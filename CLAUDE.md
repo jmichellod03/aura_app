@@ -10,8 +10,10 @@ Todo el texto de la interfaz, las memorias y los commits va en **español (Chile
 - Páginas de cálculo, cada una autónoma (HTML + CSS + JS en el mismo archivo):
   - `acero.html`: vigas y columnas laminadas, AISC 360-16 LRFD.
   - `reticulada.html`: vigas reticuladas (cordones, diagonales y montantes), AISC 360-16 LRFD.
+    - Formulario en pasos: 1 geometría y acero, 2 cargas, 3 perfiles y longitudes, 4 origen de las solicitaciones.
+    - Solicitaciones (`fuente`): por defecto las calcula AURA con `analizar()` (rigidez directa, pórtico plano, misma idealización que el `.s2k`, peso propio en D) y `solicitacionesAura()` (envolventes NCh 3171 por grupo, pares (P, M) por barra y combinación para los cordones, flecha con S1/S2). Alternativa: ingresarlas desde un modelo externo. El `.s2k` sirve para comprobar en SAP2000.
     - Barras a tracción (Cap. D) y compresión (Cap. E, con E5 para ángulos y E6 para 2L).
-    - Dos hipótesis de carga (`sModo`): costaneras **sobre los nudos** (barras articuladas, solo carga axial) o **entre nudos** (cordón superior a flexocompresión con B1 y H1-1: canales C con F2/F3 y G2, tubos rectangulares con F7 y G4; con otros perfiles queda "sin verificar" y no da CUMPLE).
+    - Dos hipótesis de carga (`sModo`): costaneras **sobre los nudos** (barras articuladas, solo carga axial) o **entre nudos** (cordones continuos: ambos cordones a flexocompresión con B1 y H1-1; canales C con F2/F3 y G2, tubos rectangulares con F7 y G4; con otros perfiles quedan "sin verificar" y no dan CUMPLE).
     - La memoria incluye una sección de alcance, hipótesis y limitaciones; no debe concluir "cumple" sobre algo que no se verificó.
     - Geometría en `geometria(tipo, n)`: en la Warren los nudos superiores van a media distancia, para que todos los nudos de los cordones reciban barras.
     - Exporta el modelo a SAP2000 (`.s2k`, kgf-m, plano XZ, combinaciones NCh 3171 y envolvente ENV). Según la hipótesis, las cargas en kgf/m van como fuerzas en los nudos (con R2 restringido en todos los nudos) o distribuidas en el cordón superior. El encabezado sigue el formato de SAP2000 v26.
