@@ -11,7 +11,7 @@ Todo el texto de la interfaz, las memorias y los commits va en **español (Chile
   - `acero.html`: vigas y columnas laminadas, AISC 360-16 LRFD.
   - `reticulada.html`: vigas reticuladas (cordones, diagonales y montantes), AISC 360-16 LRFD.
     - Barras a tracción (Cap. D) y compresión (Cap. E, con E5 para ángulos y E6 para 2L).
-    - Dos hipótesis de carga (`sModo`): costaneras **sobre los nudos** (barras articuladas, solo carga axial) o **entre nudos** (cordón superior a flexocompresión con F2/F3, G2, B1 y H1-1, solo para canales C; con otros perfiles queda "sin verificar" y no da CUMPLE).
+    - Dos hipótesis de carga (`sModo`): costaneras **sobre los nudos** (barras articuladas, solo carga axial) o **entre nudos** (cordón superior a flexocompresión con B1 y H1-1: canales C con F2/F3 y G2, tubos rectangulares con F7 y G4; con otros perfiles queda "sin verificar" y no da CUMPLE).
     - La memoria incluye una sección de alcance, hipótesis y limitaciones; no debe concluir "cumple" sobre algo que no se verificó.
     - Geometría en `geometria(tipo, n)`: en la Warren los nudos superiores van a media distancia, para que todos los nudos de los cordones reciban barras.
     - Exporta el modelo a SAP2000 (`.s2k`, kgf-m, plano XZ, combinaciones NCh 3171 y envolvente ENV). Según la hipótesis, las cargas en kgf/m van como fuerzas en los nudos (con R2 restringido en todos los nudos) o distribuidas en el cordón superior. El encabezado sigue el formato de SAP2000 v26.
@@ -60,6 +60,7 @@ Todo el texto de la interfaz, las memorias y los commits va en **español (Chile
 - `reticulada.html`:
   - UPN laminados (A e I de Prodalam / Cintac);
   - canales C y ángulos L plegados Cintac. Las propiedades se calculan con la línea media y un radio interior igual al espesor, y reproducen el peso del catálogo.
+  - tubos rectangulares y cuadrados Cintac (sección `R`): línea media con radio interior igual al espesor; para la verificación se usa el espesor de diseño 0,93e (B4.2) y para el modelo SAP el nominal.
 - Fuentes: catálogo general Cintac 2020, catálogo Prodalam y catálogo de vigas laminadas Cintac.
 
 ## Probar

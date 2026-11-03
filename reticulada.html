@@ -301,12 +301,26 @@ const CAT_LP = {
   "L 65x65x4": [65, 65, 4, 3.88], "L 65x65x5": [65, 65, 5, 4.78], "L 80x80x5": [80, 80, 5, 5.96],
   "L 80x80x6": [80, 80, 6, 7.07], "L 100x100x6": [100, 100, 6, 8.96],
 };
+// Tubos rectangulares y cuadrados Cintac (catálogo general 2020): [A (alto), B (ancho), e (mm), peso kgf/m].
+// Radio interior de las esquinas = e (reproduce el peso del catálogo).
+const CAT_TR = {
+  "Tubo 50x30x2": [50, 30, 2, 2.31], "Tubo 50x30x3": [50, 30, 3, 3.30], "Tubo 60x40x2": [60, 40, 2, 2.93], "Tubo 60x40x3": [60, 40, 3, 4.25],
+  "Tubo 80x40x2": [80, 40, 2, 3.56], "Tubo 80x40x3": [80, 40, 3, 5.19], "Tubo 80x40x4": [80, 40, 4, 6.71],
+  "Tubo 100x50x2": [100, 50, 2, 4.50], "Tubo 100x50x3": [100, 50, 3, 6.60], "Tubo 100x50x4": [100, 50, 4, 8.59], "Tubo 100x50x5": [100, 50, 5, 10.48],
+  "Tubo 150x50x3": [150, 50, 3, 8.96], "Tubo 150x50x4": [150, 50, 4, 11.73], "Tubo 150x50x5": [150, 50, 5, 14.41],
+  "Tubo 150x100x3": [150, 100, 3, 11.3], "Tubo 150x100x4": [150, 100, 4, 14.9], "Tubo 150x100x5": [150, 100, 5, 18.3],
+  "Tubo 200x100x3": [200, 100, 3, 13.72], "Tubo 200x100x4": [200, 100, 4, 18.0], "Tubo 200x100x5": [200, 100, 5, 22.3],
+  "Tubo 200x150x4": [200, 150, 4, 21.4], "Tubo 200x150x5": [200, 150, 5, 26.4],
+  "Tubo 50x50x3": [50, 50, 3, 4.25], "Tubo 75x75x3": [75, 75, 3, 6.60], "Tubo 75x75x4": [75, 75, 4, 8.59],
+  "Tubo 100x100x3": [100, 100, 3, 8.96], "Tubo 100x100x4": [100, 100, 4, 11.73], "Tubo 100x100x5": [100, 100, 5, 14.41],
+};
 function opcionesCatalogo() {
   const g = (lab, t, obj, suf) => `<optgroup label="${lab}" data-t="${t}">${Object.keys(obj).map(k => `<option value="${k}" data-t="${t}">${k}${suf}</option>`).join("")}</optgroup>`;
   return `<option value="">Dimensiones ingresadas a mano</option>`
     + g("UPN laminados (Prodalam / Cintac)", "C", CAT_UPN, "")
     + g("Canales C plegados Cintac", "C", CAT_CP, " plegado")
-    + g("Ángulos L plegados Cintac", "L", CAT_LP, " plegado");
+    + g("Ángulos L plegados Cintac", "L", CAT_LP, " plegado")
+    + g("Tubos rectangulares y cuadrados Cintac", "R", CAT_TR, "");
 }
 
 // Propiedades de una línea media poligonal de espesor t (cm): A, centroide e inercias centroidales
@@ -358,15 +372,19 @@ function htmlGrupo(g, i) {
       <option value="C"${d.tipo === "C" ? " selected" : ""}>Canal C (esquinas rectas)</option>
       <option value="L"${d.tipo === "L" ? " selected" : ""}>Ángulo simple L</option>
       <option value="2L">Doble ángulo 2L espalda con espalda</option>
+      <option value="R">Tubo rectangular (cajón)</option>
       <option value="M">Propiedades ingresadas a mano</option>
     </select>
-    <div class="t-C t-L t-2L"><label for="${p}_cat">Perfil de catálogo</label>
+    <div class="t-C t-L t-2L t-R"><label for="${p}_cat">Perfil de catálogo</label>
       <select id="${p}_cat">${opcionesCatalogo().replace(`value="${d.cat || ""}"`, `value="${d.cat || ""}" selected`)}</select>
       <div class="unit catInfo"></div></div>
     <div class="t-C dims"><div class="row2">
       ${inp("Ch", 'Altura h <span class="unit">[mm]</span>', d.C[0])}${inp("Cb", 'Ala b<sub>f</sub> <span class="unit">[mm]</span>', d.C[1])}
       ${inp("Ctw", 'Espesor alma t<sub>w</sub> <span class="unit">[mm]</span>', d.C[2])}${inp("Ctf", 'Espesor ala t<sub>f</sub> <span class="unit">[mm]</span>', d.C[3])}
     </div></div>
+    <div class="t-R dims"><div class="row3">
+      ${inp("Rh", 'Alto H <span class="unit">[mm]</span>', 100)}${inp("Rb", 'Ancho B <span class="unit">[mm]</span>', 50)}${inp("Rt", 'Espesor e <span class="unit">[mm]</span>', 3)}
+    </div><div class="unit">H en el plano de la reticulada. Esquinas con radio interior = e.</div></div>
     <div class="t-L t-2L dims"><div class="row3">
       ${inp("La", 'Ala a <span class="unit">[mm]</span>', d.L[0])}${inp("Lb", 'Ala b <span class="unit">[mm]</span>', d.L[1])}${inp("Lt", 'Espesor t <span class="unit">[mm]</span>', d.L[2])}
     </div></div>
@@ -413,6 +431,8 @@ function htmlGrupo(g, i) {
       <option value="2" selected>Caso 2: U = 1 − x̄/l (soldadura o pernos en un elemento)</option>
       <option value="8a" class="soloL">Caso 8: ángulos simples o dobles, 4 o más conectores por línea — U = 0,80</option>
       <option value="8b" class="soloL">Caso 8: ángulos simples o dobles, 3 conectores por línea — U = 0,60 (con menos, use el caso 2)</option>
+      <option value="6a" class="soloR">Caso 6: tubo con una cartela concéntrica (l ≥ H) — U = 1 − x̄/l</option>
+      <option value="6b" class="soloR">Caso 6: tubo con dos cartelas laterales (l ≥ H) — U = 1 − x̄/l</option>
       <option value="m">Valor ingresado</option>
     </select>
     <div class="row2">
@@ -485,6 +505,37 @@ function secM(A, rx, ry, xb) {
   return { tipo: "M", nombre: "Sección definida por el usuario", A, rx, ry, Ix: A * rx * rx, Iy: A * ry * ry, xbU: xb, Acon: 0, conTxt: "elemento conectado", elems: [] };
 }
 
+// Tubo rectangular: línea media con esquinas de radio interior = e. Con el espesor de diseño t = 0,93e
+// (Sección B4.2) para la verificación, o con el nominal (nominal: true) para el modelo de análisis.
+function secR(Hm, Bm, em, nominal = false, nombre) {
+  const H = Hm / 10, B = Bm / 10, e = em / 10, td = nominal ? e : 0.93 * e, Ri = e;
+  const rm = Ri + td / 2, xh = B / 2 - td / 2, yh = H / 2 - td / 2;
+  const pts = [[0, yh], [xh - rm, yh], ...arco(xh - rm, yh - rm, rm, 90, 0).slice(1), [xh, -yh + rm], ...arco(xh - rm, -yh + rm, rm, 0, -90).slice(1),
+    [-xh + rm, -yh], ...arco(-xh + rm, -yh + rm, rm, -90, -180).slice(1), [-xh, yh - rm], ...arco(-xh + rm, yh - rm, rm, 180, 90).slice(1), [0, yh]];
+  const q = poliSec(pts, td);
+  // Módulos plásticos: suma de t·|y|·ds en tramos cortos
+  let Zx = 0, Zy = 0;
+  for (let i = 1; i < pts.length; i++) {
+    const [x1, y1] = pts[i - 1], [x2, y2] = pts[i], n = 20, l = Math.hypot(x2 - x1, y2 - y1) / n;
+    for (let k = 0; k < n; k++) { const f = (k + 0.5) / n; Zx += td * l * Math.abs(y1 + (y2 - y1) * f); Zy += td * l * Math.abs(x1 + (x2 - x1) * f); }
+  }
+  const Ap = 4 * xh * yh - (4 - Math.PI) * rm * rm, J = 4 * Ap * Ap * td / q.Lt;   // Bredt
+  const bf = B - 2 * td - 2 * Ri, hf = H - 2 * td - 2 * Ri;                         // anchos planos
+  return {
+    tipo: "R", nombre: nombre || `Tubo ${mmN(Hm)}x${mmN(Bm)}x${mmN(em)}`, H, B, e, td, Ri, yh, bf, hf,
+    A: q.A, Ix: q.Ix, Iy: q.Iy, Sx: q.Ix / (H / 2), Sy: q.Iy / (B / 2), Zx, Zy, J, Cw: 0,
+    rx: Math.sqrt(q.Ix / q.A), ry: Math.sqrt(q.Iy / q.A), conTxt: "cartela",
+    elems: [
+      { n: "Alas (caso 6)", sim: L`b/t`, lam: bf / td, lr: 1.40, c1: 0.20, c2: 1.38, b: bf, t: td, k: 2 },
+      { n: "Almas (caso 6)", sim: L`h/t`, lam: hf / td, lr: 1.40, c1: 0.20, c2: 1.38, b: hf, t: td, k: 2 },
+    ],
+  };
+}
+function secTR(nombre) {
+  const [Hm, Bm, em, peso] = CAT_TR[nombre];
+  return { ...secR(Hm, Bm, em, false, nombre), peso, origen: "Tubo Cintac (catálogo general 2020; esquinas con radio interior = e; espesor de diseño t = 0,93e según B4.2)" };
+}
+
 // UPN laminado: A, Ix, Iy del catálogo; x̄, J, Cw y x_o calculados con alas de espesor medio
 function secUPN(nombre) {
   const [hm, bm, twm, tfm, rm, peso, A, Ix, Iy] = CAT_UPN[nombre];
@@ -550,7 +601,9 @@ function leerSeccion(p) {
     if (t === "C" && CAT_CP[cat]) return secCP(cat);
     if (t === "L" && CAT_LP[cat]) return secLP(cat, $(p + "_Lcon").value);
     if (t === "2L" && CAT_LP[cat]) return sec2Ldesde(secLP(cat, "a"), num(p + "_Ls"), num(p + "_Lsep"));
+    if (t === "R" && CAT_TR[cat]) return secTR(cat);
   }
+  if (t === "R") return { ...secR(num(p + "_Rh"), num(p + "_Rb"), num(p + "_Rt")), origen: "Tubo de dimensiones ingresadas (esquinas con radio interior = e; espesor de diseño t = 0,93e según B4.2)" };
   if (t === "C") return secC(num(p + "_Ch"), num(p + "_Cb"), num(p + "_Ctw"), num(p + "_Ctf"));
   if (t === "L") return secL(num(p + "_La"), num(p + "_Lb"), num(p + "_Lt"), $(p + "_Lcon").value);
   if (t === "2L") return sec2L(num(p + "_La"), num(p + "_Lb"), num(p + "_Lt"), num(p + "_Ls"), num(p + "_Lsep"));
@@ -568,6 +621,13 @@ function traccion(s, Fy, Fu, d, m) {
   else if (d.Umodo === "8a") { U = 0.8; refU = "Tabla D3.1, caso 8"; txtU = L`U = 0{,}80`; }
   else if (d.Umodo === "8b") { U = 0.6; refU = "Tabla D3.1, caso 8"; txtU = L`U = 0{,}60`; }
   else if (d.Umodo === "m") { U = d.Uval; refU = "valor ingresado"; txtU = L`U = ${tn(U, 3)}`; }
+  else if (d.Umodo === "6a" || d.Umodo === "6b") {
+    // Tubo rectangular con cartela(s); H en el plano de la conexión y B perpendicular
+    const xb = d.Umodo === "6a" ? (s.B ** 2 + 2 * s.B * s.H) / (4 * (s.B + s.H)) : s.B ** 2 / (4 * (s.B + s.H));
+    U = 1 - xb / d.lcon; refU = "Tabla D3.1, caso 6";
+    txtU = (d.Umodo === "6a" ? L`\bar{x} = \frac{B^2 + 2BH}{4(B + H)}` : L`\bar{x} = \frac{B^2}{4(B + H)}`) + L` = ${tn(xb, 3)}${CM} \qquad U = 1 - \frac{\bar{x}}{l} = 1 - \frac{${tn(xb, 3)}}{${tn(d.lcon, 1)}} = ${tn(U, 3)}`;
+    if (d.lcon < s.H) m.note(`La longitud de la conexión (${fmt(d.lcon, 1)} cm) es menor que H = ${fmt(s.H, 1)} cm: el caso 6 de la Tabla D3.1 exige l ≥ H.`, L`La longitud de la conexión es menor que $H$: el caso 6 de la Tabla D3.1 exige $l \ge H$.`);
+  }
   else {
     const U2 = 1 - s.xbU / d.lcon;
     const Umin = s.Acon > 0 ? s.Acon / Ag : 0;
@@ -584,7 +644,7 @@ function traccion(s, Fy, Fu, d, m) {
   m.row("Área bruta ; área neta: A<sub>g</sub> ; A<sub>n</sub>", `${fmt(Ag, 2)} ; ${fmt(An, 2)} cm²`, "B4.3");
   m.row(`Factor de corte diferido U (${refU})`, fmt(U, 3), "D3");
   m.row("Área neta efectiva: A<sub>e</sub> = A<sub>n</sub>U", `${fmt(Ae, 2)} cm²`, "D3-1");
-  m.p(L`\textbf{Área neta efectiva.} Conexión por ${s.conTxt}, $\bar{x} = ${tn(s.xbU, 3)}$ cm medido desde el plano de conexión:`);
+  m.p(s.tipo === "R" ? L`\textbf{Área neta efectiva.} Tubo conectado mediante cartela:` : L`\textbf{Área neta efectiva.} Conexión por ${s.conTxt}, $\bar{x} = ${tn(s.xbU, 3)}$ cm medido desde el plano de conexión:`);
   m.eq(txtU, "D3.1");
   if (d.Umodo === "2" && s.Acon > 0) m.p(L`Para secciones abiertas, $U$ no requiere ser menor que $A_{con}/A_g = ${tn(s.Acon / Ag, 3)}$ (Sección D3).`, true);
   m.eq(L`A_e = A_n\,U = ${tn(An)}\cdot ${tn(U, 3)} = ${tn(Ae)}${CM2}`, "D3-1");
@@ -735,6 +795,7 @@ function compresion(s, Fy, d, m) {
     m.row("Pandeo por flexión: F<sub>ex</sub> ; F<sub>ey</sub>", `${fmt(Fex, 1)} ; ${fmt(Fey, 1)} kgf/cm²`, "E3-4");
     m.eq(L`F_{ex} = \frac{\pi^2E}{\left(L_{cx}/r_x\right)^2} = ${tn(Fex, 1)}${KGCM2} \qquad F_{ey} = \frac{\pi^2E}{\left(L_{cy}/r_y\right)^2} = ${tn(Fey, 1)}${KGCM2}`, "E3-4");
     Fe = Math.min(Fex, Fey); modo = Fe === Fex ? "flexión eje x" : "flexión eje y";
+    if (s.tipo === "R") m.p(L`Sección tubular cerrada y doblemente simétrica: el pandeo torsional no controla (Sección E4, nota de usuario), por lo que se considera solo el pandeo por flexión (E3).`);
     if (s.tipo === "C" || s.tipo === "2L") {
       const Lcz = Lcy;
       const ro2 = s.xo ** 2 + s.yo ** 2 + (s.Ix + s.Iy) / s.A;
@@ -817,23 +878,8 @@ function cargaMayorada(pp) {
   return mejor;
 }
 
-function flexoCordon(s, Fy, d, c, t, m) {
-  m.sub("Flexocompresión del cordón superior — Capítulos F, G y H");
-  if (s.tipo !== "C") {
-    m.note("Con costaneras entre nudos el cordón superior trabaja a flexocompresión. Esta verificación está implementada solo para canales C: con ángulos, dobles ángulos o propiedades ingresadas a mano el cordón queda <b>sin verificar</b> (apoye las costaneras sobre los nudos o verifíquelo aparte).",
-      L`Con costaneras entre nudos el cordón superior trabaja a flexocompresión. Esta verificación está implementada solo para canales C; con el perfil elegido el cordón queda sin verificar.`);
-    return { dc: Infinity, noImpl: true };
-  }
-  const rEF = Math.sqrt(E / Fy), a = d.Lx, Lb = d.Ly;
-  const pp = s.peso || s.A * 0.785;
-  const wu = cargaMayorada(pp), w = Math.abs(wu.w);              // kgf/m
-  const Mu = w * (a / 100) ** 2 / 8 * 100, Vu = w * (a / 100) / 2;  // kgf·cm, kgf
-  m.p(L`Las costaneras se apoyan entre nudos, por lo que cada tramo del cordón superior recibe carga transversal. Se toma cada tramo como viga simplemente apoyada entre nudos, lo que acota superiormente el momento del cordón continuo.`, true);
-  m.row(`Carga mayorada máxima (${wu.c}, incluye peso propio ${fmt(pp, 2)} kgf/m): w<sub>u</sub>`, `${fmt(wu.w, 1)} kgf/m`);
-  m.row("Momento y corte del tramo (a = L<sub>x</sub>): M<sub>u</sub> = w<sub>u</sub>a²/8 ; V<sub>u</sub> = w<sub>u</sub>a/2", `${fmt(Mu / 100, 1)} kgf·m ; ${fmt(Vu, 0)} kgf`);
-  m.p(L`\textbf{Solicitaciones del tramo.} Combinación controlante ${wu.c.replace(/:.*/, "")} (NCh 3171), con el peso propio del cordón $${tn(pp, 2)}$ kgf/m sumado a D:`);
-  m.eq(L`w_u = ${tn(wu.w, 1)}\ \mathrm{kgf/m} \qquad M_u = \frac{w_u\,a^2}{8} = \frac{${tn(w, 1)}\cdot ${tn(a / 100, 3)}^2}{8} = ${tn(Mu / 100, 1)}\ \mathrm{kgf\cdot m} \qquad V_u = \frac{w_u\,a}{2} = ${tn(Vu, 0)}${KG}`);
-
+function flexCanal(s, Fy, Lb, Vu, m) {
+  const rEF = Math.sqrt(E / Fy);
   // Propiedades de flexión (canal en torno al eje x)
   const Sx = s.Ix / (s.h / 2);
   const Zx = s.b * s.tf * (s.h - s.tf) + s.tw * (s.h - 2 * s.tf) ** 2 / 4;
@@ -852,7 +898,7 @@ function flexoCordon(s, Fy, d, c, t, m) {
   m.eq(L`\text{Alma: } \lambda = ${tn(lw, 2)} \;${cmp(lw, lpw)}\; \lambda_p = 3{,}76\sqrt{E/F_y} = ${tn(lpw, 2)}`);
   if (lw > lpw) {
     m.note("El alma no es compacta en flexión (secciones F4/F5): fuera del alcance de esta herramienta.", L`El alma no es compacta en flexión (secciones F4/F5): fuera del alcance de esta herramienta.`);
-    return { dc: Infinity, noImpl: true };
+    return { fuera: true };
   }
 
   // Fluencia y pandeo lateral-torsional (F2), C_b = 1
@@ -885,15 +931,99 @@ function flexoCordon(s, Fy, d, c, t, m) {
       : L`M_n = \frac{0{,}9Ek_cS_x}{\lambda^2} = ${tn(Mflb / 100, 1)}\ \mathrm{kgf\cdot m}`, claseAla === "no compacta" ? "F3-1" : "F3-2");
     if (Mflb < Mn) { Mn = Mflb; refM = claseAla === "no compacta" ? "F3-1" : "F3-2"; }
   }
-  const phiMn = 0.9 * Mn;
-  m.row("<b>Resistencia de diseño en flexión: φ<sub>b</sub>M<sub>n</sub></b>", `<b>${fmt(phiMn / 100, 1)} kgf·m</b>`, refM);
-  m.eq(L`\phi_bM_n = 0{,}90\cdot ${tn(Mn / 100, 1)} = ${tn(phiMn / 100, 1)}\ \mathrm{kgf\cdot m}`);
 
   // Corte (G2.1, k_v = 5,34)
   const hw = s.h - 2 * s.tf, htw = hw / s.tw, Aw = s.h * s.tw, lim = 1.10 * Math.sqrt(5.34 * E / Fy);
   const Cv1 = htw <= lim ? 1 : lim / htw, phiVn = 0.9 * 0.6 * Fy * Aw * Cv1, dcV = Vu / phiVn;
   m.row("Corte: φ<sub>v</sub>V<sub>n</sub> = 0,9·0,6F<sub>y</sub>A<sub>w</sub>C<sub>v1</sub> ; V<sub>u</sub>/φ<sub>v</sub>V<sub>n</sub>", `${fmt(phiVn, 0)} kgf ; ${fmt(dcV, 3)} ${tag(dcV <= 1, dcV <= 1 ? "CUMPLE" : "NO CUMPLE")}`, "G2-1");
   m.eq(L`\frac{h}{t_w} = ${tn(htw, 2)} ${cmp(htw, lim)} 1{,}10\sqrt{k_vE/F_y} = ${tn(lim, 2)} \Rightarrow C_{v1} = ${tn(Cv1, 3)} \qquad \phi_vV_n = 0{,}9\cdot 0{,}6\cdot ${tn(Fy, 0)}\cdot ${tn(Aw, 2)}\cdot ${tn(Cv1, 3)} = ${tn(phiVn, 0)}${KG}`, "G2-1");
+  return { Mn, refM, phiVn };
+}
+
+// Tubo rectangular flectando en torno al eje x (lado H en el plano de la reticulada): Sección F7 y corte G4
+function flexTubo(s, Fy, Lb, Vu, m) {
+  const rEF = Math.sqrt(E / Fy), Sx = s.Sx, Mp = Fy * s.Zx;
+  m.row("Módulos de sección (t de diseño): S<sub>x</sub> ; Z<sub>x</sub>", `${fmt(Sx, 2)} ; ${fmt(s.Zx, 2)} cm³`);
+  m.eq(L`S_x = \frac{I_x}{H/2} = ${tn(Sx, 2)}\ \mathrm{cm^3} \qquad Z_x = ${tn(s.Zx, 2)}\ \mathrm{cm^3} \qquad M_p = F_yZ_x = ${tn(Mp / 100, 1)}\ \mathrm{kgf\cdot m}`, "F7-1");
+  // Clasificación en flexión (Tabla B4.1b, casos 17 y 19)
+  const lf = s.bf / s.td, lpf = 1.12 * rEF, lrf = 1.40 * rEF;
+  const lw = s.hf / s.td, lpw = 2.42 * rEF, lrw = 5.70 * rEF;
+  const clase = (l, lp, lr) => (l <= lp ? "compacta" : l <= lr ? "no compacta" : "esbelta");
+  const cA = clase(lf, lpf, lrf), cW = clase(lw, lpw, lrw);
+  m.row("Alas en flexión (caso 17): b/t ; λ<sub>p</sub> ; λ<sub>r</sub>", `${fmt(lf, 2)} ; ${fmt(lpf, 2)} ; ${fmt(lrf, 2)} ${tag(cA === "compacta", cA)}`, "B4.1b");
+  m.row("Almas en flexión (caso 19): h/t ; λ<sub>p</sub> ; λ<sub>r</sub>", `${fmt(lw, 2)} ; ${fmt(lpw, 2)} ; ${fmt(lrw, 2)} ${tag(cW === "compacta", cW)}`, "B4.1b");
+  m.eq(L`\frac{b}{t} = \frac{${tn(s.bf, 2)}}{${tn(s.td, 3)}} = ${tn(lf, 2)};\ \lambda_p = 1{,}12\sqrt{E/F_y} = ${tn(lpf, 2)};\ \lambda_r = 1{,}40\sqrt{E/F_y} = ${tn(lrf, 2)} \;\Rightarrow\; \text{ala ${cA}}`);
+  m.eq(L`\frac{h}{t} = \frac{${tn(s.hf, 2)}}{${tn(s.td, 3)}} = ${tn(lw, 2)};\ \lambda_p = 2{,}42\sqrt{E/F_y} = ${tn(lpw, 2)};\ \lambda_r = 5{,}70\sqrt{E/F_y} = ${tn(lrw, 2)} \;\Rightarrow\; \text{alma ${cW}}`);
+  if (cW === "esbelta") {
+    m.note("Las almas del tubo son esbeltas en flexión (F7.3c): fuera del alcance de esta herramienta.", L`Las almas del tubo son esbeltas en flexión (F7.3c): fuera del alcance de esta herramienta.`);
+    return { fuera: true };
+  }
+  let Mn = Mp, refM = "F7-1";
+  const usar = (M, ref) => { if (M < Mn) { Mn = M; refM = ref; } };
+  // Pandeo local del ala comprimida
+  if (cA === "no compacta") {
+    const M = Math.min(Mp, Mp - (Mp - Fy * Sx) * (3.57 * lf * Math.sqrt(Fy / E) - 4.0));
+    m.row("Pandeo local del ala: M<sub>n</sub>", `${fmt(M / 100, 1)} kgf·m`, "F7-2");
+    m.eq(L`M_n = M_p - (M_p - F_yS)\left(3{,}57\frac{b}{t}\sqrt{\frac{F_y}{E}} - 4{,}0\right) = ${tn(M / 100, 1)}\ \mathrm{kgf\cdot m}`, "F7-2");
+    usar(M, "F7-2");
+  } else if (cA === "esbelta") {
+    const be = Math.min(s.bf, 1.92 * s.td * rEF * (1 - 0.38 / lf * rEF));
+    // Sección efectiva: se descuenta (b - b_e)·t del ala comprimida (línea media a y_h del eje)
+    const dA = (s.bf - be) * s.td, A2 = s.A - dA, yc = -dA * s.yh / A2;
+    const I2 = s.Ix - dA * s.yh ** 2 - A2 * yc * yc, Se = I2 / (s.H / 2 - yc), M = Fy * Se;
+    m.row("Pandeo local del ala: b<sub>e</sub> ; S<sub>e</sub> ; M<sub>n</sub> = F<sub>y</sub>S<sub>e</sub>", `${fmt(be, 2)} cm ; ${fmt(Se, 2)} cm³ ; ${fmt(M / 100, 1)} kgf·m`, "F7-3");
+    m.eq(L`b_e = 1{,}92\,t\sqrt{\frac{E}{F_y}}\left(1 - \frac{0{,}38}{b/t}\sqrt{\frac{E}{F_y}}\right) = ${tn(be, 2)}${CM} \le b \qquad M_n = F_yS_e = ${tn(Fy, 0)}\cdot ${tn(Se, 2)} = ${tn(M / 100, 1)}\ \mathrm{kgf\cdot m}`, "F7-3");
+    usar(M, "F7-3");
+  }
+  // Pandeo local del alma no compacta
+  if (cW === "no compacta") {
+    const M = Math.min(Mp, Mp - (Mp - Fy * Sx) * (0.305 * lw * Math.sqrt(Fy / E) - 0.738));
+    m.row("Pandeo local del alma: M<sub>n</sub>", `${fmt(M / 100, 1)} kgf·m`, "F7-6");
+    m.eq(L`M_n = M_p - (M_p - F_yS)\left(0{,}305\frac{h}{t}\sqrt{\frac{F_y}{E}} - 0{,}738\right) = ${tn(M / 100, 1)}\ \mathrm{kgf\cdot m}`, "F7-6");
+    usar(M, "F7-6");
+  }
+  // Pandeo lateral-torsional (F7.4, C_b = 1)
+  const JA = Math.sqrt(s.J * s.A);
+  const Lp = 0.13 * E * s.ry * JA / Mp, Lr = 2 * E * s.ry * JA / (0.7 * Fy * Sx);
+  let Mltb = Mp, refL = "F7.4(a)";
+  if (Lb > Lr) { Mltb = Math.min(Mp, 2 * E * JA / (Lb / s.ry)); refL = "F7-11"; }
+  else if (Lb > Lp) { Mltb = Math.min(Mp, Mp - (Mp - 0.7 * Fy * Sx) * (Lb - Lp) / (Lr - Lp)); refL = "F7-10"; }
+  m.row("Pandeo lateral-torsional: L<sub>b</sub> = L<sub>y</sub> ; L<sub>p</sub> ; L<sub>r</sub> (C<sub>b</sub> = 1)", `${fmt(Lb, 1)} ; ${fmt(Lp, 1)} ; ${fmt(Lr, 1)} cm`, "F7-12/F7-13");
+  m.eq(L`L_p = 0{,}13\,E\,r_y\frac{\sqrt{JA_g}}{M_p} = ${tn(Lp, 1)}${CM} \qquad L_r = 2\,E\,r_y\frac{\sqrt{JA_g}}{0{,}7F_yS_x} = ${tn(Lr, 1)}${CM} \;\Rightarrow\; M_n = ${tn(Mltb / 100, 1)}\ \mathrm{kgf\cdot m}`, refL);
+  usar(Mltb, refL);
+  // Corte (G4): A_w = 2ht, k_v = 5, C_v2 según G2.2
+  const kv = 5, ht = s.hf / s.td, l1 = 1.10 * Math.sqrt(kv * E / Fy), l2 = 1.37 * Math.sqrt(kv * E / Fy);
+  const Cv2 = ht <= l1 ? 1 : ht <= l2 ? l1 / ht : 1.51 * kv * E / (ht * ht * Fy);
+  const Aw = 2 * s.hf * s.td, phiVn = 0.9 * 0.6 * Fy * Aw * Cv2, dcV = Vu / phiVn;
+  m.row("Corte: φ<sub>v</sub>V<sub>n</sub> = 0,9·0,6F<sub>y</sub>A<sub>w</sub>C<sub>v2</sub> ; V<sub>u</sub>/φ<sub>v</sub>V<sub>n</sub>", `${fmt(phiVn, 0)} kgf ; ${fmt(dcV, 3)} ${tag(dcV <= 1, dcV <= 1 ? "CUMPLE" : "NO CUMPLE")}`, "G4-1");
+  m.eq(L`A_w = 2ht = 2\cdot ${tn(s.hf, 2)}\cdot ${tn(s.td, 3)} = ${tn(Aw, 2)}\ \mathrm{cm^2} \qquad \frac{h}{t} = ${tn(ht, 2)} \Rightarrow C_{v2} = ${tn(Cv2, 3)} \qquad \phi_vV_n = ${tn(phiVn, 0)}${KG}`, "G4-1");
+  return { Mn, refM, phiVn };
+}
+
+function flexoCordon(s, Fy, d, c, t, m) {
+  m.sub("Flexocompresión del cordón superior — Capítulos F, G y H");
+  if (s.tipo !== "C" && s.tipo !== "R") {
+    m.note("Con costaneras entre nudos el cordón superior trabaja a flexocompresión. Esta verificación está implementada para canales C y tubos rectangulares: con ángulos, dobles ángulos o propiedades ingresadas a mano el cordón queda <b>sin verificar</b> (apoye las costaneras sobre los nudos o verifíquelo aparte).",
+      L`Con costaneras entre nudos el cordón superior trabaja a flexocompresión. Esta verificación está implementada para canales C y tubos rectangulares; con el perfil elegido el cordón queda sin verificar.`);
+    return { dc: Infinity, noImpl: true };
+  }
+  const a = d.Lx, Lb = d.Ly;
+  const pp = s.peso || s.A * 0.785;
+  const wu = cargaMayorada(pp), w = Math.abs(wu.w);              // kgf/m
+  const Mu = w * (a / 100) ** 2 / 8 * 100, Vu = w * (a / 100) / 2;  // kgf·cm, kgf
+  m.p(L`Las costaneras se apoyan entre nudos, por lo que cada tramo del cordón superior recibe carga transversal. Se toma cada tramo como viga simplemente apoyada entre nudos, lo que acota superiormente el momento del cordón continuo.`, true);
+  m.row(`Carga mayorada máxima (${wu.c}, incluye peso propio ${fmt(pp, 2)} kgf/m): w<sub>u</sub>`, `${fmt(wu.w, 1)} kgf/m`);
+  m.row("Momento y corte del tramo (a = L<sub>x</sub>): M<sub>u</sub> = w<sub>u</sub>a²/8 ; V<sub>u</sub> = w<sub>u</sub>a/2", `${fmt(Mu / 100, 1)} kgf·m ; ${fmt(Vu, 0)} kgf`);
+  m.p(L`\textbf{Solicitaciones del tramo.} Combinación controlante ${wu.c.replace(/:.*/, "")} (NCh 3171), con el peso propio del cordón $${tn(pp, 2)}$ kgf/m sumado a D:`);
+  m.eq(L`w_u = ${tn(wu.w, 1)}\ \mathrm{kgf/m} \qquad M_u = \frac{w_u\,a^2}{8} = \frac{${tn(w, 1)}\cdot ${tn(a / 100, 3)}^2}{8} = ${tn(Mu / 100, 1)}\ \mathrm{kgf\cdot m} \qquad V_u = \frac{w_u\,a}{2} = ${tn(Vu, 0)}${KG}`);
+
+  let fl;
+  if (s.tipo === "R") fl = flexTubo(s, Fy, Lb, Vu, m); else fl = flexCanal(s, Fy, Lb, Vu, m);
+  if (fl.fuera) return { dc: Infinity, noImpl: true };
+  const { Mn, refM, phiVn } = fl, dcV = Vu / phiVn;
+  const phiMn = 0.9 * Mn;
+  m.row("<b>Resistencia de diseño en flexión: φ<sub>b</sub>M<sub>n</sub></b>", `<b>${fmt(phiMn / 100, 1)} kgf·m</b>`, refM);
+  m.eq(L`\phi_bM_n = 0{,}90\cdot ${tn(Mn / 100, 1)} = ${tn(phiMn / 100, 1)}\ \mathrm{kgf\cdot m}`);
 
   // Amplificación P-δ (Anexo 8.2.1, C_m = 1,0 por carga transversal, α = 1)
   const Pe1 = PI2 * E * s.Ix / (d.Kx * d.Lx) ** 2;
@@ -934,12 +1064,13 @@ function propsLista(s) {
     ["r<sub>x</sub>", L`$r_x$`, s.rx, 3, "cm"], ["r<sub>y</sub>", L`$r_y$`, s.ry, 3, "cm"]];
   if (s.tipo === "L") l.push(["r<sub>z</sub>", L`$r_z$`, s.rz, 3, "cm"], ["x̄ ; ȳ", L`$\bar{x}$ ; $\bar{y}$`, null, 0, `${fmt(s.xb, 3)} ; ${fmt(s.yb, 3)} cm`], ["J", L`$J$`, s.J, 4, "cm⁴"]);
   if (s.tipo === "C") l.push(["x̄ (dorso del alma)", L`$\bar{x}$`, s.xb, 3, "cm"], ["x<sub>o</sub>", L`$x_o$`, s.xo, 3, "cm"], ["J", L`$J$`, s.J, 4, "cm⁴"], ["C<sub>w</sub>", L`$C_w$`, s.Cw, 1, "cm⁶"]);
+  if (s.tipo === "R") l.push(["t de diseño (0,93e)", L`$t$ de diseño`, s.td * 10, 2, "mm"], ["Z<sub>x</sub>", L`$Z_x$`, s.Zx, 2, "cm³"], ["J", L`$J$`, s.J, 2, "cm⁴"], ["b ; h planos", L`$b$ ; $h$ planos`, null, 0, `${fmt(s.bf, 2)} ; ${fmt(s.hf, 2)} cm`]);
   if (s.tipo === "2L") l.push(["r<sub>i</sub> = r<sub>z</sub> (1 ángulo)", L`$r_i$`, s.ri, 3, "cm"], ["y<sub>o</sub>", L`$y_o$`, s.yo, 3, "cm"], ["J", L`$J$`, s.J, 4, "cm⁴"]);
   if (s.tipo !== "M") l.push(["Peso" + (s.peso ? " (catálogo)" : ""), "Peso", s.peso || s.A * 0.785, 2, "kgf/m"]);
   return l;
 }
 const texOrigen = (t) => t.replace(/x̄/g, L`$\bar{x}$`).replace(/C_w/g, L`$C_w$`).replace(/—/g, "---");
-const uTex = (u) => u.replace("cm²", "cm$^2$").replace("cm⁴", "cm$^4$").replace("cm⁶", "cm$^6$");
+const uTex = (u) => u.replace("cm²", "cm$^2$").replace("cm³", "cm$^3$").replace("cm⁴", "cm$^4$").replace("cm⁶", "cm$^6$");
 
 // ---------------------------------------------------------------------------
 // Esquema de la reticulada (SVG en pantalla y TikZ en la memoria)
@@ -1032,6 +1163,7 @@ function reglasSeccion(p) {
   if ((t === "L" || t === "2L") && !cat) r.push([p + "_La", 0, true], [p + "_Lb", 0, true], [p + "_Lt", 0, true]);
   if (t === "2L") r.push([p + "_Ls", 0], [p + "_Lsep", 0, true]);
   if (t === "M") r.push([p + "_MA", 0, true], [p + "_Mrx", 0, true], [p + "_Mry", 0, true], [p + "_Mxb", 0]);
+  if (t === "R" && !cat) r.push([p + "_Rh", 0, true], [p + "_Rb", 0, true], [p + "_Rt", 0, true]);
   return r;
 }
 function reglasDatos() {
@@ -1063,6 +1195,7 @@ function geometriaInvalida() {
       marca(p + "_Ctw", num(p + "_Ctw") >= num(p + "_Cb"), "t_w debe ser menor que b_f");
     }
     if ((t === "L" || t === "2L") && !cat) marca(p + "_Lt", num(p + "_Lt") >= Math.min(num(p + "_La"), num(p + "_Lb")), "t debe ser menor que las alas");
+    if (t === "R" && !cat) marca(p + "_Rt", 4 * num(p + "_Rt") >= Math.min(num(p + "_Rh"), num(p + "_Rb")), "el espesor debe ser menor que un cuarto del lado menor");
     if ($(p + "_Umodo").value === "m") marca(p + "_Uval", num(p + "_Uval") > 1, "U no puede ser mayor que 1");
     if (t !== "M") {
       const A = leerSeccion(p).A;
@@ -1290,17 +1423,26 @@ function generarS2K() {
     if (s.tipo === "C") fila = { SectionName: nom, Material: mat, Shape: "Channel", t3: mt(s.h), t2: mt(s.b), tf: mt(s.tf), tw: mt(s.tw) };
     else if (s.tipo === "L") fila = { SectionName: nom, Material: mat, Shape: "Angle", t3: mt(s.a), t2: mt(s.b), tf: mt(s.t), tw: mt(s.t) };
     else if (s.tipo === "2L") fila = { SectionName: nom, Material: mat, Shape: "Double Angle", t3: mt(s.a), t2: mt(2 * s.b + s.s), tf: mt(s.t), tw: mt(s.t), dis: mt(s.s) };
-    // Perfiles de catálogo (UPN con acuerdos, plegados con esquinas redondeadas): SAP dibuja la forma con
-    // esquinas rectas; los modificadores llevan A, I y el peso a los valores calculados por AURA
-    if (s.tipo !== "M" && s.origen) {
-      const r = s.tipo === "C" ? secC(s.h * 10, s.b * 10, s.tw * 10, s.tf * 10) : s.tipo === "L" ? secL(s.a * 10, s.b * 10, s.t * 10) : sec2L(s.a * 10, s.b * 10, s.t * 10, s.s * 10, s.asep);
-      const kA = s.A / r.A;
-      Object.assign(fila, { AMod: q(kA), A2Mod: 1, A3Mod: 1, JMod: 1, I2Mod: q(s.Iy / r.Iy), I3Mod: q(s.Ix / r.Ix), MMod: q(kA), WMod: q(kA) });
+    else if (s.tipo === "R") {
+      // Espesor nominal en el modelo; los modificadores llevan A e I a la sección con esquinas redondeadas
+      fila = { SectionName: nom, Material: mat, Shape: "Box/Tube", t3: mt(s.H), t2: mt(s.B), tf: mt(s.e), tw: mt(s.e) };
+      const n0 = secR(s.H * 10, s.B * 10, s.e * 10, true), Ar = 2 * s.e * (s.H + s.B) - 4 * s.e * s.e;
+      const Ixr = (s.B * s.H ** 3 - (s.B - 2 * s.e) * (s.H - 2 * s.e) ** 3) / 12, Iyr = (s.H * s.B ** 3 - (s.H - 2 * s.e) * (s.B - 2 * s.e) ** 3) / 12;
+      const kA = n0.A / Ar;
+      Object.assign(fila, { AMod: q(kA), A2Mod: 1, A3Mod: 1, JMod: 1, I2Mod: q(n0.Iy / Iyr), I3Mod: q(n0.Ix / Ixr), MMod: q(kA), WMod: q(kA) });
     }
     else {
+      // Propiedades ingresadas a mano: sección general
       const A = s.A / 1e4, I3 = s.Ix / 1e8, I2 = s.Iy / 1e8;
       fila = { SectionName: nom, Material: mat, Shape: "General", t3: mt(Math.sqrt(12 * s.Ix / s.A)), t2: mt(Math.sqrt(12 * s.Iy / s.A)),
         Area: q(A), TorsConst: q((I2 + I3) / 100), I33: q(I3), I22: q(I2), AS2: q(A / 2), AS3: q(A / 2) };
+    }
+    // Perfiles de catálogo (UPN con acuerdos, plegados con esquinas redondeadas): SAP dibuja la forma con
+    // esquinas rectas; los modificadores llevan A, I y el peso a los valores calculados por AURA
+    if (s.tipo !== "M" && s.tipo !== "R" && s.origen) {
+      const r = s.tipo === "C" ? secC(s.h * 10, s.b * 10, s.tw * 10, s.tf * 10) : s.tipo === "L" ? secL(s.a * 10, s.b * 10, s.t * 10) : sec2L(s.a * 10, s.b * 10, s.t * 10, s.s * 10, s.asep);
+      const kA = s.A / r.A;
+      Object.assign(fila, { AMod: q(kA), A2Mod: 1, A3Mod: 1, JMod: 1, I2Mod: q(s.Iy / r.Iy), I3Mod: q(s.Ix / r.Ix), MMod: q(kA), WMod: q(kA) });
     }
     if (secs[nom] && JSON.stringify(secs[nom]) !== JSON.stringify(fila)) { nom += "_" + g.id.toUpperCase(); fila.SectionName = nom; }
     secs[nom] = fila;
@@ -1398,6 +1540,7 @@ function descargarS2K() {
     const t = $(p + "_tipo").value, cat = $(p + "_cat").value;
     if (!mal.length && t === "C" && !cat && (2 * num(p + "_Ctf") >= num(p + "_Ch") || num(p + "_Ctw") >= num(p + "_Cb"))) mal.push("espesores incompatibles con h y b_f");
     if (!mal.length && (t === "L" || t === "2L") && !cat && num(p + "_Lt") >= Math.min(num(p + "_La"), num(p + "_Lb"))) mal.push("t debe ser menor que las alas");
+    if (!mal.length && t === "R" && !cat && 4 * num(p + "_Rt") >= Math.min(num(p + "_Rh"), num(p + "_Rb"))) mal.push("espesor incompatible con H y B");
     if (mal.length) malos.push(`${g.nombre}: ${mal.join(", ")}`);
   }
   if (malos.length) { alert("Para exportar el modelo, todas las barras necesitan una sección válida (también los grupos no incluidos en la verificación):\n\n" + malos.join("\n")); return; }
@@ -1417,7 +1560,7 @@ let grupoVisible = "cs";
 function pintarModo() {
   const tramo = $("sModo").value === "tramo";
   $("sModoInfo").innerHTML = tramo
-    ? "El cordón superior se verifica a flexocompresión (F, G y H) con M<sub>u</sub> = w<sub>u</sub>a²/8 de estas cargas; ingrese en L<sub>y</sub> del cordón superior la distancia entre arriostramientos laterales. Implementado para canales C."
+    ? "El cordón superior se verifica a flexocompresión (F, G y H) con M<sub>u</sub> = w<sub>u</sub>a²/8 de estas cargas; ingrese en L<sub>y</sub> del cordón superior la distancia entre arriostramientos laterales. Implementado para canales C y tubos rectangulares."
     : "Todas las barras quedan articuladas y solo con carga axial. Los cordones se verifican a tracción y compresión.";
 }
 function pintarPrediseno() {
@@ -1437,7 +1580,8 @@ function mostrarTipo(p) {
   fs.querySelectorAll(".dims").forEach(el => { if (cat) el.classList.add("hidden"); });
   const info = CAT_UPN[cat] ? `h = ${CAT_UPN[cat][0]} · b = ${CAT_UPN[cat][1]} · t<sub>w</sub> = ${fmt(CAT_UPN[cat][2], 1)} · t<sub>f</sub> = ${fmt(CAT_UPN[cat][3], 1)} mm · ${fmt(CAT_UPN[cat][5], 2)} kgf/m`
     : CAT_CP[cat] ? `Plegado e = ${CAT_CP[cat][2]} mm · ${fmt(CAT_CP[cat][3], 2)} kgf/m · rige además AISI S100 / NCh 427`
-    : CAT_LP[cat] ? `Plegado e = ${CAT_LP[cat][2]} mm · ${fmt(CAT_LP[cat][3], 2)} kgf/m${t === "2L" ? " por ángulo" : ""}` : "";
+    : CAT_LP[cat] ? `Plegado e = ${CAT_LP[cat][2]} mm · ${fmt(CAT_LP[cat][3], 2)} kgf/m${t === "2L" ? " por ángulo" : ""}`
+    : CAT_TR[cat] ? `H = ${CAT_TR[cat][0]} · B = ${CAT_TR[cat][1]} · e = ${CAT_TR[cat][2]} mm · ${fmt(CAT_TR[cat][3], 2)} kgf/m · Cintac: ASTM A500 o A36/A240ES según tamaño (elija F<sub>y</sub> igual o menor)` : "";
   fs.querySelector(".catInfo").innerHTML = info;
   // Con E5 la longitud es entre puntos de trabajo y no se usa K
   const conE5 = t === "L" && $(p + "_E5").value !== "no";
@@ -1446,14 +1590,21 @@ function mostrarTipo(p) {
   fs.querySelector(".hintEje").textContent = t === "L"
     ? (conE5 ? "Con E5, L es la longitud entre puntos de trabajo; las ecuaciones de E5 ya consideran la condición de borde (no se usa K)." : "Ángulo cargado concéntricamente: pandeo en torno al eje principal menor con L_c = K·L.")
     : t === "C" ? "x: eje fuerte (perpendicular al alma); y: eje débil. El pandeo torsional usa L_cz = K_y·L_y."
-    : t === "2L" ? "Con la cartela en el plano de la reticulada: pandeo en el plano en torno a x; fuera del plano en torno a y (simetría)." : "";
+    : t === "2L" ? "Con la cartela en el plano de la reticulada: pandeo en el plano en torno a x; fuera del plano en torno a y (simetría)."
+    : t === "R" ? "x: eje fuerte (lado H vertical, en el plano); y: eje débil. Sección cerrada: el pandeo torsional no controla." : "";
   // Caso 8 de la Tabla D3.1: solo ángulos simples y dobles
   const esL = t === "L" || t === "2L";
   fs.querySelectorAll("option.soloL").forEach(o => { o.hidden = !esL; o.disabled = !esL; });
   if (!esL && /^8/.test($(p + "_Umodo").value)) $(p + "_Umodo").value = "2";
+  // Tubos: caso 6 (el caso 2 excluye los tubos)
+  const esR = t === "R", sU = $(p + "_Umodo");
+  fs.querySelectorAll("option.soloR").forEach(o => { o.hidden = !esR; o.disabled = !esR; });
+  const o2 = sU.querySelector('option[value="2"]'); o2.hidden = esR; o2.disabled = esR;
+  if (esR && sU.value === "2") sU.value = "6a";
+  if (!esR && /^6/.test(sU.value)) sU.value = "2";
   fs.querySelector("#" + p + "_Kx").closest("div").classList.toggle("hidden", conE5);
   const um = $(p + "_Umodo").value;
-  fs.querySelector(".u-2").classList.toggle("hidden", um !== "2");
+  fs.querySelector(".u-2").classList.toggle("hidden", !(um === "2" || um === "6a" || um === "6b"));
   fs.querySelector(".u-m").classList.toggle("hidden", um !== "m");
 }
 function mostrarGrupo(id) {
