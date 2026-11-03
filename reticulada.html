@@ -205,6 +205,7 @@
         <button class="btn sec" type="button" onclick="window.print()">Imprimir</button>
         <button class="btn" type="button" onclick="descargarTex()">Descargar memoria (.tex)</button>
         <button class="btn" type="button" onclick="descargarZipMemoria(ultimoTex, ultimoNombre, document.body)">Descargar .zip (Overleaf)</button>
+        <button class="btn sec" type="button" onclick="descargarS2K()" title="Archivo de texto para SAP2000: File → Import → SAP2000 .s2k Text File">Exportar modelo SAP2000 (.s2k)</button>
       </div>
       <div class="memo" id="memo"></div>
     </div>
@@ -1040,6 +1041,109 @@ Por lo tanto, como la razón demanda-capacidad máxima es $D/C = ${tn(o.dcMax, 3
 
 \end{document}
 `;
+}
+
+// ---------------------------------------------------------------------------
+// Exportación del modelo a SAP2000 (.s2k, tablas de base de datos en texto)
+// Unidades kgf, m. Reticulada en el plano XZ (X a lo largo de la luz, Z vertical), análisis plano.
+// Cordones continuos; diagonales y montantes articulados en sus extremos.
+// Patrones D, L, Lr y W vacíos y combinaciones LRFD de NCh 3171.
+// ---------------------------------------------------------------------------
+const COMB_3171 = [
+  ["C1: 1,4D", { D: 1.4 }],
+  ["C2: 1,2D + 1,6L + 0,5Lr", { D: 1.2, L: 1.6, Lr: 0.5 }],
+  ["C3a: 1,2D + 1,6Lr + L", { D: 1.2, Lr: 1.6, L: 1 }],
+  ["C3b: 1,2D + 1,6Lr + 0,8W", { D: 1.2, Lr: 1.6, W: 0.8 }],
+  ["C4: 1,2D + 1,6W + L + 0,5Lr", { D: 1.2, W: 1.6, L: 1, Lr: 0.5 }],
+  ["C6: 0,9D + 1,6W", { D: 0.9, W: 1.6 }],
+];
+const SERV_3171 = [["S1: D + L", { D: 1, L: 1 }], ["S2: D + Lr", { D: 1, Lr: 1 }]];
+
+function generarS2K() {
+  const tipo = $("gTipo").value, Lt = num("gL"), h = num("gH"), n = Math.round(num("gN"));
+  const acero = $("acero").value, { Fy, Fu } = ACEROS[acero];
+  const q = (x) => String(+(+x).toPrecision(8)).replace("e", "E");   // número con punto decimal (exponente en mayúscula)
+  const mt = (cm) => q(cm / 100);                      // cm → m
+  const lin = (o) => "   " + Object.entries(o).map(([k, v]) => `${k}=${typeof v === "string" && /[\s,]/.test(v) ? `"${v}"` : v}`).join("   ");
+  const tabla = (nom, filas) => `TABLE:  "${nom}"\n${filas.map(lin).join("\n")}\n \n`;
+  const mat = acero.replace(/[^A-Za-z0-9-]/g, "");
+
+  // Secciones por grupo
+  const NOMG = { cs: "CORDON_SUP", ci: "CORDON_INF", di: "DIAGONALES", mo: "MONTANTES" };
+  const secs = {}, secGrupo = {};
+  for (const g of GRUPOS) {
+    const s = leerSeccion(g.id);
+    let nom = s.tipo === "M" ? `SEC_${NOMG[g.id]}` : s.nombre.replace(/\s+/g, "");
+    let fila;
+    if (s.tipo === "C") fila = { SectionName: nom, Material: mat, Shape: "Channel", t3: mt(s.h), t2: mt(s.b), tf: mt(s.tf), tw: mt(s.tw) };
+    else if (s.tipo === "L") fila = { SectionName: nom, Material: mat, Shape: "Angle", t3: mt(s.a), t2: mt(s.b), tf: mt(s.t), tw: mt(s.t) };
+    else if (s.tipo === "2L") fila = { SectionName: nom, Material: mat, Shape: "Double Angle", t3: mt(s.a), t2: mt(2 * s.b + s.s), tf: mt(s.t), tw: mt(s.t), dis: mt(s.s) };
+    else {
+      const A = s.A / 1e4, I3 = s.Ix / 1e8, I2 = s.Iy / 1e8;
+      fila = { SectionName: nom, Material: mat, Shape: "General", t3: mt(Math.sqrt(12 * s.Ix / s.A)), t2: mt(Math.sqrt(12 * s.Iy / s.A)),
+        Area: q(A), TorsConst: q((I2 + I3) / 100), I33: q(I3), I22: q(I2), AS2: q(A / 2), AS3: q(A / 2) };
+    }
+    if (secs[nom] && JSON.stringify(secs[nom]) !== JSON.stringify(fila)) { nom += "_" + g.id.toUpperCase(); fila.SectionName = nom; }
+    secs[nom] = fila;
+    secGrupo[g.id] = { nom, tipoSAP: fila.Shape };
+  }
+
+  // Nudos: inferiores 1..n+1, superiores n+2..2n+2
+  const jInf = (i) => i + 1, jSup = (i) => n + 2 + i;
+  const nudos = [];
+  for (let i = 0; i <= n; i++) nudos.push({ Joint: jInf(i), CoordSys: "GLOBAL", CoordType: "Cartesian", XorR: q(i * Lt / n), Y: 0, Z: 0, SpecialJt: "No", GlobalX: q(i * Lt / n), GlobalY: 0, GlobalZ: 0 });
+  for (let i = 0; i <= n; i++) nudos.push({ Joint: jSup(i), CoordSys: "GLOBAL", CoordType: "Cartesian", XorR: q(i * Lt / n), Y: 0, Z: q(h), SpecialJt: "No", GlobalX: q(i * Lt / n), GlobalY: 0, GlobalZ: q(h) });
+
+  // Barras
+  const conect = [], asig = [], lib = [], grupos = [];
+  barras(tipo, n).forEach(([x1, y1, x2, y2, g], k) => {
+    const f = k + 1;
+    const ji = y1 ? jSup(x1) : jInf(x1), jj = y2 ? jSup(x2) : jInf(x2);
+    conect.push({ Frame: f, JointI: ji, JointJ: jj, IsCurved: "No" });
+    asig.push({ Frame: f, SectionType: secGrupo[g].tipoSAP, AutoSelect: "N.A.", AnalSect: secGrupo[g].nom, DesignSect: secGrupo[g].nom, MatProp: "Default" });
+    if (g === "di" || g === "mo") lib.push({ Frame: f, PI: "No", V2I: "No", V3I: "No", TI: "No", M2I: "Yes", M3I: "Yes", PJ: "No", V2J: "No", V3J: "No", TJ: "No", M2J: "Yes", M3J: "Yes", PartialFix: "No" });
+    grupos.push({ GroupName: NOMG[g], ObjectType: "Frame", ObjectLabel: f });
+  });
+
+  const pats = [["D", "Dead", 1], ["L", "Live", 0], ["Lr", "Roof Live", 0], ["W", "Wind", 0]];
+  const combos = [];
+  for (const [lista, diseno] of [[COMB_3171, "Strength"], [SERV_3171, "Deflection"]]) {
+    for (const [nombre, fac] of lista) {
+      const cn = nombre.split(":")[0];
+      Object.entries(fac).forEach(([c, sf], i) => combos.push(i === 0
+        ? { ComboName: cn, ComboType: "Linear Add", AutoDesign: "No", CaseType: "Linear Static", CaseName: c, ScaleFactor: sf, SteelDesign: diseno, ConcDesign: "None", AlumDesign: "None", ColdDesign: diseno }
+        : { ComboName: cn, CaseType: "Linear Static", CaseName: c, ScaleFactor: sf }));
+    }
+  }
+  const fecha = new Date();
+  const E2 = E * 1e4, G2 = G * 1e4;                        // kgf/cm² → kgf/m²
+  return `File ${ultimoNombre.replace(/\.tex$/, ".s2k").replace("memoria_", "modelo_")} generado por AURA el ${fecha.toLocaleDateString("es-CL")}
+ 
+` + tabla("PROGRAM CONTROL", [{ ProgramName: "SAP2000", Version: "22.0.0", CurrUnits: "Kgf, m, C", SteelCode: "AISC 360-16", MultiStepStatic: "No", NLStageStatic: "No" }])
+    + tabla("ACTIVE DEGREES OF FREEDOM", [{ UX: "Yes", UY: "No", UZ: "Yes", RX: "No", RY: "Yes", RZ: "No" }])
+    + tabla("MATERIAL PROPERTIES 01 - GENERAL", [{ Material: mat, Type: "Steel", SymType: "Isotropic", TempDepend: "No", Color: "Blue", Notes: "Acero chileno exportado desde AURA" }])
+    + tabla("MATERIAL PROPERTIES 02 - BASIC MECHANICAL PROPERTIES", [{ Material: mat, UnitWeight: 7850, UnitMass: q(7850 / 9.80665), E1: q(E2), G12: q(G2), U12: q(E2 / (2 * G2) - 1), A1: 0.0000117 }])
+    + tabla("MATERIAL PROPERTIES 03A - STEEL DATA", [{ Material: mat, Fy: q(Fy * 1e4), Fu: q(Fu * 1e4), EffFy: q(Fy * 1e4), EffFu: q(Fu * 1e4), SSCurveOpt: "Simple", SSHysType: "Kinematic", SHard: 0.02, SMax: 0.14, SRup: 0.2, FinalSlope: -0.1 }])
+    + tabla("FRAME SECTION PROPERTIES 01 - GENERAL", Object.values(secs))
+    + tabla("JOINT COORDINATES", nudos)
+    + tabla("CONNECTIVITY - FRAME", conect)
+    + tabla("FRAME SECTION ASSIGNMENTS", asig)
+    + (lib.length ? tabla("FRAME RELEASE ASSIGNMENTS 1 - GENERAL", lib) : "")
+    + tabla("JOINT RESTRAINT ASSIGNMENTS", [
+      { Joint: jInf(0), U1: "Yes", U2: "Yes", U3: "Yes", R1: "No", R2: "No", R3: "No" },
+      { Joint: jInf(n), U1: "No", U2: "Yes", U3: "Yes", R1: "No", R2: "No", R3: "No" }])
+    + tabla("GROUPS 1 - DEFINITIONS", Object.values(NOMG).map(g => ({ GroupName: g, Selection: "Yes", SectionCut: "Yes", Steel: "Yes", Concrete: "Yes", Aluminum: "Yes", ColdFormed: "Yes", Stage: "Yes", Bridge: "Yes", AutoSeismic: "No", AutoWind: "No", SelDesSteel: "No", SelDesAlum: "No", SelDesCold: "No", MassWeight: "Yes" })))
+    + tabla("GROUPS 2 - ASSIGNMENTS", grupos)
+    + tabla("LOAD PATTERN DEFINITIONS", pats.map(([p, t, sw]) => ({ LoadPat: p, DesignType: t, SelfWtMult: sw, ...(t === "Wind" ? { AutoLoad: "None" } : {}) })))
+    + tabla("LOAD CASE DEFINITIONS", pats.map(([p, t]) => ({ Case: p, Type: "LinStatic", InitialCond: "Zero", DesignType: t, DesignAct: "Non-Composite", RunCase: "Yes" })))
+    + tabla("CASE - STATIC 1 - LOAD ASSIGNMENTS", pats.map(([p]) => ({ Case: p, LoadType: "Load pattern", LoadName: p, LoadSF: 1 })))
+    + tabla("COMBINATION DEFINITIONS", combos)
+    + "END TABLE DATA\n";
+}
+function descargarS2K() {
+  if (!ultimoTex) { alert("Corrija los datos inválidos antes de exportar el modelo."); return; }
+  const nombre = `modelo_reticulada_${$("gTipo").value}_${String(num("gL")).replace(".", "-")}m.s2k`;
+  descargarBlob(new Blob([generarS2K().replace(/\n/g, "\r\n")], { type: "text/plain;charset=utf-8" }), nombre);
 }
 
 function descargarTex() {
