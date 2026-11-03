@@ -1797,7 +1797,7 @@ function pintarPrediseno() {
 }
 function mostrarTipo(p) {
   const t = $(p + "_tipo").value, fs = $("fs_" + p);
-  fs.querySelectorAll(".t-C, .t-L, .t-2L, .t-M").forEach(el => el.classList.toggle("hidden", !el.classList.contains("t-" + t)));
+  fs.querySelectorAll(".t-C, .t-L, .t-2L, .t-R, .t-M").forEach(el => el.classList.toggle("hidden", !el.classList.contains("t-" + t)));
   fs.querySelector(".noL").classList.toggle("hidden", t === "L");
   const sel = $(p + "_cat"), tc = t === "2L" ? "L" : t;
   sel.querySelectorAll("optgroup").forEach(o => { o.hidden = o.dataset.t !== tc; o.disabled = o.dataset.t !== tc; });
