@@ -9,7 +9,7 @@ Todo el texto de la interfaz, las memorias y los commits va en **español (Chile
 - `index.html`: inicio, proyectos y enlaces a cada herramienta.
 - Páginas de cálculo, cada una autónoma (HTML + CSS + JS en el mismo archivo):
   - `acero.html`: vigas y columnas laminadas, AISC 360-16 LRFD.
-  - `reticulada.html`: vigas reticuladas (cordones, diagonales y montantes), AISC 360-16 LRFD. Exporta el modelo a SAP2000 (`.s2k`, kgf-m, plano XZ, combinaciones NCh 3171, cargas D, L, Lr y W distribuidas en el cordón superior). El encabezado del `.s2k` sigue el formato de SAP2000 v26.
+  - `reticulada.html`: vigas reticuladas (cordones, diagonales y montantes), AISC 360-16 LRFD. Exporta el modelo a SAP2000 (`.s2k`, kgf-m, plano XZ, combinaciones NCh 3171, cargas D, L, Lr y W en kgf/m distribuidas en el cordón superior). El encabezado del `.s2k` sigue el formato de SAP2000 v26.
   - `hormigon.html`: ACI 318-08.
   - `madera.html`: NCh 1198:2024.
   - `mle.html`: NCh 2165 y NCh 1198.

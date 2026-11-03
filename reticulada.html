@@ -194,16 +194,13 @@
 
       <fieldset>
         <legend>Cargas para el modelo SAP2000</legend>
-        <div class="unit">Se exportan como cargas distribuidas sobre el cordón superior (carga por m² × ancho tributario). El peso propio de las barras lo calcula SAP en el patrón D. Valores de ejemplo: reemplácelos por los de su proyecto.</div>
-        <label for="sB">Ancho tributario (separación entre vigas) <span class="unit">[m]</span></label>
-        <input id="sB" type="number" step="0.01" min="0" value="3">
+        <div class="unit">Cargas lineales sobre el cordón superior, con el ancho tributario ya incluido. Se exportan como cargas distribuidas en sus patrones. El peso propio de las barras lo calcula SAP en el patrón D. Valores de ejemplo: reemplácelos por los de su proyecto.</div>
         <div class="row2">
-          <div><label for="sD">Sobrecarga muerta D (sin peso propio) <span class="unit">[kgf/m²]</span></label><input id="sD" type="number" step="any" min="0" value="30"></div>
-          <div><label for="sL">Sobrecarga de uso L <span class="unit">[kgf/m²]</span></label><input id="sL" type="number" step="any" min="0" value="0"></div>
-          <div><label for="sLr">Sobrecarga de techo L<sub>r</sub> <span class="unit">[kgf/m²]</span></label><input id="sLr" type="number" step="any" min="0" value="100"></div>
-          <div><label for="sW">Viento W (+ presión ↓, − succión ↑) <span class="unit">[kgf/m²]</span></label><input id="sW" type="number" step="any" value="0"></div>
+          <div><label for="sD">Carga muerta D (sin peso propio) <span class="unit">[kgf/m]</span></label><input id="sD" type="number" step="any" min="0" value="90"></div>
+          <div><label for="sL">Sobrecarga de uso L <span class="unit">[kgf/m]</span></label><input id="sL" type="number" step="any" min="0" value="0"></div>
+          <div><label for="sLr">Sobrecarga de techo L<sub>r</sub> <span class="unit">[kgf/m]</span></label><input id="sLr" type="number" step="any" min="0" value="300"></div>
+          <div><label for="sW">Viento W (+ presión ↓, − succión ↑) <span class="unit">[kgf/m]</span></label><input id="sW" type="number" step="any" value="0"></div>
         </div>
-        <div id="sOut" class="unit" style="margin-top:6px"></div>
       </fieldset>
     </div>
   </section>
@@ -858,7 +855,7 @@ function leerGrupo(p, f) {
   };
 }
 function reglasDatos() {
-  const r = [["gL", 0, true], ["gH", 0, true], ["gN", 0, true], ["fD", 0], ["sB", 0], ["sD", 0], ["sL", 0], ["sLr", 0], ["sW", -Infinity]];
+  const r = [["gL", 0, true], ["gH", 0, true], ["gN", 0, true], ["fD", 0], ["sD", 0], ["sL", 0], ["sLr", 0], ["sW", -Infinity]];
   for (const g of GRUPOS) {
     const p = g.id;
     if (!$(p + "_on").checked) continue;
@@ -904,7 +901,6 @@ let ultimoTex = "", ultimoNombre = "memoria_reticulada.tex";
 
 function calcular() {
   pintarPrediseno();
-  pintarCargasSAP();
   limpiarInvalidos($("inputs"));
   const malos = [...datosInvalidos(reglasDatos())];
   if (!malos.length) malos.push(...geometriaInvalida());
@@ -1164,12 +1160,7 @@ function generarS2K() {
 }
 // Cargas lineales sobre el cordón superior [kgf/m]; positivas hacia abajo (dirección Gravity de SAP)
 function cargasSAP() {
-  const B = num("sB");
-  return { D: num("sD") * B, L: num("sL") * B, Lr: num("sLr") * B, W: num("sW") * B };
-}
-function pintarCargasSAP() {
-  const c = cargasSAP();
-  $("sOut").innerHTML = `Cordón superior: D = <b>${fmt(c.D, 1)}</b> · L = <b>${fmt(c.L, 1)}</b> · L<sub>r</sub> = <b>${fmt(c.Lr, 1)}</b> · W = <b>${fmt(c.W, 1)}</b> kgf/m${c.W < 0 ? " (W hacia arriba)" : ""}`;
+  return { D: num("sD"), L: num("sL"), Lr: num("sLr"), W: num("sW") };
 }
 function descargarS2K() {
   if (!ultimoTex) { alert("Corrija los datos inválidos antes de exportar el modelo."); return; }
