@@ -1,0 +1,1019 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#3d4450">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="AURA">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js" integrity="sha384-K0oxqktRvaThvYgGL4G+OK2Ih6VS6Uyu7j3+7WJgp/uWM0Yv6Xi4YEiw0BB+mPfi" crossorigin="anonymous"></script>
+<script src="nube.js?v=28"></script>
+<style>
+  /* PWA: sin zoom automático de iOS al enfocar campos y texto estable al rotar */
+  html { -webkit-text-size-adjust: 100%; }
+  @media (max-width: 900px) { input, select, textarea { font-size: 16px !important; } }
+  main > *, .row2 > *, .row3 > *, fieldset { min-width: 0; }
+  input, select { min-width: 0; max-width: 100%; }
+  .memo, .tablaWrap { overflow-x: auto; }
+  svg { max-width: 100%; }
+</style>
+<title>Vigas Reticuladas Acero</title>
+<style>
+  :root {
+    --bg: #f4f5f7;
+    --panel: #ffffff;
+    --ink: #1d2330;
+    --muted: #5f6b7a;
+    --line: #dde1e7;
+    --accent: #e8711c;
+    --accent-ink: #ffffff;
+    --head: #3d4450;
+    --ok: #1f8a4c;
+    --ok-bg: #e6f4ec;
+    --bad: #c62828;
+    --bad-bg: #fbe9e9;
+    --warn: #9a6400;
+    --warn-bg: #fff4dc;
+    --mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 "Segoe UI", system-ui, -apple-system, sans-serif; }
+  header { background: var(--head); color: #fff; padding: 14px 24px; display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+  header h1 { margin: 0; font-size: 19px; font-weight: 600; }
+  header a.home { color: #fff; text-decoration: none; font-size: 13px; border: 1px solid #6b7380; border-radius: 4px; padding: 3px 9px; }
+  header a.home:hover { background: #4d5562; }
+  header span { color: #c9ced6; font-size: 13px; }
+  main { display: grid; grid-template-columns: 360px 1fr; gap: 20px; padding: 20px 24px; max-width: 1400px; margin: 0 auto; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; padding: 16px; } }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+  .panel > h2 { margin: 0; padding: 10px 16px; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); border-bottom: 1px solid var(--line); }
+  .body { padding: 14px 16px; }
+  .tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border: 1px solid var(--accent); border-radius: 6px; overflow: hidden; margin-bottom: 14px; }
+  .tabs button { border: 0; background: #fff; color: var(--accent); padding: 9px; font: inherit; font-weight: 600; cursor: pointer; }
+  .tabs button.on { background: var(--accent); color: var(--accent-ink); }
+  label { display: block; font-size: 12px; color: var(--muted); margin: 10px 0 4px; }
+  select, input[type=number] { width: 100%; padding: 7px 9px; border: 1px solid var(--line); border-radius: 5px; font: inherit; background: #fff; color: var(--ink); }
+  select:focus, input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .unit { color: var(--muted); font-size: 11px; }
+  fieldset { border: 1px solid var(--line); border-radius: 6px; margin: 14px 0 0; padding: 4px 12px 12px; }
+  legend { font-size: 12px; font-weight: 600; color: var(--head); padding: 0 4px; }
+  details { margin-top: 10px; border: 1px dashed var(--line); border-radius: 6px; padding: 6px 10px; }
+  details summary { cursor: pointer; font-size: 12px; color: var(--head); font-weight: 600; }
+  .mini { font-size: 12px; padding: 5px 9px; border: 1px solid var(--accent); color: var(--accent); background: #fff; border-radius: 4px; cursor: pointer; margin-top: 8px; }
+  .mini:hover { background: #fff3ea; }
+  .cbOut { display: block; padding: 7px 9px; border: 1px dashed var(--line); border-radius: 5px; background: #f7f8fa; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .cbTit { font-size: 12px; font-weight: 600; color: var(--head); margin: 12px 0 -4px; }
+  .chk { display: flex; gap: 8px; align-items: center; margin-top: 12px; font-size: 13px; color: var(--ink); }
+  .hidden { display: none !important; }
+
+  .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; padding: 14px 16px; }
+  .card { border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; }
+  .card .t { font-size: 12px; color: var(--muted); }
+  .card .v { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .card .s { font-size: 12px; color: var(--muted); }
+  .bar { height: 6px; background: #eceef1; border-radius: 3px; margin-top: 6px; overflow: hidden; }
+  .bar > i { display: block; height: 100%; background: var(--ok); }
+  .bar.bad > i { background: var(--bad); }
+  .verdict { margin: 0 16px 14px; padding: 12px 14px; border-radius: 6px; font-weight: 600; font-size: 15px; }
+  .verdict.ok { background: var(--ok-bg); color: var(--ok); }
+  .verdict.bad { background: var(--bad-bg); color: var(--bad); }
+  .note { margin: 8px 0; padding: 8px 10px; border-radius: 5px; background: var(--warn-bg); color: var(--warn); font-size: 12.5px; }
+
+  .memo { padding: 4px 16px 16px; }
+  .memo h3 { font-size: 14px; margin: 18px 0 6px; padding-bottom: 4px; border-bottom: 2px solid var(--accent); color: var(--head); }
+  .memo h4 { font-size: 13px; margin: 12px 0 4px; color: var(--head); }
+  table.calc { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.calc td { padding: 4px 8px; border-bottom: 1px solid #eef0f3; vertical-align: top; }
+  table.calc td.k { color: var(--ink); }
+  table.calc td.v { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; font-weight: 600; }
+  .ref { display: inline-block; font-size: 10.5px; color: var(--accent); border: 1px solid #f3c7a5; border-radius: 3px; padding: 0 4px; margin-left: 6px; font-weight: 500; }
+  .tag { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 11.5px; font-weight: 600; }
+  .tag.ok { background: var(--ok-bg); color: var(--ok); }
+  .tag.bad { background: var(--bad-bg); color: var(--bad); }
+  .tag.warn { background: var(--warn-bg); color: var(--warn); }
+  table.alt { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.alt th { text-align: left; font-size: 11.5px; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--line); padding: 5px 8px; }
+  table.alt td { padding: 5px 8px; border-bottom: 1px solid #eef0f3; font-variant-numeric: tabular-nums; }
+  .esquema { display: block; width: 100%; max-width: 320px; margin: 8px auto 4px; }
+  .formula { font-size: 12px; color: var(--ink); background: #f7f8fa; border-radius: 5px; padding: 8px 10px; line-height: 1.55; }
+  .secwrap { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
+  .secwrap svg { flex: 0 0 auto; width: 300px; max-width: 100%; }
+  .secwrap .props { flex: 1 1 260px; }
+  .props { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 4px 14px; font-size: 12.5px; }
+  .props div b { font-variant-numeric: tabular-nums; }
+  .toolbar { display: flex; justify-content: flex-end; padding: 10px 16px 0; gap: 8px; }
+  .btn { padding: 7px 14px; border-radius: 5px; border: 1px solid var(--head); background: var(--head); color: #fff; font: inherit; font-size: 13px; cursor: pointer; }
+  .btn.sec { background: #fff; color: var(--head); }
+  footer { text-align: center; color: var(--muted); font-size: 12px; padding: 10px 0 24px; }
+
+  @media print {
+    body { background: #fff; }
+    header { background: #fff; color: #000; border-bottom: 2px solid #000; }
+    header span { color: #333; }
+    header a.home { display: none; }
+    main { display: block; padding: 0; }
+    #inputs, .toolbar, #altPanel, footer { display: none; }
+    .panel { border: 0; }
+    .memo h3 { break-after: avoid; }
+    table.calc tr { break-inside: avoid; }
+  }
+  .tabs4 { grid-template-columns: repeat(4, 1fr); }
+  .tabs4 button { padding: 8px 4px; font-size: 12.5px; }
+  .esqWrap { padding: 12px 16px 0; }
+  .esqWrap svg { display: block; width: 100%; max-width: 760px; margin: 0 auto; }
+  @media print { .esqWrap svg { max-width: 100%; } }
+</style>
+</head>
+<body>
+<header>
+  <a class="home" href="index.html">← Inicio</a>
+  <h1>Verificación de vigas reticuladas de acero</h1>
+  <span>AISC 360-16 · LRFD · Solicitaciones desde SAP2000 / ETABS · Unidades kgf – cm</span>
+</header>
+
+<main>
+  <!-- ===================== ENTRADAS ===================== -->
+  <section class="panel" id="inputs">
+    <h2>Datos de entrada</h2>
+    <div class="body">
+      <fieldset style="margin-top:0">
+        <legend>Geometría de la reticulada</legend>
+        <label for="gTipo">Tipo</label>
+        <select id="gTipo">
+          <option value="pratt">Pratt (diagonales a tracción)</option>
+          <option value="howe">Howe (diagonales a compresión)</option>
+          <option value="warren">Warren (diagonales alternadas)</option>
+        </select>
+        <div class="row3">
+          <div><label for="gL">Luz L <span class="unit">[m]</span></label><input id="gL" type="number" step="0.01" min="0" value="5"></div>
+          <div><label for="gH">Altura h <span class="unit">[m]</span></label><input id="gH" type="number" step="0.01" min="0" value="0.5"></div>
+          <div><label for="gN">N° de paneles</label><input id="gN" type="number" step="1" min="1" value="6"></div>
+        </div>
+        <div id="gPre" class="unit" style="margin-top:6px"></div>
+        <button class="mini" type="button" id="gLong">Usar longitudes de barras de esta geometría</button>
+      </fieldset>
+
+      <label for="acero">Calidad del acero</label>
+      <select id="acero">
+        <option value="A37-24ES">A37-24 ES (Fy = 2400 kgf/cm²)</option>
+        <option value="A42-27ES" selected>A42-27 ES (Fy = 2700 kgf/cm²)</option>
+        <option value="A52-34ES">A52-34 ES (Fy = 3400 kgf/cm²)</option>
+      </select>
+
+      <label for="unidad">Unidades de solicitaciones</label>
+      <select id="unidad">
+        <option value="kgf">kgf</option>
+        <option value="tf">tf</option>
+      </select>
+
+      <div class="cbTit" style="margin-top:16px">Grupos de barras — ingrese la tracción y compresión máximas (envolvente LRFD) de cada grupo</div>
+      <div class="tabs tabs4" id="tabsG"></div>
+      <div id="grupos"></div>
+
+      <fieldset>
+        <legend>Deformación (servicio)</legend>
+        <div class="row2">
+          <div><label for="fD">Flecha máxima Δ (SAP/ETABS) <span class="unit">[cm]</span></label><input id="fD" type="number" step="any" min="0" value="0.9"></div>
+          <div><label for="fLim">Flecha admisible</label>
+            <select id="fLim">
+              <option value="180">L/180</option>
+              <option value="240">L/240</option>
+              <option value="300" selected>L/300</option>
+              <option value="360">L/360</option>
+            </select></div>
+        </div>
+      </fieldset>
+    </div>
+  </section>
+
+  <!-- ===================== RESULTADOS ===================== -->
+  <section>
+    <div class="panel">
+      <h2 id="resTitle">Resultados</h2>
+      <div class="esqWrap" id="esquema"></div>
+      <div class="summary" id="summary"></div>
+      <div id="verdict"></div>
+      <div class="toolbar">
+        <button class="btn sec" type="button" onclick="window.print()">Imprimir</button>
+        <button class="btn" type="button" onclick="descargarTex()">Descargar memoria (.tex)</button>
+        <button class="btn" type="button" onclick="descargarZipMemoria(ultimoTex, ultimoNombre, document.body)">Descargar .zip (Overleaf)</button>
+      </div>
+      <div class="memo" id="memo"></div>
+    </div>
+  </section>
+</main>
+<footer>Herramienta de apoyo académico. Las solicitaciones deben provenir de un modelo (SAP2000 / ETABS) con las combinaciones LRFD y los efectos de segundo orden (AISC 360-16, Cap. C). Las propiedades de las secciones se calculan con esquinas rectas; para perfiles plegados de pared delgada rige además AISI S100 / NCh 427. Verifique siempre los resultados.</footer>
+
+<script src="memo.js?v=30"></script>
+<script>
+"use strict";
+// ---------------------------------------------------------------------------
+// Constantes y utilidades (mismas convenciones que acero.html)
+// ---------------------------------------------------------------------------
+const ACEROS = {
+  "A37-24ES": { Fy: 2400, Fu: 3700 },
+  "A42-27ES": { Fy: 2700, Fu: 4200 },
+  "A52-34ES": { Fy: 3400, Fu: 5200 },
+};
+const E = 2100000;   // kgf/cm²
+const G = 810000;    // kgf/cm²
+const PI2 = Math.PI * Math.PI;
+
+const fmt = (x, d = 2) => Number.isFinite(x)
+  ? x.toLocaleString("es-CL", { minimumFractionDigits: d, maximumFractionDigits: d })
+  : "—";
+const $ = (id) => document.getElementById(id);
+const num = (id) => { const v = parseFloat($(id).value); return Number.isFinite(v) ? v : 0; };
+
+const L = String.raw;
+const tn = (x, d = 2) => Number.isFinite(x)
+  ? fmt(x, d).replace(/,/g, "{,}").replace(/\./g, "\\,")
+  : "\\infty";
+const LE = L`\le`;
+const cmp = (a, b) => (a <= b ? LE : ">");
+const KG = L`\ \mathrm{kgf}`, KGCM2 = L`\ \mathrm{kgf/cm^2}`, CM = L`\ \mathrm{cm}`, CM2 = L`\ \mathrm{cm^2}`;
+const texTxt = (t) => t.replace(/—/g, "---").replace(/%/g, "\\%");
+
+class Memo {
+  constructor() { this.out = []; this.tex = []; this.n = 0; }
+  h(t) { memoTexCerrar(this); this.n++; this.out.push(`<h3>${this.n}. ${t}</h3>`); this.tex.push(`\\section{${texTxt(t)}}`); }
+  sub(t) { memoTexCerrar(this); this.out.push(`<h4>${t}</h4>`); this.tex.push(`\\subsection{${texTxt(t)}}`); }
+  row(k, v, ref) { this.out.push({ k, v, ref }); }
+  note(t, tt) { this.out.push(`<div class="note">${t}</div>`); if (tt) this.tex.push(`\\textit{${tt}}\n`); }
+  eq(s, ref) { this.tex.push(texDisplay(s, ref)); this.out.push({ tex: s + (ref ? `\\tag*{(${ref})}` : ""), eq: true }); }
+  p(s, soloTex) { memoTexP(this, s); if (!soloTex) this.out.push({ tex: s }); }
+  raw(t) { memoTexCerrar(this); this.tex.push(t); }
+  texto() { memoTexCerrar(this); return this.tex.join("\n"); }
+  html() { return memoHTML(this.out); }
+}
+const tag = (ok, txt) => `<span class="tag ${ok ? "ok" : "bad"}">${txt}</span>`;
+const estado = (dc) => (dc <= 1 ? "Cumple" : "No cumple");
+const mmN = (x) => fmt(x, x % 1 ? 1 : 0);   // dimensiones en mm sin decimales sobrantes
+
+// ---------------------------------------------------------------------------
+// Grupos de barras y valores por defecto (caso práctico de la mini clase BEID:
+// Pratt de 5 m con cordones C250x75x6 y diagonales L50x50x4)
+// ---------------------------------------------------------------------------
+const GRUPOS = [
+  { id: "cs", nombre: "Cordón superior", corto: "Cordón sup.", def: { tipo: "C", C: [250, 75, 6, 6], L: [50, 50, 4], Pu: 3750, Tu: 0, lx: "panel", Ky: 1 } },
+  { id: "ci", nombre: "Cordón inferior", corto: "Cordón inf.", def: { tipo: "C", C: [250, 75, 6, 6], L: [50, 50, 4], Pu: 0, Tu: 3750, lx: "panel", Ky: 1 } },
+  { id: "di", nombre: "Diagonales", corto: "Diagonales", def: { tipo: "L", C: [100, 50, 3, 3], L: [50, 50, 4], Pu: 300, Tu: 2920, lx: "diag", Ky: 1 } },
+  { id: "mo", nombre: "Montantes", corto: "Montantes", def: { tipo: "L", C: [100, 50, 3, 3], L: [50, 50, 4], Pu: 1500, Tu: 0, lx: "alto", Ky: 1 } },
+];
+
+function longitudesGeom() {
+  const Lt = num("gL"), h = num("gH"), n = Math.max(1, Math.round(num("gN")));
+  const p = Lt / n;
+  return { panel: p, diag: Math.hypot(p, h), alto: h };
+}
+
+function htmlGrupo(g, i) {
+  const p = g.id, d = g.def, lg = { panel: 5 / 6, diag: Math.hypot(5 / 6, 0.5), alto: 0.5 }[d.lx];
+  const v = (x) => +x.toFixed(3);
+  const inp = (id, lab, val, step = "any", min = "0") => `<div><label for="${p}_${id}">${lab}</label><input id="${p}_${id}" type="number" step="${step}" min="${min}" value="${val}"></div>`;
+  return `<fieldset id="fs_${p}" class="grp${i ? " hidden" : ""}">
+    <legend>${g.nombre}</legend>
+    <label class="chk"><input id="${p}_on" type="checkbox" checked> Incluir este grupo en la verificación</label>
+    <label for="${p}_tipo">Tipo de sección</label>
+    <select id="${p}_tipo">
+      <option value="C"${d.tipo === "C" ? " selected" : ""}>Canal C (esquinas rectas)</option>
+      <option value="L"${d.tipo === "L" ? " selected" : ""}>Ángulo simple L</option>
+      <option value="2L">Doble ángulo 2L espalda con espalda</option>
+      <option value="M">Propiedades ingresadas a mano</option>
+    </select>
+    <div class="t-C"><div class="row2">
+      ${inp("Ch", 'Altura h <span class="unit">[mm]</span>', d.C[0])}${inp("Cb", 'Ala b<sub>f</sub> <span class="unit">[mm]</span>', d.C[1])}
+      ${inp("Ctw", 'Espesor alma t<sub>w</sub> <span class="unit">[mm]</span>', d.C[2])}${inp("Ctf", 'Espesor ala t<sub>f</sub> <span class="unit">[mm]</span>', d.C[3])}
+    </div></div>
+    <div class="t-L t-2L"><div class="row3">
+      ${inp("La", 'Ala a <span class="unit">[mm]</span>', d.L[0])}${inp("Lb", 'Ala b <span class="unit">[mm]</span>', d.L[1])}${inp("Lt", 'Espesor t <span class="unit">[mm]</span>', d.L[2])}
+    </div></div>
+    <div class="t-2L"><div class="row2">
+      ${inp("Ls", 'Separación entre ángulos (cartela) <span class="unit">[mm]</span>', 6)}${inp("Lsep", 'Distancia entre presillas a <span class="unit">[cm]</span>', 40)}
+    </div><div class="unit">Alas a contra la cartela; ala b hacia afuera. Eje y = eje de simetría.</div></div>
+    <div class="t-L"><div class="row2">
+      <div><label for="${p}_E5">Conexión del ángulo (Sección E5)</label>
+        <select id="${p}_E5">
+          <option value="a">Por un ala · reticulada plana — E5(a)</option>
+          <option value="b">Por un ala · reticulada espacial — E5(b)</option>
+          <option value="no">Carga concéntrica (sin E5)</option>
+        </select></div>
+      <div><label for="${p}_Lcon">Ala conectada</label>
+        <select id="${p}_Lcon"><option value="b">Ala b</option><option value="a">Ala a</option></select></div>
+    </div></div>
+    <div class="t-M"><div class="row2">
+      ${inp("MA", 'Área A<sub>g</sub> <span class="unit">[cm²]</span>', 10)}${inp("Mxb", 'x̄ para U (desde el plano de conexión) <span class="unit">[cm]</span>', 1)}
+      ${inp("Mrx", 'Radio de giro r<sub>x</sub> <span class="unit">[cm]</span>', 3)}${inp("Mry", 'Radio de giro r<sub>y</sub> <span class="unit">[cm]</span>', 1.5)}
+    </div><div class="unit">Solo pandeo por flexión (E3). Verifique aparte la esbeltez local y el pandeo torsional.</div></div>
+    <div class="row2">
+      ${inp("Lx", '<span class="lxLab">Longitud no arriostrada L<sub>x</sub></span> <span class="unit">[m]</span>', v(lg))}
+      ${inp("Kx", '<span class="kxLab">Factor K<sub>x</sub></span>', 1, "0.01")}
+    </div>
+    <div class="row2 noL">
+      ${inp("Ly", 'Longitud no arriostrada L<sub>y</sub> <span class="unit">[m]</span>', v(lg))}
+      ${inp("Ky", 'Factor K<sub>y</sub>', d.Ky, "0.01")}
+    </div>
+    <div class="unit hintEje"></div>
+    <div class="row2">
+      ${inp("Pu", 'Compresión máxima P<sub>u</sub> <span class="unit u-f"></span>', d.Pu)}
+      ${inp("Tu", 'Tracción máxima T<sub>u</sub> <span class="unit u-f"></span>', d.Tu)}
+    </div>
+    <div class="cbTit">Conexión en tracción (área neta efectiva, D3)</div>
+    <label for="${p}_Umodo">Factor de corte diferido U (Tabla D3.1)</label>
+    <select id="${p}_Umodo">
+      <option value="1">Caso 1: todos los elementos conectados — U = 1,0</option>
+      <option value="2" selected>Caso 2: U = 1 − x̄/l (soldadura o pernos en un elemento)</option>
+      <option value="8a">Caso 8: ángulos con 4 o más pernos — U = 0,80</option>
+      <option value="8b">Caso 8: ángulos con 3 pernos o menos — U = 0,60</option>
+      <option value="m">Valor ingresado</option>
+    </select>
+    <div class="row2">
+      <div class="u-2">${inp("lcon", 'Longitud de la conexión l <span class="unit">[cm]</span>', 10).replace(/^<div>|<\/div>$/g, "")}</div>
+      <div class="u-m">${inp("Uval", 'U ingresado', 0.85, "0.01").replace(/^<div>|<\/div>$/g, "")}</div>
+      ${inp("Ahue", 'Área de perforaciones descontada <span class="unit">[cm²]</span>', 0)}
+    </div>
+  </fieldset>`;
+}
+
+// ---------------------------------------------------------------------------
+// Propiedades de las secciones (cm). Esquinas rectas, sin acuerdos.
+// elems: elementos para la Tabla B4.1a → { n, lam, lr (coef. de √(E/Fy)), c1, c2, b, t, k (cantidad) }
+// ---------------------------------------------------------------------------
+function secC(hm, bm, twm, tfm) {
+  const h = hm / 10, b = bm / 10, tw = twm / 10, tf = tfm / 10;
+  const A = h * tw + 2 * (b - tw) * tf;
+  const xb = (h * tw * tw / 2 + 2 * (b - tw) * tf * (tw + (b - tw) / 2)) / A;   // desde el dorso del alma
+  const Ix = tw * h ** 3 / 12 + 2 * ((b - tw) * tf ** 3 / 12 + (b - tw) * tf * (h / 2 - tf / 2) ** 2);
+  const Iy = h * tw ** 3 / 12 + h * tw * (xb - tw / 2) ** 2 + 2 * (tf * (b - tw) ** 3 / 12 + (b - tw) * tf * (tw + (b - tw) / 2 - xb) ** 2);
+  const hc = h - tf, bc = b - tw / 2;                       // dimensiones a la línea media
+  const J = (2 * bc * tf ** 3 + hc * tw ** 3) / 3;
+  const e = 3 * bc * bc * tf / (6 * bc * tf + hc * tw);     // centro de corte desde la línea media del alma
+  const Cw = tf * bc ** 3 * hc ** 2 / 12 * (3 * bc * tf + 2 * hc * tw) / (6 * bc * tf + hc * tw);
+  const nombre = twm === tfm ? `C ${mmN(hm)}x${mmN(bm)}x${mmN(twm)}` : `C ${mmN(hm)}x${mmN(bm)}x${mmN(twm)}/${mmN(tfm)}`;
+  return {
+    tipo: "C", nombre, h, b, tw, tf, A, Ix, Iy, rx: Math.sqrt(Ix / A), ry: Math.sqrt(Iy / A), J, Cw, e, xb,
+    xo: xb - tw / 2 + e, yo: 0, simetria: "x", xbU: xb, Acon: h * tw, conTxt: "alma",
+    elems: [
+      { n: "Alas (caso 1)", sim: L`b_f/t_f`, lam: b / tf, lr: 0.56, c1: 0.22, c2: 1.49, b, t: tf, k: 2 },
+      { n: "Alma (caso 5)", sim: L`(h - 2t_f)/t_w`, lam: (h - 2 * tf) / tw, lr: 1.49, c1: 0.18, c2: 1.31, b: h - 2 * tf, t: tw, k: 1 },
+    ],
+  };
+}
+
+// Ángulo con ala a vertical (eje y) y ala b horizontal (eje x), talón en el origen.
+function secL(am, bm, tm, con = "b") {
+  const a = am / 10, b = bm / 10, t = tm / 10;
+  const A1 = a * t, A2 = (b - t) * t, A = A1 + A2;
+  const xb = (A1 * t / 2 + A2 * (t + (b - t) / 2)) / A;
+  const yb = (A1 * a / 2 + A2 * t / 2) / A;
+  const Ix = t * a ** 3 / 12 + A1 * (a / 2 - yb) ** 2 + (b - t) * t ** 3 / 12 + A2 * (t / 2 - yb) ** 2;
+  const Iy = a * t ** 3 / 12 + A1 * (t / 2 - xb) ** 2 + t * (b - t) ** 3 / 12 + A2 * (t + (b - t) / 2 - xb) ** 2;
+  const Ixy = A1 * (t / 2 - xb) * (a / 2 - yb) + A2 * (t + (b - t) / 2 - xb) * (t / 2 - yb);
+  const c = (Ix + Iy) / 2, R = Math.hypot((Ix - Iy) / 2, Ixy);
+  const Iw = c + R, Iz = c - R;                                  // ejes principales mayor (w) y menor (z)
+  const th = 0.5 * Math.atan2(-2 * Ixy, Ix - Iy);                // giro de x hacia el eje principal mayor
+  const xs = t / 2 - xb, ys = t / 2 - yb;                        // centro de corte (cruce de las líneas medias)
+  const uo = xs * Math.cos(th) + ys * Math.sin(th), vo = -xs * Math.sin(th) + ys * Math.cos(th);
+  const J = (a - t / 2 + b - t / 2) * t ** 3 / 3;
+  const elems = am === bm
+    ? [{ n: "Alas (caso 3)", sim: L`b/t`, lam: a / t, lr: 0.45, c1: 0.22, c2: 1.49, b: a, t, k: 2 }]
+    : [{ n: "Ala a (caso 3)", sim: L`a/t`, lam: a / t, lr: 0.45, c1: 0.22, c2: 1.49, b: a, t, k: 1 },
+       { n: "Ala b (caso 3)", sim: L`b/t`, lam: b / t, lr: 0.45, c1: 0.22, c2: 1.49, b, t, k: 1 }];
+  return {
+    tipo: "L", nombre: `L ${mmN(am)}x${mmN(bm)}x${mmN(tm)}`, a, b, t, A, Ix, Iy, Ixy, Iw, Iz,
+    rx: Math.sqrt(Ix / A), ry: Math.sqrt(Iy / A), rw: Math.sqrt(Iw / A), rz: Math.sqrt(Iz / A),
+    J, Cw: 0, xb, yb, uo, vo, th, elems, con,
+    ra: con === "b" ? Math.sqrt(Ix / A) : Math.sqrt(Iy / A),        // eje geométrico paralelo al ala conectada
+    xbU: con === "b" ? yb : xb, Acon: (con === "b" ? b : a) * t, conTxt: `ala ${con}`,
+    bl: Math.max(a, b), bs: Math.min(a, b), conCorta: (con === "b" ? b : a) < Math.max(a, b),
+  };
+}
+
+function sec2L(am, bm, tm, sm, asep) {
+  const u = secL(am, bm, tm, "a"), s = sm / 10;
+  const A = 2 * u.A, Ix = 2 * u.Ix, Iy = 2 * (u.Iy + u.A * (u.xb + s / 2) ** 2);
+  return {
+    tipo: "2L", nombre: `2L ${mmN(am)}x${mmN(bm)}x${mmN(tm)}`, uno: u, a: u.a, b: u.b, t: u.t, s, asep,
+    A, Ix, Iy, rx: Math.sqrt(Ix / A), ry: Math.sqrt(Iy / A), J: 2 * u.J, Cw: 0, xo: 0, yo: u.yb - u.t / 2,
+    simetria: "y", ri: u.rz, xbU: u.xb, Acon: 2 * u.a * u.t, conTxt: "alas a contra la cartela",
+    elems: u.elems.map(e => ({ ...e, k: e.k * 2 })),
+  };
+}
+
+function secM(A, rx, ry, xb) {
+  return { tipo: "M", nombre: "Sección definida por el usuario", A, rx, ry, Ix: A * rx * rx, Iy: A * ry * ry, xbU: xb, Acon: 0, conTxt: "elemento conectado", elems: [] };
+}
+
+function leerSeccion(p) {
+  const t = $(p + "_tipo").value;
+  if (t === "C") return secC(num(p + "_Ch"), num(p + "_Cb"), num(p + "_Ctw"), num(p + "_Ctf"));
+  if (t === "L") return secL(num(p + "_La"), num(p + "_Lb"), num(p + "_Lt"), $(p + "_Lcon").value);
+  if (t === "2L") return sec2L(num(p + "_La"), num(p + "_Lb"), num(p + "_Lt"), num(p + "_Ls"), num(p + "_Lsep"));
+  return secM(num(p + "_MA"), num(p + "_Mrx"), num(p + "_Mry"), num(p + "_Mxb"));
+}
+
+// ---------------------------------------------------------------------------
+// Tracción — Capítulo D
+// ---------------------------------------------------------------------------
+function traccion(s, Fy, Fu, d, m) {
+  m.sub("Tracción — Capítulo D");
+  const Ag = s.A, An = Math.max(0, Ag - d.Ahue);
+  let U, refU, txtU;
+  if (d.Umodo === "1") { U = 1; refU = "Tabla D3.1, caso 1"; txtU = L`U = 1{,}0`; }
+  else if (d.Umodo === "8a") { U = 0.8; refU = "Tabla D3.1, caso 8"; txtU = L`U = 0{,}80`; }
+  else if (d.Umodo === "8b") { U = 0.6; refU = "Tabla D3.1, caso 8"; txtU = L`U = 0{,}60`; }
+  else if (d.Umodo === "m") { U = d.Uval; refU = "valor ingresado"; txtU = L`U = ${tn(U, 3)}`; }
+  else {
+    const U2 = 1 - s.xbU / d.lcon;
+    const Umin = s.Acon > 0 ? s.Acon / Ag : 0;
+    U = Math.max(U2, Umin);
+    refU = "Tabla D3.1, caso 2";
+    txtU = L`U = 1 - \frac{\bar{x}}{l} = 1 - \frac{${tn(s.xbU, 3)}}{${tn(d.lcon, 1)}} = ${tn(U2, 3)}`;
+    if (Umin > U2) txtU += L` \;\rightarrow\; U = \frac{A_{con}}{A_g} = \frac{${tn(s.Acon)}}{${tn(Ag)}} = ${tn(Umin, 3)}`;
+  }
+  U = Math.min(1, Math.max(0, U));
+  const Ae = An * U;
+  const Pny = Fy * Ag, Pnr = Fu * Ae;
+  const phiY = 0.9 * Pny, phiR = 0.75 * Pnr, phiPn = Math.min(phiY, phiR);
+  m.p(L`La resistencia de diseño en tracción es el menor valor entre la fluencia en la sección bruta y la ruptura en la sección neta efectiva (Sección D2).`, true);
+  m.row("Área bruta ; área neta: A<sub>g</sub> ; A<sub>n</sub>", `${fmt(Ag, 2)} ; ${fmt(An, 2)} cm²`, "B4.3");
+  m.row(`Factor de corte diferido U (${refU})`, fmt(U, 3), "D3");
+  m.row("Área neta efectiva: A<sub>e</sub> = A<sub>n</sub>U", `${fmt(Ae, 2)} cm²`, "D3-1");
+  m.p(L`\textbf{Área neta efectiva.} Conexión por ${s.conTxt}, $\bar{x} = ${tn(s.xbU, 3)}$ cm medido desde el plano de conexión:`);
+  m.eq(txtU, "D3.1");
+  if (d.Umodo === "2" && s.Acon > 0) m.p(L`Para secciones abiertas, $U$ no requiere ser menor que $A_{con}/A_g = ${tn(s.Acon / Ag, 3)}$ (Sección D3).`, true);
+  m.eq(L`A_e = A_n\,U = ${tn(An)}\cdot ${tn(U, 3)} = ${tn(Ae)}${CM2}`, "D3-1");
+  m.row("Fluencia en la sección bruta: φ<sub>t</sub>P<sub>n</sub> = 0,90·F<sub>y</sub>A<sub>g</sub>", `${fmt(phiY, 0)} kgf`, "D2-1");
+  m.row("Ruptura en la sección neta: φ<sub>t</sub>P<sub>n</sub> = 0,75·F<sub>u</sub>A<sub>e</sub>", `${fmt(phiR, 0)} kgf`, "D2-2");
+  m.p(L`\textbf{Fluencia en la sección bruta:}`);
+  m.eq(L`\phi_tP_n = 0{,}90\,F_yA_g = 0{,}90\cdot ${tn(Fy, 0)}\cdot ${tn(Ag)} = ${tn(phiY, 0)}${KG}`, "D2-1");
+  m.p(L`\textbf{Ruptura en la sección neta efectiva:}`);
+  m.eq(L`\phi_tP_n = 0{,}75\,F_uA_e = 0{,}75\cdot ${tn(Fu, 0)}\cdot ${tn(Ae)} = ${tn(phiR, 0)}${KG}`, "D2-2");
+  const dc = d.Tu / phiPn;
+  m.row("<b>Resistencia de diseño en tracción: φ<sub>t</sub>P<sub>n</sub></b>", `<b>${fmt(phiPn, 0)} kgf</b>`);
+  m.row("<b>Razón T<sub>u</sub>/φ<sub>t</sub>P<sub>n</sub></b>", `<b>${fmt(dc, 3)}</b> ${tag(dc <= 1, dc <= 1 ? "CUMPLE" : "NO CUMPLE")}`);
+  m.p(L`Con la tracción última $T_u = ${tn(d.Tu, 0)}$ kgf (controla la ${phiY <= phiR ? "fluencia" : "ruptura"}):`);
+  m.eq(L`\frac{T_u}{\phi_tP_n} = \frac{${tn(d.Tu, 0)}}{${tn(phiPn, 0)}} = ${tn(dc, 3)} ${cmp(dc, 1)} 1{,}0`);
+  // Nota D1: L/r ≤ 300
+  const lr = s.tipo === "L" ? d.Lx / s.rz : Math.max(d.Lx / s.rx, d.Ly / s.ry);
+  m.row(`Esbeltez en tracción L/r${s.tipo === "L" ? "<sub>z</sub>" : " (máx.)"} — recomendado ≤ 300`, `${fmt(lr, 1)} ${lr <= 300 ? "" : tag(false, "> 300")}`, "D1");
+  if (lr > 300) m.note("La esbeltez del miembro traccionado supera 300 (recomendación de la nota de la Sección D1).",
+    L`La esbeltez del miembro traccionado supera 300 (recomendación de la nota de la Sección D1).`);
+  return { phiPn, dc, U, Ae, lr };
+}
+
+// ---------------------------------------------------------------------------
+// Compresión — Capítulo E (E3, E4, E5, E6, E7)
+// ---------------------------------------------------------------------------
+// Pandeo flexo-torsional, sección con un eje de simetría (E4-3); Fes = tensión del eje de simetría
+function feE43(Fes, Fez, H) {
+  const S = Fes + Fez;
+  return S / (2 * H) * (1 - Math.sqrt(Math.max(0, 1 - 4 * Fes * Fez * H / (S * S))));
+}
+// Menor raíz de la cúbica E4-4 (sección sin simetría), por bisección en [0, min(Fe)]
+function feE44(Feu, Fev, Fez, uo, vo, ro2) {
+  const f = (F) => (F - Feu) * (F - Fev) * (F - Fez) - F * F * (F - Fev) * uo * uo / ro2 - F * F * (F - Feu) * vo * vo / ro2;
+  let a = 0, b = Math.min(Feu, Fev, Fez);
+  if (f(b) <= 0) return b;
+  for (let i = 0; i < 200; i++) { const c = (a + b) / 2; if (f(c) > 0) b = c; else a = c; }
+  return (a + b) / 2;
+}
+
+function compresion(s, Fy, d, m) {
+  const rEF = Math.sqrt(E / Fy);
+  m.sub("Compresión — Capítulo E");
+
+  // Clasificación (Tabla B4.1a)
+  if (s.elems.length) {
+    m.p(L`Según la Tabla B4.1a, cada elemento es no esbelto si su razón ancho-espesor cumple $\lambda \le \lambda_r$; si alguno es esbelto se aplica la Sección E7.`, true);
+    for (const e of s.elems) {
+      const lr = e.lr * rEF;
+      m.row(`${e.n}: λ ; λ<sub>r</sub>`, `${fmt(e.lam, 2)} ; ${fmt(lr, 2)} ${tag(e.lam <= lr, e.lam <= lr ? "no esbelto" : "esbelto")}`, "B4.1a");
+      m.eq(L`\text{${e.n}: } \lambda = ${e.sim} = ${tn(e.lam, 2)} \;${cmp(e.lam, lr)}\; \lambda_r = ${tn(e.lr)}\sqrt{E/F_y} = ${tn(lr, 2)}`);
+    }
+  }
+
+  // Esbelteces y tensiones de pandeo elástico
+  let Fe, modo, slMax, ref = "E3-4";
+  const fe = (sl) => PI2 * E / (sl * sl);
+  if (s.tipo === "L") {
+    const Lm = d.Lx * d.Kx;
+    if (d.E5 !== "no") {
+      const plana = d.E5 === "a";
+      const x = Lm / s.ra;
+      let slE5 = plana ? (x <= 80 ? 72 + 0.75 * x : 32 + 1.25 * x) : (x <= 75 ? 60 + 0.8 * x : 45 + x);
+      const eqE5 = plana ? (x <= 80 ? "E5-1" : "E5-2") : (x <= 75 ? "E5-3" : "E5-4");
+      m.p(L`El ángulo se carga por un ala en sus extremos; según la Sección E5 se desprecia la excentricidad y se usa una esbeltez efectiva con el radio de giro $r_a$ del eje geométrico paralelo al ala conectada.`, true);
+      m.row(`Esbeltez geométrica: L/r<sub>a</sub> (${s.conTxt}, r<sub>a</sub> = ${fmt(s.ra, 3)} cm)`, fmt(x, 2));
+      m.eq(L`\frac{L}{r_a} = \frac{${tn(Lm, 1)}}{${tn(s.ra, 3)}} = ${tn(x, 2)}`);
+      const formula = plana ? (x <= 80 ? L`72 + 0{,}75\,\frac{L}{r_a}` : L`32 + 1{,}25\,\frac{L}{r_a}`) : (x <= 75 ? L`60 + 0{,}8\,\frac{L}{r_a}` : L`45 + \frac{L}{r_a}`);
+      m.eq(L`\frac{L_c}{r} = ${formula} = ${tn(slE5, 2)}`, eqE5);
+      if (s.conCorta) {
+        const inc = (plana ? 4 : 6) * ((s.bl / s.bs) ** 2 - 1);
+        const minimo = (plana ? 0.95 : 0.82) * Lm / s.rz;
+        const sl2 = Math.max(slE5 + inc, minimo);
+        m.eq(L`\text{Conexión por el ala corta: } \frac{L_c}{r} = ${tn(slE5, 2)} + ${plana ? 4 : 6}\left[\left(\frac{b_l}{b_s}\right)^2 - 1\right] = ${tn(slE5 + inc, 2)} \;\ge\; ${plana ? "0{,}95" : "0{,}82"}\frac{L}{r_z} = ${tn(minimo, 2)}`);
+        slE5 = sl2;
+      }
+      m.row(`Esbeltez efectiva L<sub>c</sub>/r (Sección E5${plana ? "(a)" : "(b)"})`, fmt(slE5, 2), eqE5);
+      if (s.bl / s.bs >= 1.7) m.note("La razón entre alas b<sub>l</sub>/b<sub>s</sub> es ≥ 1,7: no se cumple el requisito (5) de E5; el ángulo debería verificarse a flexocompresión (Capítulo H).",
+        L`La razón entre alas $b_l/b_s \ge 1{,}7$: no se cumple el requisito (5) de E5; el ángulo debería verificarse a flexocompresión (Capítulo H).`);
+      Fe = fe(slE5); modo = "flexión (E5)"; slMax = slE5;
+      m.row("Tensión de pandeo elástico: F<sub>e</sub>", `${fmt(Fe, 1)} kgf/cm²`, "E3-4");
+      m.eq(L`F_e = \frac{\pi^2E}{\left(L_c/r\right)^2} = \frac{\pi^2\cdot ${tn(E, 0)}}{${tn(slE5, 2)}^2} = ${tn(Fe, 1)}${KGCM2}`, "E3-4");
+    } else {
+      const slz = Lm / s.rz;
+      Fe = fe(slz); modo = "flexión eje z"; slMax = slz;
+      m.row("Esbeltez eje principal menor: L<sub>c</sub>/r<sub>z</sub>", fmt(slz, 2));
+      m.row("Tensión de pandeo elástico por flexión: F<sub>e</sub>", `${fmt(Fe, 1)} kgf/cm²`, "E3-4");
+      m.eq(L`\frac{L_c}{r_z} = \frac{${tn(d.Kx, 2)}\cdot ${tn(d.Lx, 1)}}{${tn(s.rz, 3)}} = ${tn(slz, 2)} \qquad F_e = \frac{\pi^2E}{\left(L_c/r_z\right)^2} = ${tn(Fe, 1)}${KGCM2}`, "E3-4");
+    }
+    // Pandeo flexo-torsional (E4) solo si b/t > 0,71√(E/Fy)
+    const btMax = Math.max(s.a, s.b) / s.t, lim = 0.71 * rEF;
+    if (btMax <= lim) {
+      m.row("Pandeo flexo-torsional: b/t ≤ 0,71√(E/F<sub>y</sub>)", `${fmt(btMax, 2)} ≤ ${fmt(lim, 2)} — no se considera`, "E5");
+      m.p(L`Como $b/t = ${tn(btMax, 2)} \le 0{,}71\sqrt{E/F_y} = ${tn(lim, 2)}$, el pandeo flexo-torsional no necesita ser considerado (Sección E5).`);
+    } else {
+      const ro2 = s.uo ** 2 + s.vo ** 2 + (s.Iw + s.Iz) / s.A;
+      const Feu = fe(Lm / s.rw), Fev = fe(Lm / s.rz), Fez = G * s.J / (s.A * ro2);
+      const Fft = feE44(Feu, Fev, Fez, s.uo, s.vo, ro2);
+      m.row("Pandeo flexo-torsional: b/t > 0,71√(E/F<sub>y</sub>)", `${fmt(btMax, 2)} > ${fmt(lim, 2)}`, "E5");
+      m.row("F<sub>e</sub> flexo-torsional (ejes principales, C<sub>w</sub> ≈ 0)", `${fmt(Fft, 1)} kgf/cm²`, s.a === s.b ? "E4-3" : "E4-4");
+      m.p(L`Como $b/t = ${tn(btMax, 2)} > 0{,}71\sqrt{E/F_y} = ${tn(lim, 2)}$, se evalúa el pandeo flexo-torsional en ejes principales ($C_w \approx 0$, $L_c = ${tn(Lm, 1)}$ cm):`);
+      m.eq(L`\bar{r}_o^2 = u_o^2 + v_o^2 + \frac{I_w + I_z}{A_g} = ${tn(ro2, 3)}\ \mathrm{cm^2} \qquad F_{ez} = \frac{GJ}{A_g\bar{r}_o^2} = ${tn(Fez, 1)}${KGCM2}`, "E4-7");
+      m.eq(L`F_{ew} = ${tn(Feu, 1)}${KGCM2} \quad F_{ez,\,flex} = ${tn(Fev, 1)}${KGCM2} \;\Rightarrow\; F_e = ${tn(Fft, 1)}${KGCM2}`, s.a === s.b ? "E4-3" : "E4-4");
+      if (Fft < Fe) { Fe = Fft; modo = "flexo-torsional"; ref = s.a === s.b ? "E4-3" : "E4-4"; }
+    }
+  } else {
+    const Lcx = d.Kx * d.Lx, Lcy = d.Ky * d.Ly;
+    const slx = Lcx / s.rx;
+    let sly = Lcy / s.ry;
+    m.row("Esbelteces: K<sub>x</sub>L<sub>x</sub>/r<sub>x</sub> ; K<sub>y</sub>L<sub>y</sub>/r<sub>y</sub>", `${fmt(slx, 2)} ; ${fmt(sly, 2)}`);
+    m.eq(L`\frac{L_{cx}}{r_x} = \frac{${tn(d.Kx, 2)}\cdot ${tn(d.Lx, 1)}}{${tn(s.rx, 3)}} = ${tn(slx, 2)} \qquad \frac{L_{cy}}{r_y} = \frac{${tn(d.Ky, 2)}\cdot ${tn(d.Ly, 1)}}{${tn(s.ry, 3)}} = ${tn(sly, 2)}`);
+    if (s.tipo === "2L") {
+      // E6.1: esbeltez modificada del miembro armado (Ki = 0,50 ángulos espalda con espalda)
+      const ari = s.asep / s.ri;
+      m.p(L`\textbf{Miembro armado (Sección E6).} Separación entre presillas $a = ${tn(s.asep, 1)}$ cm y radio de giro mínimo de cada ángulo $r_i = r_z = ${tn(s.ri, 3)}$ cm:`);
+      if (ari <= 40) {
+        m.row("Miembro armado: a/r<sub>i</sub> ≤ 40 → esbeltez sin modificar", fmt(ari, 2), "E6-2a");
+        m.eq(L`\frac{a}{r_i} = \frac{${tn(s.asep, 1)}}{${tn(s.ri, 3)}} = ${tn(ari, 2)} \le 40 \;\Rightarrow\; \left(\frac{L_c}{r}\right)_m = \left(\frac{L_c}{r}\right)_o = ${tn(sly, 2)}`, "E6-2a");
+      } else {
+        const slm = Math.sqrt(sly * sly + (0.5 * ari) ** 2);
+        m.row("Esbeltez modificada eje y: (L<sub>c</sub>/r)<sub>m</sub>", fmt(slm, 2), "E6-2b");
+        m.eq(L`\left(\frac{L_c}{r}\right)_m = \sqrt{\left(\frac{L_c}{r}\right)_o^2 + \left(\frac{K_i\,a}{r_i}\right)^2} = \sqrt{${tn(sly, 2)}^2 + \left(\frac{0{,}50\cdot ${tn(s.asep, 1)}}{${tn(s.ri, 3)}}\right)^2} = ${tn(slm, 2)}`, "E6-2b");
+        sly = slm;
+      }
+      const limA = 0.75 * Math.max(slx, sly);
+      if (0.5 * ari > limA) m.note(`K<sub>i</sub>a/r<sub>i</sub> = ${fmt(0.5 * ari, 1)} supera 0,75 veces la esbeltez máxima del miembro armado (${fmt(limA, 1)}): reduzca la separación entre presillas (Sección E6.2).`,
+        L`$K_ia/r_i$ supera 0{,}75 veces la esbeltez máxima del miembro armado: reduzca la separación entre presillas (Sección E6.2).`);
+    }
+    const Fex = fe(slx), Fey = fe(sly);
+    slMax = Math.max(slx, sly);
+    m.row("Pandeo por flexión: F<sub>ex</sub> ; F<sub>ey</sub>", `${fmt(Fex, 1)} ; ${fmt(Fey, 1)} kgf/cm²`, "E3-4");
+    m.eq(L`F_{ex} = \frac{\pi^2E}{\left(L_{cx}/r_x\right)^2} = ${tn(Fex, 1)}${KGCM2} \qquad F_{ey} = \frac{\pi^2E}{\left(L_{cy}/r_y\right)^2} = ${tn(Fey, 1)}${KGCM2}`, "E3-4");
+    Fe = Math.min(Fex, Fey); modo = Fe === Fex ? "flexión eje x" : "flexión eje y";
+    if (s.tipo === "C" || s.tipo === "2L") {
+      const Lcz = Lcy;
+      const ro2 = s.xo ** 2 + s.yo ** 2 + (s.Ix + s.Iy) / s.A;
+      const H = 1 - (s.xo ** 2 + s.yo ** 2) / ro2;
+      const Fez = (PI2 * E * s.Cw / (Lcz * Lcz) + G * s.J) / (s.A * ro2);
+      const Fes = s.simetria === "x" ? Fex : Fey;
+      const Fft = feE43(Fes, Fez, H);
+      const ejeS = s.simetria;
+      m.p(L`\textbf{Pandeo flexo-torsional (Sección E4).} La sección tiene un eje de simetría (eje ${ejeS}); se usa $L_{cz} = K_yL_y = ${tn(Lcz, 1)}$ cm y ${s.tipo === "C" ? L`centro de corte a $x_o = ${tn(s.xo, 3)}$ cm del centroide` : L`centro de corte a $y_o = ${tn(s.yo, 3)}$ cm del centroide y $C_w \approx 0$`}:`);
+      m.eq(L`\bar{r}_o^2 = x_o^2 + y_o^2 + \frac{I_x + I_y}{A_g} = ${tn(ro2, 3)}\ \mathrm{cm^2} \qquad H = 1 - \frac{x_o^2 + y_o^2}{\bar{r}_o^2} = ${tn(H, 4)}`, "E4-8");
+      m.eq(L`F_{ez} = \left(\frac{\pi^2EC_w}{L_{cz}^2} + GJ\right)\frac{1}{A_g\bar{r}_o^2} = \left(\frac{\pi^2\cdot ${tn(E, 0)}\cdot ${tn(s.Cw, 1)}}{${tn(Lcz, 1)}^2} + ${tn(G, 0)}\cdot ${tn(s.J, 4)}\right)\frac{1}{${tn(s.A)}\cdot ${tn(ro2, 3)}} = ${tn(Fez, 1)}${KGCM2}`, "E4-7");
+      m.eq(L`F_e = \left(\frac{F_{e${ejeS}} + F_{ez}}{2H}\right)\left[1 - \sqrt{1 - \frac{4F_{e${ejeS}}F_{ez}H}{\left(F_{e${ejeS}} + F_{ez}\right)^2}}\right] = ${tn(Fft, 1)}${KGCM2}`, "E4-3");
+      m.row("Pandeo flexo-torsional: F<sub>ez</sub> ; F<sub>e</sub>", `${fmt(Fez, 1)} ; ${fmt(Fft, 1)} kgf/cm²`, "E4-3");
+      if (Fft < Fe) { Fe = Fft; modo = "flexo-torsional"; ref = "E4-3"; }
+    }
+  }
+  if (slMax > 200) m.note("Esbeltez L<sub>c</sub>/r mayor que 200 (límite recomendado, nota de la Sección E2).",
+    L`Esbeltez $L_c/r$ mayor que 200 (límite recomendado, nota de la Sección E2).`);
+  m.row(`Tensión de pandeo elástico controlante (${modo}): F<sub>e</sub>`, `${fmt(Fe, 1)} kgf/cm²`, ref);
+
+  // Tensión crítica
+  let Fcr;
+  if (Fy / Fe <= 2.25) {
+    Fcr = Math.pow(0.658, Fy / Fe) * Fy;
+    m.row("Tensión crítica (pandeo inelástico): F<sub>cr</sub>", `${fmt(Fcr, 1)} kgf/cm²`, "E3-2");
+    m.p(L`\textbf{Tensión crítica.} Controla el pandeo por ${modo}, con $F_e = ${tn(Fe, 1)}$ kgf/cm$^2$:`);
+    m.eq(L`\frac{F_y}{F_e} = \frac{${tn(Fy, 0)}}{${tn(Fe, 1)}} = ${tn(Fy / Fe, 3)} \le 2{,}25 \;\Rightarrow\; F_{cr} = 0{,}658^{F_y/F_e}F_y = 0{,}658^{${tn(Fy / Fe, 3)}}\cdot ${tn(Fy, 0)} = ${tn(Fcr, 1)}${KGCM2}`, "E3-2");
+  } else {
+    Fcr = 0.877 * Fe;
+    m.row("Tensión crítica (pandeo elástico): F<sub>cr</sub>", `${fmt(Fcr, 1)} kgf/cm²`, "E3-3");
+    m.p(L`\textbf{Tensión crítica.} Controla el pandeo por ${modo}, con $F_e = ${tn(Fe, 1)}$ kgf/cm$^2$:`);
+    m.eq(L`\frac{F_y}{F_e} = \frac{${tn(Fy, 0)}}{${tn(Fe, 1)}} = ${tn(Fy / Fe, 3)} > 2{,}25 \;\Rightarrow\; F_{cr} = 0{,}877\,F_e = ${tn(Fcr, 1)}${KGCM2}`, "E3-3");
+  }
+
+  // Elementos esbeltos — E7
+  let Ae = s.A;
+  for (const e of s.elems) {
+    const lr = e.lr * rEF, lim7 = lr * Math.sqrt(Fy / Fcr);
+    if (e.lam <= lim7) continue;
+    const Fel = (e.c2 * lr / e.lam) ** 2 * Fy;
+    const q = Math.sqrt(Fel / Fcr);
+    const be = Math.max(0, e.b * (1 - e.c1 * q) * q);
+    Ae -= e.k * (e.b - be) * e.t;
+    m.row(`${e.n}: ancho efectivo b<sub>e</sub> (E7)`, `${fmt(be, 2)} de ${fmt(e.b, 2)} cm`, "E7-3");
+    m.eq(L`\begin{aligned}
+&\text{${e.n}: } \lambda = ${tn(e.lam, 2)} > \lambda_r\sqrt{F_y/F_{cr}} = ${tn(lim7, 2)}, \quad c_1 = ${tn(e.c1)},\; c_2 = ${tn(e.c2)}\\
+&F_{el} = \left(c_2\frac{\lambda_r}{\lambda}\right)^2F_y = ${tn(Fel, 1)}${KGCM2}\\
+&b_e = b\left(1 - c_1\sqrt{\frac{F_{el}}{F_{cr}}}\right)\sqrt{\frac{F_{el}}{F_{cr}}} = ${tn(e.b)}\left(1 - ${tn(e.c1)}\cdot ${tn(q, 3)}\right)${tn(q, 3)} = ${tn(be)}${CM}
+\end{aligned}`, "E7-3");
+  }
+  if (Ae < s.A) {
+    m.row("Área efectiva: A<sub>e</sub>", `${fmt(Ae, 2)} cm²`, "E7-1");
+    m.eq(L`A_e = A_g - \sum (b - b_e)\,t = ${tn(Ae)}${CM2}`, "E7-1");
+  }
+  const Pn = Fcr * Ae, phiPn = 0.9 * Pn;
+  const dc = d.Pu / phiPn;
+  m.row("<b>Resistencia de diseño en compresión: φ<sub>c</sub>P<sub>n</sub></b>", `<b>${fmt(phiPn, 0)} kgf</b>`, Ae < s.A ? "E7-1" : "E3-1");
+  m.eq(L`\phi_cP_n = 0{,}90\,F_{cr}A_${Ae < s.A ? "e" : "g"} = 0{,}90\cdot ${tn(Fcr, 1)}\cdot ${tn(Ae)} = ${tn(phiPn, 0)}${KG}`, Ae < s.A ? "E7-1" : "E3-1");
+  m.row("<b>Razón P<sub>u</sub>/φ<sub>c</sub>P<sub>n</sub></b>", `<b>${fmt(dc, 3)}</b> ${tag(dc <= 1, dc <= 1 ? "CUMPLE" : "NO CUMPLE")}`);
+  m.p(L`Con la compresión última $P_u = ${tn(d.Pu, 0)}$ kgf:`);
+  m.eq(L`\frac{P_u}{\phi_cP_n} = \frac{${tn(d.Pu, 0)}}{${tn(phiPn, 0)}} = ${tn(dc, 3)} ${cmp(dc, 1)} 1{,}0`);
+  return { phiPn, dc, Fcr, Fe, modo, Ae, slMax };
+}
+
+// ---------------------------------------------------------------------------
+// Propiedades a pantalla y a LaTeX
+// ---------------------------------------------------------------------------
+function propsLista(s) {
+  const l = [["A<sub>g</sub>", L`$A_g$`, s.A, 2, "cm²"], ["I<sub>x</sub>", L`$I_x$`, s.Ix, 2, "cm⁴"], ["I<sub>y</sub>", L`$I_y$`, s.Iy, 2, "cm⁴"],
+    ["r<sub>x</sub>", L`$r_x$`, s.rx, 3, "cm"], ["r<sub>y</sub>", L`$r_y$`, s.ry, 3, "cm"]];
+  if (s.tipo === "L") l.push(["r<sub>z</sub>", L`$r_z$`, s.rz, 3, "cm"], ["x̄ ; ȳ", L`$\bar{x}$ ; $\bar{y}$`, null, 0, `${fmt(s.xb, 3)} ; ${fmt(s.yb, 3)} cm`], ["J", L`$J$`, s.J, 4, "cm⁴"]);
+  if (s.tipo === "C") l.push(["x̄ (dorso del alma)", L`$\bar{x}$`, s.xb, 3, "cm"], ["x<sub>o</sub>", L`$x_o$`, s.xo, 3, "cm"], ["J", L`$J$`, s.J, 4, "cm⁴"], ["C<sub>w</sub>", L`$C_w$`, s.Cw, 1, "cm⁶"]);
+  if (s.tipo === "2L") l.push(["r<sub>i</sub> = r<sub>z</sub> (1 ángulo)", L`$r_i$`, s.ri, 3, "cm"], ["y<sub>o</sub>", L`$y_o$`, s.yo, 3, "cm"], ["J", L`$J$`, s.J, 4, "cm⁴"]);
+  if (s.tipo !== "M") l.push(["Peso", "Peso", s.A * 0.785, 2, "kgf/m"]);
+  return l;
+}
+const uTex = (u) => u.replace("cm²", "cm$^2$").replace("cm⁴", "cm$^4$").replace("cm⁶", "cm$^6$");
+
+// ---------------------------------------------------------------------------
+// Esquema de la reticulada (SVG en pantalla y TikZ en la memoria)
+// ---------------------------------------------------------------------------
+function barras(tipo, n) {
+  const b = [];   // [x1, y1, x2, y2, grupo] en unidades de panel (y = 0 inferior, 1 superior)
+  for (let i = 0; i < n; i++) { b.push([i, 1, i + 1, 1, "cs"]); b.push([i, 0, i + 1, 0, "ci"]); }
+  if (tipo === "warren") {
+    b.push([0, 0, 0, 1, "mo"]); b.push([n, 0, n, 1, "mo"]);
+    for (let i = 0; i < n; i++) b.push(i % 2 === 0 ? [i, 0, i + 1, 1, "di"] : [i, 1, i + 1, 0, "di"]);
+  } else {
+    for (let i = 0; i <= n; i++) b.push([i, 0, i, 1, "mo"]);
+    for (let i = 0; i < n; i++) {
+      const izq = i + 0.5 < n / 2;
+      const pratt = tipo === "pratt";
+      // Pratt: diagonales que bajan hacia el centro (tracción); Howe: que suben hacia el centro
+      b.push((izq === pratt) ? [i, 1, i + 1, 0, "di"] : [i, 0, i + 1, 1, "di"]);
+    }
+  }
+  return b;
+}
+const COLOR = { ok: "#1f8a4c", bad: "#c62828", off: "#b6bdc6" };
+function svgReticulada(tipo, n, Lt, h, est) {
+  const W = 640, x0 = 30, wpx = W - 2 * x0;
+  const hpx = Math.max(40, Math.min(170, wpx * h / Lt));
+  const y0 = 30, k = wpx / n;
+  const X = (i) => x0 + i * k, Y = (j) => y0 + (1 - j) * hpx;
+  const grosor = { cs: 4, ci: 4, di: 2.2, mo: 2.2 };
+  const lineas = barras(tipo, n).map(([a, b, c, d, g]) =>
+    `<line x1="${X(a)}" y1="${Y(b)}" x2="${X(c)}" y2="${Y(d)}" stroke="${COLOR[est[g] || "off"]}" stroke-width="${grosor[g]}" stroke-linecap="round"/>`).join("");
+  const nodos = [];
+  for (let i = 0; i <= n; i++) nodos.push(`<circle cx="${X(i)}" cy="${Y(0)}" r="2.6" fill="#1d2330"/><circle cx="${X(i)}" cy="${Y(1)}" r="2.6" fill="#1d2330"/>`);
+  const apoyo = (x, rod) => `<path d="M${x},${Y(0) + 3} l-9,14 h18 z" fill="#fff" stroke="#3d4450" stroke-width="1.5"/>${rod ? `<line x1="${x - 12}" y1="${Y(0) + 21}" x2="${x + 12}" y2="${Y(0) + 21}" stroke="#3d4450" stroke-width="1.5"/>` : ""}`;
+  const yb = Y(0) + 42;
+  const leyenda = GRUPOS.map((g, i) => `<g transform="translate(${x0 + i * 150},${yb + 22})"><line x1="0" y1="0" x2="22" y2="0" stroke="${COLOR[est[g.id] || "off"]}" stroke-width="${grosor[g.id]}"/><text x="28" y="4" font-size="11" fill="#1d2330">${g.nombre}</text></g>`).join("");
+  return `<svg viewBox="0 0 ${W} ${yb + 36}" role="img" aria-label="Esquema de la viga reticulada">
+    ${lineas}${nodos.join("")}${apoyo(X(0), false)}${apoyo(X(n), true)}
+    <line x1="${X(0)}" y1="${yb}" x2="${X(n)}" y2="${yb}" stroke="#5f6b7a" stroke-width="0.8"/>
+    <text x="${(X(0) + X(n)) / 2}" y="${yb - 4}" text-anchor="middle" font-size="11" fill="#5f6b7a">L = ${fmt(Lt, 2)} m · ${n} paneles de ${fmt(Lt / n, 3)} m</text>
+    <text x="${X(n) + 6}" y="${(Y(0) + Y(1)) / 2 + 4}" font-size="11" fill="#5f6b7a" transform="rotate(-90 ${X(n) + 12} ${(Y(0) + Y(1)) / 2})">h = ${fmt(h, 2)} m</text>
+    ${leyenda}
+  </svg>`;
+}
+function tikzReticulada(tipo, n, Lt, h) {
+  const k = 14 / n, hh = Math.max(1.2, Math.min(4, 14 * h / Lt));
+  const f = (x) => x.toFixed(3);
+  const est = { cs: "very thick", ci: "very thick", di: "thick", mo: "thick" };
+  const l = barras(tipo, n).map(([a, b, c, d, g]) => `\\draw[${est[g]}] (${f(a * k)},${f(b * hh)}) -- (${f(c * k)},${f(d * hh)});`).join("\n");
+  return L`\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+${l}
+\draw (0,0) -- (-0.25,-0.4) -- (0.25,-0.4) -- cycle;
+\draw (14,0) -- (13.75,-0.4) -- (14.25,-0.4) -- cycle; \draw (13.7,-0.5) -- (14.3,-0.5);
+\draw[<->] (0,-0.9) -- (14,-0.9) node[midway,below]{\small $L = ${tn(Lt, 2)}$ m};
+\draw[<->] (14.6,0) -- (14.6,${f(hh)}) node[midway,right]{\small $h = ${tn(h, 2)}$ m};
+\end{tikzpicture}
+\caption{Esquema de la viga reticulada tipo ${tipo === "pratt" ? "Pratt" : tipo === "howe" ? "Howe" : "Warren"} (${n} paneles).}
+\end{figure}
+`;
+}
+
+// ---------------------------------------------------------------------------
+// Lectura de datos y validación
+// ---------------------------------------------------------------------------
+function leerGrupo(p, f) {
+  return {
+    Lx: num(p + "_Lx") * 100, Kx: num(p + "_Kx"), Ly: num(p + "_Ly") * 100, Ky: num(p + "_Ky"),
+    Pu: num(p + "_Pu") * f, Tu: num(p + "_Tu") * f, E5: $(p + "_E5").value,
+    Umodo: $(p + "_Umodo").value, lcon: num(p + "_lcon"), Uval: num(p + "_Uval"), Ahue: num(p + "_Ahue"),
+  };
+}
+function reglasDatos() {
+  const r = [["gL", 0, true], ["gH", 0, true], ["gN", 0, true], ["fD", 0]];
+  for (const g of GRUPOS) {
+    const p = g.id;
+    if (!$(p + "_on").checked) continue;
+    const t = $(p + "_tipo").value;
+    if (t === "C") r.push([p + "_Ch", 0, true], [p + "_Cb", 0, true], [p + "_Ctw", 0, true], [p + "_Ctf", 0, true]);
+    if (t === "L" || t === "2L") r.push([p + "_La", 0, true], [p + "_Lb", 0, true], [p + "_Lt", 0, true]);
+    if (t === "2L") r.push([p + "_Ls", 0], [p + "_Lsep", 0, true]);
+    if (t === "M") r.push([p + "_MA", 0, true], [p + "_Mrx", 0, true], [p + "_Mry", 0, true], [p + "_Mxb", 0]);
+    r.push([p + "_Lx", 0, true], [p + "_Kx", 0, true], [p + "_Pu", 0], [p + "_Tu", 0], [p + "_Ahue", 0]);
+    if (t !== "L") r.push([p + "_Ly", 0, true], [p + "_Ky", 0, true]);
+    const um = $(p + "_Umodo").value;
+    if (um === "2") r.push([p + "_lcon", 0, true]);
+    if (um === "m") r.push([p + "_Uval", 0, true]);
+  }
+  return r;
+}
+// Coherencia geométrica de las dimensiones (espesores menores que las alas, etc.)
+function geometriaInvalida() {
+  const malos = [];
+  for (const g of GRUPOS) {
+    const p = g.id;
+    if (!$(p + "_on").checked) continue;
+    const t = $(p + "_tipo").value;
+    const marca = (id, bad, txt) => { if (bad) { $(id).classList.add("invalido"); malos.push(`${g.nombre}: ${txt}`); } };
+    if (t === "C") {
+      marca(p + "_Ctf", 2 * num(p + "_Ctf") >= num(p + "_Ch"), "t_f debe ser menor que h/2");
+      marca(p + "_Ctw", num(p + "_Ctw") >= num(p + "_Cb"), "t_w debe ser menor que b_f");
+    }
+    if (t === "L" || t === "2L") marca(p + "_Lt", num(p + "_Lt") >= Math.min(num(p + "_La"), num(p + "_Lb")), "t debe ser menor que las alas");
+    if ($(p + "_Umodo").value === "m") marca(p + "_Uval", num(p + "_Uval") > 1, "U no puede ser mayor que 1");
+    if (t !== "M") {
+      const A = leerSeccion(p).A;
+      marca(p + "_Ahue", num(p + "_Ahue") >= A, "el área de perforaciones debe ser menor que A_g");
+    }
+  }
+  return malos;
+}
+
+// ---------------------------------------------------------------------------
+// Cálculo principal
+// ---------------------------------------------------------------------------
+let ultimoTex = "", ultimoNombre = "memoria_reticulada.tex";
+
+function calcular() {
+  pintarPrediseno();
+  limpiarInvalidos($("inputs"));
+  const malos = [...datosInvalidos(reglasDatos())];
+  if (!malos.length) malos.push(...geometriaInvalida());
+  const activos = GRUPOS.filter(g => $(g.id + "_on").checked);
+  if (!activos.length) malos.push("incluya al menos un grupo de barras");
+  if (malos.length) {
+    $("resTitle").textContent = "Resultados";
+    $("summary").innerHTML = ""; $("memo").innerHTML = ""; $("esquema").innerHTML = "";
+    $("verdict").innerHTML = avisoInvalidos(malos);
+    ultimoTex = "";
+    return;
+  }
+  const acero = $("acero").value, { Fy, Fu } = ACEROS[acero];
+  const f = $("unidad").value === "tf" ? 1000 : 1;
+  const tipo = $("gTipo").value, Lt = num("gL"), h = num("gH"), n = Math.round(num("gN"));
+
+  const m = new Memo();
+  m.out.push(`<h3>Datos generales</h3>`);
+  m.row(`Acero ${acero}: F<sub>y</sub> ; F<sub>u</sub> ; E`, `${Fy} ; ${Fu} ; ${E.toLocaleString("es-CL")} kgf/cm²`);
+  m.row("Reticulada: tipo ; luz ; altura ; L/h", `${tipo === "pratt" ? "Pratt" : tipo === "howe" ? "Howe" : "Warren"} ; ${fmt(Lt, 2)} m ; ${fmt(h, 2)} m ; ${fmt(Lt / h, 1)}`);
+
+  const res = [], est = {};
+  for (const g of activos) {
+    const s = leerSeccion(g.id), d = leerGrupo(g.id, f);
+    m.h(`${g.nombre} — ${s.nombre}`);
+    m.sub("Propiedades de la sección");
+    const pl = propsLista(s);
+    m.out.push(`<div class="props" style="margin:4px 0 8px">${pl.map(([k, , v, dd, u]) => `<div>${k} = <b>${v === null ? u : `${fmt(v, dd)}</b> ${u}`}${v === null ? "</b>" : ""}</div>`).join("")}</div>`);
+    if (s.tipo === "C" || s.tipo === "L" || s.tipo === "2L") m.out.push(`<div class="unit">Propiedades calculadas con esquinas rectas${s.tipo === "2L" ? `, separación ${fmt(s.s * 10, 0)} mm entre ángulos` : ""}. Eje x: ${s.tipo === "C" ? "eje fuerte (perpendicular al alma)" : "horizontal"}.</div>`);
+    m.raw(L`\begin{table}[H]
+\centering
+\caption{Propiedades de la sección ${s.nombre} (${g.nombre.toLowerCase()}).}
+\begin{tabular}{lr}
+\toprule
+Propiedad & Valor\\
+\midrule
+${pl.map(([, kt, v, dd, u]) => `${kt} & ${v === null ? uTex(u).replace(/,/g, "{,}").replace(/(\d)\.(\d)/g, "$1\\,$2") : `${tn(v, dd)} ${uTex(u)}`}\\\\`).join("\n")}
+\bottomrule
+\end{tabular}
+\end{table}`);
+    m.p(L`Solicitaciones últimas del grupo (envolvente de las combinaciones LRFD del modelo): $T_u = ${tn(d.Tu, 0)}$ kgf y $P_u = ${tn(d.Pu, 0)}$ kgf. Longitudes: ${s.tipo === "L" ? L`$L = ${tn(d.Lx, 1)}$ cm, $K = ${tn(d.Kx, 2)}$` : L`$L_x = ${tn(d.Lx, 1)}$ cm, $K_x = ${tn(d.Kx, 2)}$, $L_y = ${tn(d.Ly, 1)}$ cm, $K_y = ${tn(d.Ky, 2)}$`}.`, true);
+    const t = traccion(s, Fy, Fu, d, m);
+    const c = compresion(s, Fy, d, m);
+    const dc = Math.max(t.dc, c.dc);
+    est[g.id] = dc <= 1 ? "ok" : "bad";
+    res.push({ g, s, d, t, c, dc });
+  }
+
+  // Flecha
+  const D = num("fD"), lim = +$("fLim").value, Dadm = Lt * 100 / lim, dcF = D / Dadm;
+  m.h("Verificación de deformaciones");
+  m.row(`Flecha admisible L/${lim}`, `${fmt(Dadm, 2)} cm`);
+  m.row("<b>Razón Δ/Δ<sub>adm</sub></b>", `<b>${fmt(dcF, 3)}</b> ${tag(dcF <= 1, dcF <= 1 ? "CUMPLE" : "NO CUMPLE")}`);
+  m.p(L`La flecha máxima de servicio obtenida del modelo es $\Delta = ${tn(D, 2)}$ cm:`);
+  m.eq(L`\Delta_{adm} = \frac{L}{${lim}} = \frac{${tn(Lt * 100, 1)}}{${lim}} = ${tn(Dadm, 2)}${CM} \qquad \frac{\Delta}{\Delta_{adm}} = \frac{${tn(D, 2)}}{${tn(Dadm, 2)}} = ${tn(dcF, 3)} ${cmp(dcF, 1)} 1{,}0`);
+
+  // Resumen en pantalla
+  const peor = res.reduce((a, b) => (b.dc > a.dc ? b : a), res[0]);
+  const dcMax = Math.max(peor.dc, dcF);
+  const ok = dcMax <= 1;
+  $("resTitle").textContent = `Resultados — Reticulada ${tipo === "pratt" ? "Pratt" : tipo === "howe" ? "Howe" : "Warren"} L = ${fmt(Lt, 2)} m · ${acero}`;
+  $("esquema").innerHTML = svgReticulada(tipo, n, Lt, h, est);
+  const card = (t, v, sub, r) => {
+    const w = Math.min(100, Math.max(0, r * 100));
+    return `<div class="card"><div class="t">${t}</div><div class="v">${v}</div><div class="bar ${r > 1 ? "bad" : ""}"><i style="width:${w}%"></i></div><div class="s">${sub}</div></div>`;
+  };
+  $("summary").innerHTML = res.map(r => card(`${r.g.nombre} · ${r.s.tipo === "M" ? "manual" : r.s.nombre}`, fmt(r.dc, 3),
+    `T: ${fmt(r.t.dc, 3)} (φP<sub>n</sub> = ${fmt(r.t.phiPn, 0)}) · C: ${fmt(r.c.dc, 3)} (φP<sub>n</sub> = ${fmt(r.c.phiPn, 0)}) kgf`, r.dc)).join("")
+    + card("Flecha", fmt(dcF, 3), `Δ = ${fmt(D, 2)} cm ≤ L/${lim} = ${fmt(Dadm, 2)} cm`, dcF);
+  const ctrl = dcF > peor.dc ? "flecha" : peor.g.nombre.toLowerCase();
+  $("verdict").innerHTML = `<div class="verdict ${ok ? "ok" : "bad"}">${ok ? "✔ La reticulada CUMPLE" : "✘ La reticulada NO CUMPLE"} — razón máxima = ${fmt(dcMax, 3)} (${ctrl})</div>`;
+  $("memo").innerHTML = m.html();
+
+  ultimoTex = documentoTex({ acero, Fy, Fu, tipo, Lt, h, n, res, D, Dadm, lim, dcF, dcMax, ok, f }, m.texto());
+  ultimoNombre = `memoria_reticulada_${tipo}_${String(Lt).replace(".", "-")}m_${acero}.tex`;
+}
+
+function documentoTex(o, cuerpo) {
+  const nom = o.tipo === "pratt" ? "Pratt" : o.tipo === "howe" ? "Howe" : "Warren";
+  const fecha = new Date().toLocaleDateString("es-CL", { day: "numeric", month: "long", year: "numeric" });
+  const rel = o.Lt / o.h;
+  const resumen = o.res.map(r => `${r.g.nombre} (${r.s.tipo === "M" ? "manual" : r.s.nombre}) & ${tn(r.d.Tu, 0)} & ${tn(r.t.phiPn, 0)} & ${tn(r.d.Pu, 0)} & ${tn(r.c.phiPn, 0)} & ${tn(r.dc, 3)} & ${estado(r.dc)}\\\\`).join("\n");
+  return L`\documentclass[11pt,letterpaper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-tabla,es-noshorthands,es-nolists]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+${TEX_ESTILO}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{tikz}
+\usepackage{fancyhdr}
+\setlength{\headheight}{14pt}
+\pagestyle{fancy}
+\fancyhf{}
+\chead{Diseño de Estructuras Metálicas}
+\lfoot{Memoria de cálculo --- AISC 360-16 (LRFD)}
+\rfoot{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+\allowdisplaybreaks
+
+\begin{document}
+
+\begin{center}
+{\Large\bfseries Memoria de Cálculo}\\[4pt]
+{\large Verificación de viga reticulada tipo ${nom}}\\[2pt]
+Luz ${tn(o.Lt, 2)} m --- Acero ${o.acero} --- ANSI/AISC 360-16\\[2pt]
+{\small ${fecha}}
+\end{center}
+
+\section{Parámetros de diseño general}
+Propiedades del acero ${o.acero}:
+\[
+\begin{aligned}
+E &= ${tn(E, 0)}${KGCM2}\\
+F_y &= ${tn(o.Fy, 0)}${KGCM2}\\
+F_u &= ${tn(o.Fu, 0)}${KGCM2}\\
+G &= ${tn(G, 0)}${KGCM2}
+\end{aligned}
+\]
+El diseño se realiza por el método LRFD, con $\phi_t = 0{,}90$ (fluencia) y $0{,}75$ (ruptura) en tracción y $\phi_c = 0{,}90$ en compresión. Las solicitaciones de cada grupo de barras corresponden a la envolvente de las combinaciones LRFD obtenidas de un modelo de análisis (SAP2000 / ETABS)${o.f === 1000 ? ", ingresadas en tf" : ""}, y se expresan en kgf. Las barras se verifican como miembros cargados axialmente (Capítulos D y E).
+
+\section{Geometría de la reticulada}
+${tikzReticulada(o.tipo, o.n, o.Lt, o.h)}
+La reticulada tiene una luz $L = ${tn(o.Lt, 2)}$ m, una altura $h = ${tn(o.h, 2)}$ m y ${o.n} paneles de ${tn(o.Lt / o.n, 3)} m. La relación $L/h = ${tn(rel, 1)}$ ${rel >= 10 && rel <= 15 ? "se encuentra dentro del rango de predimensionamiento" : "está fuera del rango de predimensionamiento"} $h \approx L/10$ a $L/15$.
+
+${cuerpo}
+
+\section{Resumen de resultados}
+\begin{table}[H]
+\centering
+\small
+\caption{Comparación demanda versus capacidad por grupo de barras (fuerzas en kgf).}
+\begin{tabular}{lrrrrcc}
+\toprule
+Grupo & $T_u$ & $\phi_tP_n$ & $P_u$ & $\phi_cP_n$ & D/C & Estado\\
+\midrule
+${resumen}
+Flecha (L/${o.lim}) & \multicolumn{4}{c}{$\Delta = ${tn(o.D, 2)}$ cm ; $\Delta_{adm} = ${tn(o.Dadm, 2)}$ cm} & ${tn(o.dcF, 3)} & ${estado(o.dcF)}\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Por lo tanto, como la razón demanda-capacidad máxima es $D/C = ${tn(o.dcMax, 3)}$ ${o.dcMax <= 1 ? L`$\le 1{,}0$` : L`$> 1{,}0$`}, la viga reticulada \textbf{${o.ok ? "cumple" : "no cumple"}} con las verificaciones de resistencia y deformación según el AISC 360-16.
+
+\end{document}
+`;
+}
+
+function descargarTex() {
+  if (!ultimoTex) { alert("Corrija los datos inválidos antes de descargar la memoria."); return; }
+  descargarBlob(new Blob([texUnicode(ultimoTex)], { type: "application/x-tex;charset=utf-8" }), ultimoNombre);
+}
+
+// ---------------------------------------------------------------------------
+// Interfaz
+// ---------------------------------------------------------------------------
+let grupoVisible = "cs";
+function pintarPrediseno() {
+  const Lt = num("gL"), h = num("gH");
+  if (!(Lt > 0 && h > 0)) { $("gPre").textContent = ""; return; }
+  const r = Lt / h, ok = r >= 10 && r <= 15;
+  $("gPre").innerHTML = `L/h = <b>${fmt(r, 1)}</b> · predimensionamiento h ≈ L/10 a L/15 = ${fmt(Lt / 15, 2)} – ${fmt(Lt / 10, 2)} m ${ok ? '<span class="tag ok">en rango</span>' : '<span class="tag warn">fuera de rango</span>'}`;
+}
+function mostrarTipo(p) {
+  const t = $(p + "_tipo").value, fs = $("fs_" + p);
+  fs.querySelectorAll(".t-C, .t-L, .t-2L, .t-M").forEach(el => el.classList.toggle("hidden", !el.classList.contains("t-" + t)));
+  fs.querySelector(".noL").classList.toggle("hidden", t === "L");
+  fs.querySelector(".lxLab").innerHTML = t === "L" ? "Longitud de la barra L" : "Longitud no arriostrada L<sub>x</sub>";
+  fs.querySelector(".kxLab").innerHTML = t === "L" ? "Factor K" : "Factor K<sub>x</sub>";
+  fs.querySelector(".hintEje").textContent = t === "L"
+    ? "Con E5, L es la longitud entre puntos de trabajo (use K = 1)."
+    : t === "C" ? "x: eje fuerte (perpendicular al alma); y: eje débil. El pandeo torsional usa L_cz = K_y·L_y."
+    : t === "2L" ? "Con la cartela en el plano de la reticulada: pandeo en el plano en torno a x; fuera del plano en torno a y (simetría)." : "";
+  const um = $(p + "_Umodo").value;
+  fs.querySelector(".u-2").classList.toggle("hidden", um !== "2");
+  fs.querySelector(".u-m").classList.toggle("hidden", um !== "m");
+}
+function mostrarGrupo(id) {
+  grupoVisible = id;
+  GRUPOS.forEach(g => {
+    $("fs_" + g.id).classList.toggle("hidden", g.id !== id);
+    $("tab_" + g.id).classList.toggle("on", g.id === id);
+  });
+}
+function actualizarUnidades() {
+  const tf = $("unidad").value === "tf";
+  document.querySelectorAll(".u-f").forEach(e => e.textContent = tf ? "[tf]" : "[kgf]");
+}
+function usarGeometria() {
+  const lg = longitudesGeom();
+  for (const g of GRUPOS) {
+    const v = +lg[g.def.lx].toFixed(3);
+    $(g.id + "_Lx").value = v;
+    $(g.id + "_Ly").value = v;
+  }
+  calcular();
+}
+
+function init() {
+  $("grupos").innerHTML = GRUPOS.map(htmlGrupo).join("");
+  $("tabsG").innerHTML = GRUPOS.map(g => `<button type="button" id="tab_${g.id}">${g.corto}</button>`).join("");
+  GRUPOS.forEach(g => {
+    $("tab_" + g.id).addEventListener("click", () => mostrarGrupo(g.id));
+    mostrarTipo(g.id);
+  });
+  mostrarGrupo("cs");
+  actualizarUnidades();
+  $("inputs").addEventListener("input", (e) => { if (e.target.tagName === "INPUT") calcular(); });
+  $("inputs").addEventListener("change", (e) => {
+    const id = e.target.id || "";
+    if (/_(tipo|Umodo)$/.test(id)) mostrarTipo(id.split("_")[0]);
+    if (id === "unidad") {
+      const toTf = $("unidad").value === "tf";
+      GRUPOS.forEach(g => ["_Pu", "_Tu"].forEach(s => {
+        const el = $(g.id + s), v = parseFloat(el.value);
+        if (Number.isFinite(v)) el.value = +(toTf ? v / 1000 : v * 1000).toPrecision(8);
+      }));
+      actualizarUnidades();
+    }
+    if (e.target.tagName === "SELECT" || e.target.type === "checkbox") calcular();
+  });
+  $("gLong").addEventListener("click", usarGeometria);
+  calcular();
+}
+init();
+// Integración con proyectos (proyectos.js)
+window.AURA_MEMO = {
+  tipo: "Acero estructural — viga reticulada",
+  elemento: () => "", tex: () => ultimoTex, nombre: () => ultimoNombre,
+  recalcular: () => { GRUPOS.forEach(g => mostrarTipo(g.id)); mostrarGrupo(grupoVisible); actualizarUnidades(); calcular(); },
+};
+</script>
+<script src="proyectos.js?v=30"></script>
+<script>
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
+</script>
+</body>
+</html>
