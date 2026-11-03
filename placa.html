@@ -178,6 +178,8 @@
           <div><label for="qL">Sobrecarga de uso <span class="unit">[kgf/m²]</span></label><input id="qL" type="number" step="10" value="500"></div>
           <div><label for="qD">Carga permanente adicional (terminaciones, tabiques) <span class="unit">[kgf/m²]</span></label><input id="qD" type="number" step="10" value="0"></div>
         </div>
+        <label for="flechaLim">Límite de flecha por sobrecarga de uso</label>
+        <select id="flechaLim"><option value="240">L/240</option><option value="300">L/300</option><option value="360" selected>L/360</option></select>
         <label class="chk"><input id="ppDem" type="checkbox"> Sumar el peso propio de la losa a la demanda (criterio conservador)</label>
         <label class="chk"><input id="puntual" type="checkbox"> Hay cargas puntuales (carga equivalente +30 %)</label>
         <label class="chk"><input id="heli" type="checkbox"> Afinado superficial con helicóptero</label>
@@ -319,7 +321,7 @@ function leerDatos() {
   const qn = $("QnUser").value.trim();
   return {
     L: num("L") * 100, tramos: +$("tramos").value, ehSel: $("eh").value,
-    qL: num("qL"), qD: num("qD"), ppDem: $("ppDem").checked, puntual: $("puntual").checked, heli: $("heli").checked,
+    qL: num("qL"), qD: num("qD"), flechaLim: +$("flechaLim").value, ppDem: $("ppDem").checked, puntual: $("puntual").checked, heli: $("heli").checked,
     dM: num("dMalla"), sM: num("sMalla"),
     As: Math.PI * (num("dMalla") / 10) ** 2 / 4 * 100 / num("sMalla"),
     cnv: +$("cnv").value, cd: $("cd").value, hs: num("hs") / 10, pos: $("pos").value, fc: num("fc"),
@@ -424,6 +426,22 @@ function verificar(eh, d, m) {
   m.eq(L`\frac{L}{L_{m\acute{a}x}} = \frac{${tn(d.L, 0)}}{${tn(L2, 0)}} = ${tn(dc2, 3)} ${dc2 <= 1 ? LE : ">"} 1{,}0`, "Tabla II");
   if (d.tramos > 1) m.note("Con tramos continuos se requiere armadura superior (negativa) en los apoyos intermedios, a definir por el ingeniero calculista.",
     L`Con tramos continuos se requiere armadura superior (negativa) en los apoyos intermedios, a definir por el ingeniero calculista del proyecto.`);
+  // Flecha por sobrecarga de uso con la inercia compuesta de la ficha (referida al hormigón, ASCE)
+  m.sub("Flecha por sobrecarga de uso");
+  const EcF = 15100 * Math.sqrt(d.fc);
+  const wL = d.qL / 100;                                   // kgf/cm en una franja de 1 m
+  const flecha = 5 * wL * d.L ** 4 / (384 * EcF * t4.Ic);
+  const fAdm = d.L / d.flechaLim;
+  const dcF = flecha / fAdm;
+  m.row("Sobrecarga de uso en una franja de 1 m", `${fmt(wL, 2)} kgf/cm`);
+  m.row("E<sub>c</sub> = 15.100 √f'<sub>c</sub> ; I<sub>c</sub> (referida al hormigón)", `${fmt(EcF, 0)} kgf/cm² ; ${fmt(t4.Ic, 0)} cm⁴/m`, "Ficha técnica");
+  m.row("δ = 5 q L⁴ / (384 E<sub>c</sub> I<sub>c</sub>)", `${fmt(flecha, 3)} cm`);
+  m.row(`δ<sub>adm</sub> = L/${d.flechaLim}`, `${fmt(fAdm, 3)} cm`);
+  m.row("δ / δ<sub>adm</sub>", tagDC(dcF));
+  m.eq(L`\delta = \frac{5\,q_L L^4}{384\,E_c I_c} = \frac{5 \cdot ${tn(wL, 2)} \cdot ${tn(d.L, 0)}^4}{384 \cdot ${tn(EcF, 0)} \cdot ${tn(t4.Ic, 0)}} = ${tn(flecha, 3)}\ \mathrm{cm}`);
+  m.eq(L`\frac{\delta}{\delta_{adm}} = \frac{${tn(flecha, 3)}}{${tn(d.L, 0)}/${d.flechaLim}} = \frac{${tn(flecha, 3)}}{${tn(fAdm, 3)}} = ${tn(dcF, 3)} ${dcF <= 1 ? LE : ">"} 1{,}0`);
+  m.p(L`Se usa la inercia efectiva de la sección compuesta que entrega la ficha técnica, referida al hormigón según la ASCE, por lo que se combina con $E_c$. La fórmula de viga simplemente apoyada es conservadora para tramos continuos. Solo se considera la sobrecarga de uso, sin cargas permanentes ni efectos diferidos.`, true);
+  checks.push({ k: L`Flecha por sobrecarga de uso ($L/${d.flechaLim}$)`, dem: L`$\delta = ${tn(flecha, 3)}$ cm`, cap: L`$\delta_{adm} = ${tn(fAdm, 3)}$ cm`, dc: dcF, html: "Flecha (sobrecarga de uso)" });
   checks.push({ k: "Deformaciones (Tabla II)", dem: L`$L = ${tn(d.L, 0)}$ cm`, cap: L`$L_{m\acute{a}x} = ${tn(L2, 0)}$ cm`, dc: dc2, html: "Deformación (Tabla II)" });
 
   // 4. Alzaprimado temporal (Tabla III)
@@ -684,10 +702,10 @@ function calcular() {
   // Tarjetas de resumen
   const cards = [
     { t: "Espesor total", v: `${fmt(r.et, 2)} cm`, s: `e<sub>h</sub> = ${eh} cm · PP = ${fmt(r.t4.pp, 0)} kgf/m²`, r: 0, sin: true },
-    ...r.checks.slice(0, 2).map(c => ({ t: c.html, v: fmt(c.dc, 3), s: c.html.startsWith("Capacidad") ? `q = ${fmt(r.qDem, 0)} / ${fmt(r.t1.q, 0)} kgf/m²` : `L = ${fmt(d.L, 0)} / ${fmt(r.L2, 0)} cm`, r: c.dc })),
+    ...[r.checks.find(c => c.html.startsWith("Capacidad")), r.checks.find(c => c.html.startsWith("Deformación"))].map(c => ({ t: c.html, v: fmt(c.dc, 3), s: c.html.startsWith("Capacidad") ? `q = ${fmt(r.qDem, 0)} / ${fmt(r.t1.q, 0)} kgf/m²` : `L = ${fmt(d.L, 0)} / ${fmt(r.L2, 0)} cm`, r: c.dc })),
     { t: "Alzaprimas", v: r.nAlz ? `${r.nAlz} por tramo` : "No", s: r.nAlz ? `separación ${fmt(r.sepAlz, 0)} cm` : `L ≤ ${fmt(r.L3, 0)} cm`, r: 0, sin: true },
   ];
-  const otra = r.checks.slice(2).reduce((a, c) => (c.dc > (a?.dc ?? -1) ? c : a), null);
+  const otra = r.checks.filter(c => !/^(Capacidad|Deformación)/.test(c.html)).reduce((a, c) => (c.dc > (a?.dc ?? -1) ? c : a), null);
   if (otra) cards.push({ t: otra.html, v: fmt(otra.dc, 3), s: "verificación más exigida del resto", r: otra.dc });
   $("summary").innerHTML = cards.map(c => {
     const w = Math.min(100, Math.max(0, c.r * 100));
@@ -703,11 +721,12 @@ function calcular() {
   $("memo").innerHTML = m.html();
 
   // Tabla comparativa de espesores
-  $("alt").innerHTML = `<div class="tablaWrap"><table class="alt"><tr><th>e<sub>h</sub> [cm]</th><th>e<sub>t</sub> [cm]</th><th>PP [kgf/m²]</th><th>Hormigón [m³/m²]</th><th>Tabla I</th><th>Tabla II</th><th>Alzaprimas</th><th>Estado</th><th></th></tr>${todos.map(t => {
-    const c1 = t.checks[0].dc, c2 = t.checks[1].dc;
-    return `<tr><td>${t.eh}</td><td>${fmt(t.et, 2)}</td><td>${fmt(t.t4.pp, 0)}</td><td>${fmt(t.t4.V, 3)}</td><td>${fmt(c1, 3)}</td><td>${fmt(c2, 3)}</td><td>${t.nAlz ? `${t.nAlz} a ${fmt(t.sepAlz, 0)} cm` : "no"}</td><td>${t.sinVerificar.length ? '<span class="tag warn">sin verificar</span>' : tag(t.okLosa, t.okLosa ? "cumple" : "no cumple")}</td><td>${t.eh === eh ? '<span class="tag ok">seleccionado</span>' : ""}</td></tr>`;
+  $("alt").innerHTML = `<div class="tablaWrap"><table class="alt"><tr><th>e<sub>h</sub> [cm]</th><th>e<sub>t</sub> [cm]</th><th>PP [kgf/m²]</th><th>Hormigón [m³/m²]</th><th>Tabla I</th><th>Tabla II</th><th>Flecha</th><th>Alzaprimas</th><th>Estado</th><th></th></tr>${todos.map(t => {
+    const c1 = t.checks.find(c => c.html.startsWith("Capacidad")).dc, c2 = t.checks.find(c => c.html.startsWith("Deformación")).dc,
+      cF = t.checks.find(c => c.html.startsWith("Flecha")).dc;
+    return `<tr><td>${t.eh}</td><td>${fmt(t.et, 2)}</td><td>${fmt(t.t4.pp, 0)}</td><td>${fmt(t.t4.V, 3)}</td><td>${fmt(c1, 3)}</td><td>${fmt(c2, 3)}</td><td>${fmt(cF, 3)}</td><td>${t.nAlz ? `${t.nAlz} a ${fmt(t.sepAlz, 0)} cm` : "no"}</td><td>${t.sinVerificar.length ? '<span class="tag warn">sin verificar</span>' : tag(t.okLosa, t.okLosa ? "cumple" : "no cumple")}</td><td>${t.eh === eh ? '<span class="tag ok">seleccionado</span>' : ""}</td></tr>`;
   }).join("")}</table></div>
-  <div class="unit" style="margin-top:8px">Mismas cargas, luz y conectores. Tabla I y II: razón D/C. El estado incluye también la malla y los conectores en los apoyos (no los de la viga).</div>`;
+  <div class="unit" style="margin-top:8px">Mismas cargas, luz y conectores. Tabla I, Tabla II y flecha: razón D/C. El estado incluye también la malla y los conectores en los apoyos (no los de la viga).</div>`;
 
   ultimoTex = documentoTex(d, r, m.texto());
   ultimoNombre = `memoria_placa_colaborante_L${fmt(d.L / 100, 2).replace(",", "_")}_eh${eh}.tex`;
