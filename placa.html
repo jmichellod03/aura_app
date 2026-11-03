@@ -200,7 +200,7 @@
           <div><label for="hs">Altura del conector instalado h<sub>s</sub> <span class="unit">[mm]</span></label><input id="hs" type="number" step="1" value="102"></div>
           <div><label for="pos">Posición en el valle</label>
             <select id="pos"><option value="debil" selected>Débil (R<sub>p</sub> = 0,60)</option><option value="fuerte">Fuerte, e<sub>mid-ht</sub> ≥ 51 mm (R<sub>p</sub> = 0,75)</option></select></div>
-          <div><label for="fc">Resistencia del hormigón f'<sub>c</sub> <span class="unit">[kgf/cm²]</span></label><input id="fc" type="number" step="5" value="210"></div>
+          <div><label for="fc">Resistencia del hormigón f'<sub>c</sub> <span class="unit">[kgf/cm², mín. 214]</span></label><input id="fc" type="number" step="5" value="250"></div>
           <div><label for="QnUser">Q<sub>n</sub> del fabricante <span class="unit">[tf] (vacío = AISC I8-1)</span></label><input id="QnUser" type="number" step="0.1" value=""></div>
         </div>
         <label class="chk"><input id="cViga" type="checkbox"> Calcular los conectores de la viga de apoyo (acción compuesta completa)</label>
@@ -268,6 +268,7 @@ const TABLA_IV = {
   10: { et: 16.35, V: 0.135, ppH: 324, pp: 332, Ic: 26619 },
   12: { et: 18.35, V: 0.155, ppH: 372, pp: 380, Ic: 36220 },
 };
+const FC_MIN = 214;          // kgf/cm² (21 MPa): mínimo de AISC 360-16 I1.3 para hormigón de peso normal
 const AS_MIN = 1.8;            // cm²/m, armadura de retracción mínima en cada dirección
 const V_APOYO = 11200;         // kgf por metro de ancho: resistencia última de los conectores en cada apoyo
 const FU_CON = 4570;           // kgf/cm² (65 ksi), conectores AWS D1.1 tipo B
@@ -322,7 +323,7 @@ function leerDatos() {
   };
 }
 function reglasDatos() {
-  const r = [["L", 0, true], ["qL", 0], ["qD", 0], ["asMalla", 0, true], ["fc", 0, true]];
+  const r = [["L", 0, true], ["qL", 0], ["qD", 0], ["asMalla", 0, true], ["fc", FC_MIN]];
   if ($("cnv").value !== "0") r.push(["hs", 0, true]);
   if ($("QnUser").value.trim() !== "") r.push(["QnUser", 0, true]);
   if ($("cViga").checked) r.push(["Lv", 0, true], ["Asv", 0, true]);
@@ -442,7 +443,8 @@ function verificar(eh, d, m) {
   m.row("A<sub>s,mín</sub>", `${fmt(AS_MIN, 2)} cm²/m`, "Tabla IV, nota 3");
   m.row("A<sub>s,mín</sub> / A<sub>s</sub>", tagDC(dc4));
   m.eq(L`\frac{A_{s,m\acute{\imath}n}}{A_s} = \frac{${tn(AS_MIN, 2)}}{${tn(d.As, 2)}} = ${tn(dc4, 3)} ${dc4 <= 1 ? LE : ">"} 1{,}0`);
-  m.p(L`La malla se ubica a 2,5 cm de la cara superior del hormigón, con acero A63-42H como mínimo.`, true);
+  const asACI = 0.0018 * 100 * eh;
+  m.p(L`La malla se ubica a 2,5 cm de la cara superior del hormigón, con acero A63-42H como mínimo. Se usa el mínimo del fabricante; como referencia, la cuantía $0{,}0018\,b\,e_h$ del ACI 318 aplicada al hormigón sobre la cresta daría ${tn(asACI, 2)} cm$^2$/m.`, true);
   checks.push({ k: "Malla de retracción", dem: L`$A_{s,m\acute{\imath}n} = ${tn(AS_MIN, 2)}$ cm$^2$/m`, cap: L`$A_s = ${tn(d.As, 2)}$ cm$^2$/m`, dc: dc4, html: "Malla de retracción" });
 
   // 6. Conectores de corte en los apoyos
@@ -462,13 +464,14 @@ function verificar(eh, d, m) {
     m.row("Resistencia de los conectores por metro", `${fmt(R / 1000, 2)} tf/m`);
     m.row("Mínimo exigido por el fabricante", `${fmt(V_APOYO / 1000, 1)} tf/m`, "Tabla I, nota d");
     m.row("11,2 / R", tagDC(dc5));
+    m.p(L`Se compara la resistencia nominal $Q_n$, sin factor $\phi$, igual que en el Capítulo I del AISC 360-16. Conviene confirmar con Cintac si la resistencia última de 11,2 tf/m de la nota d se refiere a $Q_n$ o a $\phi Q_n$.`, true);
     m.eq(L`R = n_v \cdot \frac{100}{${tn(SEP_VALLE, 2)}} \cdot Q_n = ${d.cnv} \cdot ${tn(vpm, 3)} \cdot ${tn(con.Qn, 0)} = ${tn(R, 0)}\ \mathrm{kgf/m}`);
     m.eq(L`\frac{11\,200}{R} = \frac{11\,200}{${tn(R, 0)}} = ${tn(dc5, 3)} ${dc5 <= 1 ? LE : ">"} 1{,}0`, "Tabla I, nota d");
     checks.push({ k: "Conectores en apoyos", dem: L`$11{,}2$ tf/m`, cap: L`$R = ${tn(R / 1000, 2)}$ tf/m`, dc: dc5, html: "Conectores en apoyos" });
 
     m.sub("Altura y recubrimiento del conector");
     const sobre = d.hs - PLACA.hr, recub = et - d.hs;
-    const dc6a = 3.8 / sobre, dc6b = recub > 0 ? 1.3 / recub : Infinity;
+    const dc6a = sobre > 0 ? 3.8 / sobre : Infinity, dc6b = recub > 0 ? 1.3 / recub : Infinity;
     m.row("Altura sobre la cresta h<sub>s</sub> − h<sub>r</sub> (mínimo 38 mm)", `${fmt(sobre * 10, 1)} mm ${tagDC(dc6a)}`, "I8.2d");
     m.row("Recubrimiento sobre el conector e<sub>t</sub> − h<sub>s</sub> (mínimo 13 mm)", `${fmt(recub * 10, 1)} mm ${tagDC(dc6b)}`, "I8.2d");
     m.eq(L`h_s - h_r = ${tn(d.hs * 10, 1)} - ${tn(PLACA.hr * 10, 1)} = ${tn(sobre * 10, 1)}\ \mathrm{mm} ${cmp(38, sobre * 10) === LE ? GE : "<"} 38\ \mathrm{mm}`, "I8.2d");
@@ -537,19 +540,20 @@ function documentoTex(d, r, cuerpo) {
     fila(L`Espesor de hormigón sobre la cresta $e_h$`, `${tn(r.eh, 0)} cm${d.ehSel === "auto" ? " (el menor que cumple)" : ""}`),
     fila(L`Sobrecarga de uso $q_L$`, L`${tn(d.qL, 0)} kgf/m$^2$`),
     fila(L`Carga permanente adicional $q_D$`, L`${tn(d.qD, 0)} kgf/m$^2$`),
-    fila(L`Hormigón $f'_c$`, L`${tn(d.fc, 0)} kgf/cm$^2$ (H25 mínimo según el fabricante)`),
+    fila(L`Hormigón $f'_c$`, L`${tn(d.fc, 0)} kgf/cm$^2$ (mínimo 21 MPa, AISC 360-16 I1.3)`),
     fila(L`Malla de retracción $A_s$`, L`${tn(d.As, 2)} cm$^2$/m en cada dirección`),
     fila("Conectores en los apoyos", d.cnv ? `${d.cnv} por valle, ${CONECTOR[d.cd].txt}, $h_s = ${tn(d.hs * 10, 0)}$ mm` : "sin conectores"),
   ].join("\n");
   const resumen = r.checks.map(c => `${c.k} & ${c.dem} & ${c.cap} & ${tn(c.dc, 3)} & ${estado(c.dc)}\\\\`).join("\n");
   const alcance = [
     L`El diseño se basa en las tablas de la Ficha Técnica y del Manual Técnico de la placa Instadeck de Cintac (espesor 0,8 mm), calculadas por el fabricante según el Steel Deck Institute (1991). Los valores no se recalculan.`,
-    L`Las tablas suponen hormigón H25 mínimo, la placa fijada a la estructura en todos los valles, el giro restringido en los bordes discontinuos y conectores de corte con 11,2 tf por metro de ancho en cada apoyo.`,
+    L`Las tablas suponen hormigón H25 como mínimo (se recomienda confirmar con Cintac a qué versión de la NCh 170 se refieren; según la NCh 170:2016, H25 corresponde a $f'_c = 25$ MPa), la placa fijada a la estructura en todos los valles, el giro restringido en los bordes discontinuos y conectores de corte con 11,2 tf por metro de ancho en cada apoyo.`,
     L`No son aplicables a losas simplemente apoyadas con bordes laterales sin apoyo ni a losas con cargas vivas móviles (estacionamientos); en esos casos se debe consultar al fabricante.`,
     d.ppDem ? L`Por criterio conservador, la demanda incluye el peso propio, aunque la Tabla I ya lo considera.` : L`La demanda se compara con la Tabla I sin sumar el peso propio, porque las sobrecargas admisibles del fabricante ya lo consideran (nota b).`,
     L`Para luces intermedias se usa la columna de la primera luz tabulada mayor o igual a la de diseño, sin interpolar.`,
     d.puntual ? L`Las cargas puntuales se representan con una carga uniforme equivalente amplificada en 30\,\%, como prediseño; no se verifica el punzonamiento del hormigón.` : L`No se consideran cargas puntuales; si existen, se debe usar una carga equivalente amplificada en 30\,\% y verificar el punzonamiento.`,
     L`No se diseñan la armadura negativa sobre los apoyos intermedios, los voladizos, las aberturas ni la viga compuesta a flexión: deben ser definidos por el ingeniero calculista del proyecto.`,
+    ...(d.viga ? [L`En la viga compuesta no se verifican el diámetro del conector respecto del ala de la viga ($d \le 2{,}5\,t_f$, I8.1) ni el ancho medio del nervio de la placa ($w_r \ge 50$ mm, I3.2c), que se deben confirmar con el perfil y la geometría de la Instadeck.`] : []),
     L`La resistencia de los conectores sigue la ecuación I8-1 del AISC 360-16 con los factores $R_g$ y $R_p$ para placas con nervios perpendiculares a la viga.`,
   ].map(t => `\\item ${t}`).join("\n");
   return L`\documentclass[11pt,letterpaper]{article}

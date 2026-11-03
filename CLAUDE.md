@@ -23,7 +23,7 @@ Todo el texto de la interfaz, las memorias y los commits va en **español (Chile
   - `placa.html`: losa con placa colaborante Instadeck 0,8 mm (Cintac).
     - Sigue el procedimiento del fabricante con sus tablas (SDI 1991): Tabla I sobrecarga admisible (columna de la primera luz tabulada ≥ L, sin interpolar), Tabla II deformaciones por número de tramos, Tabla III alzaprimado temporal y Tabla IV peso propio y cubicación. Los valores no se recalculan.
     - Espesor `eh`: automático (el menor que cumple la losa) o fijo. La demanda es carga permanente adicional + sobrecarga de uso; el peso propio se suma solo si se marca `ppDem` (la Tabla I ya lo considera). Cargas puntuales: +30 % y aviso de punzonamiento.
-    - Malla de retracción ≥ 1,8 cm²/m. Conectores en los apoyos: Q_n con AISC I8-1 (R_g, R_p) o dato del fabricante; resistencia ≥ 11,2 tf por metro de ancho (nota d de la Tabla I); altura ≥ 38 mm sobre la cresta y recubrimiento ≥ 13 mm (I8.2d). Sin conectores la losa queda "sin verificar".
+    - Malla de retracción ≥ 1,8 cm²/m. Conectores en los apoyos: Q_n con AISC I8-1 (R_g, R_p) o dato del fabricante; resistencia ≥ 11,2 tf por metro de ancho (nota d de la Tabla I); altura ≥ 38 mm sobre la cresta y recubrimiento ≥ 13 mm (I8.2d); un conector más bajo que el nervio da D/C infinito. f'c ≥ 214 kgf/cm² (21 MPa, I1.3). Sin conectores la losa queda "sin verificar".
     - Opcional: conectores de la viga de apoyo con acción compuesta completa (I3.1a, I3-1a/b, I3.2c); no se verifica la flexión de la viga compuesta ni la armadura negativa.
   - `hormigon.html`: ACI 318-08.
   - `madera.html`: NCh 1198:2024.
