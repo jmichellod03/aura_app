@@ -1152,6 +1152,8 @@ function generarS2K() {
     + tabla("CASE - STATIC 1 - LOAD ASSIGNMENTS", pats.map(([p]) => ({ Case: p, LoadType: "Load pattern", LoadName: p, LoadSF: 1 })))
     + tabla("COMBINATION DEFINITIONS", combos)
     + (cargas.length ? tabla("FRAME LOADS - DISTRIBUTED", cargas) : "")
+    // Sin combinaciones automáticas de diseño (DSTL…): se diseña solo con las de NCh 3171
+    + tabla("AUTO COMBINATION OPTION DATA 01 - GENERAL", [{ DesignType: "Concrete", AutoGen: "No" }, { DesignType: "Steel", AutoGen: "No" }])
     // Preferencias de diseño (mismas tablas que exporta SAP2000 v26): AISC 360-16 LRFD y AISI-16 LRFD
     + tabla("PREFERENCES - STEEL DESIGN - AISC 360-16", [{ THDesign: "Envelopes", FrameType: "OMF", PatLLF: 0.75, SRatioLimit: 1, MaxIter: 1, SDC: "D", SeisCode: "No", SeisLoad: "No", ImpFactor: 1, SystemRho: 1, SystemSds: 0.5, SystemR: 8, SystemCd: 5.5, Omega0: 3, Provision: "LRFD", AMethod: "Direct Analysis", SOMethod: "General 2nd Order", SRMethod: "Tau-b Fixed", NLCoeff: 0.002, PhiB: 0.9, PhiC: 0.9, PhiTY: 0.9, PhiTF: 0.75, PhiV: 0.9, PhiVRolledI: 1, PhiVT: 0.9, PlugWeld: "Yes", HSSWelding: "ERW", HSSReduceT: "No", CheckDefl: "No", DLRat: 120, SDLAndLLRat: 120, LLRat: 360, TotalRat: 240, NetRat: 240 }])
     + tabla("PREFERENCES - COLD FORMED DESIGN - AISI-16", [{ THDesign: "Envelopes", FrameType: "Braced Frame", SRatioLimit: 1, SOMethod: "General 2nd Order", Provision: "LRFD", LatFact: 1.3333333333333333, UseLatFact: "No", PhiTy: 0.9, PhiTr: 0.75, PhiC: 0.85, PhiB: 0.9, PhiBPipe: 0.95, PhiV: 0.95 }])
