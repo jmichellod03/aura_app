@@ -607,12 +607,39 @@ function descargarBlob(blob, nombre) {
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }
+// Texto del usuario → LaTeX: escapa los caracteres especiales y quita los que pdflatex no puede componer (emojis, símbolos fuera del BMP)
+const escTex = (s) => String(s ?? "")
+  .replace(/[\u{10000}-\u{10FFFF}☀-➿️‍]/gu, "").replace(/[\u0000-\u0008\u000B-\u001F]/g, "")
+  .replace(/[\\{}&%$#_~^]/g, c => ({ "\\": "\\textbackslash{}", "{": "\\{", "}": "\\}", "&": "\\&", "%": "\\%", "$": "\\$", "#": "\\#", "_": "\\_", "~": "\\textasciitilde{}", "^": "\\textasciicircum{}" }[c]))
+  .replace(/\s{2,}/g, " ").trim();
+// Oficina de cálculo para el pie de página: la del proyecto activo o la última ingresada
+function oficinaMemoria() {
+  if (window.AURA_OFICINA) return window.AURA_OFICINA;
+  try { return localStorage.getItem("auraOficina") || ""; } catch { return ""; }
+}
+// Estilo común con la memoria de un proyecto: Helvetica, interlineado simple y pie con la oficina al centro y la página a la derecha
+function estiloMemoria(tex, oficina) {
+  const ini = tex.indexOf("\\begin{document}");
+  if (ini < 0) return tex;
+  const pre = tex.slice(0, ini).replace(/^\\(?:[lcr]foot\{.*\}|renewcommand\{\\footrulewidth\}\{.*\})[ \t]*\n/gm, "");
+  const of = escTex(oficina);
+  const estilo = String.raw`\usepackage{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage{setspace}
+\setlength{\parindent}{0pt}
+\singlespacing
+\cfoot{\small ${of}}
+\rfoot{\small\thepage}
+\renewcommand{\footrulewidth}{0pt}
+`;
+  return pre + estilo + tex.slice(ini);
+}
 // Arma y descarga el .zip de una memoria: .tex con citas, referencias.bib y figuras PNG
 async function descargarZipMemoria(tex, nombre, contenedor) {
   if (!tex) { alert("Corrija los datos inválidos antes de descargar la memoria."); return; }
   const base = nombre.replace(/\.tex$/i, "");
   const fig = await prepararFiguras(tex, contenedor);
-  const { tex: conRef, usadas } = conCitas(fig.tex);
+  const { tex: conRef, usadas } = conCitas(estiloMemoria(fig.tex, oficinaMemoria()));
   const archivos = [{ nombre: `${base}.tex`, datos: texUnicode(conRef) }];
   if (usadas.length) archivos.push({ nombre: "referencias.bib", datos: usadas.map(u => u.bib).join("\n\n") + "\n" });
   descargarBlob(crearZip([...archivos, ...fig.archivos]), `${base}.zip`);

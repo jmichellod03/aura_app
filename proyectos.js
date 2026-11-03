@@ -136,11 +136,6 @@ const ls = {
 const proyectoActivoId = () => ls.get("auraProyectoActivo");
 const fijarProyectoActivo = (id) => ls.set("auraProyectoActivo", id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-// Texto del usuario → LaTeX: escapa los caracteres especiales y quita los que pdflatex no puede componer (emojis, símbolos fuera del BMP)
-const escTex = (s) => String(s ?? "")
-  .replace(/[\u{10000}-\u{10FFFF}☀-➿️‍]/gu, "").replace(/[\u0000-\u0008\u000B-\u001F]/g, "")
-  .replace(/[\\{}&%$#_~^]/g, c => ({ "\\": "\\textbackslash{}", "{": "\\{", "}": "\\}", "&": "\\&", "%": "\\%", "$": "\\$", "#": "\\#", "_": "\\_", "~": "\\textasciitilde{}", "^": "\\textasciicircum{}" }[c]))
-  .replace(/\s{2,}/g, " ").trim();
 const fechaLarga = (iso) => {
   const d = iso ? new Date(iso + "T12:00:00") : new Date();
   return d.toLocaleDateString("es-CL", { day: "numeric", month: "long", year: "numeric" });
@@ -276,6 +271,7 @@ ${pre.join("\n")}
 \cfoot{\small ${escTex(p.oficina || "")}}
 \rfoot{\small\thepage}
 \renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
 \fancypagestyle{plain}{\fancyhf{}\cfoot{\small ${escTex(p.oficina || "")}}\rfoot{\small\thepage}\renewcommand{\headrulewidth}{0pt}}
 % Índice con hipervínculos (al final del preámbulo)
 \usepackage[hidelinks]{hyperref}
@@ -411,6 +407,7 @@ async function pintarPanel() {
   const panel = document.getElementById("auraPanel");
   if (!panel) return;
   const p = proyectoActivoId() ? await Proyectos.obtener(proyectoActivoId()) : null;
+  window.AURA_OFICINA = p ? p.oficina : undefined;   // pie de página de las memorias individuales
   const tab = document.getElementById("auraPanelTab");
   tab.textContent = p ? `Proyecto: ${p.nombre.length > 22 ? p.nombre.slice(0, 21) + "…" : p.nombre}` : "Proyectos";
   if (!p) {

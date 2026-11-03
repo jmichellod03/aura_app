@@ -117,6 +117,7 @@
       <div class="tabs">
         <button id="tabEnv" class="on" type="button">Envigado</button>
         <button id="tabTab" type="button">Pie derecho (tabique)</button>
+        <button id="tabPil" type="button">Pilar</button>
         <button id="tabMuro" type="button">Muro de corte</button>
       </div>
       <div id="inEnv">
@@ -299,6 +300,83 @@
       </fieldset>
       </div>
 
+      <!-- Pilar: mismo cálculo que el pie derecho, con carga de viento opcional -->
+      <div id="inPil" class="hidden">
+      <fieldset>
+        <legend>Material y sección</legend>
+        <div class="row2">
+          <div><label for="piGrado">Grado (pino radiata)</label>
+            <select id="piGrado"><option>GS</option><option>G1+</option><option selected>G1</option><option>G2</option><option>C24</option><option>C16</option><option>MGP10</option><option>MGP12</option></select></div>
+          <div><label for="piH">Humedad H <span class="unit">[%]</span></label><input id="piH" type="number" step="1" min="12" max="40" value="18"></div>
+        </div>
+        <label for="piEsc">Escuadría</label>
+        <select id="piEsc"></select>
+        <div class="row2" id="pigCustom">
+          <div><label for="pib">b <span class="unit">[mm]</span></label><input id="pib" type="number" step="1" min="20" value="140"></div>
+          <div><label for="pih">h (en la dirección del viento) <span class="unit">[mm]</span></label><input id="pih" type="number" step="1" min="20" value="140"></div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Geometría y pandeo</legend>
+        <div class="row2">
+          <div><label for="piL">Altura del pilar L <span class="unit">[cm]</span></label><input id="piL" type="number" step="0.5" min="10" value="240"></div>
+          <div><label for="piS">Ancho tributario s <span class="unit">[m]</span></label><input id="piS" type="number" step="0.01" min="0.1" value="2"></div>
+          <div><label for="piLpx">L<sub>p,x</sub> pandeo en torno a x <span class="unit">[cm]</span></label><input id="piLpx" type="number" step="0.5" min="0" placeholder="auto: L"></div>
+          <div><label for="piLpy">L<sub>p,y</sub> pandeo en torno a y <span class="unit">[cm]</span></label><input id="piLpy" type="number" step="0.5" min="0" placeholder="auto: L"></div>
+        </div>
+        <label for="piKp">Condición de apoyo (factor de longitud efectiva K<sub>p</sub>)</label>
+        <select id="piKp"></select>
+        <label for="piKpTipo">Valores de K<sub>p</sub></label>
+        <select id="piKpTipo"><option value="1">Teóricos</option><option value="2">Recomendados de diseño</option></select>
+      </fieldset>
+
+      <fieldset>
+        <legend>Cargas de servicio (por metro de ancho tributario)</legend>
+        <div class="row3">
+          <div><label for="piPP">q<sub>PP</sub> <span class="unit">[kgf/m]</span></label><input id="piPP" type="number" step="any" min="0" value="120"></div>
+          <div><label for="piSCp">q<sub>SC,piso</sub> <span class="unit">[kgf/m]</span></label><input id="piSCp" type="number" step="any" min="0" value="200"></div>
+          <div><label for="piSCt">q<sub>SC,techo</sub> <span class="unit">[kgf/m]</span></label><input id="piSCt" type="number" step="any" min="0" value="40"></div>
+        </div>
+        <div class="unit" style="margin-top:6px">El pilar recibe q·s como carga axial.</div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Carga de viento</legend>
+        <label class="chk"><input type="checkbox" id="piV"> Considerar carga de viento en el pilar</label>
+        <div id="pigViento" class="hidden">
+          <label for="piqv">Presión de viento q<sub>v</sub> <span class="unit">[kgf/m²]</span></label>
+          <input id="piqv" type="number" step="any" min="0" value="84">
+          <div class="row2">
+            <div><label for="pila">Dist. apoyos laterales l<sub>a</sub> <span class="unit">[cm]</span></label><input id="pila" type="number" step="1" min="0" placeholder="auto: L"></div>
+            <div><label for="piApoyo">Canto comprimido (flexión)</label>
+              <select id="piApoyo"><option value="anc">Apoyo no continuo</option><option value="ac">Apoyo continuo</option></select></div>
+            <div><label for="piKDv">K<sub>D</sub> viento</label><input id="piKDv" type="number" step="0.05" min="0.5" value="1.6"></div>
+          </div>
+          <label for="piDef">Deformación por viento (8.2.4.8, Tabla 6)</label>
+          <select id="piDef"><option value="0">No verificar</option><option value="240">Con enlucidos frágiles (L/240)</option><option value="120" selected>Sin enlucidos frágiles (L/120)</option></select>
+          <div class="unit" style="margin-top:6px">El viento actúa sobre el ancho tributario: w = q<sub>v</sub>·s.</div>
+        </div>
+        <div class="unit" style="margin-top:6px">Sin esta opción solo se verifican compresión paralela y compresión normal.</div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Duración de la carga (K<sub>D</sub>) y apoyo</legend>
+        <div class="row2">
+          <div><label for="piKDpp">PP sola (permanente)</label><input id="piKDpp" type="number" step="0.01" min="0.5" value="0.9"></div>
+          <div><label for="piKDsc">SC de piso</label><input id="piKDsc" type="number" step="0.05" min="0.5" value="1"></div>
+          <div><label for="piKDt">SC de techo</label><input id="piKDt" type="number" step="0.05" min="0.5" value="1.25"></div>
+          <div><label for="piKcn">K<sub>cn</sub> apoyo (8.5)</label><input id="piKcn" type="number" step="0.05" min="0.5" max="1.8" value="0.8"></div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Combinación a analizar</legend>
+        <label for="piComb">Combinación</label>
+        <select id="piComb"><option value="auto">Crítica (automática)</option></select>
+      </fieldset>
+      </div>
+
       <!-- Muro de corte (NCh 1198:2024, cláusula 12; planilla FULL MADERA, hoja Muro corte) -->
       <div id="inMuro" class="hidden">
       <fieldset>
@@ -398,15 +476,14 @@
     <div id="figMuro" class="figMuro hidden"></div>
     <div class="toolbar">
       <button class="btn sec" type="button" onclick="window.print()">Imprimir</button>
-      <button class="btn" type="button" id="btnTex">Descargar memoria (.tex)</button>
-        <button class="btn" type="button" onclick="descargarZipMemoria(ultimoTex, ultimoNombre, document.body)">Descargar .zip (Overleaf)</button>
+        <button class="btn" type="button" onclick="descargarZipMemoria(ultimoTex, ultimoNombre, document.body)">Descargar memoria (.zip)</button>
     </div>
     <div class="memo" id="memo"></div>
   </section>
 </main>
 <footer>Herramienta de apoyo académico basada en NCh 1198:2024 y en la planilla «FULL MADERA». Verifique siempre los resultados.</footer>
 
-<script src="memo.js?v=28"></script>
+<script src="memo.js?v=31"></script>
 <script>
 "use strict";
 // ---------------------------------------------------------------------------
@@ -580,6 +657,36 @@ function reglasTabique() {
   if ($("tLpx").value.trim() !== "") r.push(["tLpx", 0, true]);
   return r;
 }
+// El pilar usa el mismo cálculo del pie derecho; sin la opción de viento, q_v = 0 y no hay combinaciones con viento
+function leerPilar() {
+  const esc = $("piEsc").value;
+  const [b, h] = esc === "custom" ? [num("pib"), num("pih")] : ESCUADRIAS[esc];
+  const kp = KP[$("piKp").value], tipo = +$("piKpTipo").value;
+  const conV = $("piV").checked, auto = (id) => ($(id).value.trim() === "" ? num("piL") : num(id));
+  return {
+    pilar: true, grado: $("piGrado").value, H: Math.max(12, num("piH")), esc, b, h, kc: false,
+    L: num("piL"), s: num("piS"), Lpx: auto("piLpx"), Lpy: auto("piLpy"),
+    Kp: kp[tipo], kpTxt: `${kp[0]} (${tipo === 1 ? "teórico" : "recomendado"})`,
+    la: auto("pila"), apoyoLat: $("piApoyo").value,
+    qPP: num("piPP"), qSCp: num("piSCp"), qSCt: num("piSCt"), qv: conV ? num("piqv") : 0,
+    KDsc: num("piKDsc"), KDt: num("piKDt"), KDv: num("piKDv"), KDpp: num("piKDpp"), Kcn: num("piKcn"), comb: $("piComb").value, def: +$("piDef").value,
+  };
+}
+function reglasPilar() {
+  const r = [["piH", 0, true], ["piL", 0, true], ["piS", 0, true], ["piPP", 0], ["piSCp", 0], ["piSCt", 0],
+    ["piKDsc", 0, true], ["piKDt", 0, true], ["piKDpp", 0, true], ["piKcn", 0, true]];
+  if ($("piEsc").value === "custom") r.push(["pib", 0, true], ["pih", 0, true]);
+  ["piLpx", "piLpy"].forEach(id => { if ($(id).value.trim() !== "") r.push([id, 0, true]); });
+  if ($("piV").checked) {
+    r.push(["piqv", 0], ["piKDv", 0, true]);
+    if ($("pila").value.trim() !== "") r.push(["pila", 0]);
+  }
+  return r;
+}
+// Textos propios de cada elemento (el pilar comparte el cálculo con el pie derecho)
+const textosPie = (d) => (d.pilar
+  ? { nom: "pilar", El: "El pilar", el: "el pilar", del: "del pilar", corto: "en el apoyo", cn: "Compresión normal en el apoyo — 8.5", sop: "el elemento de apoyo", ejeX: "en torno al eje x" }
+  : { nom: "pie derecho", El: "El pie derecho", el: "el pie derecho", del: "del pie derecho", corto: "en la solera", cn: "Compresión normal en la solera inferior — 8.5", sop: "la solera inferior", ejeX: "fuera del plano" });
 function reglasEnv() {
   const r = [["H", 0, true], ["L", 0, true], ["la", 0], ["P", 0], ["Lap", 0, true], ["Kcn", 0, true]];
   if ($("esc").value === "custom") r.push(["b", 0, true], ["h", 0, true]);
@@ -599,7 +706,7 @@ function reglasEnv() {
 }
 
 function calcularTabique(d, m) {
-  const r = {};
+  const r = {}, E = textosPie(d);
   const bc = d.b / 10, hc = d.h / 10, A = bc * hc, W = bc * hc ** 2 / 6;   // cm
   const [FfM, FcpM, , FcnM, FczM, EfM] = U1[d.grado];
   const Ff = FfM * MPA, Fcp = FcpM * MPA, Fcn = FcnM * MPA, Fcz = FczM * MPA, Ef = EfM * MPA;
@@ -614,11 +721,11 @@ function calcularTabique(d, m) {
   const combos = combinaciones(d, w > 0);
   combos.forEach(c => { c.P = c.q * d.s; });
   combos.forEach(c => m.row(`Carga axial, ${c.n} (${c.txt}), K<sub>D</sub> = ${fmt(c.KD, 2)}: P`, `${fmt(c.P, 2)} kgf`));
-  if (w > 0) m.row("Carga de viento por pie derecho ; momento ; corte: w ; M<sub>V</sub> ; V<sub>V</sub>", `${fmt(w, 2)} kgf/m ; ${fmt(MV, 1)} kgf·cm ; ${fmt(VV, 2)} kgf`);
-  m.p(L`El análisis se centra en el pie derecho del tabique, de escuadría $b \times h = ${tn(d.b, 0)} \times ${tn(d.h, 0)}$ mm y altura $L = ${tn(d.L, 1)}$ cm. Cada pie derecho recibe las cargas lineales del tabique sobre su ancho tributario $s = ${tn(d.s)}$ m; en cada combinación se usa el $K_D$ de la carga de menor duración (Anexo G):`, true);
+  if (w > 0) m.row(`Carga de viento sobre ${E.el} ; momento ; corte: w ; M<sub>V</sub> ; V<sub>V</sub>`, `${fmt(w, 2)} kgf/m ; ${fmt(MV, 1)} kgf·cm ; ${fmt(VV, 2)} kgf`);
+  m.p(L`El análisis se centra en ${d.pilar ? "el pilar" : "el pie derecho del tabique"}, de escuadría $b \times h = ${tn(d.b, 0)} \times ${tn(d.h, 0)}$ mm y altura $L = ${tn(d.L, 1)}$ cm. ${d.pilar ? "El pilar recibe las cargas lineales" : "Cada pie derecho recibe las cargas lineales del tabique"} sobre su ancho tributario $s = ${tn(d.s)}$ m; en cada combinación se usa el $K_D$ de la carga de menor duración (Anexo G):`, true);
   combos.filter(c => !c.viento).forEach(c => m.eq(L`P_{${c.n}} = (${c.tex.replace(/PP/g, "q_{PP}").replace(/SC_\{piso\}/g, "q_{SC,piso}").replace(/SC_\{techo\}/g, "q_{SC,techo}")})\,s = ${tn(c.q, 2)}\cdot ${tn(d.s)} = ${tn(c.P, 2)}\ \mathrm{kgf}`));
   if (w > 0) {
-    m.p(L`Las combinaciones con viento tienen la misma carga axial que su par gravitacional ($P_{C4} = P_{C2}$, $P_{C5} = P_{C3}$). La presión de viento $q_v = ${tn(d.qv, 1)}$ kgf/m$^2$ (NCh 432 Of.1971) actúa perpendicular al tabique:`, true);
+    m.p(L`Las combinaciones con viento tienen la misma carga axial que su par gravitacional ($P_{C4} = P_{C2}$, $P_{C5} = P_{C3}$). La presión de viento $q_v = ${tn(d.qv, 1)}$ kgf/m$^2$ (NCh 432 Of.1971) actúa ${d.pilar ? "sobre el ancho tributario del pilar" : "perpendicular al tabique"}:`, true);
     m.eq(L`w = q_v\,s = ${tn(d.qv, 1)}\cdot ${tn(d.s)} = ${tn(w, 2)}\ \mathrm{kgf/m}`);
     m.eq(L`M_V = \frac{w\,L^2}{8} = \frac{${tn(w, 2)}\cdot ${tn(Lm, 3)}^2}{8} = ${tn(MV / 100, 3)}\ \mathrm{kgf\cdot m} = ${tn(MV, 1)}\ \mathrm{kgf\cdot cm}`);
     m.eq(L`V_V = \frac{w\,L}{2} = \frac{${tn(w, 2)}\cdot ${tn(Lm, 3)}}{2} = ${tn(VV, 2)}\ \mathrm{kgf}`);
@@ -635,7 +742,7 @@ function calcularTabique(d, m) {
   m.h("Factores de modificación y propiedades de diseño");
   m.row("Factor de modificación por humedad (flexión ; c. paralela ; cizalle ; c. normal ; E): K<sub>H</sub>",
     ["Ff", "Fcp", "Fcz", "Fcn", "Ef"].map(k => fmt(KH(k), 3)).join(" ; "), "7.1.1");
-  m.row("Factor de modificación por duración de la carga (PP ; SC piso ; SC techo ; viento): K<sub>D</sub>", `${fmt(d.KDpp, 2)} ; ${fmt(d.KDsc, 2)} ; ${fmt(d.KDt, 2)} ; ${fmt(d.KDv, 2)}`, "Anexo G");
+  m.row(`Factor de modificación por duración de la carga (PP ; SC piso ; SC techo${w > 0 ? " ; viento" : ""}): K<sub>D</sub>`, `${fmt(d.KDpp, 2)} ; ${fmt(d.KDsc, 2)} ; ${fmt(d.KDt, 2)}${w > 0 ? ` ; ${fmt(d.KDv, 2)}` : ""}`, "Anexo G");
   m.row("Factores por trabajo conjunto ; altura en flexión: K<sub>c</sub> ; K<sub>hf</sub>", `${fmt(Kc, 2)} ; ${fmt(Khf, 3)}`, "7.1.3 / 8.2.2.3");
   m.row("Factor de altura en E según h ; según b: K<sub>hE,x</sub> ; K<sub>hE,y</sub>", `${fmt(KhEx, 3)} ; ${fmt(KhEy, 3)}`);
   m.row("Módulos de elasticidad de diseño: E<sub>x,dis</sub> ; E<sub>y,dis</sub>", `${fmt(Ex, 0)} ; ${fmt(Ey, 0)} kgf/cm²`);
@@ -715,12 +822,12 @@ function calcularTabique(d, m) {
   // En el .tex esta tabla va al final (resumen por combinación)
   m.modo = "pantalla";
   m.h("Resumen de combinaciones de carga");
-  tablaCombinaciones(m, combos, sel, crit, "del pie derecho", { f: "f<sub>cp</sub>", F: "F<sub>cp,λ,dis</sub>" });
+  tablaCombinaciones(m, combos, sel, crit, E.del, { f: "f<sub>cp</sub>", F: "F<sub>cp,λ,dis</sub>" });
   m.modo = "ambos";
 
   // Bloques de la memoria (combinación analizada en pantalla; todas las combinaciones en el .tex)
   const secEsbeltez = () => {
-    m.p(L`\textbf{Esbelteces.} La longitud de pandeo fuera del plano del tabique es $L_{p,x} = ${tn(d.Lpx, 1)}$ cm y en el plano $L_{p,y} = ${tn(d.Lpy, 1)}$ cm (distancia entre cadenetas). Con la condición de apoyo ${d.kpTxt.replace(/–/g, "--")}, el coeficiente de longitud efectiva según la Tabla J.1 es $K_p = ${tn(d.Kp, 2)}$. El radio de giro de una sección rectangular es $i = 0{,}289$ veces la dimensión en la dirección del pandeo:`, true);
+    m.p(L`\textbf{Esbelteces.} ${d.pilar ? L`Las longitudes de pandeo son $L_{p,x} = ${tn(d.Lpx, 1)}$ cm en torno al eje x y $L_{p,y} = ${tn(d.Lpy, 1)}$ cm en torno al eje y.` : L`La longitud de pandeo fuera del plano del tabique es $L_{p,x} = ${tn(d.Lpx, 1)}$ cm y en el plano $L_{p,y} = ${tn(d.Lpy, 1)}$ cm (distancia entre cadenetas).`} Con la condición de apoyo ${d.kpTxt.replace(/–/g, "--")}, el coeficiente de longitud efectiva según la Tabla J.1 es $K_p = ${tn(d.Kp, 2)}$. El radio de giro de una sección rectangular es $i = 0{,}289$ veces la dimensión en la dirección del pandeo:`, true);
     m.eq(L`\lambda_x = \frac{K_p L_{p,x}}{0{,}289\,h} = \frac{${tn(d.Kp, 2)}\cdot ${tn(d.Lpx, 1)}}{0{,}289\cdot ${tn(hc, 1)}} = ${tn(lx, 2)} \qquad \lambda_y = \frac{K_p L_{p,y}}{0{,}289\,b} = \frac{${tn(d.Kp, 2)}\cdot ${tn(d.Lpy, 1)}}{0{,}289\cdot ${tn(bc, 1)}} = ${tn(ly, 2)}`);
     m.eq(L`\lambda = \max(\lambda_x,\ \lambda_y) = ${tn(lam, 2)} \;${lam <= 170 ? L`\le` : ">"}\; 170 \qquad F_{cE} = \frac{3{,}6\,E_{${ejeY ? "y" : "x"},dis}}{\lambda^2} = \frac{3{,}6\cdot ${tn(Ec, 0)}}{${tn(lam, 2)}^2} = ${tn(FcE, 3)}\ \mathrm{kgf/cm^2}`, "8.3");
     m.p(L`De acuerdo con la Tabla 9 de la NCh 1198, el coeficiente de proporcionalidad para el grado ${d.grado} es $c = ${tn(cc, 2)}$.`, true);
@@ -732,13 +839,13 @@ function calcularTabique(d, m) {
       m.eq(L`A = \frac{\frac{F_{cE}}{F_{cp,dis}}\left(1 + \frac{\lambda}{200}\right) + 1}{2c} = \frac{\frac{${tn(FcE, 3)}}{${tn(c.Fcpd, 2)}}\left(1 + \frac{${tn(lam, 2)}}{200}\right) + 1}{2\cdot ${tn(cc, 2)}} = ${tn(c.Ac, 4)}`, "8.3");
       m.eq(L`B = \frac{F_{cE}}{c\,F_{cp,dis}} = \frac{${tn(FcE, 3)}}{${tn(cc, 2)}\cdot ${tn(c.Fcpd, 2)}} = ${tn(c.Bc, 4)}`);
       m.eq(L`K_\lambda = A - \sqrt{A^2 - B} = ${tn(c.Ac, 4)} - \sqrt{${tn(c.Ac, 4)}^2 - ${tn(c.Bc, 4)}} = ${tn(c.Kl, 4)}`);
-    } else m.p(L`Como $\lambda = ${tn(lam, 2)} < 10$, el pie derecho es corto y no hay reducción por pandeo: $K_\lambda = 1$.`);
+    } else m.p(L`Como $\lambda = ${tn(lam, 2)} < 10$, ${E.el} es corto y no hay reducción por pandeo: $K_\lambda = 1$.`);
     m.eq(L`F_{cp,\lambda,dis} = F_{cp,dis}\,K_\lambda = ${tn(c.Fcpd, 2)}\cdot ${tn(c.Kl, 4)} = ${tn(c.Fcl, 2)}\ \mathrm{kgf/cm^2}`);
     m.eq(chequeo("f_{cp}", c.fc, L`F_{cp,\lambda,dis}`, c.Fcl, UKG, 3));
   };
   // Desarrollo de la flexión por viento (sin título)
   const devFlexion = () => {
-    m.p(L`\textbf{Tensión de trabajo en flexión.} El empuje del viento genera flexión en el pie derecho; con el módulo resistente de la sección:`, true);
+    m.p(L`\textbf{Tensión de trabajo en flexión.} El empuje del viento genera flexión en ${E.el}; con el módulo resistente de la sección:`, true);
     m.eq(L`W = \frac{b\,h^2}{6} = \frac{${tn(bc, 1)}\cdot ${tn(hc, 1)}^2}{6} = ${tn(W, 2)}\ \mathrm{cm^3}`);
     m.eq(L`f_f = \frac{M_V}{W} = \frac{${tn(MV, 1)}}{${tn(W, 2)}} = ${tn(ff, 2)}\ \mathrm{kgf/cm^2}`);
     m.p(L`\textbf{Canto flexotraccionado.} Con el factor de duración del viento $K_D = ${tn(d.KDv, 2)}$:`, true);
@@ -761,13 +868,13 @@ function calcularTabique(d, m) {
     m.eq(chequeo("f_f", ff, "F_{f,dis}", Fdis));
   };
   const devCizalle = () => {
-    m.p(L`Con el corte máximo producido por el viento en los apoyos del pie derecho se calcula la tensión de cizalle, y se compara con la tensión de diseño con $K_D = ${tn(d.KDv, 2)}$ (sin rebajes, $K_r = 1$):`, true);
+    m.p(L`Con el corte máximo producido por el viento en los apoyos ${E.del} se calcula la tensión de cizalle, y se compara con la tensión de diseño con $K_D = ${tn(d.KDv, 2)}$ (sin rebajes, $K_r = 1$):`, true);
     m.eq(L`f_{cz} = \frac{1{,}5\,V_V}{b\,h} = \frac{1{,}5\cdot ${tn(VV, 2)}}{${tn(bc, 1)}\cdot ${tn(hc, 1)}} = ${tn(fcz, 3)}\ \mathrm{kgf/cm^2}`, "8.2.3");
     m.eq(L`F_{cz,dis} = F_{cz}\,K_H\,K_D = ${tn(Fcz, 1)}\cdot ${tn(KH("Fcz"), 3)}\cdot ${tn(d.KDv, 2)} = ${tn(Fczd, 2)}\ \mathrm{kgf/cm^2}`);
     m.eq(chequeo("f_{cz}", fcz, "F_{cz,dis}", Fczd, UKG, 3));
   };
   const devDef = () => {
-    m.p(L`El empuje del viento produce una deformación lateral del pie derecho, suma de la componente por flexión y la componente por corte (8.2.4.12, con $G = 0{,}065\,E_{x,dis}$), que se compara con el límite de la Tabla 6 para muros ${d.def === 240 ? "con enlucidos frágiles" : "sin enlucidos frágiles"}:`, true);
+    m.p(L`El empuje del viento produce una deformación lateral ${E.del}, suma de la componente por flexión y la componente por corte (8.2.4.12, con $G = 0{,}065\,E_{x,dis}$), que se compara con el límite de la Tabla 6 ${d.pilar ? L`($L/${d.def}$)` : d.def === 240 ? "para muros con enlucidos frágiles" : "para muros sin enlucidos frágiles"}:`, true);
     m.eq(L`I_x = \frac{b\,h^3}{12} = \frac{${tn(bc, 1)}\cdot ${tn(hc, 1)}^3}{12} = ${tn(Ix, 1)}\ \mathrm{cm^4} \qquad G = 0{,}065\,E_{x,dis} = 0{,}065\cdot ${tn(Ex, 0)} = ${tn(G, 0)}\ \mathrm{kgf/cm^2}`);
     m.eq(L`\delta_{V,f} = \frac{5\,w\,L^4}{384\,E_{x,dis}\,I_x} = \frac{5\cdot ${tn(w / 100, 4)}\cdot ${tn(d.L, 1)}^4}{384\cdot ${tn(Ex, 0)}\cdot ${tn(Ix, 1)}} = ${tn(r.dVf, 3)}\ \mathrm{mm}`, "8.2.4");
     m.eq(L`\delta_{V,Q} = \frac{1{,}2\,M_V}{G\,b\,h} = \frac{1{,}2\cdot ${tn(MV, 1)}}{${tn(G, 0)}\cdot ${tn(bc, 1)}\cdot ${tn(hc, 1)}} = ${tn(r.dVq, 3)}\ \mathrm{mm}`, "8.2.4.12");
@@ -775,8 +882,8 @@ function calcularTabique(d, m) {
   };
   const eqFcEx = () => m.eq(L`F_{cE,x} = \frac{3{,}6\,E_{x,dis}}{\lambda_x^2} = \frac{3{,}6\cdot ${tn(Ex, 0)}}{${tn(lx, 2)}^2} = ${tn(FcEx, 3)}\ \mathrm{kgf/cm^2}`);
   const eqInter = (c) => {
-    if (!(c.amp > 0)) m.note(`${c.n}: f<sub>cp</sub> ≥ F<sub>cE,x</sub>, el pie derecho es inestable fuera del plano (interacción = ∞).`,
-      L`${c.n}: $f_{cp} \ge F_{cE,x}$, el pie derecho es inestable fuera del plano (interacción $= \infty$).`);
+    if (!(c.amp > 0)) m.note(`${c.n}: f<sub>cp</sub> ≥ F<sub>cE,x</sub>, ${E.el} es inestable ${E.ejeX} (interacción = ∞).`,
+      L`${c.n}: $f_{cp} \ge F_{cE,x}$, ${E.el} es inestable ${E.ejeX} (interacción $= \infty$).`);
     m.eq(L`f_{cp} = ${tn(c.fc, 3)}\ \mathrm{kgf/cm^2} \;${c.amp > 0 ? "<" : L`\ge`}\; F_{cE,x} = ${tn(FcEx, 3)}\ \mathrm{kgf/cm^2} \hspace{2em}\textbf{${c.amp > 0 ? "¡CUMPLE!" : "¡NO CUMPLE!"}}`);
     m.eq(L`\begin{aligned}&\left(\frac{f_{cp}}{F_{cp,\lambda,dis}}\right)^2 + \frac{f_f}{\left(1 - \frac{f_{cp}}{F_{cE,x}}\right)F_{f,dis}}\\ &= \left(\frac{${tn(c.fc, 3)}}{${tn(c.Fcl, 2)}}\right)^2 + \frac{${tn(ff, 2)}}{\left(1 - \frac{${tn(c.fc, 3)}}{${tn(FcEx, 2)}}\right)\cdot ${tn(Fdis, 2)}} = ${tn(c.inter, 3)}\end{aligned} \;${cmp(c.inter, 1)}\; 1`);
   };
@@ -793,7 +900,7 @@ function calcularTabique(d, m) {
   m.modo = "pantalla";
   m.h(`Compresión paralela — combinación ${sel.n} (8.3)`);
   m.row("Factor de longitud efectiva: K<sub>p</sub>", `${fmt(d.Kp, 2)} — ${d.kpTxt}`);
-  m.row("Esbeltez fuera del plano ; en el plano: λ<sub>x</sub> ; λ<sub>y</sub>", `${fmt(lx, 2)} ; ${fmt(ly, 2)}`);
+  m.row(`Esbeltez ${d.pilar ? "en torno a x ; en torno a y" : "fuera del plano ; en el plano"}: λ<sub>x</sub> ; λ<sub>y</sub>`, `${fmt(lx, 2)} ; ${fmt(ly, 2)}`);
   m.row("Esbeltez controlante: λ ≤ 170", `${fmt(lam, 2)} ${okTxt(lam <= 170)}`);
   m.row(`Tensión crítica de pandeo (eje ${ejeY ? "y" : "x"}) ; coeficiente de proporcionalidad: F<sub>cE</sub> ; c`, `${fmt(FcE, 2)} kgf/cm² ; ${fmt(cc, 2)}`);
   m.row(`<b>Combinación analizada ${sel.n} (K<sub>D</sub> = ${fmt(sel.KD, 2)}): f<sub>cp</sub> / F<sub>cp,λ,dis</sub></b>`, `<b>${fmt(sel.fc, 3)} / ${fmt(sel.Fcl, 2)} = ${fmt(sel.ratio, 3)}</b> ${okTxt(sel.ratio <= 1)}`);
@@ -826,15 +933,15 @@ function calcularTabique(d, m) {
       devDef();
     }
     m.h(`Flexión y compresión combinadas — combinación ${sel.n}`);
-    m.row("Tensión crítica de pandeo fuera del plano: F<sub>cE,x</sub>", `${fmt(FcEx, 2)} kgf/cm²`);
+    m.row(`Tensión crítica de pandeo ${E.ejeX}: F<sub>cE,x</sub>`, `${fmt(FcEx, 2)} kgf/cm²`);
     m.row("Tensión de compresión ; tensión de diseño con pandeo: f<sub>cp</sub> ; F<sub>cp,λ,dis</sub>", `${fmt(sel.fc, 3)} ; ${fmt(sel.Fcl, 2)} kgf/cm²`);
     m.row("<b>Interacción flexocompresión</b>", `<b>${fmt(r.fc, 3)}</b> ${okTxt(r.fc <= 1 && sel.amp > 0)}`);
     eqFcEx();
     eqInter(sel);
   } else {
-    m.p(L`La combinación ${sel.n} no incluye viento, por lo que no corresponden las verificaciones de flexión, cizalle, deformación ni flexocompresión por viento.`);
+    m.p(w > 0 ? L`La combinación ${sel.n} no incluye viento, por lo que no corresponden las verificaciones de flexión, cizalle, deformación ni flexocompresión por viento.` : L`No se considera carga de viento, por lo que no corresponden las verificaciones de flexión, cizalle, deformación ni flexocompresión por viento.`);
   }
-  m.h("Compresión normal en la solera inferior — 8.5");
+  m.h(E.cn);
   r.cn = sel.rcn;
   m.row("Área de contacto ; tensión de trabajo en compresión normal: A<sub>n</sub> ; f<sub>cn</sub>", `${fmt(A, 2)} cm² ; ${fmt(sel.fcn, 3)} kgf/cm²`);
   m.row("Tensión de diseño en compresión normal: F<sub>cn,dis</sub>", `${fmt(Fcnd, 2)} kgf/cm²`, "8.5");
@@ -848,11 +955,11 @@ function calcularTabique(d, m) {
   secEsbeltez();
   for (const c of cT) {
     m.h(`Verificación de la combinación ${c.n}: $${c.tex}$`);
-    m.p(L`La combinación ${c.n} considera ${c.desc.toLowerCase()}. Se usa $K_D = ${tn(c.KD, 2)}$, correspondiente a la carga de menor duración (${c.kdTxt}), y la carga axial sobre el pie derecho es $P_{${c.n}} = ${tn(c.P, 2)}$ kgf.`);
+    m.p(L`La combinación ${c.n} considera ${c.desc.toLowerCase()}. Se usa $K_D = ${tn(c.KD, 2)}$, correspondiente a la carga de menor duración (${c.kdTxt}), y la carga axial sobre ${E.el} es $P_{${c.n}} = ${tn(c.P, 2)}$ kgf.`);
     m.sub("Compresión paralela — 8.3");
     eqComp(c);
-    m.sub("Compresión normal en la solera inferior — 8.5");
-    m.p(L`La reacción del pie derecho se transmite a la solera inferior por aplastamiento sobre el área de contacto $b\,h = ${tn(A, 2)}$ cm$^2$.`);
+    m.sub(E.cn);
+    m.p(L`La reacción ${E.del} se transmite a ${E.sop} por aplastamiento sobre el área de contacto $b\,h = ${tn(A, 2)}$ cm$^2$.`);
     eqFcn();
     eqCn(c);
     if (c.viento) {
@@ -1517,12 +1624,14 @@ let modo = "env";
 function actualizar() {
   $("inEnv").classList.toggle("hidden", modo !== "env");
   $("inTab").classList.toggle("hidden", modo !== "tab");
+  $("inPil").classList.toggle("hidden", modo !== "pil");
   $("inMuro").classList.toggle("hidden", modo !== "muro");
   $("tabEnv").classList.toggle("on", modo === "env");
   $("tabTab").classList.toggle("on", modo === "tab");
+  $("tabPil").classList.toggle("on", modo === "pil");
   $("tabMuro").classList.toggle("on", modo === "muro");
-  $("figMuro").classList.toggle("hidden", modo !== "muro");
-  if (modo === "env") actualizarEnv(); else if (modo === "tab") actualizarTab(); else actualizarMuro();
+  $("figMuro").classList.toggle("hidden", modo === "env");
+  if (modo === "env") actualizarEnv(); else if (modo === "tab") actualizarTab(); else if (modo === "pil") actualizarPilar(); else actualizarMuro();
 }
 
 // Tarjetas de resumen: [título, razón, detalle]
@@ -1620,14 +1729,135 @@ Con una razón máxima de ${tnT(dc, 3)}, ${sujeto} \textbf{${ok ? "cumple" : "no
 `;
 }
 
-function actualizarTab() {
-  $("tgCustom").classList.toggle("hidden", $("tEsc").value !== "custom");
-  limpiarInvalidos($("inputs"));
-  const malos = datosInvalidos(reglasTabique());
-  if (!malos.length) malos.push(...datosSobreMaximo([["tKcn", 1.8, "K<sub>cn</sub> no puede superar 1,8 (8.5.3)"], ["tla", num("tL"), "l<sub>a</sub> no puede superar la altura L"]]));
-  if (malos.length) return sinCalculo(malos);
-  opcionesCombinacion($("tComb"), num("tqv") * num("tS") > 0);
-  const d = leerTabique();
+// ---------------------------------------------------------------------------
+// Dibujos representativos (sin escala): tabique y pilar, en pantalla (SVG) y en la memoria (TikZ)
+// ---------------------------------------------------------------------------
+// Posición relativa de las cadenetas en la altura: una cada L_p,y desde la solera inferior
+function fraccionesCadenetas(d) {
+  const y = [];
+  if (d.Lpy > 0) for (let k = 1; k * d.Lpy < d.L - 1e-6 && k < 12; k++) y.push(k * d.Lpy / d.L);
+  return y;
+}
+const MARCADORES_FIG = `<defs>
+    <marker id="fc2" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#1d2330"/></marker>
+    <marker id="fv2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#2a6fb0"/></marker>
+    <marker id="fr2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#c62828"/></marker>
+  </defs>`;
+const SVG_FIG = 'style="width:100%;max-width:640px;display:block;margin:6px auto"';
+
+function tabiqueSVG(d) {
+  const W = 640, H = 430, x0 = 170, sp = 130, an = 16, top = 62, base = 372, alto = base - top, sol = 14;
+  const xs = [0, 1, 2].map(i => x0 + i * sp), xFin = xs[2] + an;
+  const frac = fraccionesCadenetas(d);
+  let g = `<rect x="${x0 - 24}" y="${top - sol}" width="${xFin - x0 + 48}" height="${sol}" fill="#d9bb86" stroke="#1d2330"/>`;
+  g += `<rect x="${x0 - 24}" y="${base}" width="${xFin - x0 + 48}" height="${sol}" fill="#d9bb86" stroke="#1d2330"/>`;
+  // cadenetas entre pies derechos
+  for (const f of frac) for (let i = 0; i < 2; i++) {
+    const y = base - f * alto;
+    g += `<rect x="${xs[i] + an}" y="${y - 5}" width="${sp - an}" height="10" fill="#e9cfa3" stroke="#1d2330"/>`;
+  }
+  xs.forEach(x => { g += `<rect x="${x}" y="${top}" width="${an}" height="${alto}" fill="#c9a26a" stroke="#1d2330" stroke-width="1.4"/>`; });
+  if (frac.length) g += `<text x="${xs[1] + an + (sp - an) / 2}" y="${base - frac[0] * alto - 11}" font-size="12" text-anchor="middle" fill="#5f6b7a">Cadeneta</text>`;
+  else g += `<text x="${xs[1] + an / 2}" y="${base - alto / 2}" font-size="12" text-anchor="middle" fill="#5f6b7a" paint-order="stroke" stroke="#fff" stroke-width="4">Sin cadenetas (L<tspan font-size="9" dy="3">p,y</tspan><tspan dy="-3"> ≥ L)</tspan></text>`;
+  // cota de la separación entre ejes (ancho tributario)
+  const yS = top - sol - 16;
+  for (let i = 0; i < 2; i++) g += `<line x1="${xs[i] + an / 2}" x2="${xs[i + 1] + an / 2}" y1="${yS}" y2="${yS}" stroke="#1d2330" marker-start="url(#fc2)" marker-end="url(#fc2)"/><text x="${xs[i] + an / 2 + sp / 2}" y="${yS - 6}" font-size="13" text-anchor="middle">s = ${fmt(d.s, 2)} m</text>`;
+  // cota de la altura
+  g += `<line x1="${x0 - 46}" x2="${x0 - 46}" y1="${top}" y2="${base}" stroke="#1d2330" marker-start="url(#fc2)" marker-end="url(#fc2)"/><text x="${x0 - 54}" y="${(top + base) / 2}" font-size="13" text-anchor="middle" transform="rotate(-90 ${x0 - 54} ${(top + base) / 2})">L = ${fmt(d.L, 1)} cm</text>`;
+  // cotas entre cadenetas
+  const xC = xFin + 44;
+  frac.forEach((f, k) => {
+    const y1 = base - (k ? frac[k - 1] : 0) * alto, y2 = base - f * alto;
+    g += `<line x1="${xC}" x2="${xC}" y1="${y1}" y2="${y2}" stroke="#1d2330" marker-start="url(#fc2)" marker-end="url(#fc2)"/><line x1="${xFin}" x2="${xC + 4}" y1="${y2}" y2="${y2}" stroke="#9aa3ae"/>`;
+    if (!k) g += `<text x="${xC + 7}" y="${(y1 + y2) / 2 + 4}" font-size="13">L<tspan font-size="9.5" dy="3">p,y</tspan><tspan dy="-3"> = ${fmt(d.Lpy, 1)} cm</tspan></text>`;
+  });
+  g += `<text x="${xFin + 32}" y="${top - 3}" font-size="12" fill="#5f6b7a">Solera superior</text><text x="${xFin + 32}" y="${base + 11}" font-size="12" fill="#5f6b7a">Solera inferior</text>`;
+  g += `<text x="${xs[1] + an / 2}" y="${base + sol + 24}" font-size="13" text-anchor="middle">Pies derechos ${fmt(d.b, 0)} × ${fmt(d.h, 0)} mm</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Dibujo representativo del tabique" ${SVG_FIG}>
+  ${MARCADORES_FIG}
+  ${g}
+</svg>`;
+}
+function tabiqueTikz(d) {
+  const f = (x) => x.toFixed(3);
+  const sp = 2.6, an = 0.28, alto = 6, sol = 0.25, frac = fraccionesCadenetas(d);
+  const xFin = 2 * sp + an;
+  let s = `\\draw[fill=brown!30] (-0.45,${f(-sol)}) rectangle (${f(xFin + 0.45)},0);\n\\draw[fill=brown!30] (-0.45,${alto}) rectangle (${f(xFin + 0.45)},${f(alto + sol)});\n`;
+  for (const fr of frac) for (let i = 0; i < 2; i++) s += `\\draw[fill=brown!18] (${f(i * sp + an)},${f(fr * alto - 0.09)}) rectangle (${f((i + 1) * sp)},${f(fr * alto + 0.09)});\n`;
+  for (let i = 0; i < 3; i++) s += `\\draw[fill=brown!45] (${f(i * sp)},0) rectangle (${f(i * sp + an)},${alto});\n`;
+  if (frac.length) s += `\\node[font=\\footnotesize, above] at (${f(1.5 * sp + an / 2)},${f(frac[0] * alto + 0.09)}) {Cadeneta};\n`;
+  else s += `\\node[font=\\footnotesize, fill=white] at (${f(sp + an / 2)},3) {Sin cadenetas ($L_{p,y} \\ge L$)};\n`;
+  for (let i = 0; i < 2; i++) s += `\\draw[cota] (${f(i * sp + an / 2)},${f(alto + sol + 0.3)}) -- node[above, font=\\small] {$s = ${tn(d.s, 2)}$ m} (${f((i + 1) * sp + an / 2)},${f(alto + sol + 0.3)});\n`;
+  s += `\\draw[cota] (-0.9,0) -- node[left, font=\\small] {$L = ${tn(d.L, 1)}$ cm} (-0.9,${alto});\n`;
+  frac.forEach((fr, k) => {
+    const y1 = (k ? frac[k - 1] : 0) * alto, y2 = fr * alto;
+    s += `\\draw[cota] (${f(xFin + 0.8)},${f(y1)}) -- ${k ? "" : `node[right, font=\\small] {$L_{p,y} = ${tn(d.Lpy, 1)}$ cm} `}(${f(xFin + 0.8)},${f(y2)});\n\\draw[gray, thin] (${f(xFin)},${f(y2)}) -- (${f(xFin + 0.9)},${f(y2)});\n`;
+  });
+  s += `\\node[font=\\footnotesize, gray!70!black, right] at (${f(xFin + 0.45)},${f(alto + sol / 2)}) {Solera superior};\n\\node[font=\\footnotesize, gray!70!black, right] at (${f(xFin + 0.45)},${f(-sol / 2)}) {Solera inferior};\n`;
+  s += `\\node[font=\\small, below] at (${f(sp + an / 2)},${f(-sol - 0.1)}) {Pies derechos $${tn(d.b, 0)} \\times ${tn(d.h, 0)}$ mm};\n`;
+  return L`\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=0.8, cota/.style={<->, >=stealth, thin}]
+${s}\end{tikzpicture}
+\caption{Dibujo representativo del tabique (sin escala): pies derechos separados ${tn(d.s, 2)} m, igual a su ancho tributario, y cadenetas cada ${tn(d.Lpy, 1)} cm.}
+\end{figure}`;
+}
+
+function pilarSVG(d, r) {
+  const W = 640, H = 430, cx = 220, an = 34, top = 74, base = 366, alto = base - top;
+  const Pmax = Math.max(...r.cT.map(c => c.P));
+  let g = `<rect x="${cx - an / 2}" y="${top}" width="${an}" height="${alto}" fill="#c9a26a" stroke="#1d2330" stroke-width="1.6"/>`;
+  g += `<line x1="${cx - 90}" x2="${cx + 90}" y1="${base}" y2="${base}" stroke="#1d2330" stroke-width="3"/>`;
+  g += `<rect x="${cx - 44}" y="${base - 6}" width="88" height="6" fill="#9aa3ae" stroke="#1d2330"/><rect x="${cx - 44}" y="${top - 6}" width="88" height="6" fill="#d9bb86" stroke="#1d2330"/>`;
+  g += `<path d="M ${cx} ${top - 58} L ${cx} ${top - 8}" stroke="#c62828" stroke-width="2.6" marker-end="url(#fr2)"/><text x="${cx + 10}" y="${top - 38}" font-size="13" fill="#c62828">P = ${fmt(Pmax, 0)} kgf</text>`;
+  if (r.w > 0) {
+    const xT = cx - an / 2 - 74;
+    g += `<line x1="${xT}" x2="${xT}" y1="${top + 10}" y2="${base - 16}" stroke="#2a6fb0" stroke-width="1.6"/>`;
+    for (let i = 0; i < 7; i++) { const y = top + 10 + i * (alto - 26) / 6; g += `<path d="M ${xT} ${y} L ${cx - an / 2 - 4} ${y}" stroke="#2a6fb0" stroke-width="2" marker-end="url(#fv2)"/>`; }
+    g += `<text x="${xT - 8}" y="${(top + base) / 2}" font-size="13" fill="#2a6fb0" text-anchor="middle" transform="rotate(-90 ${xT - 8} ${(top + base) / 2})">w = ${fmt(r.w, 1)} kgf/m</text>`;
+  }
+  g += `<line x1="${cx + 70}" x2="${cx + 70}" y1="${top}" y2="${base}" stroke="#1d2330" marker-start="url(#fc2)" marker-end="url(#fc2)"/><text x="${cx + 78}" y="${(top + base) / 2 + 4}" font-size="13">L = ${fmt(d.L, 1)} cm</text>`;
+  g += `<text x="${cx}" y="${base + 26}" font-size="12.5" text-anchor="middle" fill="#5f6b7a">${d.kpTxt}</text>`;
+  // sección transversal
+  const k = 130 / Math.max(d.b, d.h), bw = d.b * k, hh = d.h * k, sx = 490, sy = 190;
+  g += `<text x="${sx}" y="${sy - hh / 2 - 44}" font-size="13.5" font-weight="600" text-anchor="middle">Sección</text>`;
+  g += `<rect x="${sx - bw / 2}" y="${sy - hh / 2}" width="${bw}" height="${hh}" fill="#e9cfa3" stroke="#1d2330" stroke-width="2"/>`;
+  g += `<line x1="${sx - bw / 2 - 16}" x2="${sx + bw / 2 + 16}" y1="${sy}" y2="${sy}" stroke="#6b4fa0" stroke-dasharray="8 4 2 4"/><text x="${sx + bw / 2 + 20}" y="${sy + 4}" font-size="13" fill="#6b4fa0" font-style="italic">x</text>`;
+  g += `<line x1="${sx}" x2="${sx}" y1="${sy - hh / 2 - 16}" y2="${sy + hh / 2 + 16}" stroke="#6b4fa0" stroke-dasharray="8 4 2 4"/><text x="${sx + 6}" y="${sy + hh / 2 + 26}" font-size="13" fill="#6b4fa0" font-style="italic">y</text>`;
+  g += `<line x1="${sx - bw / 2}" x2="${sx + bw / 2}" y1="${sy + hh / 2 + 34}" y2="${sy + hh / 2 + 34}" stroke="#1d2330" marker-start="url(#fc2)" marker-end="url(#fc2)"/><text x="${sx}" y="${sy + hh / 2 + 52}" font-size="13" text-anchor="middle">b = ${fmt(d.b, 0)} mm</text>`;
+  g += `<line x1="${sx - bw / 2 - 28}" x2="${sx - bw / 2 - 28}" y1="${sy - hh / 2}" y2="${sy + hh / 2}" stroke="#1d2330" marker-start="url(#fc2)" marker-end="url(#fc2)"/><text x="${sx - bw / 2 - 36}" y="${sy}" font-size="13" text-anchor="middle" transform="rotate(-90 ${sx - bw / 2 - 36} ${sy})">h = ${fmt(d.h, 0)} mm</text>`;
+  if (r.w > 0) g += `<path d="M ${sx + bw / 2 + 34} ${sy - hh / 2} L ${sx + bw / 2 + 34} ${sy - hh / 2 + 46}" stroke="#2a6fb0" stroke-width="2.2" marker-end="url(#fv2)"/><text x="${sx + bw / 2 + 28}" y="${sy - hh / 2 - 6}" font-size="12" fill="#2a6fb0">viento</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Dibujo del pilar" ${SVG_FIG}>
+  ${MARCADORES_FIG}
+  ${g}
+</svg>`;
+}
+function pilarTikz(d, r) {
+  const f = (x) => x.toFixed(3);
+  const an = 0.5, alto = 6, Pmax = Math.max(...r.cT.map(c => c.P));
+  let s = `\\draw[thick, fill=brown!45] (${f(-an / 2)},0) rectangle (${f(an / 2)},${alto});\n\\draw[very thick] (-1.5,0) -- (1.5,0);\n\\draw[fill=gray!40] (-0.7,0) rectangle (0.7,0.1);\n\\draw[fill=brown!30] (-0.7,${alto}) rectangle (0.7,${alto + 0.1});\n`;
+  s += `\\draw[->, very thick, red!70!black] (0,${alto + 1.1}) -- node[right, font=\\small] {$P = ${tn(Pmax, 0)}$ kgf} (0,${alto + 0.15});\n`;
+  if (r.w > 0) {
+    s += `\\draw[blue!60!black] (-1.7,0.3) -- node[left, font=\\small] {$w = ${tn(r.w, 1)}$ kgf/m} (-1.7,${f(alto - 0.3)});\n`;
+    for (let i = 0; i < 7; i++) { const y = 0.3 + i * (alto - 0.6) / 6; s += `\\draw[->, thick, blue!60!black] (-1.7,${f(y)}) -- (${f(-an / 2 - 0.05)},${f(y)});\n`; }
+  }
+  s += `\\draw[cota] (1.3,0) -- node[right, font=\\small] {$L = ${tn(d.L, 1)}$ cm} (1.3,${alto});\n`;
+  const k = 2.6 / Math.max(d.b, d.h), bw = d.b * k, hh = d.h * k, sx = 6.6, sy = 3.4;
+  s += `\\draw[thick, fill=brown!20] (${f(sx - bw / 2)},${f(sy - hh / 2)}) rectangle (${f(sx + bw / 2)},${f(sy + hh / 2)});\n`;
+  s += `\\draw[violet, dash dot] (${f(sx - bw / 2 - 0.35)},${f(sy)}) -- (${f(sx + bw / 2 + 0.35)},${f(sy)}) node[right] {$x$};\n\\draw[violet, dash dot] (${f(sx)},${f(sy - hh / 2 - 0.3)}) -- (${f(sx)},${f(sy + hh / 2 + 0.35)}) node[above] {$y$};\n`;
+  s += `\\draw[cota] (${f(sx - bw / 2)},${f(sy - hh / 2 - 0.55)}) -- node[below, font=\\small] {$b = ${tn(d.b, 0)}$ mm} (${f(sx + bw / 2)},${f(sy - hh / 2 - 0.55)});\n`;
+  s += `\\draw[cota] (${f(sx - bw / 2 - 0.55)},${f(sy - hh / 2)}) -- node[left, font=\\small] {$h = ${tn(d.h, 0)}$ mm} (${f(sx - bw / 2 - 0.55)},${f(sy + hh / 2)});\n`;
+  return L`\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=0.8, cota/.style={<->, >=stealth, thin}]
+${s}\end{tikzpicture}
+\caption{Pilar de ${tn(d.b, 0)} $\times$ ${tn(d.h, 0)} mm y altura ${tn(d.L, 1)} cm${r.w > 0 ? ", con carga axial y viento lateral" : ", con carga axial"} (${d.kpTxt.replace(/–/g, "--").toLowerCase()}).}
+\end{figure}`;
+}
+
+// Resultados, dibujo y memoria del pie derecho de tabique y del pilar (mismo cálculo)
+function mostrarPie(d) {
+  const E = textosPie(d);
   const m = new Memo();
   const r = calcularTabique(d, m);
   const s = r.sel;
@@ -1637,7 +1867,7 @@ function actualizarTab() {
     [`Cizalle por viento (${s.n})`, r.ciz, `${fmt(r.fcz, 2)} / ${fmt(r.Fczd, 2)} kgf/cm²`],
     [`Flexocompresión (${s.n})`, r.fc, "interacción con K<sub>D</sub> de viento"]);
   if (s.viento && d.def) items.push(["Deformación por viento", r.defV, `${fmt(r.dV, 2)} / ${fmt(r.limV, 2)} mm`]);
-  items.push([`Compresión normal solera (${s.n})`, r.cn, `${fmt(r.fcn, 2)} / ${fmt(r.Fcnd, 2)} kgf/cm²`],
+  items.push([`Compresión normal ${E.corto} (${s.n})`, r.cn, `${fmt(r.fcn, 2)} / ${fmt(r.Fcnd, 2)} kgf/cm²`],
     ["Esbeltez λ/170", r.lam / 170, `λ = ${fmt(r.lam, 1)}`]);
   if (r.lamv !== undefined) items.push(["Volcamiento λ<sub>v</sub>/50", r.lamv / 50, `λ<sub>v</sub> = ${fmt(r.lamv, 1)}`]);
   tarjetas(items);
@@ -1645,36 +1875,37 @@ function actualizarTab() {
   const ok = dc <= 1;
   const nombre = d.esc === "custom" ? `${d.b}×${d.h} mm` : `${d.esc} (${d.b}×${d.h} mm)`;
   const notaComb = `Combinación analizada: ${s.n} (${s.txt})${s === r.crit ? " — es la combinación crítica" : ` · combinación crítica: ${r.crit.n} (${r.crit.txt}), razón máxima ${Number.isFinite(r.crit.max) ? fmt(r.crit.max, 3) : "∞"}`}`;
-  $("resTitle").textContent = `Resultados — pie derecho ${nombre} · ${d.grado} · L = ${fmt(d.L, 1)} cm`;
-  $("verdict").innerHTML = `<div class="verdict ${ok ? "ok" : "bad"}">${ok ? "✔ El pie derecho CUMPLE" : "✘ El pie derecho NO CUMPLE"} — razón máxima = ${Number.isFinite(dc) ? fmt(dc, 3) : "∞"}<div style="font-weight:400;font-size:13px;margin-top:4px">${notaComb}</div></div>`;
+  $("resTitle").textContent = `Resultados — ${E.nom} ${nombre} · ${d.grado} · L = ${fmt(d.L, 1)} cm`;
+  $("verdict").innerHTML = `<div class="verdict ${ok ? "ok" : "bad"}">${ok ? `✔ ${E.El} CUMPLE` : `✘ ${E.El} NO CUMPLE`} — razón máxima = ${Number.isFinite(dc) ? fmt(dc, 3) : "∞"}<div style="font-weight:400;font-size:13px;margin-top:4px">${notaComb}</div></div>`;
+  $("figMuro").innerHTML = d.pilar ? pilarSVG(d, r) : tabiqueSVG(d);
   $("memo").innerHTML = m.html();
   // Datos de diseño: un parámetro por fila
   const datos = [
     L`Especie y grado estructural & Pino radiata ${d.grado}`,
     L`Contenido de humedad $H$ & ${tn(d.H, 0)}\,\%`,
     L`Escuadría $b \times h$ & ${tn(d.b, 0)} $\times$ ${tn(d.h, 0)} mm`,
-    L`Altura del pie derecho $L$ & ${tn(d.L, 1)} cm`,
-    L`Separación entre pies derechos $s$ & ${tn(d.s)} m`,
-    L`Longitud de pandeo fuera del plano $L_{p,x}$ & ${tn(d.Lpx, 1)} cm`,
-    L`Longitud de pandeo en el plano $L_{p,y}$ & ${tn(d.Lpy, 1)} cm`,
+    L`Altura ${E.del} $L$ & ${tn(d.L, 1)} cm`,
+    d.pilar ? L`Ancho tributario $s$ & ${tn(d.s)} m` : L`Separación entre pies derechos $s$ & ${tn(d.s)} m`,
+    d.pilar ? L`Longitud de pandeo en torno a x $L_{p,x}$ & ${tn(d.Lpx, 1)} cm` : L`Longitud de pandeo fuera del plano $L_{p,x}$ & ${tn(d.Lpx, 1)} cm`,
+    d.pilar ? L`Longitud de pandeo en torno a y $L_{p,y}$ & ${tn(d.Lpy, 1)} cm` : L`Longitud de pandeo en el plano $L_{p,y}$ & ${tn(d.Lpy, 1)} cm`,
     L`Condición de apoyo & ${d.kpTxt.replace(/–/g, "--")}`,
     L`Factor de longitud efectiva $K_p$ & ${tn(d.Kp, 2)}`,
-    L`Distancia entre apoyos laterales $l_a$ & ${tn(d.la, 0)} cm`,
-    L`Trabajo conjunto (7.1.3) & ${d.kc ? "sí" : "no"}`,
-    L`Factor de compresión normal en la solera $K_{cn}$ & ${tn(d.Kcn, 2)}`,
   ];
+  if (!d.pilar || d.qv > 0) datos.push(L`Distancia entre apoyos laterales $l_a$ & ${tn(d.la, 0)} cm`);
+  if (!d.pilar) datos.push(L`Trabajo conjunto (7.1.3) & ${d.kc ? "sí" : "no"}`);
+  datos.push(L`Factor de compresión normal ${E.corto} $K_{cn}$ & ${tn(d.Kcn, 2)}`);
   if (d.qv > 0) datos.push(L`Límite de deformación por viento & ${d.def ? `$L/${d.def}$` : "no se verifica"}`);
   const cargas = [
     L`Peso propio $q_{PP}$ & ${tn(d.qPP, 2)} kgf/m`,
     L`Sobrecarga de piso $q_{SC,piso}$ & ${tn(d.qSCp, 2)} kgf/m`,
     L`Sobrecarga de techo $q_{SC,techo}$ & ${tn(d.qSCt, 2)} kgf/m`,
-    L`Presión de viento $q_v$ & ${tn(d.qv, 1)} kgf/m$^2$`,
   ];
+  if (!d.pilar || d.qv > 0) cargas.push(L`Presión de viento $q_v$ & ${tn(d.qv, 1)} kgf/m$^2$`);
   // Resumen del .tex agrupado por combinación
   const itemsTex = [];
   for (const c of r.cT) {
     itemsTex.push([`${c.n}: compresión paralela`, c.ratio, `${fmt(c.fc, 2)} / ${fmt(c.Fcl, 2)} kgf/cm²`],
-      [`${c.n}: compresión normal en solera`, c.rcn, `${fmt(c.fcn, 2)} / ${fmt(r.Fcnd, 2)} kgf/cm²`]);
+      [`${c.n}: compresión normal ${E.corto}`, c.rcn, `${fmt(c.fcn, 2)} / ${fmt(r.Fcnd, 2)} kgf/cm²`]);
     if (c.viento) {
       itemsTex.push([`${c.n}: flexión por viento`, r.flexV, `${fmt(r.ff, 1)} / ${fmt(r.Fdis, 1)} kgf/cm²`],
         [`${c.n}: cizalle por viento`, r.cizV, `${fmt(r.fcz, 2)} / ${fmt(r.Fczd, 2)} kgf/cm²`]);
@@ -1686,10 +1917,32 @@ function actualizarTab() {
   if (r.lamvV !== undefined && r.cT.some(c => c.viento)) itemsTex.push(["Volcamiento λ<sub>v</sub>/50", r.lamvV / 50, `λ<sub>v</sub> = ${fmt(r.lamvV, 1)}`]);
   const dcT = Math.max(...itemsTex.map(i => i[1]));
   const simT = { ftex: "f_{cp}", Ftex: L`F_{cp,\lambda,dis}` };
-  ultimoTex = documentoTex("Pie derecho de tabique", `Pino radiata ${d.grado}, escuadría ${nombre.replace(/×/g, L`$\times$`)}, altura $L = ${tn(d.L, 1)}$ cm`,
-    datos, m.texto(), itemsTex, dcT, dcT <= 1, "el pie derecho",
-    { cargas, combos: tablaCombinacionesDefTex(r.cT), resumen: tablaCombinacionesTex(r.cT, r.crit, "del pie derecho", simT) });
-  ultimoNombre = `memoria_tabique_${d.grado}_${d.b}x${d.h}.tex`;
+  ultimoTex = documentoTex(d.pilar ? "Pilar de madera aserrada" : "Pie derecho de tabique", `Pino radiata ${d.grado}, escuadría ${nombre.replace(/×/g, L`$\times$`)}, altura $L = ${tn(d.L, 1)}$ cm`,
+    datos, m.texto(), itemsTex, dcT, dcT <= 1, E.el,
+    { cargas, combos: tablaCombinacionesDefTex(r.cT), figura: d.pilar ? pilarTikz(d, r) : tabiqueTikz(d), resumen: tablaCombinacionesTex(r.cT, r.crit, E.del, simT) });
+  ultimoNombre = `memoria_${d.pilar ? "pilar" : "tabique"}_${d.grado}_${d.b}x${d.h}.tex`;
+}
+
+function actualizarTab() {
+  $("tgCustom").classList.toggle("hidden", $("tEsc").value !== "custom");
+  limpiarInvalidos($("inputs"));
+  const malos = datosInvalidos(reglasTabique());
+  if (!malos.length) malos.push(...datosSobreMaximo([["tKcn", 1.8, "K<sub>cn</sub> no puede superar 1,8 (8.5.3)"], ["tla", num("tL"), "l<sub>a</sub> no puede superar la altura L"]]));
+  if (malos.length) return sinCalculo(malos);
+  opcionesCombinacion($("tComb"), num("tqv") * num("tS") > 0);
+  mostrarPie(leerTabique());
+}
+
+function actualizarPilar() {
+  const conV = $("piV").checked;
+  $("pigCustom").classList.toggle("hidden", $("piEsc").value !== "custom");
+  $("pigViento").classList.toggle("hidden", !conV);
+  limpiarInvalidos($("inputs"));
+  const malos = datosInvalidos(reglasPilar());
+  if (!malos.length) malos.push(...datosSobreMaximo([["piKcn", 1.8, "K<sub>cn</sub> no puede superar 1,8 (8.5.3)"], ["pila", num("piL"), "l<sub>a</sub> no puede superar la altura L"]]));
+  if (malos.length) return sinCalculo(malos);
+  opcionesCombinacion($("piComb"), conV && num("piqv") * num("piS") > 0);
+  mostrarPie(leerPilar());
 }
 
 function actualizarEnv() {
@@ -1797,15 +2050,6 @@ Con una razón máxima de ${tnT(dc, 3)}, la viga \textbf{${ok ? "cumple" : "no c
   ultimoNombre = `memoria_envigado_${d.grado}_${d.b}x${d.h}.tex`;
 }
 
-function descargarTex() {
-  if (!ultimoTex) { alert("Corrija los datos inválidos antes de descargar la memoria."); return; }
-  const blob = new Blob([texUnicode(ultimoTex)],{ type: "application/x-tex;charset=utf-8" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob); a.download = ultimoNombre;
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-}
-
 function init() {
   $("esc").innerHTML = Object.entries(ESCUADRIAS).map(([k, [b, h]]) => `<option value='${k}'>${k} — ${b} × ${h} mm</option>`).join("") + `<option value="custom">Personalizada</option>`;
   $("esc").value = '2x6"';
@@ -1815,9 +2059,14 @@ function init() {
   $("tKp").value = "C4";
   $("tabEnv").addEventListener("click", () => { modo = "env"; actualizar(); });
   $("tabTab").addEventListener("click", () => { modo = "tab"; actualizar(); });
+  $("tabPil").addEventListener("click", () => { modo = "pil"; actualizar(); });
   $("tabMuro").addEventListener("click", () => { modo = "muro"; actualizar(); });
   const elem = new URLSearchParams(location.search).get("elemento");
-  if (elem === "tabique") modo = "tab"; else if (elem === "muro") modo = "muro";
+  if (elem === "tabique") modo = "tab"; else if (elem === "pilar") modo = "pil"; else if (elem === "muro") modo = "muro";
+  $("piEsc").innerHTML = $("esc").innerHTML;
+  $("piEsc").value = "custom";
+  $("piKp").innerHTML = $("tKp").innerHTML;
+  $("piKp").value = "C4";
   $("mEsc").innerHTML = $("esc").innerHTML;
   $("mEsc").value = "custom";
   $("mKp").innerHTML = $("tKp").innerHTML;
@@ -1827,18 +2076,17 @@ function init() {
   const panel = $("inputs");
   panel.addEventListener("input", actualizar);
   panel.addEventListener("change", actualizar);
-  $("btnTex").addEventListener("click", descargarTex);
   actualizar();
 }
 init();
 // Integración con proyectos (proyectos.js): datos para guardar y restaurar este cálculo
 window.AURA_MEMO = {
-  get tipo() { return { env: "Madera aserrada — envigado", tab: "Madera aserrada — pie derecho de tabique", muro: "Madera aserrada — muro de corte" }[modo]; },
-  elemento: () => ({ env: "envigado", tab: "tabique", muro: "muro" }[modo]), tex: () => ultimoTex, nombre: () => ultimoNombre,
+  get tipo() { return { env: "Madera aserrada — envigado", tab: "Madera aserrada — pie derecho de tabique", pil: "Madera aserrada — pilar", muro: "Madera aserrada — muro de corte" }[modo]; },
+  elemento: () => ({ env: "envigado", tab: "tabique", pil: "pilar", muro: "muro" }[modo]), tex: () => ultimoTex, nombre: () => ultimoNombre,
   recalcular: () => actualizar(),
 };
 </script>
-<script src="proyectos.js?v=29"></script>
+<script src="proyectos.js?v=31"></script>
 <script>
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
 </script>

@@ -214,8 +214,7 @@
       <div id="verdict"></div>
       <div class="toolbar">
         <button class="btn sec" type="button" onclick="window.print()">Imprimir</button>
-        <button class="btn" type="button" onclick="descargarTex()">Descargar memoria (.tex)</button>
-        <button class="btn" type="button" onclick="descargarZipMemoria(ultimoTex, ultimoNombre, document.body)">Descargar .zip (Overleaf)</button>
+        <button class="btn" type="button" onclick="descargarZipMemoria(ultimoTex, ultimoNombre, document.body)">Descargar memoria (.zip)</button>
         <button class="btn sec" type="button" onclick="descargarS2K()" title="Archivo de texto para SAP2000: File → Import → SAP2000 .s2k Text File">Exportar modelo SAP2000 (.s2k)</button>
       </div>
       <div class="memo" id="memo"></div>
@@ -224,7 +223,7 @@
 </main>
 <footer>Herramienta de apoyo académico. Las solicitaciones deben provenir de un modelo (SAP2000 / ETABS) con las combinaciones LRFD y los efectos de segundo orden (AISC 360-16, Cap. C). Las propiedades de las secciones se calculan con esquinas rectas; para perfiles plegados de pared delgada rige además AISI S100 / NCh 427. Verifique siempre los resultados.</footer>
 
-<script src="memo.js?v=30"></script>
+<script src="memo.js?v=31"></script>
 <script>
 "use strict";
 // ---------------------------------------------------------------------------
@@ -1174,11 +1173,6 @@ function descargarS2K() {
   descargarBlob(new Blob([generarS2K().replace(/\n/g, "\r\n")], { type: "text/plain;charset=utf-8" }), nombre);
 }
 
-function descargarTex() {
-  if (!ultimoTex) { alert("Corrija los datos inválidos antes de descargar la memoria."); return; }
-  descargarBlob(new Blob([texUnicode(ultimoTex)], { type: "application/x-tex;charset=utf-8" }), ultimoNombre);
-}
-
 // ---------------------------------------------------------------------------
 // Interfaz
 // ---------------------------------------------------------------------------
@@ -1284,7 +1278,7 @@ window.AURA_MEMO = {
   recalcular: () => { marcarManuales(); GRUPOS.forEach(g => mostrarTipo(g.id)); mostrarGrupo(grupoVisible); actualizarUnidades(); calcular(); },
 };
 </script>
-<script src="proyectos.js?v=30"></script>
+<script src="proyectos.js?v=31"></script>
 <script>
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
 </script>
