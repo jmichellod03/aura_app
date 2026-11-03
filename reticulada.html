@@ -157,7 +157,8 @@
           <div><label for="gN">N° de paneles</label><input id="gN" type="number" step="1" min="1" value="6"></div>
         </div>
         <div id="gPre" class="unit" style="margin-top:6px"></div>
-        <button class="mini" type="button" id="gLong">Usar longitudes de barras de esta geometría</button>
+        <button class="mini" type="button" id="gLong">Restablecer longitudes de barras según la geometría</button>
+        <div class="unit" style="margin-top:4px">Las longitudes se actualizan solas al cambiar L, h o el n° de paneles; las editadas a mano se mantienen.</div>
       </fieldset>
 
       <label for="acero">Calidad del acero</label>
@@ -1090,14 +1091,26 @@ function actualizarUnidades() {
   const tf = $("unidad").value === "tf";
   document.querySelectorAll(".u-f").forEach(e => e.textContent = tf ? "[tf]" : "[kgf]");
 }
-function usarGeometria() {
+// Longitudes de barras desde la geometría. Los campos editados a mano (data-manual) se respetan,
+// salvo con el botón, que restablece todos.
+function usarGeometria(todos = true) {
+  const Lt = num("gL"), h = num("gH"), n = Math.round(num("gN"));
+  if (!(Lt > 0 && h > 0 && n >= 1)) return;
   const lg = longitudesGeom();
   for (const g of GRUPOS) {
     const v = +lg[g.def.lx].toFixed(3);
-    $(g.id + "_Lx").value = v;
-    $(g.id + "_Ly").value = v;
+    for (const id of [g.id + "_Lx", g.id + "_Ly"]) {
+      if (todos) delete $(id).dataset.manual;
+      if (!$(id).dataset.manual) $(id).value = v;
+    }
   }
-  calcular();
+}
+// Al restaurar un cálculo guardado: marca como manuales las longitudes que no calzan con la geometría
+function marcarManuales() {
+  const lg = longitudesGeom();
+  for (const g of GRUPOS) for (const id of [g.id + "_Lx", g.id + "_Ly"]) {
+    if (Math.abs(num(id) - lg[g.def.lx]) > 0.0015) $(id).dataset.manual = "1"; else delete $(id).dataset.manual;
+  }
 }
 
 function init() {
@@ -1109,7 +1122,12 @@ function init() {
   });
   mostrarGrupo("cs");
   actualizarUnidades();
-  $("inputs").addEventListener("input", (e) => { if (e.target.tagName === "INPUT") calcular(); });
+  $("inputs").addEventListener("input", (e) => {
+    const id = e.target.id || "";
+    if (/_(Lx|Ly)$/.test(id)) e.target.dataset.manual = "1";
+    if (id === "gL" || id === "gH" || id === "gN") usarGeometria(false);
+    if (e.target.tagName === "INPUT") calcular();
+  });
   $("inputs").addEventListener("change", (e) => {
     const id = e.target.id || "";
     if (/_(tipo|Umodo|cat)$/.test(id)) mostrarTipo(id.split("_")[0]);
@@ -1123,7 +1141,7 @@ function init() {
     }
     if (e.target.tagName === "SELECT" || e.target.type === "checkbox") calcular();
   });
-  $("gLong").addEventListener("click", usarGeometria);
+  $("gLong").addEventListener("click", () => { usarGeometria(true); calcular(); });
   calcular();
 }
 init();
@@ -1131,7 +1149,7 @@ init();
 window.AURA_MEMO = {
   tipo: "Acero estructural — viga reticulada",
   elemento: () => "", tex: () => ultimoTex, nombre: () => ultimoNombre,
-  recalcular: () => { GRUPOS.forEach(g => mostrarTipo(g.id)); mostrarGrupo(grupoVisible); actualizarUnidades(); calcular(); },
+  recalcular: () => { marcarManuales(); GRUPOS.forEach(g => mostrarTipo(g.id)); mostrarGrupo(grupoVisible); actualizarUnidades(); calcular(); },
 };
 </script>
 <script src="proyectos.js?v=30"></script>
