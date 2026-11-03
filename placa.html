@@ -539,26 +539,41 @@ function verificar(eh, d, m) {
   m.eq(L`\frac{L}{L_{m\acute{a}x}} = \frac{${tn(d.L, 0)}}{${tn(L2, 0)}} = ${tn(dc2, 3)} ${dc2 <= 1 ? LE : ">"} 1{,}0`, "Tabla II");
   if (d.tramos > 1) m.note("Con tramos continuos se requiere armadura superior (negativa) en los apoyos intermedios, a definir por el ingeniero calculista.",
     L`Con tramos continuos se requiere armadura superior (negativa) en los apoyos intermedios, a definir por el ingeniero calculista del proyecto.`);
-  // Flecha con peso propio + carga permanente adicional + sobrecarga de uso (criterio conservador),
-  // con la inercia compuesta de la ficha (referida al hormigón, ASCE)
-  m.sub("Flecha con peso propio y cargas de servicio");
-  const EcF = 15100 * Math.sqrt(d.fc);
-  const qF = t4.pp + d.qD + d.qL;                          // kgf/m²
-  const wL = qF / 100;                                     // kgf/cm en una franja de 1 m
-  const flecha = 5 * wL * d.L ** 4 / (384 * EcF * t4.Ic);
+  // Flecha de servicio. Sin alzaprimas, el peso propio (hormigón fresco + placa) lo resiste la placa sola
+  // (I⁺ de la ficha, con E del acero); las cargas posteriores al fraguado van sobre la sección compuesta
+  // (inercia de la ficha referida al hormigón, ASCE, con E_c). Con alzaprimas, todo va sobre la compuesta.
+  m.sub("Flecha de servicio");
+  const alzaprimada = d.L > TABLA_III[eh][cond] + 1e-9 || d.heli;
+  const EcF = 15100 * Math.sqrt(d.fc), ES = 2100000;
+  const fl = (q, EI) => 5 * (q / 100) * d.L ** 4 / (384 * EI);
+  const qComp = (alzaprimada ? t4.pp : 0) + d.qD + d.qL;   // kgf/m² sobre la sección compuesta
+  const fPlaca = alzaprimada ? 0 : fl(t4.pp, ES * PLACA.I);
+  const fComp = fl(qComp, EcF * t4.Ic);
+  const flecha = fPlaca + fComp;
   const fAdm = d.L / d.flechaLim;
   const dcF = flecha / fAdm;
-  m.row("Carga: PP + carga permanente adicional + sobrecarga de uso", `${fmt(t4.pp, 0)} + ${fmt(d.qD, 0)} + ${fmt(d.qL, 0)} = ${fmt(qF, 0)} kgf/m²`);
-  m.row("Carga en una franja de 1 m", `${fmt(wL, 2)} kgf/cm`);
-  m.row("E<sub>c</sub> = 15.100 √f'<sub>c</sub> ; I<sub>c</sub> (referida al hormigón)", `${fmt(EcF, 0)} kgf/cm² ; ${fmt(t4.Ic, 0)} cm⁴/m`, "Ficha técnica");
-  m.row("δ = 5 q L⁴ / (384 E<sub>c</sub> I<sub>c</sub>)", `${fmt(flecha, 3)} cm`);
+  m.row("E<sub>c</sub> = 15.100 √f'<sub>c</sub> ; I<sub>c</sub> compuesta (referida al hormigón)", `${fmt(EcF, 0)} kgf/cm² ; ${fmt(t4.Ic, 0)} cm⁴/m`, "Ficha técnica");
+  if (!alzaprimada) {
+    m.row(`Placa sola con el peso propio (sin alzaprimas): ${fmt(t4.pp, 0)} kgf/m², E<sub>s</sub> · I<sup>+</sup> = 2.100.000 · ${fmt(PLACA.I, 2)}`, `δ<sub>1</sub> = ${fmt(fPlaca, 3)} cm`, "Ficha técnica");
+    m.row(`Sección compuesta con q<sub>D</sub> + q<sub>L</sub> = ${fmt(d.qD, 0)} + ${fmt(d.qL, 0)} = ${fmt(qComp, 0)} kgf/m²`, `δ<sub>2</sub> = ${fmt(fComp, 3)} cm`);
+    m.row("Flecha total δ = δ<sub>1</sub> + δ<sub>2</sub>", `${fmt(flecha, 3)} cm`);
+  } else {
+    m.row(`Sección compuesta con PP + q<sub>D</sub> + q<sub>L</sub> = ${fmt(t4.pp, 0)} + ${fmt(d.qD, 0)} + ${fmt(d.qL, 0)} = ${fmt(qComp, 0)} kgf/m² (losa alzaprimada)`, `δ = ${fmt(flecha, 3)} cm`);
+  }
   m.row(`δ<sub>adm</sub> = L/${d.flechaLim}`, `${fmt(fAdm, 3)} cm`);
   m.row("δ / δ<sub>adm</sub>", tagDC(dcF));
-  m.eq(L`q = PP + q_D + q_L = ${tn(t4.pp, 0)} + ${tn(d.qD, 0)} + ${tn(d.qL, 0)} = ${tn(qF, 0)}\ \mathrm{kgf/m^2} \;\Rightarrow\; ${tn(wL, 2)}\ \mathrm{kgf/cm}`);
-  m.eq(L`\delta = \frac{5\,q L^4}{384\,E_c I_c} = \frac{5 \cdot ${tn(wL, 2)} \cdot ${tn(d.L, 0)}^4}{384 \cdot ${tn(EcF, 0)} \cdot ${tn(t4.Ic, 0)}} = ${tn(flecha, 3)}\ \mathrm{cm}`);
-  m.eq(L`\frac{\delta}{\delta_{adm}} = \frac{${tn(flecha, 3)}}{${tn(d.L, 0)}/${d.flechaLim}} = \frac{${tn(flecha, 3)}}{${tn(fAdm, 3)}} = ${tn(dcF, 3)} ${dcF <= 1 ? LE : ">"} 1{,}0`);
-  m.p(L`Se usa la inercia efectiva de la sección compuesta que entrega la ficha técnica, referida al hormigón según la ASCE, por lo que se combina con $E_c$. La fórmula de viga simplemente apoyada es conservadora para tramos continuos. Por criterio conservador se suman el peso propio, la carga permanente adicional y la sobrecarga de uso, todos sobre la sección compuesta. No se incluyen los efectos diferidos (fluencia lenta y retracción).`, true);
-  checks.push({ k: L`Flecha con peso propio y cargas de servicio ($L/${d.flechaLim}$)`, dem: L`$\delta = ${tn(flecha, 3)}$ cm`, cap: L`$\delta_{adm} = ${tn(fAdm, 3)}$ cm`, dc: dcF, html: "Flecha (PP + servicio)" });
+  if (!alzaprimada) {
+    m.eq(L`\delta_1 = \frac{5\,PP\,L^4}{384\,E_s I^+} = \frac{5 \cdot ${tn(t4.pp / 100, 2)} \cdot ${tn(d.L, 0)}^4}{384 \cdot 2\,100\,000 \cdot ${tn(PLACA.I, 2)}} = ${tn(fPlaca, 3)}\ \mathrm{cm}`);
+    m.eq(L`\delta_2 = \frac{5\,(q_D + q_L)\,L^4}{384\,E_c I_c} = \frac{5 \cdot ${tn(qComp / 100, 2)} \cdot ${tn(d.L, 0)}^4}{384 \cdot ${tn(EcF, 0)} \cdot ${tn(t4.Ic, 0)}} = ${tn(fComp, 3)}\ \mathrm{cm}`);
+    m.eq(L`\frac{\delta_1 + \delta_2}{\delta_{adm}} = \frac{${tn(fPlaca, 3)} + ${tn(fComp, 3)}}{${tn(d.L, 0)}/${d.flechaLim}} = ${tn(dcF, 3)} ${dcF <= 1 ? LE : ">"} 1{,}0`);
+  } else {
+    m.eq(L`\delta = \frac{5\,(PP + q_D + q_L)\,L^4}{384\,E_c I_c} = \frac{5 \cdot ${tn(qComp / 100, 2)} \cdot ${tn(d.L, 0)}^4}{384 \cdot ${tn(EcF, 0)} \cdot ${tn(t4.Ic, 0)}} = ${tn(flecha, 3)}\ \mathrm{cm}`);
+    m.eq(L`\frac{\delta}{\delta_{adm}} = \frac{${tn(flecha, 3)}}{${tn(d.L, 0)}/${d.flechaLim}} = ${tn(dcF, 3)} ${dcF <= 1 ? LE : ">"} 1{,}0`);
+  }
+  m.p(alzaprimada
+    ? L`Con alzaprimas, el peso propio actúa sobre la sección compuesta al retirarlas. Se usa la inercia de la sección compuesta de la ficha, referida al hormigón según la ASCE, combinada con $E_c$. Las cargas se expresan en kgf/cm en una franja de 1 m. La fórmula de viga simplemente apoyada es conservadora para tramos continuos. No se incluyen los efectos diferidos (fluencia lenta y retracción).`
+    : L`Sin alzaprimas, el peso del hormigón fresco y de la placa lo resiste la placa sola (inercia efectiva $I^+$ de la ficha con el módulo del acero); las cargas aplicadas después del fraguado actúan sobre la sección compuesta, con la inercia de la ficha referida al hormigón y $E_c$. Las cargas se expresan en kgf/cm en una franja de 1 m. La fórmula de viga simplemente apoyada es conservadora para tramos continuos. No se incluyen los efectos diferidos (fluencia lenta y retracción).`, true);
+  checks.push({ k: L`Flecha de servicio ($L/${d.flechaLim}$)`, dem: L`$\delta = ${tn(flecha, 3)}$ cm`, cap: L`$\delta_{adm} = ${tn(fAdm, 3)}$ cm`, dc: dcF, html: "Flecha de servicio" });
   checks.push({ k: "Deformaciones (Tabla II)", dem: L`$L = ${tn(d.L, 0)}$ cm`, cap: L`$L_{m\acute{a}x} = ${tn(L2, 0)}$ cm`, dc: dc2, html: "Deformación (Tabla II)" });
 
   // 4. Alzaprimado temporal (Tabla III)
@@ -588,6 +603,11 @@ function verificar(eh, d, m) {
   const asACI = 0.0018 * 100 * eh;
   m.p(L`La malla se ubica a 2,5 cm de la cara superior del hormigón, con acero A63-42H como mínimo. Se usa el mínimo del fabricante; como referencia, la cuantía $0{,}0018\,b\,e_h$ del ACI 318 aplicada al hormigón sobre la cresta daría ${tn(asACI, 2)} cm$^2$/m.`, true);
   checks.push({ k: "Malla de retracción", dem: L`$A_{s,m\acute{\imath}n} = ${tn(AS_MIN, 2)}$ cm$^2$/m`, cap: L`$A_s = ${tn(d.As, 2)}$ cm$^2$/m`, dc: dc4, html: "Malla de retracción" });
+  const sMaxM = Math.min(5 * eh, 45);
+  const dc4b = d.sM / sMaxM;
+  m.row("Espaciamiento máximo s<sub>máx</sub> = mín(5 e<sub>h</sub> ; 45 cm)", `${fmt(d.sM, 1)} ${dc4b <= 1 + 1e-9 ? "≤" : ">"} ${fmt(sMaxM, 1)} cm ${tagDC(dc4b)}`, "ACI 318-08 7.12.2.2");
+  m.eq(L`s = ${tn(d.sM, 1)}\ \mathrm{cm} ${cmp(d.sM, sMaxM)} s_{m\acute{a}x} = \min(5 e_h;\ 45) = \min(${tn(5 * eh, 0)};\ 45) = ${tn(sMaxM, 1)}\ \mathrm{cm}`, "ACI 318-08 7.12.2.2");
+  checks.push({ k: "Espaciamiento de la malla", dem: L`$s = ${tn(d.sM, 1)}$ cm`, cap: L`$s_{m\acute{a}x} = ${tn(sMaxM, 1)}$ cm`, dc: dc4b, html: "Espaciamiento de la malla" });
 
   // 6. Conectores de corte en los apoyos
   m.h("Conectores de corte en los apoyos");
@@ -635,8 +655,8 @@ function verificar(eh, d, m) {
       m.eq(L`d = ${tn(dd * 10, 1)}\ \mathrm{mm} ${cmp(dd, 2.5 * tf)} 2{,}5\,t_f = 2{,}5 \cdot ${tn(tf * 10, 1)} = ${tn(2.5 * tf * 10, 1)}\ \mathrm{mm}`, "I8.1");
       m.eq(L`b_{nec} = ${d.cnv > 1 ? L`(${d.cnv} - 1)\cdot 4d + ` : ""}1{,}6\,d = ${tn(bNec * 10, 0)}\ \mathrm{mm} ${cmp(bNec, bf)} b_f = ${tn(bf * 10, 0)}\ \mathrm{mm}`, "I8.2d");
       m.p(L`El límite $d \le 2{,}5\,t_f$ no se aplica si el conector queda directamente sobre el alma. El ancho necesario considera la separación transversal mínima de $4d$ entre ejes y el diámetro de la cabeza del conector (criterio práctico).`, true);
-      checks.push({ k: L`Diámetro del conector ($d \le 2{,}5\,t_f$)`, dem: L`${tn(dd * 10, 1)} mm`, cap: L`${tn(2.5 * tf * 10, 1)} mm`, dc: dc8, html: "Conector y ala (d ≤ 2,5 tf)" });
-      checks.push({ k: "Ancho del ala para los conectores", dem: L`${tn(bNec * 10, 0)} mm`, cap: L`${tn(bf * 10, 0)} mm`, dc: dc9, html: "Ancho del ala" });
+      checks.push({ k: L`Diámetro del conector ($d \le 2{,}5\,t_f$)`, dem: L`${tn(dd * 10, 1)} mm`, cap: L`${tn(2.5 * tf * 10, 1)} mm`, dc: dc8, html: "Conector y ala (d ≤ 2,5 tf)", viga: true });
+      checks.push({ k: "Ancho del ala para los conectores", dem: L`${tn(bNec * 10, 0)} mm`, cap: L`${tn(bf * 10, 0)} mm`, dc: dc9, html: "Ancho del ala", viga: true });
     } else {
       m.note("Perfil de la viga no definido: verifique d ≤ 2,5 t<sub>f</sub> (I8.1) y que el ala tenga ancho para los conectores (4d entre ejes, I8.2d).",
         L`Perfil de la viga no definido: se debe verificar $d \le 2{,}5\,t_f$ (I8.1) y que el ala tenga ancho para los conectores ($4d$ entre ejes, I8.2d).`);
@@ -655,6 +675,11 @@ function verificar(eh, d, m) {
       const dc7 = nMax > 0 ? nMit / nMax : Infinity;
       const sMax = Math.min(8 * et, 90);
       if (d.pv) m.row(`Perfil ${d.pv.nombre} (${d.aceroV}): A<sub>s</sub>`, `${fmt(d.Asv, 2)} cm²`, "Catálogo Cintac");
+      const wr = (DECK.vb + DECK.w) / 10;                  // ancho medio del nervio de hormigón [cm]
+      const dcW = 5 / wr;
+      m.row("Ancho medio del nervio de hormigón w<sub>r</sub> (geometría aproximada de la ficha)", `${fmt(wr * 10, 0)} ≥ 50 mm ${tagDC(dcW)}`, "I3.2c");
+      m.row("Altura del nervio h<sub>r</sub> ≤ 75 mm ; hormigón sobre la cresta ≥ 50 mm", `${fmt(PLACA.hr * 10, 1)} mm ; ${fmt(eh * 10, 0)} mm`, "I3.2c");
+      checks.push({ k: L`Ancho medio del nervio ($w_r \ge 50$ mm)`, dem: "50 mm", cap: L`${tn(wr * 10, 0)} mm`, dc: dcW, html: "Ancho del nervio", viga: true });
       m.row("Ancho efectivo b = mín(L<sub>v</sub>/4 ; s)", `${fmt(bef, 1)} cm`, "I3.1a");
       m.row("Área de hormigón sobre la cresta A<sub>c</sub> = b · e<sub>h</sub>", `${fmt(Ac, 0)} cm²`, "I3.2c");
       m.row("0,85 f'<sub>c</sub> A<sub>c</sub>", `${fmt(C / 1000, 2)} tf`, "I3-1a");
@@ -712,7 +737,8 @@ function documentoTex(d, r, cuerpo) {
     L`Para luces intermedias se usa la columna de la primera luz tabulada mayor o igual a la de diseño, sin interpolar.`,
     d.puntual ? L`Las cargas puntuales se representan con una carga uniforme equivalente amplificada en 30\,\%, como prediseño; no se verifica el punzonamiento del hormigón.` : L`No se consideran cargas puntuales; si existen, se debe usar una carga equivalente amplificada en 30\,\% y verificar el punzonamiento.`,
     L`No se diseñan la armadura negativa sobre los apoyos intermedios, los voladizos, las aberturas ni la viga compuesta a flexión: deben ser definidos por el ingeniero calculista del proyecto.`,
-    ...(d.viga ? [L`En la viga compuesta no se verifican el diámetro del conector respecto del ala de la viga ($d \le 2{,}5\,t_f$, I8.1) ni el ancho medio del nervio de la placa ($w_r \ge 50$ mm, I3.2c), que se deben confirmar con el perfil y la geometría de la Instadeck.`] : []),
+    ...(d.cnv && !d.pv ? [L`Sin perfil del catálogo no se verifican el diámetro del conector respecto del ala de la viga ($d \le 2{,}5\,t_f$, I8.1) ni el ancho del ala para los conectores, que se deben confirmar con el perfil real.`] : []),
+    ...(d.viga ? [L`El ancho medio del nervio $w_r$ se obtiene de la geometría de la placa medida del dibujo de la ficha (aproximada); se recomienda confirmarlo con Cintac.`] : []),
     L`La resistencia de los conectores sigue la ecuación I8-1 del AISC 360-16 con los factores $R_g$ y $R_p$ para placas con nervios perpendiculares a la viga.`,
   ].map(t => `\\item ${t}`).join("\n");
   return L`\documentclass[11pt,letterpaper]{article}
@@ -854,7 +880,7 @@ function calcular() {
   const rm = Number.isFinite(r.dcMax) ? fmt(r.dcMax, 3) : "∞";
   $("verdict").innerHTML = r.sinVerificar.length
     ? `<div class="verdict bad">✘ La losa queda SIN VERIFICAR — ${r.sinVerificar.join("; ")} · razón máxima = ${rm}</div>`
-    : `<div class="verdict ${r.ok ? "ok" : "bad"}">${r.ok ? "✔ La losa CUMPLE" : r.okLosa ? "✘ La losa cumple, pero los conectores de la viga NO caben" : "✘ La losa NO CUMPLE"} — razón máxima = ${rm}${r.nAlz ? ` · requiere ${r.nAlz} línea${r.nAlz > 1 ? "s" : ""} de alzaprimas por tramo` : ""}</div>`;
+    : `<div class="verdict ${r.ok ? "ok" : "bad"}">${r.ok ? "✔ La losa CUMPLE" : r.okLosa ? `✘ La losa cumple, pero no la viga de apoyo (${r.checks.filter(c => c.viga && c.dc > 1 + 1e-9).map(c => c.html.toLowerCase()).join(", ")})` : "✘ La losa NO CUMPLE"} — razón máxima = ${rm}${r.nAlz ? ` · requiere ${r.nAlz} línea${r.nAlz > 1 ? "s" : ""} de alzaprimas por tramo` : ""}</div>`;
   $("memo").innerHTML = m.html();
 
   // Tabla comparativa de espesores
