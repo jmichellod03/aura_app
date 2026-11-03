@@ -185,9 +185,13 @@
 
       <fieldset>
         <legend>3. Malla de retracción</legend>
-        <label for="asMalla">Área de la malla en cada dirección A<sub>s</sub> <span class="unit">[cm²/m]</span></label>
-        <input id="asMalla" type="number" step="0.01" value="1.88">
-        <div class="unit" style="margin-top:4px">Por ejemplo, malla de φ6 a 15 cm = 1,88 cm²/m. Acero A63-42H mínimo.</div>
+        <div class="row2">
+          <div><label for="dMalla">Diámetro de la barra φ <span class="unit">[mm]</span></label><input id="dMalla" type="number" step="0.1" value="6"></div>
+          <div><label for="sMalla">Espaciamiento s <span class="unit">[cm]</span></label><input id="sMalla" type="number" step="0.5" value="15"></div>
+        </div>
+        <label>Área en cada dirección A<sub>s</sub> = (π φ²/4) · 100/s</label>
+        <output id="asOut" class="cbOut">—</output>
+        <div class="unit" style="margin-top:4px">Misma malla en ambas direcciones. Acero A63-42H mínimo.</div>
       </fieldset>
 
       <fieldset>
@@ -316,14 +320,15 @@ function leerDatos() {
   return {
     L: num("L") * 100, tramos: +$("tramos").value, ehSel: $("eh").value,
     qL: num("qL"), qD: num("qD"), ppDem: $("ppDem").checked, puntual: $("puntual").checked, heli: $("heli").checked,
-    As: num("asMalla"),
+    dM: num("dMalla"), sM: num("sMalla"),
+    As: Math.PI * (num("dMalla") / 10) ** 2 / 4 * 100 / num("sMalla"),
     cnv: +$("cnv").value, cd: $("cd").value, hs: num("hs") / 10, pos: $("pos").value, fc: num("fc"),
     QnUser: qn === "" ? null : num("QnUser") * 1000,
     viga: $("cViga").checked, Lv: num("Lv") * 100, Asv: num("Asv"), aceroV: $("aceroV").value,
   };
 }
 function reglasDatos() {
-  const r = [["L", 0, true], ["qL", 0], ["qD", 0], ["asMalla", 0, true], ["fc", FC_MIN]];
+  const r = [["L", 0, true], ["qL", 0], ["qD", 0], ["dMalla", 0, true], ["sMalla", 0, true], ["fc", FC_MIN]];
   if ($("cnv").value !== "0") r.push(["hs", 0, true]);
   if ($("QnUser").value.trim() !== "") r.push(["QnUser", 0, true]);
   if ($("cViga").checked) r.push(["Lv", 0, true], ["Asv", 0, true]);
@@ -439,7 +444,9 @@ function verificar(eh, d, m) {
   // 5. Malla de retracción
   m.h("Armadura de retracción");
   const dc4 = AS_MIN / d.As;
-  m.row("A<sub>s</sub> de la malla en cada dirección", `${fmt(d.As, 2)} cm²/m`);
+  m.row("Malla en cada dirección", `φ${fmt(d.dM, 1)} a ${fmt(d.sM, 1)} cm`);
+  m.row("A<sub>s</sub> = (π φ²/4) · 100/s", `${fmt(d.As, 2)} cm²/m`);
+  m.eq(L`A_s = \frac{\pi\,\phi^2}{4}\cdot\frac{100}{s} = \frac{\pi \cdot ${tn(d.dM / 10, 2)}^2}{4}\cdot\frac{100}{${tn(d.sM, 1)}} = ${tn(d.As, 2)}\ \mathrm{cm^2/m}`);
   m.row("A<sub>s,mín</sub>", `${fmt(AS_MIN, 2)} cm²/m`, "Tabla IV, nota 3");
   m.row("A<sub>s,mín</sub> / A<sub>s</sub>", tagDC(dc4));
   m.eq(L`\frac{A_{s,m\acute{\imath}n}}{A_s} = \frac{${tn(AS_MIN, 2)}}{${tn(d.As, 2)}} = ${tn(dc4, 3)} ${dc4 <= 1 ? LE : ">"} 1{,}0`);
@@ -541,7 +548,7 @@ function documentoTex(d, r, cuerpo) {
     fila(L`Sobrecarga de uso $q_L$`, L`${tn(d.qL, 0)} kgf/m$^2$`),
     fila(L`Carga permanente adicional $q_D$`, L`${tn(d.qD, 0)} kgf/m$^2$`),
     fila(L`Hormigón $f'_c$`, L`${tn(d.fc, 0)} kgf/cm$^2$ (mínimo 21 MPa, AISC 360-16 I1.3)`),
-    fila(L`Malla de retracción $A_s$`, L`${tn(d.As, 2)} cm$^2$/m en cada dirección`),
+    fila(L`Malla de retracción`, L`$\phi$${tn(d.dM, 1)} a ${tn(d.sM, 1)} cm en cada dirección ($A_s = ${tn(d.As, 2)}$ cm$^2$/m)`),
     fila("Conectores en los apoyos", d.cnv ? `${d.cnv} por valle, ${CONECTOR[d.cd].txt}, $h_s = ${tn(d.hs * 10, 0)}$ mm` : "sin conectores"),
   ].join("\n");
   const resumen = r.checks.map(c => `${c.k} & ${c.dem} & ${c.cap} & ${tn(c.dc, 3)} & ${estado(c.dc)}\\\\`).join("\n");
@@ -647,10 +654,12 @@ function calcular() {
     $("resTitle").textContent = "Resultados";
     $("summary").innerHTML = ""; $("memo").innerHTML = ""; $("alt").innerHTML = "";
     $("verdict").innerHTML = avisoInvalidos(malos);
+    $("asOut").textContent = "—";
     ultimoTex = "";
     return;
   }
   const d = leerDatos();
+  $("asOut").textContent = `${fmt(d.As, 2)} cm²/m`;
   if (d.cnv === 0) d.viga = false;
 
   // Todos los espesores, para elegir el menor que cumple y para la tabla comparativa
