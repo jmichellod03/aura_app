@@ -1855,10 +1855,14 @@ function generarDXF() {
   for (const [g, yc, d] of [["cs", H, dS], ["ci", 0, dI]]) {
     const xs = geo.barras.filter(b => b[2] === g).flatMap(([i, j]) => [X(i), X(j)]), xa = Math.min(...xs), xb = Math.max(...xs);
     dx.poly("CORDONES", [[xa, yc - d / 2], [xb, yc - d / 2], [xb, yc + d / 2], [xa, yc + d / 2]]);
-    geo.barras.forEach(([i, j, gg], k) => { if (gg === g) dx.text("NUMERACION", (X(i) + X(j)) / 2, yc + (g === "cs" ? -1 : 1) * (d / 2 + th * 0.8), th * 0.5, String(k + 1), 1, 2); });
+    // Número de cada tramo dentro del contorno del cordón (entre el eje y la cara exterior); si el perfil es
+    // muy bajo para el texto, fuera del contorno
+    const yN = d / 2 > th * 1.2 ? yc + (g === "cs" ? 1 : -1) * d / 4 : yc + (g === "cs" ? 1 : -1) * (d / 2 + th * 0.6);
+    geo.barras.forEach(([i, j, gg], k) => { if (gg === g) dx.text("NUMERACION", (X(i) + X(j)) / 2, yN, th * 0.5, String(k + 1), 1, 2); });
   }
   // Nudos
-  geo.nudos.forEach((_, i) => { dx.circle("NUDOS", X(i), Y(i), th * 0.15); dx.text("NUDOS", X(i) + th * 0.3, Y(i) + (Y(i) > 0 ? dS / 2 + th * 0.4 : -dI / 2 - th * 1.2), th * 0.45, "N" + (i + 1)); });
+  // Nudos: etiqueta junto al punto, hacia el interior de la viga
+  geo.nudos.forEach((_, i) => { dx.circle("NUDOS", X(i), Y(i), th * 0.15); dx.text("NUDOS", X(i) + th * 0.35, Y(i) + (Y(i) > 0 ? -th * 0.75 : th * 0.3), th * 0.45, "N" + (i + 1)); });
   // Apoyos
   const sA = th * 2.2, yAp = -dI / 2;
   for (const [x, desl] of [[0, false], [Lt, true]]) {
