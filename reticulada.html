@@ -1128,6 +1128,10 @@ function generarS2K() {
         : { ComboName: cn, CaseType: "Linear Static", CaseName: c, ScaleFactor: sf }));
     }
   }
+  // Envolvente de las combinaciones de resistencia (máxima tracción y compresión por barra)
+  COMB_3171.forEach(([nombre], i) => combos.push(i === 0
+    ? { ComboName: "ENV", ComboType: "Envelope", AutoDesign: "No", CaseType: "Response Combo", CaseName: nombre.split(":")[0], ScaleFactor: 1, SteelDesign: "None", ConcDesign: "None", AlumDesign: "None", ColdDesign: "None" }
+    : { ComboName: "ENV", CaseType: "Response Combo", CaseName: nombre.split(":")[0], ScaleFactor: 1 }));
   const fecha = new Date();
   const E2 = E * 1e4, G2 = G * 1e4;                        // kgf/cm² → kgf/m²
   return `File ${ultimoNombre.replace(/\.tex$/, ".s2k").replace("memoria_", "modelo_")} generado por AURA el ${fecha.toLocaleDateString("es-CL")}
