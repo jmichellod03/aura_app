@@ -67,7 +67,7 @@
   .opts a small { color: var(--muted); }
   .opts a .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c); flex: 0 0 8px; }
   .opts a .arr { margin-left: auto; color: var(--c); font-weight: 700; }
-  /* Subgrupo desplegable dentro de una tarjeta (Madera → aserrada / MLE) */
+  /* Subgrupo desplegable dentro de una tarjeta (Acero → vigas y columnas / reticuladas; Madera → aserrada / MLE) */
   .opts button.sub { all: unset; box-sizing: border-box; width: 100%; display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 6px; cursor: pointer; color: var(--ink); }
   .opts button.sub:hover, .opts button.sub:focus-visible { background: #f2f4f7; }
   .opts button.sub b { display: block; font-weight: 600; }
@@ -133,13 +133,18 @@
         <span class="chev">▾</span>
       </button>
       <div class="opts" id="optCalc">
-        <a href="acero.html"><span class="dot"></span><span><b>Acero estructural</b><small>Vigas y columnas · AISC 360-16</small></span><span class="arr">→</span></a>
-        <a href="reticulada.html"><span class="dot"></span><span><b>Vigas reticuladas de acero</b><small>Análisis y verificación de cordones, diagonales y montantes · AISC 360-16 · exporta a SAP2000</small></span><span class="arr">→</span></a>
+        <div class="grupo">
+          <button type="button" class="sub" aria-expanded="false" aria-controls="optAcero"><span class="dot"></span><span><b>Acero estructural</b><small>Vigas, columnas y vigas reticuladas · AISC 360-16</small></span><span class="arr">▾</span></button>
+          <div class="subopts" id="optAcero">
+            <a href="acero.html"><span class="dot"></span><span><b>Vigas y columnas</b><small>Perfiles laminados · AISC 360-16</small></span><span class="arr">→</span></a>
+            <a href="reticulada.html"><span class="dot"></span><span><b>Vigas reticuladas</b><small>Análisis y verificación de cordones, diagonales y montantes · AISC 360-16 · plano DXF y modelo SAP2000</small></span><span class="arr">→</span></a>
+          </div>
+        </div>
         <a href="hormigon.html"><span class="dot"></span><span><b>Hormigón armado</b><small>Vigas, losas y muros · ACI 318-08</small></span><span class="arr">→</span></a>
         <div class="grupo">
           <button type="button" class="sub" aria-expanded="false" aria-controls="optMadera"><span class="dot"></span><span><b>Madera</b><small>Madera aserrada y madera laminada encolada (MLE)</small></span><span class="arr">▾</span></button>
           <div class="subopts" id="optMadera">
-            <a href="madera.html"><span class="dot"></span><span><b>Madera aserrada</b><small>Envigados, pies derechos de tabiques y muros de corte · pino radiata · NCh 1198:2024</small></span><span class="arr">→</span></a>
+            <a href="madera.html"><span class="dot"></span><span><b>Madera aserrada</b><small>Envigados, pies derechos de tabiques, pilares y muros de corte · pino radiata · NCh 1198:2024</small></span><span class="arr">→</span></a>
             <a href="mle.html"><span class="dot"></span><span><b>Madera laminada MLE</b><small>Vigas y columnas · NCh 2165:2023 · NCh 1198:2024 cl. 11</small></span><span class="arr">→</span></a>
           </div>
         </div>
@@ -199,8 +204,8 @@
     <div class="dlg-acc"><button type="button" class="pb sec" id="dlgCancelar">Cancelar</button><button type="submit" class="pb">Guardar proyecto</button></div>
   </form>
 </dialog>
-<script src="memo.js?v=28"></script>
-<script src="proyectos.js?v=29"></script>
+<script src="memo.js?v=31"></script>
+<script src="proyectos.js?v=31"></script>
 
 <script>
 "use strict";

@@ -338,8 +338,7 @@
       <div id="verdict"></div>
       <div class="toolbar">
         <button class="btn sec" type="button" onclick="window.print()">Imprimir</button>
-        <button class="btn" type="button" onclick="descargarTex('viga')">Descargar memoria (.tex)</button>
-        <button class="btn" type="button" onclick="descargarZipMemoria(ultimoTex, ultimoNombre, document.body)">Descargar .zip (Overleaf)</button>
+        <button class="btn" type="button" onclick="descargarZipMemoria(ultimoTex, ultimoNombre, document.body)">Descargar memoria (.zip)</button>
       </div>
       <div class="memo" id="memo"></div>
     </div>
@@ -350,8 +349,7 @@
       <div id="lverdict"></div>
       <div class="toolbar">
         <button class="btn sec" type="button" onclick="window.print()">Imprimir</button>
-        <button class="btn" type="button" onclick="descargarTex('losa')">Descargar memoria (.tex)</button>
-        <button class="btn" type="button" onclick="descargarZipMemoria(ultimoTexLosa, ultimoNombreLosa, document.body)">Descargar .zip (Overleaf)</button>
+        <button class="btn" type="button" onclick="descargarZipMemoria(ultimoTexLosa, ultimoNombreLosa, document.body)">Descargar memoria (.zip)</button>
       </div>
       <div class="memo" id="lmemo"></div>
     </div>
@@ -369,7 +367,7 @@
 </main>
 <footer>Herramienta de apoyo académico. Las solicitaciones deben corresponder a la envolvente de combinaciones mayoradas. Verifique siempre los resultados.</footer>
 
-<script src="memo.js?v=28"></script>
+<script src="memo.js?v=31"></script>
 <script>
 "use strict";
 // ---------------------------------------------------------------------------
@@ -955,19 +953,6 @@ Por lo tanto, con una relación demanda-capacidad máxima $D/C = ${tn(dc, 3)}$ (
 
 \end{document}
 `;
-}
-
-function descargarTex(el = "viga") {
-  const [texto, nombre] = el === "losa" ? [ultimoTexLosa, ultimoNombreLosa] : [ultimoTex, ultimoNombre];
-  if (!texto) { alert("Corrija los datos inválidos antes de descargar la memoria."); return; }
-  const blob = new Blob([texUnicode(texto)],{ type: "application/x-tex;charset=utf-8" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = nombre;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
 // ===========================================================================
@@ -1702,7 +1687,7 @@ window.AURA_MEMO = {
   recalcular: () => (elActual() === "losa" ? calcularLosa() : calcularViga()),
 };
 </script>
-<script src="proyectos.js?v=29"></script>
+<script src="proyectos.js?v=31"></script>
 <script>
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
 </script>

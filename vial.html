@@ -288,15 +288,14 @@
     <div class="dibujo"><h3>Paquete estructural</h3><div id="svgPaq"></div></div>
     <div class="toolbar">
       <button class="btn sec" type="button" onclick="window.print()">Imprimir</button>
-      <button class="btn" type="button" id="btnTex">Descargar memoria (.tex)</button>
-        <button class="btn" type="button" onclick="descargarZipMemoria(ultimoTex, ultimoNombre, document.body)">Descargar .zip (Overleaf)</button>
+        <button class="btn" type="button" onclick="descargarZipMemoria(ultimoTex, ultimoNombre, document.body)">Descargar memoria (.zip)</button>
     </div>
     <div class="memo" id="memo"></div>
   </section>
 </main>
 <footer>Herramienta de apoyo académico basada en el Manual de Carreteras, Volumen N° 3 (Edición 2025), Capítulo 3.600. Verifique siempre los resultados.</footer>
 
-<script src="memo.js?v=28"></script>
+<script src="memo.js?v=31"></script>
 <script>
 "use strict";
 // ---------------------------------------------------------------------------
@@ -970,15 +969,6 @@ ${avisosTex}
   ultimoNombre = `memoria_pavimento_flexible_NE${Math.round(r.NET)}.tex`;
 }
 
-function descargarTex() {
-  if (!ultimoTex) return;
-  const blob = new Blob([texUnicode(ultimoTex)], { type: "application/x-tex;charset=utf-8" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob); a.download = ultimoNombre;
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-}
-
 function init() {
   $("plaza").innerHTML = `<option value="">— Ingresar FEE manualmente —</option>` +
     PLAZAS.map((p, k) => `<option value="${k}">${p[0]} · mov. ${p[1]}</option>`).join("");
@@ -997,7 +987,6 @@ function init() {
   const panel = $("inputs");
   panel.addEventListener("input", actualizar);
   panel.addEventListener("change", actualizar);
-  $("btnTex").addEventListener("click", descargarTex);
   actualizar();
 }
 init();
@@ -1011,7 +1000,7 @@ window.AURA_MEMO = {
   },
 };
 </script>
-<script src="proyectos.js?v=29"></script>
+<script src="proyectos.js?v=31"></script>
 <script>
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
 </script>
