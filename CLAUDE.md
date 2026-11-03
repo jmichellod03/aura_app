@@ -9,7 +9,12 @@ Todo el texto de la interfaz, las memorias y los commits va en **español (Chile
 - `index.html`: inicio, proyectos y enlaces a cada herramienta.
 - Páginas de cálculo, cada una autónoma (HTML + CSS + JS en el mismo archivo):
   - `acero.html`: vigas y columnas laminadas, AISC 360-16 LRFD.
-  - `reticulada.html`: vigas reticuladas (cordones, diagonales y montantes), AISC 360-16 LRFD. Exporta el modelo a SAP2000 (`.s2k`, kgf-m, plano XZ, combinaciones NCh 3171, cargas D, L, Lr y W en kgf/m distribuidas en el cordón superior). El encabezado del `.s2k` sigue el formato de SAP2000 v26.
+  - `reticulada.html`: vigas reticuladas (cordones, diagonales y montantes), AISC 360-16 LRFD.
+    - Barras a tracción (Cap. D) y compresión (Cap. E, con E5 para ángulos y E6 para 2L).
+    - Dos hipótesis de carga (`sModo`): costaneras **sobre los nudos** (barras articuladas, solo carga axial) o **entre nudos** (cordón superior a flexocompresión con F2/F3, G2, B1 y H1-1, solo para canales C; con otros perfiles queda "sin verificar" y no da CUMPLE).
+    - La memoria incluye una sección de alcance, hipótesis y limitaciones; no debe concluir "cumple" sobre algo que no se verificó.
+    - Geometría en `geometria(tipo, n)`: en la Warren los nudos superiores van a media distancia, para que todos los nudos de los cordones reciban barras.
+    - Exporta el modelo a SAP2000 (`.s2k`, kgf-m, plano XZ, combinaciones NCh 3171 y envolvente ENV). Según la hipótesis, las cargas en kgf/m van como fuerzas en los nudos (con R2 restringido en todos los nudos) o distribuidas en el cordón superior. El encabezado sigue el formato de SAP2000 v26.
   - `hormigon.html`: ACI 318-08.
   - `madera.html`: NCh 1198:2024.
   - `mle.html`: NCh 2165 y NCh 1198.

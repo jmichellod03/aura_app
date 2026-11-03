@@ -149,7 +149,7 @@
         <select id="gTipo">
           <option value="pratt">Pratt (diagonales a tracción)</option>
           <option value="howe">Howe (diagonales a compresión)</option>
-          <option value="warren">Warren (diagonales alternadas)</option>
+          <option value="warren">Warren (diagonales alternadas, nudos superiores a media distancia)</option>
         </select>
         <div class="row3">
           <div><label for="gL">Luz L <span class="unit">[m]</span></label><input id="gL" type="number" step="0.01" min="0" value="5"></div>
@@ -193,8 +193,14 @@
       </fieldset>
 
       <fieldset>
-        <legend>Cargas para el modelo SAP2000</legend>
-        <div class="unit">Cargas lineales sobre el cordón superior, con el ancho tributario ya incluido. Se exportan como cargas distribuidas en sus patrones. El peso propio de las barras lo calcula SAP en el patrón D. Valores de ejemplo: reemplácelos por los de su proyecto.</div>
+        <legend>Cargas sobre el cordón superior (servicio)</legend>
+        <label for="sModo">Apoyo de las costaneras</label>
+        <select id="sModo">
+          <option value="nudos" selected>Sobre los nudos: cargas puntuales, barras articuladas</option>
+          <option value="tramo">Entre nudos: carga distribuida, cordones continuos</option>
+        </select>
+        <div class="unit" id="sModoInfo"></div>
+        <div class="unit" style="margin-top:6px">Cargas lineales sin mayorar, con el ancho tributario ya incluido. Se usan para exportar el modelo a SAP2000 y, con costaneras entre nudos, para la flexión del cordón superior. El peso propio de las barras lo calcula SAP en el patrón D. Valores de ejemplo: reemplácelos por los de su proyecto.</div>
         <div class="row2">
           <div><label for="sD">Carga muerta D (sin peso propio) <span class="unit">[kgf/m]</span></label><input id="sD" type="number" step="any" min="0" value="90"></div>
           <div><label for="sL">Sobrecarga de uso L <span class="unit">[kgf/m]</span></label><input id="sL" type="number" step="any" min="0" value="0"></div>
@@ -336,8 +342,8 @@ const GRUPOS = [
 
 function longitudesGeom() {
   const Lt = num("gL"), h = num("gH"), n = Math.max(1, Math.round(num("gN")));
-  const p = Lt / n;
-  return { panel: p, diag: Math.hypot(p, h), alto: h };
+  const p = Lt / n, warren = $("gTipo").value === "warren";
+  return { panel: p, diag: Math.hypot(warren ? p / 2 : p, h), alto: h };
 }
 
 function htmlGrupo(g, i) {
@@ -366,7 +372,13 @@ function htmlGrupo(g, i) {
     </div></div>
     <div class="t-2L"><div class="row2">
       ${inp("Ls", 'Separación entre ángulos (cartela) <span class="unit">[mm]</span>', 6)}${inp("Lsep", 'Distancia entre presillas a <span class="unit">[cm]</span>', 40)}
-    </div><div class="unit">Alas a contra la cartela; ala b hacia afuera. Eje y = eje de simetría.</div></div>
+    </div>
+      <label for="${p}_E6">Conectores intermedios (Sección E6.1)</label>
+      <select id="${p}_E6">
+        <option value="sold">Soldados o con pernos pretensados — E6-2</option>
+        <option value="snug">Apernados de apriete normal (snug-tight) — E6-1</option>
+      </select>
+      <div class="unit">Alas a contra la cartela; ala b hacia afuera. Eje y = eje de simetría.</div></div>
     <div class="t-L"><div class="row2">
       <div><label for="${p}_E5">Conexión del ángulo (Sección E5)</label>
         <select id="${p}_E5">
@@ -399,8 +411,8 @@ function htmlGrupo(g, i) {
     <select id="${p}_Umodo">
       <option value="1">Caso 1: todos los elementos conectados — U = 1,0</option>
       <option value="2" selected>Caso 2: U = 1 − x̄/l (soldadura o pernos en un elemento)</option>
-      <option value="8a">Caso 8: ángulos con 4 o más pernos — U = 0,80</option>
-      <option value="8b">Caso 8: ángulos con 3 pernos o menos — U = 0,60</option>
+      <option value="8a" class="soloL">Caso 8: ángulos simples o dobles, 4 o más conectores por línea — U = 0,80</option>
+      <option value="8b" class="soloL">Caso 8: ángulos simples o dobles, 3 conectores por línea — U = 0,60 (con menos, use el caso 2)</option>
       <option value="m">Valor ingresado</option>
     </select>
     <div class="row2">
@@ -629,8 +641,11 @@ function compresion(s, Fy, d, m) {
   // Esbelteces y tensiones de pandeo elástico
   let Fe, modo, slMax, ref = "E3-4";
   const fe = (sl) => PI2 * E / (sl * sl);
+  let e5no = false;
   if (s.tipo === "L") {
-    const Lm = d.Lx * d.Kx;
+    // E5 usa la longitud entre puntos de trabajo L (sus ecuaciones ya incluyen la condición de borde);
+    // K solo se aplica a un ángulo cargado concéntricamente (sin E5)
+    const Lm = d.E5 !== "no" ? d.Lx : d.Lx * d.Kx;
     if (d.E5 !== "no") {
       const plana = d.E5 === "a";
       const x = Lm / s.ra;
@@ -649,8 +664,17 @@ function compresion(s, Fy, d, m) {
         slE5 = sl2;
       }
       m.row(`Esbeltez efectiva L<sub>c</sub>/r (Sección E5${plana ? "(a)" : "(b)"})`, fmt(slE5, 2), eqE5);
-      if (s.bl / s.bs >= 1.7) m.note("La razón entre alas b<sub>l</sub>/b<sub>s</sub> es ≥ 1,7: no se cumple el requisito (5) de E5; el ángulo debería verificarse a flexocompresión (Capítulo H).",
-        L`La razón entre alas $b_l/b_s \ge 1{,}7$: no se cumple el requisito (5) de E5; el ángulo debería verificarse a flexocompresión (Capítulo H).`);
+      // Condiciones (4) y (5) de E5: si no se cumplen, E5 no es aplicable y el ángulo debe verificarse
+      // a carga axial y flexión con el Capítulo H (fuera del alcance de esta herramienta)
+      const fallas = [];
+      if (slE5 > 200) fallas.push(`(4) L<sub>c</sub>/r = ${fmt(slE5, 1)} > 200`);
+      if (s.bl / s.bs >= 1.7) fallas.push(`(5) b<sub>l</sub>/b<sub>s</sub> = ${fmt(s.bl / s.bs, 2)} ≥ 1,7`);
+      m.row("Condiciones (4) L<sub>c</sub>/r ≤ 200 y (5) b<sub>l</sub>/b<sub>s</sub> < 1,7 de la Sección E5", fallas.length ? tag(false, "no se cumplen") : tag(true, "se cumplen"), "E5");
+      if (fallas.length) {
+        e5no = true;
+        m.note(`La Sección E5 no es aplicable: no se cumple ${fallas.join(" ni ")}. El ángulo debe verificarse a carga axial y flexión con el Capítulo H, fuera del alcance de esta herramienta: el resultado de compresión queda como NO CUMPLE.`,
+          L`La Sección E5 no es aplicable porque no se cumplen sus condiciones (4) o (5). El ángulo debe verificarse con el Capítulo H; el resultado de compresión queda como no cumple.`);
+      }
       Fe = fe(slE5); modo = "flexión (E5)"; slMax = slE5;
       m.row("Tensión de pandeo elástico: F<sub>e</sub>", `${fmt(Fe, 1)} kgf/cm²`, "E3-4");
       m.eq(L`F_e = \frac{\pi^2E}{\left(L_c/r\right)^2} = \frac{\pi^2\cdot ${tn(E, 0)}}{${tn(slE5, 2)}^2} = ${tn(Fe, 1)}${KGCM2}`, "E3-4");
@@ -671,11 +695,12 @@ function compresion(s, Fy, d, m) {
       const Feu = fe(Lm / s.rw), Fev = fe(Lm / s.rz), Fez = G * s.J / (s.A * ro2);
       const Fft = feE44(Feu, Fev, Fez, s.uo, s.vo, ro2);
       m.row("Pandeo flexo-torsional: b/t > 0,71√(E/F<sub>y</sub>)", `${fmt(btMax, 2)} > ${fmt(lim, 2)}`, "E5");
-      m.row("F<sub>e</sub> flexo-torsional (ejes principales, C<sub>w</sub> ≈ 0)", `${fmt(Fft, 1)} kgf/cm²`, s.a === s.b ? "E4-3" : "E4-4");
+      m.row("F<sub>e</sub> flexo-torsional (ejes principales, C<sub>w</sub> ≈ 0)", `${fmt(Fft, 1)} kgf/cm²`, "E4-4");
       m.p(L`Como $b/t = ${tn(btMax, 2)} > 0{,}71\sqrt{E/F_y} = ${tn(lim, 2)}$, se evalúa el pandeo flexo-torsional en ejes principales ($C_w \approx 0$, $L_c = ${tn(Lm, 1)}$ cm):`);
-      m.eq(L`\bar{r}_o^2 = u_o^2 + v_o^2 + \frac{I_w + I_z}{A_g} = ${tn(ro2, 3)}\ \mathrm{cm^2} \qquad F_{ez} = \frac{GJ}{A_g\bar{r}_o^2} = ${tn(Fez, 1)}${KGCM2}`, "E4-7");
-      m.eq(L`F_{ew} = ${tn(Feu, 1)}${KGCM2} \quad F_{ez,\,flex} = ${tn(Fev, 1)}${KGCM2} \;\Rightarrow\; F_e = ${tn(Fft, 1)}${KGCM2}`, s.a === s.b ? "E4-3" : "E4-4");
-      if (Fft < Fe) { Fe = Fft; modo = "flexo-torsional"; ref = s.a === s.b ? "E4-3" : "E4-4"; }
+      m.eq(L`\bar{r}_o^2 = u_o^2 + v_o^2 + \frac{I_w + I_z}{A_g} = ${tn(ro2, 3)}\ \mathrm{cm^2}`, "E4-9");
+      m.eq(L`F_{ez} = \frac{GJ}{A_g\bar{r}_o^2} = ${tn(Fez, 1)}${KGCM2}`, "E4-7");
+      m.eq(L`F_{ew} = ${tn(Feu, 1)}${KGCM2} \quad F_{ez,\,flex} = ${tn(Fev, 1)}${KGCM2} \;\Rightarrow\; F_e = ${tn(Fft, 1)}${KGCM2}`, "E4-4");
+      if (Fft < Fe) { Fe = Fft; modo = "flexo-torsional"; ref = "E4-4"; }
     }
   } else {
     const Lcx = d.Kx * d.Lx, Lcy = d.Ky * d.Ly;
@@ -686,8 +711,13 @@ function compresion(s, Fy, d, m) {
     if (s.tipo === "2L") {
       // E6.1: esbeltez modificada del miembro armado (Ki = 0,50 ángulos espalda con espalda)
       const ari = s.asep / s.ri;
-      m.p(L`\textbf{Miembro armado (Sección E6).} Separación entre presillas $a = ${tn(s.asep, 1)}$ cm y radio de giro mínimo de cada ángulo $r_i = r_z = ${tn(s.ri, 3)}$ cm:`);
-      if (ari <= 40) {
+      m.p(L`\textbf{Miembro armado (Sección E6).} Separación entre presillas $a = ${tn(s.asep, 1)}$ cm y radio de giro mínimo de cada ángulo $r_i = r_z = ${tn(s.ri, 3)}$ cm, con ${d.E6 === "snug" ? "conectores apernados de apriete normal (snug-tight)" : "conectores soldados o con pernos pretensados"}:`);
+      if (d.E6 === "snug") {
+        const slm = Math.sqrt(sly * sly + ari * ari);
+        m.row("Esbeltez modificada eje y (pernos de apriete normal): (L<sub>c</sub>/r)<sub>m</sub>", fmt(slm, 2), "E6-1");
+        m.eq(L`\left(\frac{L_c}{r}\right)_m = \sqrt{\left(\frac{L_c}{r}\right)_o^2 + \left(\frac{a}{r_i}\right)^2} = \sqrt{${tn(sly, 2)}^2 + ${tn(ari, 2)}^2} = ${tn(slm, 2)}`, "E6-1");
+        sly = slm;
+      } else if (ari <= 40) {
         m.row("Miembro armado: a/r<sub>i</sub> ≤ 40 → esbeltez sin modificar", fmt(ari, 2), "E6-2a");
         m.eq(L`\frac{a}{r_i} = \frac{${tn(s.asep, 1)}}{${tn(s.ri, 3)}} = ${tn(ari, 2)} \le 40 \;\Rightarrow\; \left(\frac{L_c}{r}\right)_m = \left(\frac{L_c}{r}\right)_o = ${tn(sly, 2)}`, "E6-2a");
       } else {
@@ -714,7 +744,8 @@ function compresion(s, Fy, d, m) {
       const Fft = feE43(Fes, Fez, H);
       const ejeS = s.simetria;
       m.p(L`\textbf{Pandeo flexo-torsional (Sección E4).} La sección tiene un eje de simetría (eje ${ejeS}); se usa $L_{cz} = K_yL_y = ${tn(Lcz, 1)}$ cm y ${s.tipo === "C" ? L`centro de corte a $x_o = ${tn(s.xo, 3)}$ cm del centroide` : L`centro de corte a $y_o = ${tn(s.yo, 3)}$ cm del centroide y $C_w \approx 0$`}:`);
-      m.eq(L`\bar{r}_o^2 = x_o^2 + y_o^2 + \frac{I_x + I_y}{A_g} = ${tn(ro2, 3)}\ \mathrm{cm^2} \qquad H = 1 - \frac{x_o^2 + y_o^2}{\bar{r}_o^2} = ${tn(H, 4)}`, "E4-8");
+      m.eq(L`\bar{r}_o^2 = x_o^2 + y_o^2 + \frac{I_x + I_y}{A_g} = ${tn(ro2, 3)}\ \mathrm{cm^2}`, "E4-9");
+      m.eq(L`H = 1 - \frac{x_o^2 + y_o^2}{\bar{r}_o^2} = ${tn(H, 4)}`, "E4-8");
       m.eq(L`F_{ez} = \left(\frac{\pi^2EC_w}{L_{cz}^2} + GJ\right)\frac{1}{A_g\bar{r}_o^2} = \left(\frac{\pi^2\cdot ${tn(E, 0)}\cdot ${tn(s.Cw, 1)}}{${tn(Lcz, 1)}^2} + ${tn(G, 0)}\cdot ${tn(s.J, 4)}\right)\frac{1}{${tn(s.A)}\cdot ${tn(ro2, 3)}} = ${tn(Fez, 1)}${KGCM2}`, "E4-7");
       m.eq(L`F_e = \left(\frac{F_{e${ejeS}} + F_{ez}}{2H}\right)\left[1 - \sqrt{1 - \frac{4F_{e${ejeS}}F_{ez}H}{\left(F_{e${ejeS}} + F_{ez}\right)^2}}\right] = ${tn(Fft, 1)}${KGCM2}`, "E4-3");
       m.row("Pandeo flexo-torsional: F<sub>ez</sub> ; F<sub>e</sub>", `${fmt(Fez, 1)} ; ${fmt(Fft, 1)} kgf/cm²`, "E4-3");
@@ -760,13 +791,139 @@ function compresion(s, Fy, d, m) {
     m.eq(L`A_e = A_g - \sum (b - b_e)\,t = ${tn(Ae)}${CM2}`, "E7-1");
   }
   const Pn = Fcr * Ae, phiPn = 0.9 * Pn;
-  const dc = d.Pu / phiPn;
+  if (d.Pu <= 0) e5no = false;   // sin compresión, la aplicabilidad de E5 no influye
+  const dc = e5no ? Infinity : d.Pu / phiPn;
   m.row("<b>Resistencia de diseño en compresión: φ<sub>c</sub>P<sub>n</sub></b>", `<b>${fmt(phiPn, 0)} kgf</b>`, Ae < s.A ? "E7-1" : "E3-1");
   m.eq(L`\phi_cP_n = 0{,}90\,F_{cr}A_${Ae < s.A ? "e" : "g"} = 0{,}90\cdot ${tn(Fcr, 1)}\cdot ${tn(Ae)} = ${tn(phiPn, 0)}${KG}`, Ae < s.A ? "E7-1" : "E3-1");
   m.row("<b>Razón P<sub>u</sub>/φ<sub>c</sub>P<sub>n</sub></b>", `<b>${fmt(dc, 3)}</b> ${tag(dc <= 1, dc <= 1 ? "CUMPLE" : "NO CUMPLE")}`);
   m.p(L`Con la compresión última $P_u = ${tn(d.Pu, 0)}$ kgf:`);
   m.eq(L`\frac{P_u}{\phi_cP_n} = \frac{${tn(d.Pu, 0)}}{${tn(phiPn, 0)}} = ${tn(dc, 3)} ${cmp(dc, 1)} 1{,}0`);
-  return { phiPn, dc, Fcr, Fe, modo, Ae, slMax };
+  return { phiPn, dc, Fcr, Fe, modo, Ae, slMax, e5no };
+}
+
+// ---------------------------------------------------------------------------
+// Flexocompresión del cordón superior con costaneras entre nudos (Capítulos F, G, H y Anexo 8)
+// Cada tramo entre nudos se toma como viga simplemente apoyada de luz a = L_x con la carga mayorada
+// máxima de las combinaciones NCh 3171: M_u = w_u a²/8 y V_u = w_u a/2 (cota superior del momento del
+// cordón continuo). Solo canales C flectando en torno a su eje fuerte (alma en el plano de la reticulada).
+// ---------------------------------------------------------------------------
+function cargaMayorada(pp) {
+  const q = cargasSAP();
+  let mejor = { w: 0, c: COMB_3171[0][0] };
+  for (const [nom, fac] of COMB_3171) {
+    const w = Object.entries(fac).reduce((a, [k, f]) => a + f * (k === "D" ? q.D + pp : q[k]), 0);
+    if (Math.abs(w) > Math.abs(mejor.w)) mejor = { w, c: nom };
+  }
+  return mejor;
+}
+
+function flexoCordon(s, Fy, d, c, t, m) {
+  m.sub("Flexocompresión del cordón superior — Capítulos F, G y H");
+  if (s.tipo !== "C") {
+    m.note("Con costaneras entre nudos el cordón superior trabaja a flexocompresión. Esta verificación está implementada solo para canales C: con ángulos, dobles ángulos o propiedades ingresadas a mano el cordón queda <b>sin verificar</b> (apoye las costaneras sobre los nudos o verifíquelo aparte).",
+      L`Con costaneras entre nudos el cordón superior trabaja a flexocompresión. Esta verificación está implementada solo para canales C; con el perfil elegido el cordón queda sin verificar.`);
+    return { dc: Infinity, noImpl: true };
+  }
+  const rEF = Math.sqrt(E / Fy), a = d.Lx, Lb = d.Ly;
+  const pp = s.peso || s.A * 0.785;
+  const wu = cargaMayorada(pp), w = Math.abs(wu.w);              // kgf/m
+  const Mu = w * (a / 100) ** 2 / 8 * 100, Vu = w * (a / 100) / 2;  // kgf·cm, kgf
+  m.p(L`Las costaneras se apoyan entre nudos, por lo que cada tramo del cordón superior recibe carga transversal. Se toma cada tramo como viga simplemente apoyada entre nudos, lo que acota superiormente el momento del cordón continuo.`, true);
+  m.row(`Carga mayorada máxima (${wu.c}, incluye peso propio ${fmt(pp, 2)} kgf/m): w<sub>u</sub>`, `${fmt(wu.w, 1)} kgf/m`);
+  m.row("Momento y corte del tramo (a = L<sub>x</sub>): M<sub>u</sub> = w<sub>u</sub>a²/8 ; V<sub>u</sub> = w<sub>u</sub>a/2", `${fmt(Mu / 100, 1)} kgf·m ; ${fmt(Vu, 0)} kgf`);
+  m.p(L`\textbf{Solicitaciones del tramo.} Combinación controlante ${wu.c.replace(/:.*/, "")} (NCh 3171), con el peso propio del cordón $${tn(pp, 2)}$ kgf/m sumado a D:`);
+  m.eq(L`w_u = ${tn(wu.w, 1)}\ \mathrm{kgf/m} \qquad M_u = \frac{w_u\,a^2}{8} = \frac{${tn(w, 1)}\cdot ${tn(a / 100, 3)}^2}{8} = ${tn(Mu / 100, 1)}\ \mathrm{kgf\cdot m} \qquad V_u = \frac{w_u\,a}{2} = ${tn(Vu, 0)}${KG}`);
+
+  // Propiedades de flexión (canal en torno al eje x)
+  const Sx = s.Ix / (s.h / 2);
+  const Zx = s.b * s.tf * (s.h - s.tf) + s.tw * (s.h - 2 * s.tf) ** 2 / 4;
+  const ho = s.h - s.tf, rts = Math.sqrt(Math.sqrt(s.Iy * s.Cw) / Sx), cc = ho / 2 * Math.sqrt(s.Iy / s.Cw);
+  const Mp = Fy * Zx;
+  m.row("Módulos de sección: S<sub>x</sub> ; Z<sub>x</sub>", `${fmt(Sx, 2)} ; ${fmt(Zx, 2)} cm³`);
+  m.eq(L`S_x = \frac{I_x}{h/2} = \frac{${tn(s.Ix, 2)}}{${tn(s.h / 2, 2)}} = ${tn(Sx, 2)}\ \mathrm{cm^3} \qquad Z_x = b_f t_f (h - t_f) + \frac{t_w (h - 2t_f)^2}{4} = ${tn(Zx, 2)}\ \mathrm{cm^3}`);
+
+  // Clasificación en flexión (Tabla B4.1b)
+  const lf = s.b / s.tf, lpf = 0.38 * rEF, lrf = 1.0 * rEF;
+  const lw = s.elems[1].lam, lpw = 3.76 * rEF;
+  const claseAla = lf <= lpf ? "compacta" : lf <= lrf ? "no compacta" : "esbelta";
+  m.row("Ala en flexión (caso 10): λ ; λ<sub>p</sub> ; λ<sub>r</sub>", `${fmt(lf, 2)} ; ${fmt(lpf, 2)} ; ${fmt(lrf, 2)} ${tag(claseAla === "compacta", claseAla)}`, "B4.1b");
+  m.row("Alma en flexión (caso 15): λ ; λ<sub>p</sub>", `${fmt(lw, 2)} ; ${fmt(lpw, 2)} ${tag(lw <= lpw, lw <= lpw ? "compacta" : "no compacta")}`, "B4.1b");
+  m.eq(L`\text{Ala: } \lambda = \frac{b_f}{t_f} = ${tn(lf, 2)};\quad \lambda_p = 0{,}38\sqrt{E/F_y} = ${tn(lpf, 2)};\quad \lambda_r = 1{,}0\sqrt{E/F_y} = ${tn(lrf, 2)} \;\Rightarrow\; \text{${claseAla}}`);
+  m.eq(L`\text{Alma: } \lambda = ${tn(lw, 2)} \;${cmp(lw, lpw)}\; \lambda_p = 3{,}76\sqrt{E/F_y} = ${tn(lpw, 2)}`);
+  if (lw > lpw) {
+    m.note("El alma no es compacta en flexión (secciones F4/F5): fuera del alcance de esta herramienta.", L`El alma no es compacta en flexión (secciones F4/F5): fuera del alcance de esta herramienta.`);
+    return { dc: Infinity, noImpl: true };
+  }
+
+  // Fluencia y pandeo lateral-torsional (F2), C_b = 1
+  const Lp = 1.76 * s.ry * rEF;
+  const jc = s.J * cc / (Sx * ho);
+  const Lr = 1.95 * rts * E / (0.7 * Fy) * Math.sqrt(jc + Math.sqrt(jc * jc + 6.76 * (0.7 * Fy / E) ** 2));
+  let Mltb, refL;
+  if (Lb <= Lp) { Mltb = Mp; refL = "F2-1"; }
+  else if (Lb <= Lr) { Mltb = Math.min(Mp, Mp - (Mp - 0.7 * Fy * Sx) * (Lb - Lp) / (Lr - Lp)); refL = "F2-2"; }
+  else {
+    const Fcr = PI2 * E / (Lb / rts) ** 2 * Math.sqrt(1 + 0.078 * jc * (Lb / rts) ** 2);
+    Mltb = Math.min(Mp, Fcr * Sx); refL = "F2-3";
+  }
+  m.row("Longitud no arriostrada L<sub>b</sub> = L<sub>y</sub> ; L<sub>p</sub> ; L<sub>r</sub> (C<sub>b</sub> = 1)", `${fmt(Lb, 1)} ; ${fmt(Lp, 1)} ; ${fmt(Lr, 1)} cm`, "F2-5/F2-6");
+  m.row(`Fluencia y pandeo lateral-torsional: M<sub>n</sub>`, `${fmt(Mltb / 100, 1)} kgf·m`, refL);
+  m.p(L`\textbf{Pandeo lateral-torsional (F2).} Con $c = \frac{h_o}{2}\sqrt{I_y/C_w} = ${tn(cc, 3)}$ (canales, F2-8b), $r_{ts} = ${tn(rts, 3)}$ cm y $C_b = 1{,}0$ (conservador):`);
+  m.eq(L`L_p = 1{,}76\,r_y\sqrt{\frac{E}{F_y}} = ${tn(Lp, 1)}${CM} \qquad L_r = 1{,}95\,r_{ts}\frac{E}{0{,}7F_y}\sqrt{\frac{Jc}{S_xh_o} + \sqrt{\left(\frac{Jc}{S_xh_o}\right)^2 + 6{,}76\left(\frac{0{,}7F_y}{E}\right)^2}} = ${tn(Lr, 1)}${CM}`, "F2-5");
+  m.eq(L`M_p = F_yZ_x = ${tn(Mp / 100, 1)}\ \mathrm{kgf\cdot m} \qquad L_b = ${tn(Lb, 1)}\ \mathrm{cm} \;\Rightarrow\; M_n = ${tn(Mltb / 100, 1)}\ \mathrm{kgf\cdot m}`, refL);
+
+  // Pandeo local del ala (por analogía con F3: la Tabla F1.1 no cubre canales con alas no compactas)
+  let Mn = Mltb, refM = refL;
+  if (claseAla !== "compacta") {
+    let Mflb;
+    if (claseAla === "no compacta") Mflb = Mp - (Mp - 0.7 * Fy * Sx) * (lf - lpf) / (lrf - lpf);
+    else { const kc = Math.min(0.76, Math.max(0.35, 4 / Math.sqrt(lw))); Mflb = 0.9 * E * kc * Sx / (lf * lf); }
+    m.row("Pandeo local del ala: M<sub>n</sub> (por analogía con F3)", `${fmt(Mflb / 100, 1)} kgf·m`, claseAla === "no compacta" ? "F3-1" : "F3-2");
+    m.p(L`\textbf{Pandeo local del ala.} La Tabla F1.1 no cubre canales con alas ${claseAla}s; se aplica la Sección F3 por analogía:`);
+    m.eq(claseAla === "no compacta"
+      ? L`M_n = M_p - (M_p - 0{,}7F_yS_x)\frac{\lambda - \lambda_{pf}}{\lambda_{rf} - \lambda_{pf}} = ${tn(Mflb / 100, 1)}\ \mathrm{kgf\cdot m}`
+      : L`M_n = \frac{0{,}9Ek_cS_x}{\lambda^2} = ${tn(Mflb / 100, 1)}\ \mathrm{kgf\cdot m}`, claseAla === "no compacta" ? "F3-1" : "F3-2");
+    if (Mflb < Mn) { Mn = Mflb; refM = claseAla === "no compacta" ? "F3-1" : "F3-2"; }
+  }
+  const phiMn = 0.9 * Mn;
+  m.row("<b>Resistencia de diseño en flexión: φ<sub>b</sub>M<sub>n</sub></b>", `<b>${fmt(phiMn / 100, 1)} kgf·m</b>`, refM);
+  m.eq(L`\phi_bM_n = 0{,}90\cdot ${tn(Mn / 100, 1)} = ${tn(phiMn / 100, 1)}\ \mathrm{kgf\cdot m}`);
+
+  // Corte (G2.1, k_v = 5,34)
+  const hw = s.h - 2 * s.tf, htw = hw / s.tw, Aw = s.h * s.tw, lim = 1.10 * Math.sqrt(5.34 * E / Fy);
+  const Cv1 = htw <= lim ? 1 : lim / htw, phiVn = 0.9 * 0.6 * Fy * Aw * Cv1, dcV = Vu / phiVn;
+  m.row("Corte: φ<sub>v</sub>V<sub>n</sub> = 0,9·0,6F<sub>y</sub>A<sub>w</sub>C<sub>v1</sub> ; V<sub>u</sub>/φ<sub>v</sub>V<sub>n</sub>", `${fmt(phiVn, 0)} kgf ; ${fmt(dcV, 3)} ${tag(dcV <= 1, dcV <= 1 ? "CUMPLE" : "NO CUMPLE")}`, "G2-1");
+  m.eq(L`\frac{h}{t_w} = ${tn(htw, 2)} ${cmp(htw, lim)} 1{,}10\sqrt{k_vE/F_y} = ${tn(lim, 2)} \Rightarrow C_{v1} = ${tn(Cv1, 3)} \qquad \phi_vV_n = 0{,}9\cdot 0{,}6\cdot ${tn(Fy, 0)}\cdot ${tn(Aw, 2)}\cdot ${tn(Cv1, 3)} = ${tn(phiVn, 0)}${KG}`, "G2-1");
+
+  // Amplificación P-δ (Anexo 8.2.1, C_m = 1,0 por carga transversal, α = 1)
+  const Pe1 = PI2 * E * s.Ix / (d.Kx * d.Lx) ** 2;
+  let B1 = 1;
+  if (d.Pu > 0) {
+    if (d.Pu >= Pe1) {
+      m.note("P<sub>u</sub> ≥ P<sub>e1</sub>: el cordón es inestable en el plano (B<sub>1</sub> → ∞).", L`$P_u \ge P_{e1}$: el cordón es inestable en el plano.`);
+      return { dc: Infinity, Mu, phiMn };
+    }
+    B1 = Math.max(1, 1 / (1 - d.Pu / Pe1));
+  }
+  m.row("Amplificación P-δ: P<sub>e1</sub> ; B<sub>1</sub> (C<sub>m</sub> = 1,0)", `${fmt(Pe1, 0)} kgf ; ${fmt(B1, 3)}`, "A-8-3");
+  m.eq(L`P_{e1} = \frac{\pi^2EI_x}{(K_xL_x)^2} = ${tn(Pe1, 0)}${KG} \qquad B_1 = \frac{C_m}{1 - P_u/P_{e1}} = \frac{1{,}0}{1 - ${tn(d.Pu, 0)}/${tn(Pe1, 0)}} = ${tn(B1, 3)} \ge 1`, "A-8-3");
+
+  // Interacción H1-1 con compresión y con tracción (envolventes: conservador)
+  const H = (r, rm) => (r >= 0.2 ? r + 8 / 9 * rm : r / 2 + rm);
+  const rP = d.Pu / c.phiPn, rMc = B1 * Mu / phiMn, dcC = H(rP, rMc);
+  const rT = d.Tu / t.phiPn, rMt = Mu / phiMn, dcT = H(rT, rMt);
+  const eqH = (r, rm, Pr, Pc, Mr) => r >= 0.2
+    ? L`\frac{${Pr}}{${Pc}} + \frac{8}{9}\frac{${Mr}}{\phi_bM_n} = ${tn(r, 3)} + \frac{8}{9}\cdot ${tn(rm, 3)} = ${tn(H(r, rm), 3)} ${cmp(H(r, rm), 1)} 1{,}0`
+    : L`\frac{${Pr}}{2\,${Pc}} + \frac{${Mr}}{\phi_bM_n} = \frac{${tn(r, 3)}}{2} + ${tn(rm, 3)} = ${tn(H(r, rm), 3)} ${cmp(H(r, rm), 1)} 1{,}0`;
+  m.p(L`\textbf{Interacción (H1.1 y H1.2).} Se combinan las fuerzas axiales máximas de la envolvente con el momento máximo del tramo, aunque provengan de combinaciones distintas (conservador):`);
+  m.eq(eqH(rP, rMc, L`P_u`, L`\phi_cP_n`, L`B_1M_u`), rP >= 0.2 ? "H1-1a" : "H1-1b");
+  m.eq(eqH(rT, rMt, L`T_u`, L`\phi_tP_n`, L`M_u`), rT >= 0.2 ? "H1-1a" : "H1-1b");
+  const dcH = Math.max(dcC, dcT);
+  m.row("Interacción con compresión: P<sub>u</sub>/φ<sub>c</sub>P<sub>n</sub> ; B<sub>1</sub>M<sub>u</sub>/φ<sub>b</sub>M<sub>n</sub> → D/C", `${fmt(rP, 3)} ; ${fmt(rMc, 3)} → ${fmt(dcC, 3)}`, rP >= 0.2 ? "H1-1a" : "H1-1b");
+  m.row("Interacción con tracción: T<sub>u</sub>/φ<sub>t</sub>P<sub>n</sub> ; M<sub>u</sub>/φ<sub>b</sub>M<sub>n</sub> → D/C", `${fmt(rT, 3)} ; ${fmt(rMt, 3)} → ${fmt(dcT, 3)}`, rT >= 0.2 ? "H1-1a" : "H1-1b");
+  const dc = Math.max(dcH, dcV);
+  m.row("<b>Razón de flexocompresión y corte del cordón superior</b>", `<b>${fmt(dc, 3)}</b> ${tag(dc <= 1, dc <= 1 ? "CUMPLE" : "NO CUMPLE")}`);
+  return { dc, dcH, dcV, Mu, Vu, phiMn, phiVn, B1, wu };
 }
 
 // ---------------------------------------------------------------------------
@@ -781,27 +938,42 @@ function propsLista(s) {
   if (s.tipo !== "M") l.push(["Peso" + (s.peso ? " (catálogo)" : ""), "Peso", s.peso || s.A * 0.785, 2, "kgf/m"]);
   return l;
 }
+const texOrigen = (t) => t.replace(/x̄/g, L`$\bar{x}$`).replace(/C_w/g, L`$C_w$`).replace(/—/g, "---");
 const uTex = (u) => u.replace("cm²", "cm$^2$").replace("cm⁴", "cm$^4$").replace("cm⁶", "cm$^6$");
 
 // ---------------------------------------------------------------------------
 // Esquema de la reticulada (SVG en pantalla y TikZ en la memoria)
 // ---------------------------------------------------------------------------
-function barras(tipo, n) {
-  const b = [];   // [x1, y1, x2, y2, grupo] en unidades de panel (y = 0 inferior, 1 superior)
-  for (let i = 0; i < n; i++) { b.push([i, 1, i + 1, 1, "cs"]); b.push([i, 0, i + 1, 0, "ci"]); }
+// Geometría: nudos [x en paneles, y (0 inferior, 1 superior)] y barras [nudo i, nudo j, grupo].
+// Todos los nudos de los cordones reciben diagonales o montantes, así la longitud no arriostrada de los
+// cordones en el plano es siempre la distancia entre nudos consecutivos.
+// Warren: n paneles del cordón inferior; los nudos superiores quedan a media distancia, más montantes extremos.
+function geometria(tipo, n) {
+  const nudos = [], idx = new Map(), bs = [];
+  const nodo = (x, y) => { const k = x + "|" + y; if (!idx.has(k)) { idx.set(k, nudos.length); nudos.push([x, y]); } return idx.get(k); };
+  const bar = (x1, y1, x2, y2, g) => bs.push([nodo(x1, y1), nodo(x2, y2), g]);
   if (tipo === "warren") {
-    b.push([0, 0, 0, 1, "mo"]); b.push([n, 0, n, 1, "mo"]);
-    for (let i = 0; i < n; i++) b.push(i % 2 === 0 ? [i, 0, i + 1, 1, "di"] : [i, 1, i + 1, 0, "di"]);
+    const sup = [0, ...Array.from({ length: n }, (_, i) => i + 0.5), n];
+    for (let k = 0; k < sup.length - 1; k++) bar(sup[k], 1, sup[k + 1], 1, "cs");
+    for (let i = 0; i < n; i++) bar(i, 0, i + 1, 0, "ci");
+    bar(0, 0, 0, 1, "mo"); bar(n, 0, n, 1, "mo");
+    for (let i = 0; i < n; i++) { bar(i, 0, i + 0.5, 1, "di"); bar(i + 0.5, 1, i + 1, 0, "di"); }
   } else {
-    for (let i = 0; i <= n; i++) b.push([i, 0, i, 1, "mo"]);
+    for (let i = 0; i < n; i++) bar(i, 1, i + 1, 1, "cs");
+    for (let i = 0; i < n; i++) bar(i, 0, i + 1, 0, "ci");
+    for (let i = 0; i <= n; i++) bar(i, 0, i, 1, "mo");
     for (let i = 0; i < n; i++) {
-      const izq = i + 0.5 < n / 2;
-      const pratt = tipo === "pratt";
       // Pratt: diagonales que bajan hacia el centro (tracción); Howe: que suben hacia el centro
-      b.push((izq === pratt) ? [i, 1, i + 1, 0, "di"] : [i, 0, i + 1, 1, "di"]);
+      const izq = i + 0.5 < n / 2, pratt = tipo === "pratt";
+      if (izq === pratt) bar(i, 1, i + 1, 0, "di"); else bar(i, 0, i + 1, 1, "di");
     }
   }
-  return b;
+  return { nudos, barras: bs };
+}
+// Barras como [x1, y1, x2, y2, grupo] (para los dibujos)
+function barras(tipo, n) {
+  const g = geometria(tipo, n);
+  return g.barras.map(([i, j, gr]) => [...g.nudos[i], ...g.nudos[j], gr]);
 }
 const COLOR = { ok: "#1f8a4c", bad: "#c62828", off: "#b6bdc6" };
 function svgReticulada(tipo, n, Lt, h, est) {
@@ -812,8 +984,7 @@ function svgReticulada(tipo, n, Lt, h, est) {
   const grosor = { cs: 4, ci: 4, di: 2.2, mo: 2.2 };
   const lineas = barras(tipo, n).map(([a, b, c, d, g]) =>
     `<line x1="${X(a)}" y1="${Y(b)}" x2="${X(c)}" y2="${Y(d)}" stroke="${COLOR[est[g] || "off"]}" stroke-width="${grosor[g]}" stroke-linecap="round"/>`).join("");
-  const nodos = [];
-  for (let i = 0; i <= n; i++) nodos.push(`<circle cx="${X(i)}" cy="${Y(0)}" r="2.6" fill="#1d2330"/><circle cx="${X(i)}" cy="${Y(1)}" r="2.6" fill="#1d2330"/>`);
+  const nodos = geometria(tipo, n).nudos.map(([x, y]) => `<circle cx="${X(x)}" cy="${Y(y)}" r="2.6" fill="#1d2330"/>`);
   const apoyo = (x, rod) => `<path d="M${x},${Y(0) + 3} l-9,14 h18 z" fill="#fff" stroke="#3d4450" stroke-width="1.5"/>${rod ? `<line x1="${x - 12}" y1="${Y(0) + 21}" x2="${x + 12}" y2="${Y(0) + 21}" stroke="#3d4450" stroke-width="1.5"/>` : ""}`;
   const yb = Y(0) + 42;
   const leyenda = GRUPOS.map((g, i) => `<g transform="translate(${x0 + i * 150},${yb + 22})"><line x1="0" y1="0" x2="22" y2="0" stroke="${COLOR[est[g.id] || "off"]}" stroke-width="${grosor[g.id]}"/><text x="28" y="4" font-size="11" fill="#1d2330">${g.nombre}</text></g>`).join("");
@@ -850,21 +1021,28 @@ ${l}
 function leerGrupo(p, f) {
   return {
     Lx: num(p + "_Lx") * 100, Kx: num(p + "_Kx"), Ly: num(p + "_Ly") * 100, Ky: num(p + "_Ky"),
-    Pu: num(p + "_Pu") * f, Tu: num(p + "_Tu") * f, E5: $(p + "_E5").value,
+    Pu: num(p + "_Pu") * f, Tu: num(p + "_Tu") * f, E5: $(p + "_E5").value, E6: $(p + "_E6").value,
     Umodo: $(p + "_Umodo").value, lcon: num(p + "_lcon"), Uval: num(p + "_Uval"), Ahue: num(p + "_Ahue"),
   };
+}
+// Datos que definen la sección de un grupo (también para los grupos desmarcados, que igual se exportan a SAP)
+function reglasSeccion(p) {
+  const t = $(p + "_tipo").value, cat = $(p + "_cat").value, r = [];
+  if (t === "C" && !cat) r.push([p + "_Ch", 0, true], [p + "_Cb", 0, true], [p + "_Ctw", 0, true], [p + "_Ctf", 0, true]);
+  if ((t === "L" || t === "2L") && !cat) r.push([p + "_La", 0, true], [p + "_Lb", 0, true], [p + "_Lt", 0, true]);
+  if (t === "2L") r.push([p + "_Ls", 0], [p + "_Lsep", 0, true]);
+  if (t === "M") r.push([p + "_MA", 0, true], [p + "_Mrx", 0, true], [p + "_Mry", 0, true], [p + "_Mxb", 0]);
+  return r;
 }
 function reglasDatos() {
   const r = [["gL", 0, true], ["gH", 0, true], ["gN", 0, true], ["fD", 0], ["sD", 0], ["sL", 0], ["sLr", 0], ["sW", -Infinity]];
   for (const g of GRUPOS) {
     const p = g.id;
     if (!$(p + "_on").checked) continue;
-    const t = $(p + "_tipo").value, cat = $(p + "_cat").value;
-    if (t === "C" && !cat) r.push([p + "_Ch", 0, true], [p + "_Cb", 0, true], [p + "_Ctw", 0, true], [p + "_Ctf", 0, true]);
-    if ((t === "L" || t === "2L") && !cat) r.push([p + "_La", 0, true], [p + "_Lb", 0, true], [p + "_Lt", 0, true]);
-    if (t === "2L") r.push([p + "_Ls", 0], [p + "_Lsep", 0, true]);
-    if (t === "M") r.push([p + "_MA", 0, true], [p + "_Mrx", 0, true], [p + "_Mry", 0, true], [p + "_Mxb", 0]);
-    r.push([p + "_Lx", 0, true], [p + "_Kx", 0, true], [p + "_Pu", 0], [p + "_Tu", 0], [p + "_Ahue", 0]);
+    const t = $(p + "_tipo").value;
+    r.push(...reglasSeccion(p));
+    r.push([p + "_Lx", 0, true], [p + "_Pu", 0], [p + "_Tu", 0], [p + "_Ahue", 0]);
+    if (!(t === "L" && $(p + "_E5").value !== "no")) r.push([p + "_Kx", 0, true]);
     if (t !== "L") r.push([p + "_Ly", 0, true], [p + "_Ky", 0, true]);
     const um = $(p + "_Umodo").value;
     if (um === "2") r.push([p + "_lcon", 0, true]);
@@ -901,9 +1079,12 @@ let ultimoTex = "", ultimoNombre = "memoria_reticulada.tex";
 
 function calcular() {
   pintarPrediseno();
+  pintarModo();
   limpiarInvalidos($("inputs"));
   const malos = [...datosInvalidos(reglasDatos())];
   if (!malos.length) malos.push(...geometriaInvalida());
+  const nRaw = parseFloat($("gN").value);
+  if (!malos.length && !(Number.isInteger(nRaw) && nRaw >= 1)) { $("gN").classList.add("invalido"); malos.push("N° de paneles: debe ser un número entero mayor o igual a 1"); }
   const activos = GRUPOS.filter(g => $(g.id + "_on").checked);
   if (!activos.length) malos.push("incluya al menos un grupo de barras");
   if (malos.length) {
@@ -921,6 +1102,19 @@ function calcular() {
   m.out.push(`<h3>Datos generales</h3>`);
   m.row(`Acero ${acero}: F<sub>y</sub> ; F<sub>u</sub> ; E`, `${Fy} ; ${Fu} ; ${E.toLocaleString("es-CL")} kgf/cm²`);
   m.row("Reticulada: tipo ; luz ; altura ; L/h", `${tipo === "pratt" ? "Pratt" : tipo === "howe" ? "Howe" : "Warren"} ; ${fmt(Lt, 2)} m ; ${fmt(h, 2)} m ; ${fmt(Lt / h, 1)}`);
+  const modoC = $("sModo").value;
+
+  // Alcance, hipótesis y limitaciones (también en la memoria .tex)
+  const plegado = activos.some(g => /plegado/.test(leerSeccion(g.id).origen || ""));
+  const hayL = activos.some(g => $(g.id + "_tipo").value === "L" && $(g.id + "_E5").value !== "no");
+  m.h("Alcance, hipótesis y limitaciones");
+  m.p(modoC === "nudos"
+    ? L`\textbf{Cargas.} Las costaneras se apoyan sobre los nudos: las cargas llegan como fuerzas puntuales a los nudos superiores y todas las barras se consideran articuladas, por lo que se verifican como miembros cargados axialmente (Capítulos D y E). Se desprecian los momentos secundarios y el momento del peso propio de cada barra entre nudos.`
+    : L`\textbf{Cargas.} Las costaneras se apoyan entre nudos: el cordón superior recibe carga transversal y se verifica a flexocompresión (Capítulos F, G y H, con amplificación $B_1$ del Anexo 8). Las demás barras se verifican como miembros cargados axialmente (Capítulos D y E).`);
+  m.p(L`\textbf{Análisis.} Las fuerzas axiales provienen de un análisis elástico lineal de primer orden (SAP2000 / ETABS). En una viga reticulada simplemente apoyada que no forma parte del sistema sismorresistente los efectos de segundo orden globales son despreciables; ${modoC === "tramo" ? L`el efecto local $P$-$\delta$ del cordón superior se considera con $B_1$.` : L`no hay efecto $P$-$\delta$ local porque las barras no tienen carga transversal.`}`);
+  m.p(L`\textbf{No incluido.} No se verifican las conexiones (soldaduras, pernos, cartelas, bloque de corte), el arriostramiento lateral de los cordones ni los apoyos.${hayL ? L` Para los ángulos con la Sección E5 se supone que se cumplen las condiciones (1) a (3): carga por la misma ala en ambos extremos, conexión soldada o con al menos dos pernos y sin cargas transversales intermedias.` : ""}`);
+  if (plegado) m.p(L`\textbf{Perfiles plegados.} Hay perfiles plegados en frío: su diseño corresponde a AISI S100 / NCh 427. Esta memoria aplica AISC 360-16 como referencia y no reemplaza esa verificación.`);
+  m.p(L`\textbf{Deformación.} El límite de flecha L/${$("fLim").value} es un criterio de servicio adoptado para el proyecto; el AISC 360-16 no establece límites numéricos.`);
 
   const res = [], est = {};
   for (const g of activos) {
@@ -929,7 +1123,7 @@ function calcular() {
     m.sub("Propiedades de la sección");
     const pl = propsLista(s);
     m.out.push(`<div class="props" style="margin:4px 0 8px">${pl.map(([k, , v, dd, u]) => `<div>${k} = <b>${v === null ? u : `${fmt(v, dd)}</b> ${u}`}${v === null ? "</b>" : ""}</div>`).join("")}</div>`);
-    if (s.origen) { m.out.push(`<div class="unit">${s.origen}${s.tipo === "2L" ? `, separación ${fmt(s.s * 10, 0)} mm entre ángulos` : ""}.</div>`); m.p(`Perfil: ${s.origen}.`, true); }
+    if (s.origen) { m.out.push(`<div class="unit">${s.origen.replace(/C_w/g, "C<sub>w</sub>")}${s.tipo === "2L" ? `, separación ${fmt(s.s * 10, 0)} mm entre ángulos` : ""}.</div>`); m.p(`Perfil: ${texOrigen(s.origen)}.`, true); }
     else if (s.tipo === "C" || s.tipo === "L" || s.tipo === "2L") m.out.push(`<div class="unit">Propiedades calculadas con esquinas rectas${s.tipo === "2L" ? `, separación ${fmt(s.s * 10, 0)} mm entre ángulos` : ""}. Eje x: ${s.tipo === "C" ? "eje fuerte (perpendicular al alma)" : "horizontal"}.</div>`);
     m.raw(L`\begin{table}[H]
 \centering
@@ -942,12 +1136,14 @@ ${pl.map(([, kt, v, dd, u]) => `${kt} & ${v === null ? uTex(u).replace(/,/g, "{,
 \bottomrule
 \end{tabular}
 \end{table}`);
-    m.p(L`Solicitaciones últimas del grupo (envolvente de las combinaciones LRFD del modelo): $T_u = ${tn(d.Tu, 0)}$ kgf y $P_u = ${tn(d.Pu, 0)}$ kgf. Longitudes: ${s.tipo === "L" ? L`$L = ${tn(d.Lx, 1)}$ cm, $K = ${tn(d.Kx, 2)}$` : L`$L_x = ${tn(d.Lx, 1)}$ cm, $K_x = ${tn(d.Kx, 2)}$, $L_y = ${tn(d.Ly, 1)}$ cm, $K_y = ${tn(d.Ky, 2)}$`}.`, true);
+    m.p(L`Solicitaciones últimas del grupo (envolvente de las combinaciones LRFD del modelo): $T_u = ${tn(d.Tu, 0)}$ kgf y $P_u = ${tn(d.Pu, 0)}$ kgf. Longitudes: ${s.tipo === "L" ? (d.E5 !== "no" ? L`$L = ${tn(d.Lx, 1)}$ cm entre puntos de trabajo (E5)` : L`$L = ${tn(d.Lx, 1)}$ cm, $K = ${tn(d.Kx, 2)}$`) : L`$L_x = ${tn(d.Lx, 1)}$ cm, $K_x = ${tn(d.Kx, 2)}$, $L_y = ${tn(d.Ly, 1)}$ cm, $K_y = ${tn(d.Ky, 2)}$`}.`, true);
     const t = traccion(s, Fy, Fu, d, m);
     const c = compresion(s, Fy, d, m);
-    const dc = Math.max(t.dc, c.dc);
+    let fx = null;
+    if (g.id === "cs" && modoC === "tramo") fx = flexoCordon(s, Fy, d, c, t, m);
+    const dc = Math.max(t.dc, c.dc, fx ? fx.dc : 0);
     est[g.id] = dc <= 1 ? "ok" : "bad";
-    res.push({ g, s, d, t, c, dc });
+    res.push({ g, s, d, t, c, fx, dc });
   }
 
   // Flecha
@@ -968,14 +1164,16 @@ ${pl.map(([, kt, v, dd, u]) => `${kt} & ${v === null ? uTex(u).replace(/,/g, "{,
     const w = Math.min(100, Math.max(0, r * 100));
     return `<div class="card"><div class="t">${t}</div><div class="v">${v}</div><div class="bar ${r > 1 ? "bad" : ""}"><i style="width:${w}%"></i></div><div class="s">${sub}</div></div>`;
   };
-  $("summary").innerHTML = res.map(r => card(`${r.g.nombre} · ${r.s.tipo === "M" ? "manual" : r.s.nombre}`, fmt(r.dc, 3),
-    `T: ${fmt(r.t.dc, 3)} (φP<sub>n</sub> = ${fmt(r.t.phiPn, 0)}) · C: ${fmt(r.c.dc, 3)} (φP<sub>n</sub> = ${fmt(r.c.phiPn, 0)}) kgf`, r.dc)).join("")
-    + card("Flecha", fmt(dcF, 3), `Δ = ${fmt(D, 2)} cm ≤ L/${lim} = ${fmt(Dadm, 2)} cm`, dcF);
+  const dcTxt = (x) => Number.isFinite(x) ? fmt(x, 3) : "∞";
+  $("summary").innerHTML = res.map(r => card(`${r.g.nombre} · ${r.s.tipo === "M" ? "manual" : r.s.nombre}`, dcTxt(r.dc),
+    `T: ${fmt(r.t.dc, 3)} (φP<sub>n</sub> = ${fmt(r.t.phiPn, 0)}) · C: ${r.c.e5no ? "E5 no aplicable" : `${fmt(r.c.dc, 3)} (φP<sub>n</sub> = ${fmt(r.c.phiPn, 0)})`} kgf`
+    + (r.fx ? (r.fx.noImpl ? " · Flexión: <b>sin verificar</b>" : ` · Flexocompresión: ${dcTxt(r.fx.dc)} (φM<sub>n</sub> = ${fmt(r.fx.phiMn / 100, 1)} kgf·m)`) : ""), r.dc)).join("")
+    + card("Flecha", fmt(dcF, 3), `Δ = ${fmt(D, 2)} cm ${dcF <= 1 ? "≤" : ">"} L/${lim} = ${fmt(Dadm, 2)} cm`, dcF);
   const ctrl = dcF > peor.dc ? "flecha" : peor.g.nombre.toLowerCase();
-  $("verdict").innerHTML = `<div class="verdict ${ok ? "ok" : "bad"}">${ok ? "✔ La reticulada CUMPLE" : "✘ La reticulada NO CUMPLE"} — razón máxima = ${fmt(dcMax, 3)} (${ctrl})</div>`;
+  $("verdict").innerHTML = `<div class="verdict ${ok ? "ok" : "bad"}">${ok ? "✔ La reticulada CUMPLE" : "✘ La reticulada NO CUMPLE"} — razón máxima = ${dcTxt(dcMax)} (${ctrl})${res.some(r => r.fx && r.fx.noImpl) ? " · flexión del cordón superior sin verificar" : ""}${res.some(r => r.c.e5no) ? " · E5 no aplicable" : ""}</div>`;
   $("memo").innerHTML = m.html();
 
-  ultimoTex = documentoTex({ acero, Fy, Fu, tipo, Lt, h, n, res, D, Dadm, lim, dcF, dcMax, ok, f }, m.texto());
+  ultimoTex = documentoTex({ acero, Fy, Fu, tipo, Lt, h, n, res, D, Dadm, lim, dcF, dcMax, ok, f, modoC }, m.texto());
   ultimoNombre = `memoria_reticulada_${tipo}_${String(Lt).replace(".", "-")}m_${acero}.tex`;
 }
 
@@ -983,7 +1181,8 @@ function documentoTex(o, cuerpo) {
   const nom = o.tipo === "pratt" ? "Pratt" : o.tipo === "howe" ? "Howe" : "Warren";
   const fecha = new Date().toLocaleDateString("es-CL", { day: "numeric", month: "long", year: "numeric" });
   const rel = o.Lt / o.h;
-  const resumen = o.res.map(r => `${r.g.nombre} (${r.s.tipo === "M" ? "manual" : r.s.nombre}) & ${tn(r.d.Tu, 0)} & ${tn(r.t.phiPn, 0)} & ${tn(r.d.Pu, 0)} & ${tn(r.c.phiPn, 0)} & ${tn(r.dc, 3)} & ${estado(r.dc)}\\\\`).join("\n");
+  const resumen = o.res.map(r => `${r.g.nombre} (${r.s.tipo === "M" ? "manual" : r.s.nombre}) & ${tn(r.d.Tu, 0)} & ${tn(r.t.phiPn, 0)} & ${tn(r.d.Pu, 0)} & ${r.c.e5no ? "E5 no aplica" : tn(r.c.phiPn, 0)} & ${tn(Math.max(r.t.dc, r.c.dc), 3)} & ${estado(Math.max(r.t.dc, r.c.dc))}\\\\`
+    + (r.fx ? `\n\\quad Flexocompresión (H1) & \\multicolumn{4}{c}{${r.fx.noImpl ? "sin verificar (perfil no implementado)" : L`$M_u = ${tn(r.fx.Mu / 100, 1)}$ kgf$\cdot$m ; $\phi_bM_n = ${tn(r.fx.phiMn / 100, 1)}$ kgf$\cdot$m`}} & ${tn(r.fx.dc, 3)} & ${r.fx.noImpl ? "Sin verificar" : estado(r.fx.dc)}\\\\` : "")).join("\n");
   return L`\documentclass[11pt,letterpaper]{article}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
@@ -1025,11 +1224,11 @@ F_u &= ${tn(o.Fu, 0)}${KGCM2}\\
 G &= ${tn(G, 0)}${KGCM2}
 \end{aligned}
 \]
-El diseño se realiza por el método LRFD, con $\phi_t = 0{,}90$ (fluencia) y $0{,}75$ (ruptura) en tracción y $\phi_c = 0{,}90$ en compresión. Las solicitaciones de cada grupo de barras corresponden a la envolvente de las combinaciones LRFD obtenidas de un modelo de análisis (SAP2000 / ETABS)${o.f === 1000 ? ", ingresadas en tf" : ""}, y se expresan en kgf. Las barras se verifican como miembros cargados axialmente (Capítulos D y E).
+El diseño se realiza por el método LRFD, con $\phi_t = 0{,}90$ (fluencia) y $0{,}75$ (ruptura) en tracción y $\phi_c = 0{,}90$ en compresión. Las solicitaciones de cada grupo de barras corresponden a la envolvente de las combinaciones LRFD obtenidas de un modelo de análisis (SAP2000 / ETABS)${o.f === 1000 ? ", ingresadas en tf" : ""}, y se expresan en kgf. ${o.modoC === "nudos" ? "Las costaneras se apoyan sobre los nudos y las barras se verifican como miembros cargados axialmente (Capítulos D y E)." : "Las costaneras se apoyan entre nudos: el cordón superior se verifica a flexocompresión (Capítulos F, G y H) y las demás barras como miembros cargados axialmente (Capítulos D y E)."} Las hipótesis y limitaciones se detallan en la sección siguiente.
 
 \section{Geometría de la reticulada}
 ${tikzReticulada(o.tipo, o.n, o.Lt, o.h)}
-La reticulada tiene una luz $L = ${tn(o.Lt, 2)}$ m, una altura $h = ${tn(o.h, 2)}$ m y ${o.n} paneles de ${tn(o.Lt / o.n, 3)} m. La relación $L/h = ${tn(rel, 1)}$ ${rel >= 10 && rel <= 15 ? "se encuentra dentro del rango de predimensionamiento" : "está fuera del rango de predimensionamiento"} $h \approx L/10$ a $L/15$.
+La reticulada tiene una luz $L = ${tn(o.Lt, 2)}$ m, una altura $h = ${tn(o.h, 2)}$ m y ${o.n} paneles de ${tn(o.Lt / o.n, 3)} m${o.tipo === "warren" ? " en el cordón inferior (nudos superiores a media distancia)" : ""}. La relación $L/h = ${tn(rel, 1)}$ ${rel >= 10 && rel <= 15 ? "se encuentra dentro del rango de predimensionamiento" : "está fuera del rango de predimensionamiento"} $h \approx L/10$ a $L/15$.
 
 ${cuerpo}
 
@@ -1048,7 +1247,7 @@ Flecha (L/${o.lim}) & \multicolumn{4}{c}{$\Delta = ${tn(o.D, 2)}$ cm ; $\Delta_{
 \end{tabular}
 \end{table}
 
-Por lo tanto, como la razón demanda-capacidad máxima es $D/C = ${tn(o.dcMax, 3)}$ ${o.dcMax <= 1 ? L`$\le 1{,}0$` : L`$> 1{,}0$`}, la viga reticulada \textbf{${o.ok ? "cumple" : "no cumple"}} con las verificaciones de resistencia y deformación según el AISC 360-16.
+Por lo tanto, como la razón demanda-capacidad máxima es $D/C = ${tn(o.dcMax, 3)}$ ${o.dcMax <= 1 ? L`$\le 1{,}0$` : L`$> 1{,}0$`}, la viga reticulada \textbf{${o.ok ? "cumple" : "no cumple"}} con las verificaciones de resistencia del AISC 360-16 incluidas en esta memoria y con el criterio de deformación L/${o.lim} adoptado, bajo las hipótesis y limitaciones indicadas.${o.res.some(r => r.fx && r.fx.noImpl) ? " La flexión del cordón superior no fue verificada." : ""}
 
 \end{document}
 `;
@@ -1057,8 +1256,10 @@ Por lo tanto, como la razón demanda-capacidad máxima es $D/C = ${tn(o.dcMax, 3
 // ---------------------------------------------------------------------------
 // Exportación del modelo a SAP2000 (.s2k, tablas de base de datos en texto)
 // Unidades kgf, m. Reticulada en el plano XZ (X a lo largo de la luz, Z vertical), análisis plano.
-// Cordones continuos; diagonales y montantes articulados en sus extremos.
-// Patrones D, L, Lr y W vacíos y combinaciones LRFD de NCh 3171.
+// Costaneras sobre los nudos: cargas puntuales en los nudos superiores y todas las barras articuladas
+// (giro R2 restringido en los nudos). Costaneras entre nudos: carga distribuida en el cordón superior,
+// cordones continuos y diagonales y montantes articulados.
+// Patrones D, L, Lr y W con las cargas ingresadas y combinaciones LRFD y de servicio de NCh 3171.
 // ---------------------------------------------------------------------------
 const COMB_3171 = [
   ["C1: 1,4D", { D: 1.4 }],
@@ -1089,6 +1290,13 @@ function generarS2K() {
     if (s.tipo === "C") fila = { SectionName: nom, Material: mat, Shape: "Channel", t3: mt(s.h), t2: mt(s.b), tf: mt(s.tf), tw: mt(s.tw) };
     else if (s.tipo === "L") fila = { SectionName: nom, Material: mat, Shape: "Angle", t3: mt(s.a), t2: mt(s.b), tf: mt(s.t), tw: mt(s.t) };
     else if (s.tipo === "2L") fila = { SectionName: nom, Material: mat, Shape: "Double Angle", t3: mt(s.a), t2: mt(2 * s.b + s.s), tf: mt(s.t), tw: mt(s.t), dis: mt(s.s) };
+    // Perfiles de catálogo (UPN con acuerdos, plegados con esquinas redondeadas): SAP dibuja la forma con
+    // esquinas rectas; los modificadores llevan A, I y el peso a los valores calculados por AURA
+    if (s.tipo !== "M" && s.origen) {
+      const r = s.tipo === "C" ? secC(s.h * 10, s.b * 10, s.tw * 10, s.tf * 10) : s.tipo === "L" ? secL(s.a * 10, s.b * 10, s.t * 10) : sec2L(s.a * 10, s.b * 10, s.t * 10, s.s * 10, s.asep);
+      const kA = s.A / r.A;
+      Object.assign(fila, { AMod: q(kA), A2Mod: 1, A3Mod: 1, JMod: 1, I2Mod: q(s.Iy / r.Iy), I3Mod: q(s.Ix / r.Ix), MMod: q(kA), WMod: q(kA) });
+    }
     else {
       const A = s.A / 1e4, I3 = s.Ix / 1e8, I2 = s.Iy / 1e8;
       fila = { SectionName: nom, Material: mat, Shape: "General", t3: mt(Math.sqrt(12 * s.Ix / s.A)), t2: mt(Math.sqrt(12 * s.Iy / s.A)),
@@ -1099,24 +1307,37 @@ function generarS2K() {
     secGrupo[g.id] = { nom, tipoSAP: fila.Shape };
   }
 
-  // Nudos: inferiores 1..n+1, superiores n+2..2n+2
-  const jInf = (i) => i + 1, jSup = (i) => n + 2 + i;
-  const nudos = [];
-  for (let i = 0; i <= n; i++) nudos.push({ Joint: jInf(i), CoordSys: "GLOBAL", CoordType: "Cartesian", XorR: q(i * Lt / n), Y: 0, Z: 0, SpecialJt: "No", GlobalX: q(i * Lt / n), GlobalY: 0, GlobalZ: 0 });
-  for (let i = 0; i <= n; i++) nudos.push({ Joint: jSup(i), CoordSys: "GLOBAL", CoordType: "Cartesian", XorR: q(i * Lt / n), Y: 0, Z: q(h), SpecialJt: "No", GlobalX: q(i * Lt / n), GlobalY: 0, GlobalZ: q(h) });
+  // Nudos (numerados desde 1 en el orden de la geometría)
+  const geo = geometria(tipo, n), enNudos = $("sModo").value === "nudos";
+  const X = (i) => geo.nudos[i][0] * Lt / n, Z = (i) => geo.nudos[i][1] * h;
+  const nudos = geo.nudos.map((_, i) => ({ Joint: i + 1, CoordSys: "GLOBAL", CoordType: "Cartesian", XorR: q(X(i)), Y: 0, Z: q(Z(i)), SpecialJt: "No", GlobalX: q(X(i)), GlobalY: 0, GlobalZ: q(Z(i)) }));
+  const apoyoA = geo.nudos.findIndex(([x, y]) => x === 0 && y === 0) + 1, apoyoB = geo.nudos.findIndex(([x, y]) => x === n && y === 0) + 1;
 
-  // Barras
-  const conect = [], asig = [], lib = [], grupos = [], cargas = [];
+  // Barras, articulaciones y cargas
+  const conect = [], asig = [], lib = [], grupos = [], cargas = [], trib = {};
   const qs = cargasSAP();
-  barras(tipo, n).forEach(([x1, y1, x2, y2, g], k) => {
-    const f = k + 1;
-    const ji = y1 ? jSup(x1) : jInf(x1), jj = y2 ? jSup(x2) : jInf(x2);
-    conect.push({ Frame: f, JointI: ji, JointJ: jj, IsCurved: "No" });
+  const libre = { PI: "No", V2I: "No", V3I: "No", TI: "No", M2I: "Yes", M3I: "Yes", PJ: "No", V2J: "No", V3J: "No", TJ: "No", M2J: "Yes", M3J: "Yes", PartialFix: "No" };
+  geo.barras.forEach(([i, j, g], k) => {
+    const f = k + 1, largo = Math.hypot(X(j) - X(i), Z(j) - Z(i));
+    conect.push({ Frame: f, JointI: i + 1, JointJ: j + 1, IsCurved: "No" });
     asig.push({ Frame: f, SectionType: secGrupo[g].tipoSAP, AutoSelect: "N.A.", AnalSect: secGrupo[g].nom, DesignSect: secGrupo[g].nom, MatProp: "Default" });
-    if (g === "di" || g === "mo") lib.push({ Frame: f, PI: "No", V2I: "No", V3I: "No", TI: "No", M2I: "Yes", M3I: "Yes", PJ: "No", V2J: "No", V3J: "No", TJ: "No", M2J: "Yes", M3J: "Yes", PartialFix: "No" });
+    if (enNudos || g === "di" || g === "mo") lib.push({ Frame: f, ...libre });
     grupos.push({ GroupName: NOMG[g], ObjectType: "Frame", ObjectLabel: f });
-    if (g === "cs") for (const [pat, w] of Object.entries(qs)) if (w) cargas.push({ Frame: f, LoadPat: pat, CoordSys: "GLOBAL", Type: "Force", Dir: "Gravity", DistType: "RelDist", RelDistA: 0, RelDistB: 1, AbsDistA: 0, AbsDistB: q(Lt / n), FOverLA: q(w), FOverLB: q(w) });
+    if (g !== "cs") return;
+    if (enNudos) { trib[i] = (trib[i] || 0) + largo / 2; trib[j] = (trib[j] || 0) + largo / 2; }
+    else for (const [pat, w] of Object.entries(qs)) if (w) cargas.push({ Frame: f, LoadPat: pat, CoordSys: "GLOBAL", Type: "Force", Dir: "Gravity", DistType: "RelDist", RelDistA: 0, RelDistB: 1, AbsDistA: 0, AbsDistB: q(largo), FOverLA: q(w), FOverLB: q(w) });
   });
+  // Costaneras sobre los nudos: carga puntual = carga lineal × longitud tributaria del nudo (Z hacia arriba)
+  const cargasNudo = [];
+  if (enNudos) for (const [i, lt] of Object.entries(trib)) for (const [pat, w] of Object.entries(qs))
+    if (w) cargasNudo.push({ Joint: +i + 1, LoadPat: pat, CoordSys: "GLOBAL", F1: 0, F2: 0, F3: q(-w * lt), M1: 0, M2: 0, M3: 0 });
+  // Apoyo fijo y deslizante; con barras articuladas se restringe además el giro R2 de cada nudo
+  // (ningún elemento le da rigidez al giro; no cambia las fuerzas)
+  const restr = geo.nudos.map((_, i) => {
+    const j = i + 1, fijo = j === apoyoA, desl = j === apoyoB;
+    if (!fijo && !desl && !enNudos) return null;
+    return { Joint: j, U1: fijo ? "Yes" : "No", U2: fijo || desl ? "Yes" : "No", U3: fijo || desl ? "Yes" : "No", R1: "No", R2: enNudos ? "Yes" : "No", R3: "No" };
+  }).filter(Boolean);
 
   const pats = [["D", "Dead", 1], ["L", "Live", 0], ["Lr", "Roof Live", 0], ["W", "Wind", 0]];
   const combos = [];
@@ -1146,9 +1367,7 @@ function generarS2K() {
     + tabla("CONNECTIVITY - FRAME", conect)
     + tabla("FRAME SECTION ASSIGNMENTS", asig)
     + (lib.length ? tabla("FRAME RELEASE ASSIGNMENTS 1 - GENERAL", lib) : "")
-    + tabla("JOINT RESTRAINT ASSIGNMENTS", [
-      { Joint: jInf(0), U1: "Yes", U2: "Yes", U3: "Yes", R1: "No", R2: "No", R3: "No" },
-      { Joint: jInf(n), U1: "No", U2: "Yes", U3: "Yes", R1: "No", R2: "No", R3: "No" }])
+    + tabla("JOINT RESTRAINT ASSIGNMENTS", restr)
     + tabla("GROUPS 1 - DEFINITIONS", Object.values(NOMG).map((g, i) => ({ GroupName: g, Selection: "Yes", SectionCut: "Yes", Steel: "Yes", Concrete: "Yes", Aluminum: "Yes", ColdFormed: "Yes", Stage: "Yes", Bridge: "Yes", AutoSeismic: "No", AutoWind: "No", SelDesSteel: "No", SelDesAlum: "No", SelDesCold: "No", MassWeight: "Yes", Color: ["Red", "Blue", "Green", "Magenta"][i] })))
     + tabla("GROUPS 2 - ASSIGNMENTS", grupos)
     + tabla("LOAD PATTERN DEFINITIONS", pats.map(([p, t, sw]) => ({ LoadPat: p, DesignType: t, SelfWtMult: sw, ...(t === "Wind" ? { AutoLoad: "None" } : {}) })))
@@ -1156,11 +1375,13 @@ function generarS2K() {
     + tabla("CASE - STATIC 1 - LOAD ASSIGNMENTS", pats.map(([p]) => ({ Case: p, LoadType: "Load pattern", LoadName: p, LoadSF: 1 })))
     + tabla("COMBINATION DEFINITIONS", combos)
     + (cargas.length ? tabla("FRAME LOADS - DISTRIBUTED", cargas) : "")
+    + (cargasNudo.length ? tabla("JOINT LOADS - FORCE", cargasNudo) : "")
     // Sin combinaciones automáticas de diseño (DSTL…): se diseña solo con las de NCh 3171
     + tabla("AUTO COMBINATION OPTION DATA 01 - GENERAL", [{ DesignType: "Concrete", AutoGen: "No" }, { DesignType: "Steel", AutoGen: "No" }])
-    // Preferencias de diseño (mismas tablas que exporta SAP2000 v26): AISC 360-16 LRFD y AISI-16 LRFD
-    + tabla("PREFERENCES - STEEL DESIGN - AISC 360-16", [{ THDesign: "Envelopes", FrameType: "OMF", PatLLF: 0.75, SRatioLimit: 1, MaxIter: 1, SDC: "D", SeisCode: "No", SeisLoad: "No", ImpFactor: 1, SystemRho: 1, SystemSds: 0.5, SystemR: 8, SystemCd: 5.5, Omega0: 3, Provision: "LRFD", AMethod: "Direct Analysis", SOMethod: "General 2nd Order", SRMethod: "Tau-b Fixed", NLCoeff: 0.002, PhiB: 0.9, PhiC: 0.9, PhiTY: 0.9, PhiTF: 0.75, PhiV: 0.9, PhiVRolledI: 1, PhiVT: 0.9, PlugWeld: "Yes", HSSWelding: "ERW", HSSReduceT: "No", CheckDefl: "No", DLRat: 120, SDLAndLLRat: 120, LLRat: 360, TotalRat: 240, NetRat: 240 }])
-    + tabla("PREFERENCES - COLD FORMED DESIGN - AISI-16", [{ THDesign: "Envelopes", FrameType: "Braced Frame", SRatioLimit: 1, SOMethod: "General 2nd Order", Provision: "LRFD", LatFact: 1.3333333333333333, UseLatFact: "No", PhiTy: 0.9, PhiTr: 0.75, PhiC: 0.85, PhiB: 0.9, PhiBPipe: 0.95, PhiV: 0.95 }])
+    // Preferencias de diseño (mismas tablas que exporta SAP2000 v26): AISC 360-16 y AISI-16 LRFD, con método de
+    // longitud efectiva y primer orden amplificado, coherente con los casos lineales (LinStatic) del modelo
+    + tabla("PREFERENCES - STEEL DESIGN - AISC 360-16", [{ THDesign: "Envelopes", FrameType: "OMF", PatLLF: 0.75, SRatioLimit: 1, MaxIter: 1, SDC: "D", SeisCode: "No", SeisLoad: "No", ImpFactor: 1, SystemRho: 1, SystemSds: 0.5, SystemR: 8, SystemCd: 5.5, Omega0: 3, Provision: "LRFD", AMethod: "Effective Length", SOMethod: "Amplified 1st Order", SRMethod: "Tau-b Fixed", NLCoeff: 0.002, PhiB: 0.9, PhiC: 0.9, PhiTY: 0.9, PhiTF: 0.75, PhiV: 0.9, PhiVRolledI: 1, PhiVT: 0.9, PlugWeld: "Yes", HSSWelding: "ERW", HSSReduceT: "No", CheckDefl: "No", DLRat: 120, SDLAndLLRat: 120, LLRat: 360, TotalRat: 240, NetRat: 240 }])
+    + tabla("PREFERENCES - COLD FORMED DESIGN - AISI-16", [{ THDesign: "Envelopes", FrameType: "Braced Frame", SRatioLimit: 1, SOMethod: "Amplified 1st Order", Provision: "LRFD", LatFact: 1.3333333333333333, UseLatFact: "No", PhiTy: 0.9, PhiTr: 0.75, PhiC: 0.85, PhiB: 0.9, PhiBPipe: 0.95, PhiV: 0.95 }])
     + tabla("DATABASE FORMAT TYPES", [{ UnitsCurr: "Yes", OverrideE: "No" }])
     + "END TABLE DATA\n";
 }
@@ -1170,6 +1391,16 @@ function cargasSAP() {
 }
 function descargarS2K() {
   if (!ultimoTex) { alert("Corrija los datos inválidos antes de exportar el modelo."); return; }
+  // Todos los grupos se exportan (las barras existen aunque el grupo no se verifique): sus secciones deben ser válidas
+  const malos = [];
+  for (const g of GRUPOS) {
+    const p = g.id, mal = datosInvalidos(reglasSeccion(p));
+    const t = $(p + "_tipo").value, cat = $(p + "_cat").value;
+    if (!mal.length && t === "C" && !cat && (2 * num(p + "_Ctf") >= num(p + "_Ch") || num(p + "_Ctw") >= num(p + "_Cb"))) mal.push("espesores incompatibles con h y b_f");
+    if (!mal.length && (t === "L" || t === "2L") && !cat && num(p + "_Lt") >= Math.min(num(p + "_La"), num(p + "_Lb"))) mal.push("t debe ser menor que las alas");
+    if (mal.length) malos.push(`${g.nombre}: ${mal.join(", ")}`);
+  }
+  if (malos.length) { alert("Para exportar el modelo, todas las barras necesitan una sección válida (también los grupos no incluidos en la verificación):\n\n" + malos.join("\n")); return; }
   const nombre = `modelo_reticulada_${$("gTipo").value}_${String(num("gL")).replace(".", "-")}m.s2k`;
   descargarBlob(new Blob([generarS2K().replace(/\n/g, "\r\n")], { type: "text/plain;charset=utf-8" }), nombre);
 }
@@ -1183,6 +1414,12 @@ function descargarTex() {
 // Interfaz
 // ---------------------------------------------------------------------------
 let grupoVisible = "cs";
+function pintarModo() {
+  const tramo = $("sModo").value === "tramo";
+  $("sModoInfo").innerHTML = tramo
+    ? "El cordón superior se verifica a flexocompresión (F, G y H) con M<sub>u</sub> = w<sub>u</sub>a²/8 de estas cargas; ingrese en L<sub>y</sub> del cordón superior la distancia entre arriostramientos laterales. Implementado para canales C."
+    : "Todas las barras quedan articuladas y solo con carga axial. Los cordones se verifican a tracción y compresión.";
+}
 function pintarPrediseno() {
   const Lt = num("gL"), h = num("gH");
   if (!(Lt > 0 && h > 0)) { $("gPre").textContent = ""; return; }
@@ -1202,12 +1439,19 @@ function mostrarTipo(p) {
     : CAT_CP[cat] ? `Plegado e = ${CAT_CP[cat][2]} mm · ${fmt(CAT_CP[cat][3], 2)} kgf/m · rige además AISI S100 / NCh 427`
     : CAT_LP[cat] ? `Plegado e = ${CAT_LP[cat][2]} mm · ${fmt(CAT_LP[cat][3], 2)} kgf/m${t === "2L" ? " por ángulo" : ""}` : "";
   fs.querySelector(".catInfo").innerHTML = info;
+  // Con E5 la longitud es entre puntos de trabajo y no se usa K
+  const conE5 = t === "L" && $(p + "_E5").value !== "no";
   fs.querySelector(".lxLab").innerHTML = t === "L" ? "Longitud de la barra L" : "Longitud no arriostrada L<sub>x</sub>";
   fs.querySelector(".kxLab").innerHTML = t === "L" ? "Factor K" : "Factor K<sub>x</sub>";
   fs.querySelector(".hintEje").textContent = t === "L"
-    ? "Con E5, L es la longitud entre puntos de trabajo (use K = 1)."
+    ? (conE5 ? "Con E5, L es la longitud entre puntos de trabajo; las ecuaciones de E5 ya consideran la condición de borde (no se usa K)." : "Ángulo cargado concéntricamente: pandeo en torno al eje principal menor con L_c = K·L.")
     : t === "C" ? "x: eje fuerte (perpendicular al alma); y: eje débil. El pandeo torsional usa L_cz = K_y·L_y."
     : t === "2L" ? "Con la cartela en el plano de la reticulada: pandeo en el plano en torno a x; fuera del plano en torno a y (simetría)." : "";
+  // Caso 8 de la Tabla D3.1: solo ángulos simples y dobles
+  const esL = t === "L" || t === "2L";
+  fs.querySelectorAll("option.soloL").forEach(o => { o.hidden = !esL; o.disabled = !esL; });
+  if (!esL && /^8/.test($(p + "_Umodo").value)) $(p + "_Umodo").value = "2";
+  fs.querySelector("#" + p + "_Kx").closest("div").classList.toggle("hidden", conE5);
   const um = $(p + "_Umodo").value;
   fs.querySelector(".u-2").classList.toggle("hidden", um !== "2");
   fs.querySelector(".u-m").classList.toggle("hidden", um !== "m");
@@ -1262,7 +1506,7 @@ function init() {
   });
   $("inputs").addEventListener("change", (e) => {
     const id = e.target.id || "";
-    if (/_(tipo|Umodo|cat)$/.test(id)) mostrarTipo(id.split("_")[0]);
+    if (/_(tipo|Umodo|cat|E5)$/.test(id)) mostrarTipo(id.split("_")[0]);
     if (id === "unidad") {
       const toTf = $("unidad").value === "tf";
       GRUPOS.forEach(g => ["_Pu", "_Tu"].forEach(s => {
@@ -1271,6 +1515,7 @@ function init() {
       }));
       actualizarUnidades();
     }
+    if (id === "gTipo") usarGeometria(false);
     if (e.target.tagName === "SELECT" || e.target.type === "checkbox") calcular();
   });
   $("gLong").addEventListener("click", () => { usarGeometria(true); calcular(); });
