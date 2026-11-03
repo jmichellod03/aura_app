@@ -1678,7 +1678,7 @@ Por lo tanto, como la razón demanda-capacidad máxima es $D/C = ${tn(o.dcMax, 3
 // Exportación del modelo a SAP2000 (.s2k, tablas de base de datos en texto)
 // Unidades kgf, m. Reticulada en el plano XZ (X a lo largo de la luz, Z vertical), análisis plano.
 // Costaneras sobre los nudos: cargas puntuales en los nudos superiores y todas las barras articuladas
-// (giro R2 restringido en los nudos). Costaneras entre nudos: carga distribuida en el cordón superior,
+// (en cada nudo queda un solo extremo sin liberar, así el modelo es estable sin restringir giros). Costaneras entre nudos: carga distribuida en el cordón superior,
 // cordones continuos y diagonales y montantes articulados.
 // Patrones D, L, Lr y W con las cargas ingresadas y combinaciones LRFD y de servicio de NCh 3171.
 // ---------------------------------------------------------------------------
@@ -1748,11 +1748,22 @@ function generarS2K() {
   const oriPerp = { cs: leerSeccion("cs").ori === "perp", ci: leerSeccion("ci").ori === "perp" };
   const qs = cargasSAP();
   const libre = { PI: "No", V2I: "No", V3I: "No", TI: "No", M2I: "Yes", M3I: "Yes", PJ: "No", V2J: "No", V3J: "No", TJ: "No", M2J: "Yes", M3J: "Yes", PartialFix: "No" };
+  // Barras articuladas sin restringir el giro de los nudos: en cada nudo se deja un solo extremo de barra
+  // sin liberar (preferentemente de un cordón). Ese nudo gira libre con esa única barra, así que su momento es
+  // nulo y el modelo es estable sin apoyos ficticios.
+  const sinLiberar = new Map();   // nudo -> índice de barra cuyo extremo queda sin liberar
+  if (enNudos) {
+    const orden = [...geo.barras.keys()].sort((a, b) => (/^c/.test(geo.barras[a][2]) ? 0 : 1) - (/^c/.test(geo.barras[b][2]) ? 0 : 1));
+    for (const k of orden) for (const nd of [geo.barras[k][0], geo.barras[k][1]]) if (!sinLiberar.has(nd)) sinLiberar.set(nd, k);
+  }
   geo.barras.forEach(([i, j, g], k) => {
     const f = k + 1, largo = Math.hypot(X(j) - X(i), Z(j) - Z(i));
     conect.push({ Frame: f, JointI: i + 1, JointJ: j + 1, IsCurved: "No" });
     asig.push({ Frame: f, SectionType: secGrupo[g].tipoSAP, AutoSelect: "N.A.", AnalSect: secGrupo[g].nom, DesignSect: secGrupo[g].nom, MatProp: "Default" });
-    if (enNudos || g === "di" || g === "mo") lib.push({ Frame: f, ...libre });
+    if (enNudos) {
+      const rI = sinLiberar.get(i) !== k, rJ = sinLiberar.get(j) !== k;
+      if (rI || rJ) lib.push({ Frame: f, ...libre, M2I: rI ? "Yes" : "No", M3I: rI ? "Yes" : "No", M2J: rJ ? "Yes" : "No", M3J: rJ ? "Yes" : "No" });
+    } else if (g === "di" || g === "mo") lib.push({ Frame: f, ...libre });
     grupos.push({ GroupName: NOMG[g], ObjectType: "Frame", ObjectLabel: f });
     if ((g === "cs" || g === "ci") && oriPerp[g]) giro.push({ Frame: f, Angle: g === "cs" ? 90 : -90, AdvanceAxes: "No" });
     if (g !== "cs") return;
@@ -1763,13 +1774,8 @@ function generarS2K() {
   const cargasNudo = [];
   if (enNudos) for (const [i, lt] of Object.entries(trib)) for (const [pat, w] of Object.entries(qs))
     if (w) cargasNudo.push({ Joint: +i + 1, LoadPat: pat, CoordSys: "GLOBAL", F1: 0, F2: 0, F3: q(-w * lt), M1: 0, M2: 0, M3: 0 });
-  // Apoyo fijo y deslizante; con barras articuladas se restringe además el giro R2 de cada nudo
-  // (ningún elemento le da rigidez al giro; no cambia las fuerzas)
-  const restr = geo.nudos.map((_, i) => {
-    const j = i + 1, fijo = j === apoyoA, desl = j === apoyoB;
-    if (!fijo && !desl && !enNudos) return null;
-    return { Joint: j, U1: fijo ? "Yes" : "No", U2: fijo || desl ? "Yes" : "No", U3: fijo || desl ? "Yes" : "No", R1: "No", R2: enNudos ? "Yes" : "No", R3: "No" };
-  }).filter(Boolean);
+  // Apoyo fijo y deslizante (sin restricciones de giro)
+  const restr = [apoyoA, apoyoB].map((j) => ({ Joint: j, U1: j === apoyoA ? "Yes" : "No", U2: "Yes", U3: "Yes", R1: "No", R2: "No", R3: "No" }));
 
   const pats = [["D", "Dead", 1], ["L", "Live", 0], ["Lr", "Roof Live", 0], ["W", "Wind", 0]];
   const combos = [];
