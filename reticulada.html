@@ -179,9 +179,10 @@
           <div><label for="sD">Carga muerta D (sin peso propio) <span class="unit">[kgf/m]</span></label><input id="sD" type="number" step="any" min="0" value="90"></div>
           <div><label for="sL">Sobrecarga de uso L <span class="unit">[kgf/m]</span></label><input id="sL" type="number" step="any" min="0" value="0"></div>
           <div><label for="sLr">Sobrecarga de techo L<sub>r</sub> <span class="unit">[kgf/m]</span></label><input id="sLr" type="number" step="any" min="0" value="300"></div>
+          <div><label for="sS">Nieve S (NCh 431) <span class="unit">[kgf/m]</span></label><input id="sS" type="number" step="any" min="0" value="0"></div>
           <div><label for="sW">Viento W (+ presión ↓, − succión ↑) <span class="unit">[kgf/m]</span></label><input id="sW" type="number" step="any" value="0"></div>
         </div>
-        <label for="fLim">Flecha admisible (servicio, D + L y D + L<sub>r</sub>)</label>
+        <label for="fLim">Flecha admisible (servicio: D + L, D + L<sub>r</sub>, D + S y D + W)</label>
         <select id="fLim">
           <option value="180">L/180</option>
           <option value="240">L/240</option>
@@ -237,7 +238,7 @@
     </div>
   </section>
 </main>
-<footer>Herramienta de apoyo académico. Las solicitaciones deben provenir de un modelo (SAP2000 / ETABS) con las combinaciones LRFD y los efectos de segundo orden (AISC 360-16, Cap. C). Las propiedades de las secciones se calculan con esquinas rectas; para perfiles plegados de pared delgada rige además AISI S100 / NCh 427. Verifique siempre los resultados.</footer>
+<footer>Herramienta de apoyo académico. Las solicitaciones las calcula AURA con un análisis elástico lineal del modelo plano de la reticulada (o se ingresan desde un modelo externo); el modelo se puede comprobar en SAP2000. Las propiedades de las secciones se calculan con esquinas rectas; para perfiles plegados de pared delgada rige además AISI S100 / NCh 427. Verifique siempre los resultados.</footer>
 
 <script src="memo.js?v=30"></script>
 <script>
@@ -358,7 +359,7 @@ const arco = (cx, cy, rc, a0, a1) => Array.from({ length: 9 }, (_, i) => {
 // ---------------------------------------------------------------------------
 const GRUPOS = [
   { id: "cs", nombre: "Cordón superior", corto: "Cordón sup.", def: { tipo: "C", C: [250, 75, 6, 6], L: [50, 50, 4], Pu: 3750, Tu: 0, lx: "panel", Ky: 1 } },
-  { id: "ci", nombre: "Cordón inferior", corto: "Cordón inf.", def: { tipo: "C", C: [250, 75, 6, 6], L: [50, 50, 4], Pu: 0, Tu: 3750, lx: "panel", Ky: 1 } },
+  { id: "ci", nombre: "Cordón inferior", corto: "Cordón inf.", def: { tipo: "C", C: [250, 75, 6, 6], L: [50, 50, 4], Pu: 0, Tu: 3750, lx: "panel", ly: "luz", Ky: 1 } },
   { id: "di", nombre: "Diagonales", corto: "Diagonales", def: { tipo: "L", cat: "L 50x50x4", C: [100, 50, 3, 3], L: [50, 50, 4], Pu: 300, Tu: 2920, lx: "diag", Ky: 1 } },
   { id: "mo", nombre: "Montantes", corto: "Montantes", def: { tipo: "L", cat: "L 50x50x4", C: [100, 50, 3, 3], L: [50, 50, 4], Pu: 1500, Tu: 0, lx: "alto", Ky: 1 } },
 ];
@@ -366,11 +367,12 @@ const GRUPOS = [
 function longitudesGeom() {
   const Lt = num("gL"), h = num("gH"), n = Math.max(1, Math.round(num("gN")));
   const p = Lt / n, warren = $("gTipo").value === "warren";
-  return { panel: p, diag: Math.hypot(warren ? p / 2 : p, h), alto: h };
+  return { panel: p, diag: Math.hypot(warren ? p / 2 : p, h), alto: h, luz: Lt };
 }
 
 function htmlGrupo(g, i) {
   const p = g.id, d = g.def, lg = { panel: 5 / 6, diag: Math.hypot(5 / 6, 0.5), alto: 0.5 }[d.lx];
+  const lgY = d.ly === "luz" ? 5 : lg;
   const v = (x) => +x.toFixed(3);
   const inp = (id, lab, val, step = "any", min = "0") => `<div><label for="${p}_${id}">${lab}</label><input id="${p}_${id}" type="number" step="${step}" min="${min}" value="${val}"></div>`;
   return `<fieldset id="fs_${p}" class="grp${i ? " hidden" : ""}">
@@ -430,7 +432,7 @@ function htmlGrupo(g, i) {
       ${inp("Kx", '<span class="kxLab">Factor K<sub>x</sub></span>', 1, "0.01")}
     </div>
     <div class="row2 noL">
-      ${inp("Ly", 'Longitud no arriostrada L<sub>y</sub> <span class="unit">[m]</span>', v(lg))}
+      ${inp("Ly", `Longitud no arriostrada L<sub>y</sub>${p === "ci" ? " (fuera del plano)" : ""} <span class="unit">[m]</span>`, v(lgY))}
       ${inp("Ky", 'Factor K<sub>y</sub>', d.Ky, "0.01")}
     </div>
     <div class="unit hintEje"></div>
@@ -650,6 +652,8 @@ function leerSeccion0(p) {
 // Tracción — Capítulo D
 // ---------------------------------------------------------------------------
 function traccion(s, Fy, Fu, d, m) {
+  // El caso 2 y el caso 8 de la Tabla D3.1 no aplican a tubos: se usa el caso 6 con una cartela
+  if (s.tipo === "R" && !["1", "6a", "6b", "m"].includes(d.Umodo)) d = { ...d, Umodo: "6a" };
   m.sub("Tracción — Capítulo D");
   const Ag = s.A, An = Math.max(0, Ag - d.Ahue);
   let U, refU, txtU;
@@ -899,13 +903,13 @@ function compresion(s, Fy, d, m) {
 }
 
 // ---------------------------------------------------------------------------
-// Flexocompresión del cordón superior con costaneras entre nudos (Capítulos F, G, H y Anexo 8)
-// Cada tramo entre nudos se toma como viga simplemente apoyada de luz a = L_x con la carga mayorada
-// máxima de las combinaciones NCh 3171: M_u = w_u a²/8 y V_u = w_u a/2 (cota superior del momento del
-// cordón continuo). Solo canales C flectando en torno a su eje fuerte (alma en el plano de la reticulada).
+// Flexocompresión de los cordones continuos (costaneras entre nudos): Capítulos F, G, H y Anexo 8.
+// Pares (P, M) por barra y combinación del análisis de AURA, o envolventes de un modelo externo con
+// w_u·a²/8 como mínimo de control. Canales C (alma en el plano: F2/F3 y G2; alma perpendicular: F6 y G6)
+// y tubos rectangulares (F7 y G4). Con otros perfiles el cordón queda sin verificar.
 // ---------------------------------------------------------------------------
 function cargaMayorada(pp, soloPP = false) {
-  const q = soloPP ? { D: 0, L: 0, Lr: 0, W: 0 } : cargasSAP();
+  const q = soloPP ? { D: 0, L: 0, Lr: 0, S: 0, W: 0 } : cargasSAP();
   let mejor = { w: 0, c: COMB_3171[0][0] };
   for (const [nom, fac] of COMB_3171) {
     const w = Object.entries(fac).reduce((a, [k, f]) => a + f * (k === "D" ? q.D + pp : q[k]), 0);
@@ -1080,7 +1084,7 @@ function flexTubo(s, Fy, Lb, Vu, m) {
 function flexoCordon(s, Fy, d, c, t, m, dem, nom = "cordón superior", conCargas = true) {
   m.sub(`Flexocompresión del ${nom} — Capítulos F, G y H`);
   if (s.tipo !== "C" && s.tipo !== "R") {
-    m.note("Con cordones continuos el ${nom} trabaja a flexocompresión. Esta verificación está implementada para canales C y tubos rectangulares: con ángulos, dobles ángulos o propiedades ingresadas a mano el ${nom} queda <b>sin verificar</b> (apoye las costaneras sobre los nudos o verifíquelo aparte).",
+    m.note(`Con cordones continuos el ${nom} trabaja a flexocompresión. Esta verificación está implementada para canales C y tubos rectangulares: con ángulos, dobles ángulos o propiedades ingresadas a mano el ${nom} queda <b>sin verificar</b> (apoye las costaneras sobre los nudos o verifíquelo aparte).`,
       L`Con cordones continuos el ${nom} trabaja a flexocompresión. Esta verificación está implementada para canales C y tubos rectangulares; con el perfil elegido el ${nom} queda sin verificar.`);
     return { dc: Infinity, noImpl: true };
   }
@@ -1131,7 +1135,7 @@ function flexoCordon(s, Fy, d, c, t, m, dem, nom = "cordón superior", conCargas
   }
   m.row("Amplificación P-δ: P<sub>e1</sub> = π²EI<sub>x</sub>/(K<sub>x</sub>L<sub>x</sub>)²", `${fmt(Pe1, 0)} kgf`, "A-8-5");
   if (!Number.isFinite(peor.dc)) {
-    m.note("P<sub>u</sub> ≥ P<sub>e1</sub>: el ${nom} es inestable en el plano (B<sub>1</sub> → ∞).", L`$P_u \ge P_{e1}$: el ${nom} es inestable en el plano.`);
+    m.note(`P<sub>u</sub> ≥ P<sub>e1</sub>: el ${nom} es inestable en el plano (B<sub>1</sub> → ∞).`, L`$P_u \ge P_{e1}$: el ${nom} es inestable en el plano.`);
     return { dc: Infinity, Mu: peor.M, phiMn };
   }
   const comp = peor.P > 0, Pr = Math.abs(peor.P);
@@ -1261,7 +1265,7 @@ function reglasSeccion(p) {
 }
 function reglasDatos() {
   const ext = $("fuente").value === "ext";
-  const r = [["gL", 0, true], ["gH", 0, true], ["gN", 0, true], ["sD", 0], ["sL", 0], ["sLr", 0], ["sW", -Infinity]];
+  const r = [["gL", 0, true], ["gH", 0, true], ["gN", 0, true], ["sD", 0], ["sL", 0], ["sLr", 0], ["sS", 0], ["sW", -Infinity]];
   if (ext) r.push(["fD", 0]);
   if (ext && $("sModo").value === "tramo") ["cs", "ci"].forEach(p => { if ($(p + "_on").checked) r.push([p + "_Mu", 0], [p + "_Vu", 0]); });
   for (const g of GRUPOS) {
@@ -1390,7 +1394,7 @@ function analizar() {
     let reac = 0; fijos.forEach(d => { if (d % 3 === 1) reac += R[d]; });
     return { u, fe, qy, carga, reac };
   };
-  const pats = {}; for (const p of ["D", "L", "Lr", "W"]) pats[p] = patron(p);
+  const pats = {}; for (const p of ["D", "L", "Lr", "S", "W"]) pats[p] = patron(p);
   // Combinación lineal de patrones
   const combinar = (fac) => {
     const u = new Array(nd).fill(0), fe = barras.map(() => new Array(6).fill(0)), qy = barras.map(() => 0);
@@ -1430,7 +1434,7 @@ function solicitacionesAura() {
   let flecha = 0, cF = "—";
   for (const [nombre, fac] of SERV_3171) {
     const r = an.combinar(fac);
-    for (let i = 0; i < an.geo.nudos.length; i++) { const uz = -r.u[an.dof(i, 1)]; if (uz > flecha) { flecha = uz; cF = nombre.split(":")[0]; } }
+    for (let i = 0; i < an.geo.nudos.length; i++) { const uz = Math.abs(r.u[an.dof(i, 1)]); if (uz > flecha) { flecha = uz; cF = nombre.split(":")[0]; } }
   }
   const D = an.pats.D;
   return { an, env, flecha: flecha * 100, cF, cargaD: D.carga, reacD: D.reac };
@@ -1439,7 +1443,7 @@ function solicitacionesAura() {
 function memoAnalisis(m, sol, modoC) {
   const an = sol.an, NOM = { cs: "Cordón superior", ci: "Cordón inferior", di: "Diagonales", mo: "Montantes" };
   m.h("Análisis estructural");
-  m.p(L`Modelo plano de la reticulada con ${an.geo.nudos.length} nudos y ${an.barras.length} barras, apoyo fijo a la izquierda y deslizante a la derecha, resuelto por el método de rigidez (análisis elástico lineal de primer orden, $E = ${tn(E, 0)}$ kgf/cm$^2$, secciones con su espesor nominal). ${modoC === "nudos" ? "Todas las barras están articuladas en sus extremos y las cargas del cordón superior se aplican como fuerzas en los nudos superiores, según su longitud tributaria." : "Los cordones son continuos, las diagonales y los montantes están articulados, y las cargas del cordón superior se aplican distribuidas sobre él."} El peso propio de todas las barras se incluye en D. Se usan las combinaciones de resistencia C1 a C6 y las de servicio S1 y S2 de la NCh 3171.`);
+  m.p(L`Modelo plano de la reticulada con ${an.geo.nudos.length} nudos y ${an.barras.length} barras, apoyo fijo a la izquierda y deslizante a la derecha, resuelto por el método de rigidez (análisis elástico lineal de primer orden, $E = ${tn(E, 0)}$ kgf/cm$^2$, secciones con su espesor nominal). ${modoC === "nudos" ? "Todas las barras están articuladas en sus extremos y las cargas del cordón superior se aplican como fuerzas en los nudos superiores, según su longitud tributaria." : "Los cordones son continuos, las diagonales y los montantes están articulados, y las cargas del cordón superior se aplican distribuidas sobre él."} El peso propio de todas las barras se incluye en D. Se usan las combinaciones de resistencia de la NCh 3171 sin las sísmicas (C1, C2, C3, C4 y C6, con L$_r$ o S y L o 0{,}8W desarrolladas) y las de servicio D + L, D + L$_r$, D + S y D + W; la flecha se mide en los nudos.`);
   m.row("Comprobación de equilibrio (patrón D): carga total ; suma de reacciones verticales", `${fmt(sol.cargaD, 1)} ; ${fmt(sol.reacD, 1)} kgf`);
   const filas = GRUPOS.map(g => { const v = sol.env[g.id]; return { g: NOM[g.id], v }; });
   m.out.push(`<table class="alt" style="margin:6px 0 4px"><tr><th>Grupo</th><th>Tracción máx. [kgf]</th><th>Compresión máx. [kgf]</th>${modoC === "tramo" ? "<th>Momento máx. [kgf·m]</th>" : ""}</tr>${filas.map(({ g, v }) =>
@@ -1520,7 +1524,10 @@ function calcular() {
   m.p(L`\textbf{Análisis.} ${ext ? "Las solicitaciones provienen de un modelo externo (SAP2000 / ETABS) con análisis elástico lineal de primer orden." : "Las solicitaciones provienen del análisis elástico lineal de primer orden del modelo plano de la reticulada realizado por AURA (sección siguiente); se pueden comprobar exportando el modelo a SAP2000."} En una viga reticulada simplemente apoyada que no forma parte del sistema sismorresistente los efectos de segundo orden globales son despreciables; ${modoC === "tramo" ? L`el efecto local $P$-$\delta$ del cordón superior se considera con $B_1$.` : L`no hay efecto $P$-$\delta$ local porque las barras no tienen carga transversal.`}`);
   m.p(L`\textbf{No incluido.} No se verifican las conexiones (soldaduras, pernos, cartelas, bloque de corte), el arriostramiento lateral de los cordones ni los apoyos.${hayL ? L` Para los ángulos con la Sección E5 se supone que se cumplen las condiciones (1) a (3): carga por la misma ala en ambos extremos, conexión soldada o con al menos dos pernos y sin cargas transversales intermedias.` : ""}`);
   if (plegado) m.p(L`\textbf{Perfiles plegados.} Hay perfiles plegados en frío: su diseño corresponde a AISI S100 / NCh 427. Esta memoria aplica AISC 360-16 como referencia y no reemplaza esa verificación.`);
-  m.p(L`\textbf{Deformación.} El límite de flecha L/${$("fLim").value} es un criterio de servicio adoptado para el proyecto; el AISC 360-16 no establece límites numéricos.`);
+  m.p(L`\textbf{Combinaciones.} Se usan las combinaciones LRFD de la NCh 3171 con D, L, L$_r$, S y W. No se incluyen las combinaciones sísmicas (C5 y 0{,}9D + 1{,}4E): en una viga de techo simplemente apoyada que no forma parte del sistema sismorresistente el sismo horizontal no la solicita y C5 queda cubierta por C2 o C3; si la viga forma parte de un marco o se exige sismo vertical, deben agregarse. El factor de L en C3 y C4 se toma igual a 1{,}0 (conservador).`);
+  m.p(L`\textbf{Deformación.} El límite de flecha L/${$("fLim").value} es un criterio de servicio adoptado para el proyecto; el AISC 360-16 no establece límites numéricos. La flecha se mide en los nudos (sin la flexión local del cordón entre nudos).`);
+  const hayUPN = activos.some(g => /UPN/.test(leerSeccion(g.id).nombre || "")), hayPerp = activos.some(g => leerSeccion(g.id).ori === "perp");
+  if (hayUPN || hayPerp) m.p(L`\textbf{Aproximaciones.} ${hayUPN ? "En los perfiles UPN, $J$, $C_w$ y la posición del centro de corte se calculan con alas de espesor constante (difieren algo de los valores tabulados y afectan levemente el pandeo flexo-torsional). " : ""}${hayPerp ? "En las canales con el alma perpendicular al plano, $\\bar{x}$ para el factor $U$ se mide desde la cara exterior del ala (conservador si la conexión es por la cara interior)." : ""}`);
   m.p = mp;
 
   // Análisis estructural (solo con AURA)
@@ -1590,7 +1597,10 @@ ${pl.map(([, kt, v, dd, u]) => `${kt} & ${v === null ? uTex(u).replace(/,/g, "{,
     + (r.fx ? (r.fx.noImpl ? " · Flexión: <b>sin verificar</b>" : ` · Flexocompresión: ${dcTxt(r.fx.dc)} (φM<sub>n</sub> = ${fmt(r.fx.phiMn / 100, 1)} kgf·m)`) : ""), r.dc)).join("")
     + card("Flecha", fmt(dcF, 3), `Δ = ${fmt(D, 2)} cm ${dcF <= 1 ? "≤" : ">"} L/${lim} = ${fmt(Dadm, 2)} cm`, dcF);
   const ctrl = dcF > peor.dc ? "flecha" : peor.g.nombre.toLowerCase();
-  $("verdict").innerHTML = `<div class="verdict ${ok ? "ok" : "bad"}">${ok ? "✔ La reticulada CUMPLE" : "✘ La reticulada NO CUMPLE"} — razón máxima = ${dcTxt(dcMax)} (${ctrl})${res.some(r => r.fx && r.fx.noImpl) ? " · flexión de un cordón sin verificar" : ""}${res.some(r => r.c.e5no) ? " · E5 no aplicable" : ""}</div>`;
+  // Cordones comprimidos con L_y menor que la luz: dependen de arriostramientos laterales que hay que asegurar
+  const sinArr = res.filter(r => r.g.id === "ci" && r.d.Pu > 0 && r.d.Ly < Lt * 100 - 1);
+  const avisoArr = sinArr.length ? ` · ⚠ ${sinArr.map(r => r.g.nombre.toLowerCase()).join(" y ")} comprimido con L<sub>y</sub> menor que la luz: verifique que existan arriostramientos laterales cada L<sub>y</sub>` : "";
+  $("verdict").innerHTML = `<div class="verdict ${ok ? "ok" : "bad"}">${ok ? "✔ La reticulada CUMPLE" : "✘ La reticulada NO CUMPLE"} — razón máxima = ${dcTxt(dcMax)} (${ctrl})${res.some(r => r.fx && r.fx.noImpl) ? " · flexión de un cordón sin verificar" : ""}${res.some(r => r.c.e5no) ? " · E5 no aplicable" : ""}${avisoArr}${res.some(r => /plegado/.test(r.s.origen || "")) ? " · perfiles plegados: rige además AISI S100 / NCh 427" : ""}</div>`;
   $("memo").innerHTML = m.html();
 
   ultimoTex = documentoTex({ acero, Fy, Fu, tipo, Lt, h, n, res, D, Dadm, lim, dcF, dcMax, ok, f, modoC, ext }, m.texto());
@@ -1682,15 +1692,22 @@ Por lo tanto, como la razón demanda-capacidad máxima es $D/C = ${tn(o.dcMax, 3
 // cordones continuos y diagonales y montantes articulados.
 // Patrones D, L, Lr y W con las cargas ingresadas y combinaciones LRFD y de servicio de NCh 3171.
 // ---------------------------------------------------------------------------
+// Combinaciones LRFD de NCh 3171 sin las sísmicas (C5 y 0,9D + 1,4E), con "(Lr o S)" y "(L o 0,8W)" desarrollados.
+// El factor de L en C3 y C4 se toma 1,0 (valor conservador; la norma permite 0,5 en algunos casos).
 const COMB_3171 = [
   ["C1: 1,4D", { D: 1.4 }],
-  ["C2: 1,2D + 1,6L + 0,5Lr", { D: 1.2, L: 1.6, Lr: 0.5 }],
+  ["C2a: 1,2D + 1,6L + 0,5Lr", { D: 1.2, L: 1.6, Lr: 0.5 }],
+  ["C2b: 1,2D + 1,6L + 0,5S", { D: 1.2, L: 1.6, S: 0.5 }],
   ["C3a: 1,2D + 1,6Lr + L", { D: 1.2, Lr: 1.6, L: 1 }],
   ["C3b: 1,2D + 1,6Lr + 0,8W", { D: 1.2, Lr: 1.6, W: 0.8 }],
-  ["C4: 1,2D + 1,6W + L + 0,5Lr", { D: 1.2, W: 1.6, L: 1, Lr: 0.5 }],
+  ["C3c: 1,2D + 1,6S + L", { D: 1.2, S: 1.6, L: 1 }],
+  ["C3d: 1,2D + 1,6S + 0,8W", { D: 1.2, S: 1.6, W: 0.8 }],
+  ["C4a: 1,2D + 1,6W + L + 0,5Lr", { D: 1.2, W: 1.6, L: 1, Lr: 0.5 }],
+  ["C4b: 1,2D + 1,6W + L + 0,5S", { D: 1.2, W: 1.6, L: 1, S: 0.5 }],
   ["C6: 0,9D + 1,6W", { D: 0.9, W: 1.6 }],
 ];
-const SERV_3171 = [["S1: D + L", { D: 1, L: 1 }], ["S2: D + Lr", { D: 1, Lr: 1 }]];
+// Servicio: flecha con D + L, D + Lr, D + S y D + W (con succión, flecha hacia arriba)
+const SERV_3171 = [["S1: D + L", { D: 1, L: 1 }], ["S2: D + Lr", { D: 1, Lr: 1 }], ["S3: D + S", { D: 1, S: 1 }], ["S4: D + W", { D: 1, W: 1 }]];
 
 function generarS2K() {
   const tipo = $("gTipo").value, Lt = num("gL"), h = num("gH"), n = Math.round(num("gN"));
@@ -1777,7 +1794,7 @@ function generarS2K() {
   // Apoyo fijo y deslizante (sin restricciones de giro)
   const restr = [apoyoA, apoyoB].map((j) => ({ Joint: j, U1: j === apoyoA ? "Yes" : "No", U2: "Yes", U3: "Yes", R1: "No", R2: "No", R3: "No" }));
 
-  const pats = [["D", "Dead", 1], ["L", "Live", 0], ["Lr", "Roof Live", 0], ["W", "Wind", 0]];
+  const pats = [["D", "Dead", 1], ["L", "Live", 0], ["Lr", "Roof Live", 0], ["S", "Snow", 0], ["W", "Wind", 0]];
   const combos = [];
   for (const [lista, diseno] of [[COMB_3171, "Strength"], [SERV_3171, "Deflection"]]) {
     for (const [nombre, fac] of lista) {
@@ -1826,7 +1843,7 @@ function generarS2K() {
 }
 // Cargas lineales sobre el cordón superior [kgf/m]; positivas hacia abajo (dirección Gravity de SAP)
 function cargasSAP() {
-  return { D: num("sD"), L: num("sL"), Lr: num("sLr"), W: num("sW") };
+  return { D: num("sD"), L: num("sL"), Lr: num("sLr"), S: num("sS"), W: num("sW") };
 }
 function descargarS2K() {
   if (!ultimoTex) { alert("Corrija los datos inválidos antes de exportar el modelo."); return; }
@@ -2057,7 +2074,7 @@ function generarDXF() {
   const notas = [
     `VIGA RETICULADA ${tipo.toUpperCase()}  L = ${fmt(Lt / 1000, 2)} m  h = ${fmt(H / 1000, 2)} m  ${n} paneles`,
     `Acero ${R ? R.acero : $("acero").value} (Fy = ${ACEROS[$("acero").value].Fy} kgf/cm²). Diseño AISC 360-16 LRFD, combinaciones NCh 3171.`,
-    `Cargas de servicio sobre el cordón superior: D = ${fmt(q.D, 0)} (+ peso propio), L = ${fmt(q.L, 0)}, Lr = ${fmt(q.Lr, 0)}, W = ${fmt(q.W, 0)} kgf/m.`,
+    `Cargas de servicio sobre el cordón superior: D = ${fmt(q.D, 0)} (+ peso propio), L = ${fmt(q.L, 0)}, Lr = ${fmt(q.Lr, 0)}, S = ${fmt(q.S, 0)}, W = ${fmt(q.W, 0)} kgf/m.`,
     `Costaneras ${$("sModo").value === "nudos" ? "sobre los nudos (barras articuladas)" : "entre nudos (cordones continuos)"}.`,
     ...(R ? R.res.map(r => `${r.g.nombre}: ${r.s.nombre}  -  razón D/C = ${Number.isFinite(r.dc) ? fmt(r.dc, 3) : "sin verificar"}`) : []),
     ...(R ? [`Flecha de servicio ${fmt(R.D, 2)} cm  (admisible L/${R.lim}).`] : []),
@@ -2117,7 +2134,7 @@ function mostrarTipo(p) {
   fs.querySelectorAll(".dims").forEach(el => { if (cat) el.classList.add("hidden"); });
   const info = CAT_UPN[cat] ? `h = ${CAT_UPN[cat][0]} · b = ${CAT_UPN[cat][1]} · t<sub>w</sub> = ${fmt(CAT_UPN[cat][2], 1)} · t<sub>f</sub> = ${fmt(CAT_UPN[cat][3], 1)} mm · ${fmt(CAT_UPN[cat][5], 2)} kgf/m`
     : CAT_CP[cat] ? `Plegado e = ${CAT_CP[cat][2]} mm · ${fmt(CAT_CP[cat][3], 2)} kgf/m · rige además AISI S100 / NCh 427`
-    : CAT_LP[cat] ? `Plegado e = ${CAT_LP[cat][2]} mm · ${fmt(CAT_LP[cat][3], 2)} kgf/m${t === "2L" ? " por ángulo" : ""}`
+    : CAT_LP[cat] ? `Plegado e = ${CAT_LP[cat][2]} mm · ${fmt(CAT_LP[cat][3], 2)} kgf/m${t === "2L" ? " por ángulo" : ""} · rige además AISI S100 / NCh 427`
     : CAT_TR[cat] ? `H = ${CAT_TR[cat][0]} · B = ${CAT_TR[cat][1]} · e = ${CAT_TR[cat][2]} mm · ${fmt(CAT_TR[cat][3], 2)} kgf/m · Cintac: ASTM A500 o A36/A240ES según tamaño (elija F<sub>y</sub> igual o menor)` : "";
   fs.querySelector(".catInfo").innerHTML = info;
   // Con E5 la longitud es entre puntos de trabajo y no se usa K
@@ -2140,6 +2157,12 @@ function mostrarTipo(p) {
   if (esR && sU.value === "2") sU.value = "6a";
   if (!esR && /^6/.test(sU.value)) sU.value = "2";
   fs.querySelector("#" + p + "_Kx").closest("div").classList.toggle("hidden", conE5);
+  if (p === "ci" || p === "cs") {
+    const ay = p === "ci"
+      ? " L_y del cordón inferior: distancia entre arriostramientos laterales (si no hay, la luz completa). Controla cuando el viento lo comprime."
+      : " L_y del cordón superior: distancia entre costaneras o arriostramientos conectados y arriostrados en la techumbre.";
+    fs.querySelector(".hintEje").textContent += ay;
+  }
   const um = $(p + "_Umodo").value;
   fs.querySelector(".u-2").classList.toggle("hidden", !(um === "2" || um === "6a" || um === "6b"));
   fs.querySelector(".u-m").classList.toggle("hidden", um !== "m");
@@ -2163,18 +2186,17 @@ function usarGeometria(todos = true) {
   if (!(Lt > 0 && h > 0 && n >= 1)) return;
   const lg = longitudesGeom();
   for (const g of GRUPOS) {
-    const v = +lg[g.def.lx].toFixed(3);
-    for (const id of [g.id + "_Lx", g.id + "_Ly"]) {
+    for (const [id, clave] of [[g.id + "_Lx", g.def.lx], [g.id + "_Ly", g.def.ly || g.def.lx]]) {
       if (todos) delete $(id).dataset.manual;
-      if (!$(id).dataset.manual) $(id).value = v;
+      if (!$(id).dataset.manual) $(id).value = +lg[clave].toFixed(3);
     }
   }
 }
 // Al restaurar un cálculo guardado: marca como manuales las longitudes que no calzan con la geometría
 function marcarManuales() {
   const lg = longitudesGeom();
-  for (const g of GRUPOS) for (const id of [g.id + "_Lx", g.id + "_Ly"]) {
-    if (Math.abs(num(id) - lg[g.def.lx]) > 0.0015) $(id).dataset.manual = "1"; else delete $(id).dataset.manual;
+  for (const g of GRUPOS) for (const [id, clave] of [[g.id + "_Lx", g.def.lx], [g.id + "_Ly", g.def.ly || g.def.lx]]) {
+    if (Math.abs(num(id) - lg[clave]) > 0.0015) $(id).dataset.manual = "1"; else delete $(id).dataset.manual;
   }
 }
 
