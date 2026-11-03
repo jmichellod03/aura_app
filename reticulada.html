@@ -258,14 +258,67 @@ const estado = (dc) => (dc <= 1 ? "Cumple" : "No cumple");
 const mmN = (x) => fmt(x, x % 1 ? 1 : 0);   // dimensiones en mm sin decimales sobrantes
 
 // ---------------------------------------------------------------------------
+// Catálogo de perfiles más usados en reticuladas
+// UPN laminadas (catálogo Prodalam / Cintac vigas laminadas): [h, b, tw, tf, r (mm), peso kgf/m, A cm², Ix cm⁴, Iy cm⁴]
+// C y L plegados Cintac (catálogo general 2020): [A, B, e (mm), peso kgf/m]; radio interior de plegado = e.
+// ---------------------------------------------------------------------------
+const CAT_UPN = {
+  "UPN 80": [80, 45, 6, 8, 8, 8.64, 11.0, 106, 19.4],
+  "UPN 100": [100, 50, 6, 8.5, 8.5, 10.6, 13.5, 206, 29.3],
+  "UPN 120": [120, 55, 7, 9, 9, 13.4, 17.0, 364, 43.2],
+  "UPN 140": [140, 60, 7, 10, 10, 16.0, 20.4, 605, 62.7],
+  "UPN 160": [160, 65, 7.5, 10.5, 10.5, 18.8, 24.0, 925, 85.3],
+  "UPN 180": [180, 70, 8, 11, 11, 22.0, 28.0, 1350, 114],
+  "UPN 200": [200, 75, 8.5, 11.5, 11.5, 25.3, 32.2, 1910, 148],
+};
+const CAT_CP = {
+  "C 100x50x3": [100, 50, 3, 4.48], "C 125x50x3": [125, 50, 3, 5.07], "C 150x50x3": [150, 50, 3, 5.66],
+  "C 150x50x4": [150, 50, 4, 7.44], "C 150x75x4": [150, 75, 4, 9.01], "C 200x50x3": [200, 50, 3, 6.83],
+  "C 200x50x4": [200, 50, 4, 9.01], "C 200x75x4": [200, 75, 4, 10.58], "C 250x75x4": [250, 75, 4, 12.15],
+};
+const CAT_LP = {
+  "L 30x30x3": [30, 30, 3, 1.30], "L 40x40x3": [40, 40, 3, 1.77], "L 40x40x4": [40, 40, 4, 2.31],
+  "L 50x50x3": [50, 50, 3, 2.24], "L 50x50x4": [50, 50, 4, 2.93], "L 50x50x5": [50, 50, 5, 3.60],
+  "L 65x65x4": [65, 65, 4, 3.88], "L 65x65x5": [65, 65, 5, 4.78], "L 80x80x5": [80, 80, 5, 5.96],
+  "L 80x80x6": [80, 80, 6, 7.07], "L 100x100x6": [100, 100, 6, 8.96],
+};
+function opcionesCatalogo() {
+  const g = (lab, t, obj, suf) => `<optgroup label="${lab}" data-t="${t}">${Object.keys(obj).map(k => `<option value="${k}" data-t="${t}">${k}${suf}</option>`).join("")}</optgroup>`;
+  return `<option value="">Dimensiones ingresadas a mano</option>`
+    + g("UPN laminados (Prodalam / Cintac)", "C", CAT_UPN, "")
+    + g("Canales C plegados Cintac", "C", CAT_CP, " plegado")
+    + g("Ángulos L plegados Cintac", "L", CAT_LP, " plegado");
+}
+
+// Propiedades de una línea media poligonal de espesor t (cm): A, centroide e inercias centroidales
+function poliSec(pts, t) {
+  let A = 0, Sx = 0, Sy = 0, Ixo = 0, Iyo = 0, Ixyo = 0, Lt = 0;
+  for (let i = 1; i < pts.length; i++) {
+    const [x1, y1] = pts[i - 1], [x2, y2] = pts[i];
+    const l = Math.hypot(x2 - x1, y2 - y1), a = l * t;
+    Lt += l; A += a; Sx += a * (y1 + y2) / 2; Sy += a * (x1 + x2) / 2;
+    Ixo += a * (y1 * y1 + y1 * y2 + y2 * y2) / 3;
+    Iyo += a * (x1 * x1 + x1 * x2 + x2 * x2) / 3;
+    Ixyo += a * (2 * x1 * y1 + x1 * y2 + x2 * y1 + 2 * x2 * y2) / 6;
+  }
+  const xc = Sy / A, yc = Sx / A;
+  return { A, xc, yc, Ix: Ixo - A * yc * yc, Iy: Iyo - A * xc * xc, Ixy: Ixyo - A * xc * yc, Lt };
+}
+// Arco de la línea media (centro cx, cy; radio rc; de a0 a a1 en grados), 8 tramos
+const arco = (cx, cy, rc, a0, a1) => Array.from({ length: 9 }, (_, i) => {
+  const a = (a0 + (a1 - a0) * i / 8) * Math.PI / 180;
+  return [cx + rc * Math.cos(a), cy + rc * Math.sin(a)];
+});
+
+// ---------------------------------------------------------------------------
 // Grupos de barras y valores por defecto (caso práctico de la mini clase BEID:
 // Pratt de 5 m con cordones C250x75x6 y diagonales L50x50x4)
 // ---------------------------------------------------------------------------
 const GRUPOS = [
   { id: "cs", nombre: "Cordón superior", corto: "Cordón sup.", def: { tipo: "C", C: [250, 75, 6, 6], L: [50, 50, 4], Pu: 3750, Tu: 0, lx: "panel", Ky: 1 } },
   { id: "ci", nombre: "Cordón inferior", corto: "Cordón inf.", def: { tipo: "C", C: [250, 75, 6, 6], L: [50, 50, 4], Pu: 0, Tu: 3750, lx: "panel", Ky: 1 } },
-  { id: "di", nombre: "Diagonales", corto: "Diagonales", def: { tipo: "L", C: [100, 50, 3, 3], L: [50, 50, 4], Pu: 300, Tu: 2920, lx: "diag", Ky: 1 } },
-  { id: "mo", nombre: "Montantes", corto: "Montantes", def: { tipo: "L", C: [100, 50, 3, 3], L: [50, 50, 4], Pu: 1500, Tu: 0, lx: "alto", Ky: 1 } },
+  { id: "di", nombre: "Diagonales", corto: "Diagonales", def: { tipo: "L", cat: "L 50x50x4", C: [100, 50, 3, 3], L: [50, 50, 4], Pu: 300, Tu: 2920, lx: "diag", Ky: 1 } },
+  { id: "mo", nombre: "Montantes", corto: "Montantes", def: { tipo: "L", cat: "L 50x50x4", C: [100, 50, 3, 3], L: [50, 50, 4], Pu: 1500, Tu: 0, lx: "alto", Ky: 1 } },
 ];
 
 function longitudesGeom() {
@@ -288,11 +341,14 @@ function htmlGrupo(g, i) {
       <option value="2L">Doble ángulo 2L espalda con espalda</option>
       <option value="M">Propiedades ingresadas a mano</option>
     </select>
-    <div class="t-C"><div class="row2">
+    <div class="t-C t-L t-2L"><label for="${p}_cat">Perfil de catálogo</label>
+      <select id="${p}_cat">${opcionesCatalogo().replace(`value="${d.cat || ""}"`, `value="${d.cat || ""}" selected`)}</select>
+      <div class="unit catInfo"></div></div>
+    <div class="t-C dims"><div class="row2">
       ${inp("Ch", 'Altura h <span class="unit">[mm]</span>', d.C[0])}${inp("Cb", 'Ala b<sub>f</sub> <span class="unit">[mm]</span>', d.C[1])}
       ${inp("Ctw", 'Espesor alma t<sub>w</sub> <span class="unit">[mm]</span>', d.C[2])}${inp("Ctf", 'Espesor ala t<sub>f</sub> <span class="unit">[mm]</span>', d.C[3])}
     </div></div>
-    <div class="t-L t-2L"><div class="row3">
+    <div class="t-L t-2L dims"><div class="row3">
       ${inp("La", 'Ala a <span class="unit">[mm]</span>', d.L[0])}${inp("Lb", 'Ala b <span class="unit">[mm]</span>', d.L[1])}${inp("Lt", 'Espesor t <span class="unit">[mm]</span>', d.L[2])}
     </div></div>
     <div class="t-2L"><div class="row2">
@@ -397,22 +453,79 @@ function secL(am, bm, tm, con = "b") {
 }
 
 function sec2L(am, bm, tm, sm, asep) {
-  const u = secL(am, bm, tm, "a"), s = sm / 10;
-  const A = 2 * u.A, Ix = 2 * u.Ix, Iy = 2 * (u.Iy + u.A * (u.xb + s / 2) ** 2);
-  return {
-    tipo: "2L", nombre: `2L ${mmN(am)}x${mmN(bm)}x${mmN(tm)}`, uno: u, a: u.a, b: u.b, t: u.t, s, asep,
-    A, Ix, Iy, rx: Math.sqrt(Ix / A), ry: Math.sqrt(Iy / A), J: 2 * u.J, Cw: 0, xo: 0, yo: u.yb - u.t / 2,
-    simetria: "y", ri: u.rz, xbU: u.xb, Acon: 2 * u.a * u.t, conTxt: "alas a contra la cartela",
-    elems: u.elems.map(e => ({ ...e, k: e.k * 2 })),
-  };
+  return sec2Ldesde(secL(am, bm, tm, "a"), sm, asep);
 }
 
 function secM(A, rx, ry, xb) {
   return { tipo: "M", nombre: "Sección definida por el usuario", A, rx, ry, Ix: A * rx * rx, Iy: A * ry * ry, xbU: xb, Acon: 0, conTxt: "elemento conectado", elems: [] };
 }
 
+// UPN laminado: A, Ix, Iy del catálogo; x̄, J, Cw y x_o calculados con alas de espesor medio
+function secUPN(nombre) {
+  const [hm, bm, twm, tfm, rm, peso, A, Ix, Iy] = CAT_UPN[nombre];
+  const s = secC(hm, bm, twm, tfm);
+  const r = rm / 10;
+  return {
+    ...s, nombre, origen: "UPN laminado — catálogo Prodalam / Cintac (A e I del catálogo; x̄, J y C_w calculados con alas de espesor medio)", A, Ix, Iy, peso, r,
+    rx: Math.sqrt(Ix / A), ry: Math.sqrt(Iy / A),
+    elems: [
+      { ...s.elems[0] },
+      { n: "Alma (caso 5)", sim: L`(h - 2t_f - 2r)/t_w`, lam: (s.h - 2 * s.tf - 2 * r) / s.tw, lr: 1.49, c1: 0.18, c2: 1.31, b: s.h - 2 * s.tf - 2 * r, t: s.tw, k: 1 },
+    ],
+  };
+}
+// Canal C plegado Cintac: línea media con esquinas redondeadas (radio interior = e)
+function secCP(nombre) {
+  const [hm, bm, em, peso] = CAT_CP[nombre];
+  const s = secC(hm, bm, em, em);
+  const t = s.tw, rc = 1.5 * t, ym = s.h / 2 - t / 2, x0 = t / 2;
+  const pts = [[s.b, ym], [x0 + rc, ym], ...arco(x0 + rc, ym - rc, rc, 90, 180).slice(1),
+    ...arco(x0 + rc, -ym + rc, rc, 180, 270), [s.b, -ym]];
+  const q = poliSec(pts, t);
+  const xb = q.xc;
+  return {
+    ...s, nombre, origen: "C plegado — catálogo Cintac (propiedades calculadas con radio interior = e)", A: q.A, Ix: q.Ix, Iy: q.Iy, peso,
+    rx: Math.sqrt(q.Ix / q.A), ry: Math.sqrt(q.Iy / q.A), xb, xbU: xb, J: q.Lt * t ** 3 / 3, xo: xb - t / 2 + s.e,
+  };
+}
+// Ángulo L plegado Cintac: línea media con esquina redondeada (radio interior = e)
+function secLP(nombre, con) {
+  const [am, bm, em, peso] = CAT_LP[nombre];
+  const s = secL(am, bm, em, con);
+  const t = s.t, rc = 1.5 * t, c = t / 2;
+  const pts = [[c, s.a], ...arco(c + rc, c + rc, rc, 180, 270), [s.b, c]];
+  const q = poliSec(pts, t);
+  const cc = (q.Ix + q.Iy) / 2, R = Math.hypot((q.Ix - q.Iy) / 2, q.Ixy);
+  const th = 0.5 * Math.atan2(-2 * q.Ixy, q.Ix - q.Iy);
+  const xs = c - q.xc, ys = c - q.yc;
+  return {
+    ...s, nombre, origen: "L plegado — catálogo Cintac (propiedades calculadas con radio interior = e)", peso,
+    A: q.A, Ix: q.Ix, Iy: q.Iy, Ixy: q.Ixy, Iw: cc + R, Iz: cc - R, xb: q.xc, yb: q.yc,
+    rx: Math.sqrt(q.Ix / q.A), ry: Math.sqrt(q.Iy / q.A), rw: Math.sqrt((cc + R) / q.A), rz: Math.sqrt((cc - R) / q.A),
+    J: q.Lt * t ** 3 / 3, th, uo: xs * Math.cos(th) + ys * Math.sin(th), vo: -xs * Math.sin(th) + ys * Math.cos(th),
+    ra: con === "b" ? Math.sqrt(q.Ix / q.A) : Math.sqrt(q.Iy / q.A), xbU: con === "b" ? q.yc : q.xc,
+  };
+}
+// Doble ángulo a partir de un ángulo ya calculado (alas a contra la cartela)
+function sec2Ldesde(u, sm, asep) {
+  const s = sm / 10;
+  const A = 2 * u.A, Ix = 2 * u.Ix, Iy = 2 * (u.Iy + u.A * (u.xb + s / 2) ** 2);
+  return {
+    tipo: "2L", nombre: "2" + u.nombre, uno: u, a: u.a, b: u.b, t: u.t, s, asep, peso: u.peso ? 2 * u.peso : undefined, origen: u.origen,
+    A, Ix, Iy, rx: Math.sqrt(Ix / A), ry: Math.sqrt(Iy / A), J: 2 * u.J, Cw: 0, xo: 0, yo: u.yb - u.t / 2,
+    simetria: "y", ri: u.rz, xbU: u.xb, Acon: 2 * u.a * u.t, conTxt: "alas a contra la cartela",
+    elems: u.elems.map(e => ({ ...e, k: e.k * 2 })),
+  };
+}
+
 function leerSeccion(p) {
-  const t = $(p + "_tipo").value;
+  const t = $(p + "_tipo").value, cat = $(p + "_cat").value;
+  if (cat) {
+    if (t === "C" && CAT_UPN[cat]) return secUPN(cat);
+    if (t === "C" && CAT_CP[cat]) return secCP(cat);
+    if (t === "L" && CAT_LP[cat]) return secLP(cat, $(p + "_Lcon").value);
+    if (t === "2L" && CAT_LP[cat]) return sec2Ldesde(secLP(cat, "a"), num(p + "_Ls"), num(p + "_Lsep"));
+  }
   if (t === "C") return secC(num(p + "_Ch"), num(p + "_Cb"), num(p + "_Ctw"), num(p + "_Ctf"));
   if (t === "L") return secL(num(p + "_La"), num(p + "_Lb"), num(p + "_Lt"), $(p + "_Lcon").value);
   if (t === "2L") return sec2L(num(p + "_La"), num(p + "_Lb"), num(p + "_Lt"), num(p + "_Ls"), num(p + "_Lsep"));
@@ -652,7 +765,7 @@ function propsLista(s) {
   if (s.tipo === "L") l.push(["r<sub>z</sub>", L`$r_z$`, s.rz, 3, "cm"], ["x̄ ; ȳ", L`$\bar{x}$ ; $\bar{y}$`, null, 0, `${fmt(s.xb, 3)} ; ${fmt(s.yb, 3)} cm`], ["J", L`$J$`, s.J, 4, "cm⁴"]);
   if (s.tipo === "C") l.push(["x̄ (dorso del alma)", L`$\bar{x}$`, s.xb, 3, "cm"], ["x<sub>o</sub>", L`$x_o$`, s.xo, 3, "cm"], ["J", L`$J$`, s.J, 4, "cm⁴"], ["C<sub>w</sub>", L`$C_w$`, s.Cw, 1, "cm⁶"]);
   if (s.tipo === "2L") l.push(["r<sub>i</sub> = r<sub>z</sub> (1 ángulo)", L`$r_i$`, s.ri, 3, "cm"], ["y<sub>o</sub>", L`$y_o$`, s.yo, 3, "cm"], ["J", L`$J$`, s.J, 4, "cm⁴"]);
-  if (s.tipo !== "M") l.push(["Peso", "Peso", s.A * 0.785, 2, "kgf/m"]);
+  if (s.tipo !== "M") l.push(["Peso" + (s.peso ? " (catálogo)" : ""), "Peso", s.peso || s.A * 0.785, 2, "kgf/m"]);
   return l;
 }
 const uTex = (u) => u.replace("cm²", "cm$^2$").replace("cm⁴", "cm$^4$").replace("cm⁶", "cm$^6$");
@@ -733,9 +846,9 @@ function reglasDatos() {
   for (const g of GRUPOS) {
     const p = g.id;
     if (!$(p + "_on").checked) continue;
-    const t = $(p + "_tipo").value;
-    if (t === "C") r.push([p + "_Ch", 0, true], [p + "_Cb", 0, true], [p + "_Ctw", 0, true], [p + "_Ctf", 0, true]);
-    if (t === "L" || t === "2L") r.push([p + "_La", 0, true], [p + "_Lb", 0, true], [p + "_Lt", 0, true]);
+    const t = $(p + "_tipo").value, cat = $(p + "_cat").value;
+    if (t === "C" && !cat) r.push([p + "_Ch", 0, true], [p + "_Cb", 0, true], [p + "_Ctw", 0, true], [p + "_Ctf", 0, true]);
+    if ((t === "L" || t === "2L") && !cat) r.push([p + "_La", 0, true], [p + "_Lb", 0, true], [p + "_Lt", 0, true]);
     if (t === "2L") r.push([p + "_Ls", 0], [p + "_Lsep", 0, true]);
     if (t === "M") r.push([p + "_MA", 0, true], [p + "_Mrx", 0, true], [p + "_Mry", 0, true], [p + "_Mxb", 0]);
     r.push([p + "_Lx", 0, true], [p + "_Kx", 0, true], [p + "_Pu", 0], [p + "_Tu", 0], [p + "_Ahue", 0]);
@@ -752,13 +865,13 @@ function geometriaInvalida() {
   for (const g of GRUPOS) {
     const p = g.id;
     if (!$(p + "_on").checked) continue;
-    const t = $(p + "_tipo").value;
+    const t = $(p + "_tipo").value, cat = $(p + "_cat").value;
     const marca = (id, bad, txt) => { if (bad) { $(id).classList.add("invalido"); malos.push(`${g.nombre}: ${txt}`); } };
-    if (t === "C") {
+    if (t === "C" && !cat) {
       marca(p + "_Ctf", 2 * num(p + "_Ctf") >= num(p + "_Ch"), "t_f debe ser menor que h/2");
       marca(p + "_Ctw", num(p + "_Ctw") >= num(p + "_Cb"), "t_w debe ser menor que b_f");
     }
-    if (t === "L" || t === "2L") marca(p + "_Lt", num(p + "_Lt") >= Math.min(num(p + "_La"), num(p + "_Lb")), "t debe ser menor que las alas");
+    if ((t === "L" || t === "2L") && !cat) marca(p + "_Lt", num(p + "_Lt") >= Math.min(num(p + "_La"), num(p + "_Lb")), "t debe ser menor que las alas");
     if ($(p + "_Umodo").value === "m") marca(p + "_Uval", num(p + "_Uval") > 1, "U no puede ser mayor que 1");
     if (t !== "M") {
       const A = leerSeccion(p).A;
@@ -803,7 +916,8 @@ function calcular() {
     m.sub("Propiedades de la sección");
     const pl = propsLista(s);
     m.out.push(`<div class="props" style="margin:4px 0 8px">${pl.map(([k, , v, dd, u]) => `<div>${k} = <b>${v === null ? u : `${fmt(v, dd)}</b> ${u}`}${v === null ? "</b>" : ""}</div>`).join("")}</div>`);
-    if (s.tipo === "C" || s.tipo === "L" || s.tipo === "2L") m.out.push(`<div class="unit">Propiedades calculadas con esquinas rectas${s.tipo === "2L" ? `, separación ${fmt(s.s * 10, 0)} mm entre ángulos` : ""}. Eje x: ${s.tipo === "C" ? "eje fuerte (perpendicular al alma)" : "horizontal"}.</div>`);
+    if (s.origen) { m.out.push(`<div class="unit">${s.origen}${s.tipo === "2L" ? `, separación ${fmt(s.s * 10, 0)} mm entre ángulos` : ""}.</div>`); m.p(`Perfil: ${s.origen}.`, true); }
+    else if (s.tipo === "C" || s.tipo === "L" || s.tipo === "2L") m.out.push(`<div class="unit">Propiedades calculadas con esquinas rectas${s.tipo === "2L" ? `, separación ${fmt(s.s * 10, 0)} mm entre ángulos` : ""}. Eje x: ${s.tipo === "C" ? "eje fuerte (perpendicular al alma)" : "horizontal"}.</div>`);
     m.raw(L`\begin{table}[H]
 \centering
 \caption{Propiedades de la sección ${s.nombre} (${g.nombre.toLowerCase()}).}
@@ -946,6 +1060,15 @@ function mostrarTipo(p) {
   const t = $(p + "_tipo").value, fs = $("fs_" + p);
   fs.querySelectorAll(".t-C, .t-L, .t-2L, .t-M").forEach(el => el.classList.toggle("hidden", !el.classList.contains("t-" + t)));
   fs.querySelector(".noL").classList.toggle("hidden", t === "L");
+  const sel = $(p + "_cat"), tc = t === "2L" ? "L" : t;
+  sel.querySelectorAll("optgroup").forEach(o => { o.hidden = o.dataset.t !== tc; o.disabled = o.dataset.t !== tc; });
+  if (sel.value && sel.selectedOptions[0].dataset.t !== tc) sel.value = "";
+  const cat = sel.value;
+  fs.querySelectorAll(".dims").forEach(el => { if (cat) el.classList.add("hidden"); });
+  const info = CAT_UPN[cat] ? `h = ${CAT_UPN[cat][0]} · b = ${CAT_UPN[cat][1]} · t<sub>w</sub> = ${fmt(CAT_UPN[cat][2], 1)} · t<sub>f</sub> = ${fmt(CAT_UPN[cat][3], 1)} mm · ${fmt(CAT_UPN[cat][5], 2)} kgf/m`
+    : CAT_CP[cat] ? `Plegado e = ${CAT_CP[cat][2]} mm · ${fmt(CAT_CP[cat][3], 2)} kgf/m · rige además AISI S100 / NCh 427`
+    : CAT_LP[cat] ? `Plegado e = ${CAT_LP[cat][2]} mm · ${fmt(CAT_LP[cat][3], 2)} kgf/m${t === "2L" ? " por ángulo" : ""}` : "";
+  fs.querySelector(".catInfo").innerHTML = info;
   fs.querySelector(".lxLab").innerHTML = t === "L" ? "Longitud de la barra L" : "Longitud no arriostrada L<sub>x</sub>";
   fs.querySelector(".kxLab").innerHTML = t === "L" ? "Factor K" : "Factor K<sub>x</sub>";
   fs.querySelector(".hintEje").textContent = t === "L"
@@ -989,7 +1112,7 @@ function init() {
   $("inputs").addEventListener("input", (e) => { if (e.target.tagName === "INPUT") calcular(); });
   $("inputs").addEventListener("change", (e) => {
     const id = e.target.id || "";
-    if (/_(tipo|Umodo)$/.test(id)) mostrarTipo(id.split("_")[0]);
+    if (/_(tipo|Umodo|cat)$/.test(id)) mostrarTipo(id.split("_")[0]);
     if (id === "unidad") {
       const toTf = $("unidad").value === "tf";
       GRUPOS.forEach(g => ["_Pu", "_Tu"].forEach(s => {
