@@ -1119,11 +1119,11 @@ function generarS2K() {
   const E2 = E * 1e4, G2 = G * 1e4;                        // kgf/cm² → kgf/m²
   return `File ${ultimoNombre.replace(/\.tex$/, ".s2k").replace("memoria_", "modelo_")} generado por AURA el ${fecha.toLocaleDateString("es-CL")}
  
-` + tabla("PROGRAM CONTROL", [{ ProgramName: "SAP2000", Version: "22.0.0", CurrUnits: "Kgf, m, C", SteelCode: "AISC 360-16", MultiStepStatic: "No", NLStageStatic: "No" }])
+` + tabla("PROGRAM CONTROL", [{ ProgramName: "SAP2000", Version: "26.0.0", CurrUnits: "Kgf, m, C", SteelCode: "AISC 360-16", MultiStepStatic: "No", NLStageStatic: "No" }])
     + tabla("ACTIVE DEGREES OF FREEDOM", [{ UX: "Yes", UY: "No", UZ: "Yes", RX: "No", RY: "Yes", RZ: "No" }])
     + tabla("MATERIAL PROPERTIES 01 - GENERAL", [{ Material: mat, Type: "Steel", SymType: "Isotropic", TempDepend: "No", Color: "Blue", Notes: "Acero chileno exportado desde AURA" }])
     + tabla("MATERIAL PROPERTIES 02 - BASIC MECHANICAL PROPERTIES", [{ Material: mat, UnitWeight: 7850, UnitMass: q(7850 / 9.80665), E1: q(E2), G12: q(G2), U12: q(E2 / (2 * G2) - 1), A1: 0.0000117 }])
-    + tabla("MATERIAL PROPERTIES 03A - STEEL DATA", [{ Material: mat, Fy: q(Fy * 1e4), Fu: q(Fu * 1e4), EffFy: q(Fy * 1e4), EffFu: q(Fu * 1e4), SSCurveOpt: "Simple", SSHysType: "Kinematic", SHard: 0.02, SMax: 0.14, SRup: 0.2, FinalSlope: -0.1 }])
+    + tabla("MATERIAL PROPERTIES 03A - STEEL DATA", [{ Material: mat, Fy: q(Fy * 1e4), Fu: q(Fu * 1e4), EffFy: q(Fy * 1e4), EffFu: q(Fu * 1e4), SSCurveOpt: "Simple", SSHysType: "Kinematic", SHard: 0.02, SMax: 0.14, SRup: 0.2, FinalSlope: -0.1, CoupModType: "Von Mises" }])
     + tabla("FRAME SECTION PROPERTIES 01 - GENERAL", Object.values(secs))
     + tabla("JOINT COORDINATES", nudos)
     + tabla("CONNECTIVITY - FRAME", conect)
@@ -1132,7 +1132,7 @@ function generarS2K() {
     + tabla("JOINT RESTRAINT ASSIGNMENTS", [
       { Joint: jInf(0), U1: "Yes", U2: "Yes", U3: "Yes", R1: "No", R2: "No", R3: "No" },
       { Joint: jInf(n), U1: "No", U2: "Yes", U3: "Yes", R1: "No", R2: "No", R3: "No" }])
-    + tabla("GROUPS 1 - DEFINITIONS", Object.values(NOMG).map(g => ({ GroupName: g, Selection: "Yes", SectionCut: "Yes", Steel: "Yes", Concrete: "Yes", Aluminum: "Yes", ColdFormed: "Yes", Stage: "Yes", Bridge: "Yes", AutoSeismic: "No", AutoWind: "No", SelDesSteel: "No", SelDesAlum: "No", SelDesCold: "No", MassWeight: "Yes" })))
+    + tabla("GROUPS 1 - DEFINITIONS", Object.values(NOMG).map((g, i) => ({ GroupName: g, Selection: "Yes", SectionCut: "Yes", Steel: "Yes", Concrete: "Yes", Aluminum: "Yes", ColdFormed: "Yes", Stage: "Yes", Bridge: "Yes", AutoSeismic: "No", AutoWind: "No", SelDesSteel: "No", SelDesAlum: "No", SelDesCold: "No", MassWeight: "Yes", Color: ["Red", "Blue", "Green", "Magenta"][i] })))
     + tabla("GROUPS 2 - ASSIGNMENTS", grupos)
     + tabla("LOAD PATTERN DEFINITIONS", pats.map(([p, t, sw]) => ({ LoadPat: p, DesignType: t, SelfWtMult: sw, ...(t === "Wind" ? { AutoLoad: "None" } : {}) })))
     + tabla("LOAD CASE DEFINITIONS", pats.map(([p, t]) => ({ Case: p, Type: "LinStatic", InitialCond: "Zero", DesignType: t, DesignAct: "Non-Composite", RunCase: "Yes" })))
