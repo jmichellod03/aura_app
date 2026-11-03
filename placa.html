@@ -209,11 +209,17 @@
           <div><label for="fc">Resistencia del hormigón f'<sub>c</sub> <span class="unit">[kgf/cm², mín. 214]</span></label><input id="fc" type="number" step="5" value="250"></div>
           <div><label for="QnUser">Q<sub>n</sub> del fabricante <span class="unit">[tf] (vacío = AISC I8-1)</span></label><input id="QnUser" type="number" step="0.1" value=""></div>
         </div>
+        <div class="cbTit">Viga de apoyo</div>
+        <div class="row2">
+          <div><label for="serieV">Serie</label><select id="serieV"><option>HEA</option><option>HEB</option><option selected>IPE</option><option>IPN</option><option value="otro">Otro (ingresar área)</option></select></div>
+          <div><label for="perfilV">Perfil</label><select id="perfilV"></select></div>
+        </div>
+        <div id="asvBox" class="hidden"><label for="Asv">Área del perfil A<sub>s</sub> <span class="unit">[cm²]</span></label><input id="Asv" type="number" step="0.1" value="23.9"></div>
+        <div id="perfilInfo" class="unit" style="margin-top:4px"></div>
         <label class="chk"><input id="cViga" type="checkbox"> Calcular los conectores de la viga de apoyo (acción compuesta completa)</label>
         <div id="vigaBox" class="hidden">
-          <div class="row3">
+          <div class="row2">
             <div><label for="Lv">Luz de la viga <span class="unit">[m]</span></label><input id="Lv" type="number" step="0.05" value="3.85"></div>
-            <div><label for="Asv">Área del perfil A<sub>s</sub> <span class="unit">[cm²]</span></label><input id="Asv" type="number" step="0.1" value="23.9"></div>
             <div><label for="aceroV">Acero de la viga</label>
               <select id="aceroV"><option selected>A37-24ES</option><option>A42-27ES</option><option>A52-34ES</option></select></div>
           </div>
@@ -231,6 +237,7 @@
       <div id="verdict"></div>
       <div class="toolbar">
         <button class="btn sec" type="button" onclick="window.print()">Imprimir</button>
+        <button class="btn sec" type="button" onclick="descargarDXF()" title="Plano en formato DXF (AutoCAD), en milímetros y por capas">Descargar plano (.dxf)</button>
         <button class="btn" type="button" onclick="descargarZipMemoria(ultimoTex, ultimoNombre, document.body)">Descargar memoria (.zip)</button>
       </div>
       <div class="memo" id="memo"></div>
@@ -280,6 +287,92 @@ const V_APOYO = 11200;         // kgf por metro de ancho: resistencia última de
 const FU_CON = 4570;           // kgf/cm² (65 ksi), conectores AWS D1.1 tipo B
 const CONECTOR = { "5/8": { d: 1.588, txt: "5/8\"" }, "3/4": { d: 1.905, txt: "3/4\"" } };
 const ACEROS = { "A37-24ES": 2400, "A42-27ES": 2700, "A52-34ES": 3400 };
+// Geometría de la placa para el plano [mm]. Solo la altura (63,5) y el avance (950) están acotados en la
+// ficha; el ancho de la cresta, del valle y de las almas se midió del dibujo de la ficha (aproximado).
+const DECK = { p: 950 / 3, ct: 139, w: 29 };
+DECK.vb = DECK.p - DECK.ct - 2 * DECK.w;
+
+// Catálogo Cintac de vigas laminadas (el mismo de acero.html).
+// [nombre, h, b, tw, tf, r (mm), peso (kgf/m), A (cm²), Ix (cm⁴), Wx (cm³), Iy (cm⁴), Wy (cm³)]
+const CATALOGO = {
+  HEA: [
+    ["HEA 100", 96, 100, 5.0, 8.0, 12, 16.7, 21.2, 349, 72.8, 134, 26.8],
+    ["HEA 120", 114, 120, 5.0, 8.0, 12, 19.9, 25.3, 606, 106, 231, 38.5],
+    ["HEA 140", 133, 140, 5.5, 8.5, 12, 24.7, 31.4, 1030, 155, 389, 55.6],
+    ["HEA 160", 152, 160, 6.0, 9.0, 15, 30.4, 38.8, 1670, 220, 616, 76.9],
+    ["HEA 180", 171, 180, 6.0, 9.5, 15, 35.5, 45.3, 2510, 294, 925, 103],
+    ["HEA 200", 190, 200, 6.5, 10.0, 18, 42.3, 53.8, 3690, 389, 1340, 134],
+    ["HEA 220", 210, 220, 7.0, 11.0, 18, 50.5, 64.3, 5410, 515, 1950, 178],
+    ["HEA 240", 230, 240, 7.5, 12.0, 21, 60.3, 76.8, 7760, 675, 2770, 231],
+    ["HEA 260", 250, 260, 7.5, 12.5, 24, 68.2, 86.8, 10450, 836, 3670, 282],
+    ["HEA 280", 270, 280, 8.0, 13.0, 24, 76.4, 97.3, 13670, 1010, 4760, 340],
+    ["HEA 300", 290, 300, 8.5, 14.0, 27, 88.3, 112.0, 18260, 1260, 6310, 421],
+    ["HEA 320", 310, 300, 9.0, 15.5, 27, 97.6, 124.4, 22928, 1480, 6985, 466],
+    ["HEA 340", 330, 300, 9.5, 16.5, 27, 105.0, 133.5, 27693, 1680, 7436, 496],
+    ["HEA 360", 350, 300, 10.0, 17.5, 27, 112.0, 142.8, 33090, 1890, 7887, 526],
+    ["HEA 400", 390, 300, 11.0, 19.0, 27, 125.0, 159.0, 45069, 2310, 8564, 571],
+    ["HEA 450", 440, 300, 11.5, 21.0, 27, 140.0, 178.0, 63722, 2900, 9465, 631],
+    ["HEA 500", 490, 300, 12.0, 23.0, 27, 155.0, 197.5, 86975, 3550, 10367, 691],
+  ],
+  HEB: [
+    ["HEB 100", 100, 100, 6.0, 10.0, 12, 20.4, 26.0, 450, 89.9, 167, 33.5],
+    ["HEB 120", 120, 120, 6.5, 11.0, 12, 26.7, 34.0, 864, 144, 318, 52.9],
+    ["HEB 140", 140, 140, 7.0, 12.0, 12, 33.7, 43.0, 1510, 216, 550, 78.5],
+    ["HEB 160", 160, 160, 8.0, 13.0, 15, 42.6, 54.3, 2490, 311, 889, 111],
+    ["HEB 180", 180, 180, 8.5, 14.0, 15, 51.2, 65.3, 3830, 426, 1360, 151],
+    ["HEB 200", 200, 200, 9.0, 15.0, 18, 61.3, 78.1, 5700, 570, 2000, 200],
+    ["HEB 220", 220, 220, 9.5, 16.0, 18, 71.5, 91.0, 8090, 736, 2840, 258],
+    ["HEB 240", 240, 240, 10.0, 17.0, 21, 83.2, 106.0, 11260, 938, 3920, 327],
+    ["HEB 260", 260, 260, 10.0, 17.5, 24, 93.0, 118.0, 14920, 1150, 5130, 395],
+    ["HEB 280", 280, 280, 10.5, 18.0, 24, 103.0, 131.0, 19270, 1380, 6590, 471],
+    ["HEB 300", 300, 300, 11.0, 19.0, 27, 117.0, 149.0, 25170, 1680, 8560, 571],
+    ["HEB 320", 320, 300, 11.5, 20.5, 27, 127.0, 161.3, 30820, 1930, 9239, 616],
+    ["HEB 340", 340, 300, 12.0, 21.5, 27, 134.0, 170.9, 36656, 2160, 9690, 646],
+    ["HEB 360", 360, 300, 12.5, 22.5, 27, 142.0, 180.6, 43193, 2400, 10141, 676],
+    ["HEB 400", 400, 300, 13.5, 24.0, 27, 155.0, 197.8, 57680, 2880, 10819, 721],
+    ["HEB 450", 450, 300, 14.0, 26.0, 27, 171.0, 218.0, 79887, 3550, 11721, 781],
+    ["HEB 500", 500, 300, 14.5, 28.0, 27, 187.0, 238.6, 107176, 4290, 12624, 842],
+  ],
+  IPE: [
+    ["IPE 80", 80, 46, 3.8, 5.2, 5, 6.0, 7.64, 80.1, 20.0, 8.49, 3.69],
+    ["IPE 100", 100, 55, 4.1, 5.7, 7, 8.1, 10.3, 171, 34.2, 15.9, 5.79],
+    ["IPE 120", 120, 64, 4.4, 6.3, 7, 10.4, 13.2, 318, 53.0, 27.7, 8.65],
+    ["IPE 140", 140, 73, 4.7, 6.9, 7, 12.9, 16.4, 541, 77.3, 44.9, 12.3],
+    ["IPE 160", 160, 82, 5.0, 7.4, 9, 15.8, 20.1, 869, 109, 68.3, 16.7],
+    ["IPE 180", 180, 91, 5.3, 8.0, 9, 18.8, 23.9, 1320, 146, 101, 22.2],
+    ["IPE 200", 200, 100, 5.6, 8.5, 12, 22.4, 28.5, 1940, 194, 142, 28.5],
+    ["IPE 220", 220, 110, 5.9, 9.2, 12, 26.2, 33.4, 2770, 252, 205, 37.3],
+    ["IPE 240", 240, 120, 6.2, 9.8, 11, 30.7, 39.1, 3890, 324, 284, 47.3],
+    ["IPE 270", 270, 135, 6.6, 10.2, 15, 36.1, 45.9, 5790, 429, 420, 62.2],
+    ["IPE 300", 300, 150, 7.1, 10.7, 15, 42.2, 53.8, 8360, 557, 604, 80.5],
+    ["IPE 330", 330, 160, 7.5, 11.5, 18, 49.1, 62.6, 11770, 713, 788, 98.5],
+    ["IPE 360", 360, 170, 8.0, 12.7, 18, 57.1, 72.7, 16270, 904, 1040, 123],
+    ["IPE 400", 400, 180, 8.6, 13.5, 21, 66.3, 84.5, 23130, 1160, 1320, 146],
+    ["IPE 450", 450, 190, 9.4, 14.6, 21, 77.7, 98.8, 33740, 1500, 1680, 176],
+    ["IPE 500", 500, 200, 10.2, 16.0, 24, 90.7, 115.5, 48200, 1930, 2140, 214],
+    ["IPE 550", 550, 210, 11.1, 17.2, 24, 106.0, 134.0, 67120, 2440, 2670, 254],
+    ["IPE 600", 600, 220, 12.0, 19.0, 24, 122.0, 156.0, 92080, 3070, 3387, 308],
+  ],
+  IPN: [
+    ["IPN 80", 80, 42, 3.9, 5.9, 3.9, 5.95, 7.58, 77.8, 19.5, 6.29, 3.00],
+    ["IPN 100", 100, 50, 4.5, 6.8, 4.5, 8.32, 10.6, 171, 34.2, 12.2, 4.88],
+    ["IPN 120", 120, 58, 5.1, 7.7, 5.1, 11.2, 14.2, 328, 54.7, 21.5, 7.41],
+    ["IPN 140", 140, 66, 5.7, 8.6, 5.7, 14.4, 18.3, 573, 81.9, 35.2, 10.7],
+    ["IPN 160", 160, 74, 6.3, 9.5, 6.3, 17.9, 22.8, 935, 117, 54.7, 14.8],
+    ["IPN 180", 180, 82, 6.9, 10.4, 6.9, 21.9, 27.9, 1450, 161, 81.3, 19.8],
+    ["IPN 200", 200, 90, 7.5, 11.3, 7.5, 26.3, 33.5, 2140, 214, 117, 26.0],
+    ["IPN 220", 220, 98, 8.1, 12.2, 8.1, 31.1, 39.6, 3060, 278, 162, 33.1],
+    ["IPN 240", 240, 106, 8.7, 13.1, 8.7, 36.2, 46.1, 4250, 354, 221, 41.7],
+    ["IPN 260", 260, 113, 9.4, 14.1, 9.4, 41.9, 53.4, 5740, 442, 288, 51.0],
+    ["IPN 300", 300, 125, 10.8, 16.2, 10.8, 54.2, 69.1, 9800, 653, 451, 72.2],
+    ["IPN 340", 340, 137, 12.2, 18.3, 12.2, 68.1, 86.8, 15700, 923, 674, 98.4],
+    ["IPN 360", 360, 143, 13.0, 19.5, 13.0, 76.2, 97.1, 19610, 1090, 818, 114],
+    ["IPN 400", 400, 155, 14.4, 21.6, 14.4, 92.6, 118.0, 29210, 1460, 1160, 149],
+    ["IPN 450", 450, 170, 16.2, 24.3, 16.2, 115.0, 147.0, 45850, 2040, 1730, 203],
+    ["IPN 500", 500, 185, 18.0, 27.0, 18.0, 141.0, 180.0, 68740, 2750, 2480, 268],
+    ["IPN 550", 550, 200, 19.0, 30.0, 19.0, 167.0, 213.0, 99180, 3610, 3490, 349],
+  ],
+};
 
 // ---------------------------------------------------------------------------
 // Utilidades de formato
@@ -326,15 +419,35 @@ function leerDatos() {
     As: Math.PI * (num("dMalla") / 10) ** 2 / 4 * 100 / num("sMalla"),
     cnv: +$("cnv").value, cd: $("cd").value, hs: num("hs") / 10, pos: $("pos").value, fc: num("fc"),
     QnUser: qn === "" ? null : num("QnUser") * 1000,
-    viga: $("cViga").checked, Lv: num("Lv") * 100, Asv: num("Asv"), aceroV: $("aceroV").value,
+    viga: $("cViga").checked, Lv: num("Lv") * 100, aceroV: $("aceroV").value,
+    ...perfilViga(),
   };
 }
 function reglasDatos() {
   const r = [["L", 0, true], ["qL", 0], ["qD", 0], ["dMalla", 0, true], ["sMalla", 0, true], ["fc", FC_MIN]];
   if ($("cnv").value !== "0") r.push(["hs", 0, true]);
   if ($("QnUser").value.trim() !== "") r.push(["QnUser", 0, true]);
-  if ($("cViga").checked) r.push(["Lv", 0, true], ["Asv", 0, true]);
+  if ($("cViga").checked) r.push(["Lv", 0, true]);
+  if ($("cViga").checked && $("serieV").value === "otro") r.push(["Asv", 0, true]);
   return r;
+}
+
+// Perfil de la viga de apoyo: del catálogo (dimensiones en cm) o solo el área si es "Otro"
+function perfilViga() {
+  const serie = $("serieV").value;
+  if (serie === "otro") return { pv: null, Asv: num("Asv") };
+  const row = CATALOGO[serie][$("perfilV").selectedIndex] || CATALOGO[serie][0];
+  const [nombre, h, b, tw, tf, , peso, A] = row;
+  return { pv: { nombre, h: h / 10, b: b / 10, tw: tw / 10, tf: tf / 10, peso, A }, Asv: A };
+}
+function llenarPerfilesV() {
+  const serie = $("serieV").value, otro = serie === "otro";
+  $("asvBox").classList.toggle("hidden", !otro);
+  $("perfilV").disabled = otro;
+  if (otro) { $("perfilV").innerHTML = ""; return; }
+  const prev = $("perfilV").value;
+  $("perfilV").innerHTML = CATALOGO[serie].map(r => `<option>${r[0]}</option>`).join("");
+  if ([...$("perfilV").options].some(o => o.value === prev)) $("perfilV").value = prev;
 }
 
 // Sobrecarga admisible de la Tabla I: se usa la columna de la primera luz tabulada ≥ L (sin interpolar,
@@ -510,6 +623,25 @@ function verificar(eh, d, m) {
     checks.push({ k: L`Altura del conector sobre la cresta`, dem: "38 mm", cap: L`${tn(sobre * 10, 1)} mm`, dc: dc6a, html: "Altura del conector" });
     checks.push({ k: L`Recubrimiento del conector`, dem: "13 mm", cap: L`${tn(recub * 10, 1)} mm`, dc: dc6b, html: "Recubrimiento del conector" });
 
+    m.sub("Conectores sobre el ala de la viga");
+    if (d.pv) {
+      const dd = con.D.d, tf = d.pv.tf, bf = d.pv.b;
+      const dc8 = dd / (2.5 * tf);
+      const bNec = (d.cnv - 1) * 4 * dd + 1.6 * dd;
+      const dc9 = bNec / bf;
+      m.row(`Perfil ${d.pv.nombre}: b<sub>f</sub> ; t<sub>f</sub>`, `${fmt(bf * 10, 0)} mm ; ${fmt(tf * 10, 1)} mm`);
+      m.row("Diámetro del conector d ≤ 2,5 t<sub>f</sub>", `${fmt(dd * 10, 1)} ${dc8 <= 1 + 1e-9 ? "≤" : ">"} ${fmt(2.5 * tf * 10, 1)} mm ${tagDC(dc8)}`, "I8.1");
+      m.row(`Ancho del ala para ${d.cnv} conector${d.cnv > 1 ? "es" : ""}: ${d.cnv > 1 ? "4d entre ejes + " : ""}cabeza ≈ 1,6d`, `${fmt(bNec * 10, 0)} ${dc9 <= 1 + 1e-9 ? "≤" : ">"} ${fmt(bf * 10, 0)} mm ${tagDC(dc9)}`, "I8.2d");
+      m.eq(L`d = ${tn(dd * 10, 1)}\ \mathrm{mm} ${cmp(dd, 2.5 * tf)} 2{,}5\,t_f = 2{,}5 \cdot ${tn(tf * 10, 1)} = ${tn(2.5 * tf * 10, 1)}\ \mathrm{mm}`, "I8.1");
+      m.eq(L`b_{nec} = ${d.cnv > 1 ? L`(${d.cnv} - 1)\cdot 4d + ` : ""}1{,}6\,d = ${tn(bNec * 10, 0)}\ \mathrm{mm} ${cmp(bNec, bf)} b_f = ${tn(bf * 10, 0)}\ \mathrm{mm}`, "I8.2d");
+      m.p(L`El límite $d \le 2{,}5\,t_f$ no se aplica si el conector queda directamente sobre el alma. El ancho necesario considera la separación transversal mínima de $4d$ entre ejes y el diámetro de la cabeza del conector (criterio práctico).`, true);
+      checks.push({ k: L`Diámetro del conector ($d \le 2{,}5\,t_f$)`, dem: L`${tn(dd * 10, 1)} mm`, cap: L`${tn(2.5 * tf * 10, 1)} mm`, dc: dc8, html: "Conector y ala (d ≤ 2,5 tf)" });
+      checks.push({ k: "Ancho del ala para los conectores", dem: L`${tn(bNec * 10, 0)} mm`, cap: L`${tn(bf * 10, 0)} mm`, dc: dc9, html: "Ancho del ala" });
+    } else {
+      m.note("Perfil de la viga no definido: verifique d ≤ 2,5 t<sub>f</sub> (I8.1) y que el ala tenga ancho para los conectores (4d entre ejes, I8.2d).",
+        L`Perfil de la viga no definido: se debe verificar $d \le 2{,}5\,t_f$ (I8.1) y que el ala tenga ancho para los conectores ($4d$ entre ejes, I8.2d).`);
+    }
+
     // 7. Conectores de la viga compuesta (opcional)
     if (d.viga) {
       m.h("Conectores de la viga de apoyo (acción compuesta completa)");
@@ -522,9 +654,7 @@ function verificar(eh, d, m) {
       const nMax = nValles * d.cnv;
       const dc7 = nMax > 0 ? nMit / nMax : Infinity;
       const sMax = Math.min(8 * et, 90);
-      const kMax = Math.max(1, Math.floor(sMax / SEP_VALLE + 1e-9));
-      const vallesUsados = Math.ceil(nMit / d.cnv);
-      const k = Math.max(1, Math.min(kMax, Math.floor(nValles / Math.max(vallesUsados, 1))));
+      if (d.pv) m.row(`Perfil ${d.pv.nombre} (${d.aceroV}): A<sub>s</sub>`, `${fmt(d.Asv, 2)} cm²`, "Catálogo Cintac");
       m.row("Ancho efectivo b = mín(L<sub>v</sub>/4 ; s)", `${fmt(bef, 1)} cm`, "I3.1a");
       m.row("Área de hormigón sobre la cresta A<sub>c</sub> = b · e<sub>h</sub>", `${fmt(Ac, 0)} cm²`, "I3.2c");
       m.row("0,85 f'<sub>c</sub> A<sub>c</sub>", `${fmt(C / 1000, 2)} tf`, "I3-1a");
@@ -538,13 +668,13 @@ function verificar(eh, d, m) {
       m.eq(L`A_s F_y = ${tn(d.Asv, 2)} \cdot ${tn(Fy, 0)} = ${tn(T, 0)}\ \mathrm{kgf}`, "I3-1b");
       m.eq(L`n = \left\lceil \frac{V'}{Q_n} \right\rceil = \left\lceil \frac{${tn(Vh, 0)}}{${tn(con.Qn, 0)}} \right\rceil = ${nMit}`, "I8.2c");
       m.p(L`Con los nervios perpendiculares a la viga se desprecia el hormigón bajo la cresta de la placa (I3.2c). El número $n$ se dispone a cada lado del punto de momento máximo, por lo que la viga simplemente apoyada lleva $2n = ${2 * nMit}$ conectores.`, true);
-      if (dc7 <= 1) m.row("Disposición sugerida", `${d.cnv} conector${d.cnv > 1 ? "es" : ""} cada ${k} valle${k > 1 ? "s" : ""} (${fmt(k * SEP_VALLE, 1)} cm ≤ ${fmt(sMax, 1)} cm)`, "I8.2d");
+      if (dc7 <= 1) m.row("Disposición", `${d.cnv} conector${d.cnv > 1 ? "es" : ""} en todos los valles, cada ${fmt(SEP_VALLE, 1)} cm ≤ ${fmt(sMax, 1)} cm (también lo exige la nota d)`, "I8.2d");
       else m.note("No caben los conectores para la acción compuesta completa: use acción compuesta parcial (verificar la viga con I3) o más conectores por valle.",
         L`No caben los conectores para la acción compuesta completa: se debe usar acción compuesta parcial (verificar la viga con la sección I3) o más conectores por valle.`);
       m.note("La placa debe quedar anclada a la viga a no más de 45 cm (conectores, soldadura tapón o tornillos), I3.2c(4). La resistencia a flexión de la viga compuesta no se verifica aquí.",
         L`La placa debe quedar anclada a la viga a no más de 45 cm (conectores, soldadura tapón o tornillos), según I3.2c(4). La resistencia a flexión de la viga compuesta no se verifica en esta memoria.`);
       checks.push({ k: "Conectores de la viga", dem: L`$n = ${nMit}$`, cap: L`$n_{m\acute{a}x} = ${nMax}$`, dc: dc7, html: "Conectores de la viga", viga: true });
-      viga = { Fy, bef, Ac, C, T, Vh, nMit, nMax, k, sMax };
+      viga = { Fy, bef, Ac, C, T, Vh, nMit, nMax, sMax };
     }
   }
 
@@ -665,7 +795,7 @@ ${r.sinVerificar.length
 // ---------------------------------------------------------------------------
 // Cálculo e interfaz
 // ---------------------------------------------------------------------------
-let ultimoTex = "", ultimoNombre = "memoria.tex";
+let ultimoTex = "", ultimoNombre = "memoria.tex", ultimoD = null, ultimoR = null;
 
 function calcular() {
   $("vigaBox").classList.toggle("hidden", !$("cViga").checked);
@@ -677,10 +807,13 @@ function calcular() {
     $("summary").innerHTML = ""; $("memo").innerHTML = ""; $("alt").innerHTML = "";
     $("verdict").innerHTML = avisoInvalidos(malos);
     $("asOut").textContent = "—";
-    ultimoTex = "";
+    ultimoTex = ""; ultimoR = null;
     return;
   }
   const d = leerDatos();
+  $("perfilInfo").innerHTML = d.pv
+    ? `h = ${fmt(d.pv.h * 10, 0)} mm · b<sub>f</sub> = ${fmt(d.pv.b * 10, 0)} mm · t<sub>f</sub> = ${fmt(d.pv.tf * 10, 1)} mm · A = ${fmt(d.pv.A, 2)} cm² · ${fmt(d.pv.peso, 1)} kgf/m`
+    : "Sin perfil del catálogo: el plano dibuja una viga genérica.";
   $("asOut").textContent = `${fmt(d.As, 2)} cm²/m`;
   if (d.cnv === 0) d.viga = false;
 
@@ -732,11 +865,235 @@ function calcular() {
   }).join("")}</table></div>
   <div class="unit" style="margin-top:8px">Mismas cargas, luz y conectores. Tabla I, Tabla II y flecha: razón D/C. El estado incluye también la malla y los conectores en los apoyos (no los de la viga).</div>`;
 
+  ultimoD = d; ultimoR = r;
   ultimoTex = documentoTex(d, r, m.texto());
   ultimoNombre = `memoria_placa_colaborante_L${fmt(d.L / 100, 2).replace(",", "_")}_eh${eh}.tex`;
 }
 
+// ---------------------------------------------------------------------------
+// Plano DXF (R12, milímetros, por capas): elevación de la losa entre vigas, elevación de la viga con los
+// conectores, cortes A-A y B-B ampliados y notas. Clase Dxf y detalle() iguales a reticulada.html.
+// ---------------------------------------------------------------------------
+class Dxf {
+  constructor() { this.e = []; }
+  _p(...pares) { for (let i = 0; i < pares.length; i += 2) this.e.push(String(pares[i]), typeof pares[i + 1] === "number" ? (+pares[i + 1].toFixed(4)).toString() : pares[i + 1]); }
+  line(ly, x1, y1, x2, y2) { this._p(0, "LINE", 8, ly, 10, x1, 20, y1, 30, 0, 11, x2, 21, y2, 31, 0); }
+  poly(ly, pts, cerrada = true) {
+    this._p(0, "POLYLINE", 8, ly, 66, 1, 10, 0, 20, 0, 30, 0, 70, cerrada ? 1 : 0);
+    for (const [x, y] of pts) this._p(0, "VERTEX", 8, ly, 10, x, 20, y, 30, 0);
+    this._p(0, "SEQEND", 8, ly);
+  }
+  circle(ly, x, y, r) { this._p(0, "CIRCLE", 8, ly, 10, x, 20, y, 30, 0, 40, r); }
+  // h: alineación horizontal (0 izq, 1 centro, 2 der); v: vertical (0 base, 1 abajo, 2 medio, 3 arriba)
+  text(ly, x, y, alto, txt, h = 0, v = 0, rot = 0) {
+    this._p(0, "TEXT", 8, ly, 10, x, 20, y, 30, 0, 40, alto, 1, txt, 50, rot, 7, "STANDARD");
+    if (h || v) this._p(72, h, 11, x, 21, y, 31, 0, 73, v);
+  }
+  archivo(capas) {
+    const c = [];
+    const p = (...a) => { for (let i = 0; i < a.length; i += 2) c.push(String(a[i]), String(a[i + 1])); };
+    p(0, "SECTION", 2, "HEADER", 9, "$ACADVER", 1, "AC1009", 9, "$DWGCODEPAGE", 3, "ANSI_1252", 9, "$INSBASE", 10, 0, 20, 0, 30, 0, 0, "ENDSEC");
+    p(0, "SECTION", 2, "TABLES");
+    p(0, "TABLE", 2, "LTYPE", 70, 2);
+    p(0, "LTYPE", 2, "CONTINUOUS", 70, 0, 3, "Solid line", 72, 65, 73, 0, 40, 0);
+    p(0, "LTYPE", 2, "CENTER", 70, 0, 3, "Center ____ _ ____", 72, 65, 73, 4, 40, 50, 49, 32, 49, -6, 49, 6, 49, -6);
+    p(0, "ENDTAB");
+    p(0, "TABLE", 2, "LAYER", 70, capas.length);
+    for (const [n, col, lt] of capas) p(0, "LAYER", 2, n, 70, 0, 62, col, 6, lt || "CONTINUOUS");
+    p(0, "ENDTAB");
+    p(0, "TABLE", 2, "STYLE", 70, 1, 0, "STYLE", 2, "STANDARD", 70, 0, 40, 0, 41, 1, 50, 0, 71, 0, 42, 2.5, 3, "txt", 4, "", 0, "ENDTAB");
+    p(0, "ENDSEC");
+    c.push("0", "SECTION", "2", "ENTITIES", ...this.e, "0", "ENDSEC", "0", "EOF");
+    // Windows-1252: caracteres fuera del juego se reemplazan
+    const txt = c.join("\r\n") + "\r\n";
+    // La fuente txt.shx de AutoCAD no trae "·", "²" ni "³": se reemplazan por equivalentes simples
+    const map = { "—": "-", "–": "-", "≤": "<=", "≥": ">=", "φ": "phi", "Δ": "Delta", "λ": "lambda", "→": "->", "π": "pi", "·": "-", "²": "2", "³": "3", "×": "x" };
+    const limpio = txt.replace(/[—–≤≥φΔλ→π·²³×]/g, (ch) => map[ch]).replace(/[^\x00-\xff]/g, "?");
+    return Uint8Array.from(limpio, (ch) => ch.charCodeAt(0));
+  }
+}
+
+// Envoltorio que escala (k) y traslada (x0, y0) las entidades de un detalle
+function detalle(dx, x0, y0, k) {
+  const P = (x, y) => [x0 + x * k, y0 + y * k];
+  return {
+    line: (ly, x1, y1, x2, y2) => dx.line(ly, ...P(x1, y1), ...P(x2, y2)),
+    poly: (ly, pts, c) => dx.poly(ly, pts.map(([x, y]) => P(x, y)), c),
+    circle: (ly, x, y, r) => dx.circle(ly, ...P(x, y), r * k),
+    text: (ly, x, y, h, t, a, v, rot) => dx.text(ly, ...P(x, y), h * k, t, a, v, rot),
+  };
+}
+function generarDXF() {
+  const d = ultimoD, r = ultimoR;
+  const dx = new Dxf();
+  const hr = PLACA.hr * 10, et = r.et * 10, eh = r.eh * 10, Lm = d.L * 10;
+  const pv = d.pv ? { nombre: d.pv.nombre, h: d.pv.h * 10, b: d.pv.b * 10, tw: d.pv.tw * 10, tf: d.pv.tf * 10 }
+    : { nombre: "PERFIL A DEFINIR", h: 200, b: 100, tw: 6, tf: 9, gen: true };
+  const dS = d.cnv ? CONECTOR[d.cd].d * 10 : 19.05, hs = d.hs * 10;
+  const th = 40;                                   // altura de texto en el plano [mm]
+  const K = 5;                                     // ampliación de los cortes
+  const capaVig = pv.gen ? "OCULTAS" : "VIGAS";
+
+  const E = detalle(dx, 0, 0, 1);
+  const tick = (D, t) => t * 0.35;
+  const cota = (D, x1, y1, x2, y2, txt, t, vertical = false) => {
+    D.line("COTAS", x1, y1, x2, y2);
+    const k = tick(D, t);
+    for (const [x, y] of [[x1, y1], [x2, y2]]) D.line("COTAS", x - k, y - k, x + k, y + k);
+    if (vertical) D.text("COTAS", x1 - t * 0.6, (y1 + y2) / 2, t * 0.8, txt, 1, 2, 90);
+    else D.text("COTAS", (x1 + x2) / 2, y1 + t * 0.5, t * 0.8, txt, 1, 0);
+  };
+  // Perfil I con el borde superior del ala en (xc, yt)
+  const perfilI = (D, xc, yt, ly) => {
+    const { h, b, tw, tf } = pv, X = (x) => xc + x, Y = (y) => yt + y;
+    D.poly(ly, [[-b / 2, 0], [b / 2, 0], [b / 2, -tf], [tw / 2, -tf], [tw / 2, -(h - tf)], [b / 2, -(h - tf)], [b / 2, -h],
+      [-b / 2, -h], [-b / 2, -(h - tf)], [-tw / 2, -(h - tf)], [-tw / 2, -tf], [-b / 2, -tf]].map(([x, y]) => [X(x), Y(y)]));
+  };
+  // Conector: vástago de diámetro d y cabeza de 1,6d; base en (xc, yb)
+  const conector = (D, xc, yb) => {
+    const hc = Math.max(0.5 * dS, 8);
+    D.poly("CONECTORES", [[xc - dS / 2, yb], [xc + dS / 2, yb], [xc + dS / 2, yb + hs - hc], [xc - dS / 2, yb + hs - hc]]);
+    D.poly("CONECTORES", [[xc - 0.8 * dS, yb + hs - hc], [xc + 0.8 * dS, yb + hs - hc], [xc + 0.8 * dS, yb + hs], [xc - 0.8 * dS, yb + hs]]);
+  };
+  // Perfil de la placa (valle en y = 0, cresta en y = hr) desde x0, con n pasos que parten en un valle
+  const perfilPlaca = (n, x0 = 0) => {
+    const pts = [];
+    for (let i = 0; i < n; i++) {
+      const b = x0 + i * DECK.p;
+      pts.push([b, 0], [b + DECK.vb, 0], [b + DECK.vb + DECK.w, hr], [b + DECK.vb + DECK.w + DECK.ct, hr]);
+    }
+    pts.push([x0 + n * DECK.p, 0]);
+    return pts;
+  };
+  const mallaTxt = `MALLA %%c${fmt(d.dM, 1)} a ${fmt(d.sM, 1)} cm en ambas direcciones (As = ${fmt(d.As, 2)} cm2/m), a 25 mm de la cara superior`;
+  const conTxt = d.cnv ? `CONECTOR %%c${CONECTOR[d.cd].txt} h = ${fmt(hs, 0)} mm, ${d.cnv} por valle` : "SIN CONECTORES";
+
+  // ===== 1. Elevación de la losa entre vigas (sentido de los nervios)
+  const nt = Math.min(d.tramos, 3), Lt = nt * Lm;
+  E.text("TEXTOS", 0, et + th * 5, th * 1.4, `ELEVACIÓN DE LA LOSA ENTRE VIGAS (sentido de los nervios) - ${nt}${d.tramos >= 3 ? " o más" : ""} tramo${nt > 1 ? "s" : ""}`);
+  E.text("TEXTOS", 0, et + th * 3, th * 0.8, `Placa Instadeck 0,8 mm + hormigón: eh = ${fmt(eh, 0)} mm sobre la cresta, espesor total ${fmt(et, 1)} mm`);
+  const xa = -pv.b, xb = Lt + pv.b;
+  E.line("PLACA", xa, 0, xb, 0);                          // valle (apoyado en las vigas)
+  E.line("OCULTAS", xa, hr, xb, hr);                      // cresta de los nervios
+  E.poly("HORMIGON", [[xa, 0], [xa, et], [xb, et], [xb, 0]], false);
+  E.line("MALLA", xa, et - 25, xb, et - 25);
+  for (let i = 0; i <= nt; i++) {
+    perfilI(E, i * Lm, 0, capaVig);
+    E.line("EJES", i * Lm, et + th, i * Lm, -pv.h - th);
+    if (i > 0 && i < nt) E.text("TEXTOS", i * Lm, et + th * 0.6, th * 0.6, "ARMADURA NEGATIVA SEGÚN CÁLCULO", 1, 0);
+  }
+  E.text("TEXTOS", 0, -pv.h - th * 1.8, th * 0.8, `Vigas ${pv.nombre}`, 1, 0);
+  // Alzaprimas
+  const yAlz = -pv.h - 300;
+  if (r.nAlz > 0) for (let i = 0; i < nt; i++) for (let k = 1; k <= r.nAlz; k++) {
+    const x = i * Lm + k * r.sepAlz * 10;
+    E.line("ALZAPRIMAS", x, 0, x, yAlz);
+    E.line("ALZAPRIMAS", x - 60, 0, x + 60, 0);
+    E.line("ALZAPRIMAS", x - 100, yAlz, x + 100, yAlz);
+  }
+  const yC1 = yAlz - th * 3, yC2 = yC1 - th * 2.2;
+  for (let i = 0; i < nt; i++) {
+    cota(E, i * Lm, yC1, (i + 1) * Lm, yC1, `L = ${fmt(Lm, 0)}`, th);
+    if (r.nAlz > 0) for (let k = 0; k <= r.nAlz; k++) {
+      const x1 = i * Lm + k * r.sepAlz * 10, x2 = x1 + r.sepAlz * 10;
+      cota(E, x1, yC2, x2, yC2, fmt(r.sepAlz * 10, 0), th * 0.8);
+    }
+  }
+  E.text("TEXTOS", 0, yC2 - th * 2, th * 0.8, r.nAlz > 0
+    ? `ALZAPRIMAS: ${r.nAlz} línea${r.nAlz > 1 ? "s" : ""} por tramo, a ${fmt(r.sepAlz * 10, 0)} mm. Retirar con el 80 % de f'c (no antes de 10 días).`
+    : "Sin alzaprimas (longitud máxima sin alzaprimado según Tabla III).");
+  let y0 = yC2 - th * 6;
+
+  // ===== 2. Elevación de la viga de apoyo con los conectores (solo si se calculó la viga)
+  if (d.viga && d.cnv) {
+    const Lv = d.Lv * 10, top = y0 - et - th * 4;
+    const V = detalle(dx, 0, top, 1);
+    V.text("TEXTOS", 0, et + th * 3.5, th * 1.4, `ELEVACIÓN DE LA VIGA DE APOYO ${pv.nombre} - CONECTORES`);
+    V.poly(capaVig, [[0, 0], [Lv, 0], [Lv, -pv.h], [0, -pv.h]]);
+    V.line(capaVig, 0, -pv.tf, Lv, -pv.tf); V.line(capaVig, 0, -(pv.h - pv.tf), Lv, -(pv.h - pv.tf));
+    const n = Math.floor(Lv / DECK.p);
+    V.poly("PLACA", perfilPlaca(n), false);
+    V.line("HORMIGON", 0, et, n * DECK.p, et);
+    V.line("MALLA", 0, et - 25, n * DECK.p, et - 25);
+    let nc = 0;
+    for (let i = 0; i < n; i++) { conector(V, i * DECK.p + DECK.vb / 2, 0); nc++; }
+    for (const x of [0, Lv]) V.poly("APOYOS", [[x, -pv.h], [x - 80, -pv.h - 140], [x + 80, -pv.h - 140]]);
+    cota(V, 0, -pv.h - th * 5, Lv, -pv.h - th * 5, `Lv = ${fmt(Lv, 0)}`, th);
+    cota(V, DECK.vb / 2, et + th, DECK.vb / 2 + DECK.p, et + th, fmt(DECK.p, 1), th * 0.8);
+    V.text("TEXTOS", 0, -pv.h - th * 7.5, th * 0.8, `${conTxt} en todos los valles (cada ${fmt(DECK.p, 1)} mm): ${nc * d.cnv} conectores en la viga; se requieren ${2 * r.viga.nMit} (${r.viga.nMit} por mitad).`);
+    if (r.viga.nMit > r.viga.nMax) V.text("TEXTOS", 0, -pv.h - th * 9, th * 0.8, "NO CABEN para la acción compuesta completa: verificar con acción compuesta parcial (AISC 360-16 I3).");
+    y0 = top - pv.h - th * 13;
+  }
+
+  // ===== 3. Cortes ampliados (cotas reales en mm)
+  const t3 = th / K;
+  const topS = y0 - (et + 40) * K - th * 3;
+  const A = detalle(dx, 0, topS, K);
+  dx.text("TEXTOS", 0, topS + (et + 40) * K + th * 1.5, th * 1.2, `CORTE A-A: LOSA SOBRE LA VIGA, POR EL EJE DE LA VIGA (escala ${K}:1, cotas en mm)`);
+  A.poly("PLACA", perfilPlaca(3), false);
+  A.poly("HORMIGON", [[0, 0], [0, et], [950, et], [950, 0]], false);
+  A.line("MALLA", 0, et - 25, 950, et - 25);
+  for (let x = d.sM * 10 / 2; x < 950; x += d.sM * 10) A.circle("MALLA", x, et - 25 - d.dM / 2, d.dM / 2);
+  A.line(capaVig, -30, 0, 980, 0); A.line(capaVig, -30, -pv.tf, 980, -pv.tf);
+  A.line("OCULTAS", -30, -40, 980, -40);
+  if (d.cnv) for (let i = 0; i < 3; i++) conector(A, i * DECK.p + DECK.vb / 2, 0);
+  cota(A, 990, 0, 990, hr, `hr = ${fmt(hr, 1)}`, t3, true);
+  cota(A, 1060, hr, 1060, et, `eh = ${fmt(eh, 0)}`, t3, true);
+  cota(A, 1130, 0, 1130, et, `et = ${fmt(et, 1)}`, t3, true);
+  cota(A, 0, -60, 950, -60, "Avance útil 950", t3);
+  cota(A, DECK.vb / 2, et + 20, DECK.vb / 2 + DECK.p, et + 20, fmt(DECK.p, 1), t3);
+  if (d.cnv) cota(A, -40, 0, -40, hs, `hs = ${fmt(hs, 0)}`, t3, true);
+  A.text("TEXTOS", 0, -110, t3 * 0.8, "Placa Instadeck 0,8 mm (geometría de cresta y valle aproximada, medida de la ficha)");
+  A.text("TEXTOS", 0, -150, t3 * 0.8, `Ala de la viga ${pv.nombre}`);
+
+  const xB = 1600 * K, B = detalle(dx, xB, topS, K), wB = Math.max(500, pv.b / 2 + 200);
+  dx.text("TEXTOS", xB - wB * K, topS + (et + 40) * K + th * 1.5, th * 1.2, `CORTE B-B: POR UN VALLE, TRANSVERSAL A LA VIGA (escala ${K}:1, cotas en mm)`);
+  perfilI(B, 0, 0, capaVig);
+  B.line("PLACA", -wB, 0, wB, 0);
+  B.line("OCULTAS", -wB, hr, wB, hr);
+  B.poly("HORMIGON", [[-wB, 0], [-wB, et], [wB, et], [wB, 0]], false);
+  B.line("MALLA", -wB, et - 25 - d.dM, wB, et - 25 - d.dM);
+  for (let x = -wB + d.sM * 10 / 2; x < wB; x += d.sM * 10) B.circle("MALLA", x, et - 25 - d.dM / 2, d.dM / 2);
+  if (d.cnv) {
+    const xs = d.cnv === 1 ? [0] : [-2 * dS, 2 * dS];
+    xs.forEach(x => conector(B, x, 0));
+    if (d.cnv > 1) cota(B, xs[0], hs + 25, xs[1], hs + 25, fmt(4 * dS, 0), t3);
+    cota(B, wB + 30, 0, wB + 30, hs, `hs = ${fmt(hs, 0)}`, t3, true);
+    cota(B, wB + 30, hs, wB + 30, et, fmt(et - hs, 1), t3, true);
+  }
+  cota(B, wB + 100, 0, wB + 100, et, `et = ${fmt(et, 1)}`, t3, true);
+  cota(B, -pv.b / 2, -pv.h - 30, pv.b / 2, -pv.h - 30, `bf = ${fmt(pv.b, 0)}`, t3);
+  cota(B, -wB - 30, -pv.h, -wB - 30, 0, `h = ${fmt(pv.h, 0)}`, t3, true);
+  B.text("TEXTOS", -wB, -pv.h - 80, t3 * 0.8, `${pv.nombre}${pv.gen ? " (genérico)" : ""}`);
+
+  // ===== 4. Notas
+  let yN = topS - Math.max(pv.h + 160, 200) * K - th * 2;
+  const notas = [
+    "NOTAS",
+    `1. Placa colaborante Instadeck (Cintac), espesor 0,8 mm, acero grado 37 galvanizado G-90. Avance útil 950 mm.`,
+    `2. Hormigón f'c = ${fmt(d.fc, 0)} kgf/cm2 (H25 mínimo según el fabricante). Espesor sobre la cresta eh = ${fmt(eh, 0)} mm; espesor total ${fmt(et, 1)} mm.`,
+    `3. ${mallaTxt}.`,
+    `4. ${conTxt}${d.cnv ? `, soldado a la viga a través de la placa en todos los valles de cada apoyo` : ""}.`,
+    `5. Fijar la placa a las vigas en todos los valles y entre placas cada 50 cm. La unión transversal de placas va sobre las vigas.`,
+    nt > 1 ? `6. Con tramos continuos, armadura negativa sobre los apoyos intermedios según el cálculo del ingeniero.` : `6. Losa de un tramo: restringir el giro en los bordes discontinuos.`,
+    r.nAlz > 0 ? `7. Alzaprimas: ${r.nAlz} por tramo a ${fmt(r.sepAlz * 10, 0)} mm; retirarlas con el 80 % de f'c, no antes de 10 días.` : `7. No requiere alzaprimas${d.heli ? "" : " (sin afinado con helicóptero)"}.`,
+    `8. Dibujo de apoyo generado por AURA; las uniones y la armadura negativa no están dibujadas. Verificar con el proyecto.`,
+  ];
+  notas.forEach((t, i) => { dx.text("TEXTOS", 0, yN, i ? th * 0.8 : th * 1.1, t); yN -= th * 1.6; });
+
+  return dx.archivo([["PLACA", 4], ["HORMIGON", 8], ["MALLA", 3], ["CONECTORES", 1], ["VIGAS", 5], ["ALZAPRIMAS", 30],
+    ["APOYOS", 7], ["EJES", 9, "CENTER"], ["OCULTAS", 8, "CENTER"], ["COTAS", 2], ["TEXTOS", 7]]);
+}
+function descargarDXF() {
+  if (!ultimoR) { alert("Corrija los datos inválidos antes de descargar el plano."); return; }
+  const nombre = `plano_placa_colaborante_L${fmt(ultimoD.L / 100, 2).replace(",", "-")}m_eh${ultimoR.eh}.dxf`;
+  descargarBlob(new Blob([generarDXF()], { type: "application/dxf" }), nombre);
+}
+
 function init() {
+  llenarPerfilesV();
+  $("perfilV").value = "IPE 180";
+  $("serieV").addEventListener("change", () => { llenarPerfilesV(); calcular(); });
   $("inputs").addEventListener("input", (e) => { if (e.target.tagName === "INPUT" && e.target.type !== "checkbox") calcular(); });
   $("inputs").addEventListener("change", () => calcular());
   calcular();
@@ -746,7 +1103,7 @@ init();
 window.AURA_MEMO = {
   tipo: "Losa colaborante",
   elemento: () => "", tex: () => ultimoTex, nombre: () => ultimoNombre,
-  recalcular: () => calcular(),
+  recalcular: (v) => { llenarPerfilesV(); if (v && v.perfilV) $("perfilV").value = v.perfilV; if ($("perfilV").selectedIndex < 0) $("perfilV").selectedIndex = 0; calcular(); },
 };
 </script>
 <script src="proyectos.js?v=32"></script>
