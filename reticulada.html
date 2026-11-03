@@ -1802,8 +1802,9 @@ class Dxf {
     c.push("0", "SECTION", "2", "ENTITIES", ...this.e, "0", "ENDSEC", "0", "EOF");
     // Windows-1252: caracteres fuera del juego se reemplazan
     const txt = c.join("\r\n") + "\r\n";
-    const map = { "—": "-", "–": "-", "≤": "<=", "≥": ">=", "φ": "phi", "Δ": "Delta", "λ": "lambda", "→": "->", "π": "pi" };
-    const limpio = txt.replace(/[—–≤≥φΔλ→π]/g, (ch) => map[ch]).replace(/[^\x00-\xff]/g, "?");
+    // La fuente txt.shx de AutoCAD no trae "·", "²" ni "³": se reemplazan por equivalentes simples
+    const map = { "—": "-", "–": "-", "≤": "<=", "≥": ">=", "φ": "phi", "Δ": "Delta", "λ": "lambda", "→": "->", "π": "pi", "·": "-", "²": "2", "³": "3", "×": "x" };
+    const limpio = txt.replace(/[—–≤≥φΔλ→π·²³×]/g, (ch) => map[ch]).replace(/[^\x00-\xff]/g, "?");
     return Uint8Array.from(limpio, (ch) => ch.charCodeAt(0));
   }
 }
@@ -1867,7 +1868,7 @@ function generarDXF() {
   }
   // Etiquetas de perfiles (cordón superior sobre la viga; el resto en una leyenda bajo el título)
   dx.text("TEXTOS", Lt / 2, H + dS / 2 + th * 1.6, th, `${NOM.cs}: ${sec.cs.nombre}`, 1, 1);
-  dx.text("TEXTOS", 0, H + dS / 2 + th * 3.2, th * 0.75, `Cordón inferior: ${sec.ci.nombre}   ·   Diagonales: ${sec.di.nombre}   ·   Montantes: ${sec.mo.nombre}   ·   N = nudo, (k) = barra`);
+  dx.text("TEXTOS", 0, H + dS / 2 + th * 4.2, th * 0.75, `Cordón inferior: ${sec.ci.nombre}   /   Diagonales: ${sec.di.nombre}   /   Montantes: ${sec.mo.nombre}   /   N = nudo, (k) = barra`);
 
   // --- Cotas
   const tick = th * 0.4, cota = (x1, y1, x2, y2, txt, vertical = false) => {
@@ -1884,7 +1885,7 @@ function generarDXF() {
   const xH = Lt + sA + th * 2.5;
   cota(xH, 0, xH, H, `h = ${fmt(H, 0)} mm (ejes)`, true);
   dx.line("COTAS", Lt + th * 0.5, 0, xH + tick * 2, 0); dx.line("COTAS", Lt + th * 0.5, H, xH + tick * 2, H);
-  dx.text("TEXTOS", 0, H + dS / 2 + th * 5, th * 1.4, `ELEVACIÓN VIGA RETICULADA ${tipo.toUpperCase()} - L = ${fmt(Lt / 1000, 2)} m`);
+  dx.text("TEXTOS", 0, H + dS / 2 + th * 6, th * 1.4, `ELEVACIÓN VIGA RETICULADA ${tipo.toUpperCase()} - L = ${fmt(Lt / 1000, 2)} m`);
 
   // --- Detalles de secciones (escala real, en mm)
   const ySec = yC2 - th * 9;
