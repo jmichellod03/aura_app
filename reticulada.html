@@ -191,6 +191,20 @@
             </select></div>
         </div>
       </fieldset>
+
+      <fieldset>
+        <legend>Cargas para el modelo SAP2000</legend>
+        <div class="unit">Se exportan como cargas distribuidas sobre el cordón superior (carga por m² × ancho tributario). El peso propio de las barras lo calcula SAP en el patrón D. Valores de ejemplo: reemplácelos por los de su proyecto.</div>
+        <label for="sB">Ancho tributario (separación entre vigas) <span class="unit">[m]</span></label>
+        <input id="sB" type="number" step="0.01" min="0" value="3">
+        <div class="row2">
+          <div><label for="sD">Sobrecarga muerta D (sin peso propio) <span class="unit">[kgf/m²]</span></label><input id="sD" type="number" step="any" min="0" value="30"></div>
+          <div><label for="sL">Sobrecarga de uso L <span class="unit">[kgf/m²]</span></label><input id="sL" type="number" step="any" min="0" value="0"></div>
+          <div><label for="sLr">Sobrecarga de techo L<sub>r</sub> <span class="unit">[kgf/m²]</span></label><input id="sLr" type="number" step="any" min="0" value="100"></div>
+          <div><label for="sW">Viento W (+ presión ↓, − succión ↑) <span class="unit">[kgf/m²]</span></label><input id="sW" type="number" step="any" value="0"></div>
+        </div>
+        <div id="sOut" class="unit" style="margin-top:6px"></div>
+      </fieldset>
     </div>
   </section>
 
@@ -844,7 +858,7 @@ function leerGrupo(p, f) {
   };
 }
 function reglasDatos() {
-  const r = [["gL", 0, true], ["gH", 0, true], ["gN", 0, true], ["fD", 0]];
+  const r = [["gL", 0, true], ["gH", 0, true], ["gN", 0, true], ["fD", 0], ["sB", 0], ["sD", 0], ["sL", 0], ["sLr", 0], ["sW", -Infinity]];
   for (const g of GRUPOS) {
     const p = g.id;
     if (!$(p + "_on").checked) continue;
@@ -890,6 +904,7 @@ let ultimoTex = "", ultimoNombre = "memoria_reticulada.tex";
 
 function calcular() {
   pintarPrediseno();
+  pintarCargasSAP();
   limpiarInvalidos($("inputs"));
   const malos = [...datosInvalidos(reglasDatos())];
   if (!malos.length) malos.push(...geometriaInvalida());
@@ -1095,7 +1110,8 @@ function generarS2K() {
   for (let i = 0; i <= n; i++) nudos.push({ Joint: jSup(i), CoordSys: "GLOBAL", CoordType: "Cartesian", XorR: q(i * Lt / n), Y: 0, Z: q(h), SpecialJt: "No", GlobalX: q(i * Lt / n), GlobalY: 0, GlobalZ: q(h) });
 
   // Barras
-  const conect = [], asig = [], lib = [], grupos = [];
+  const conect = [], asig = [], lib = [], grupos = [], cargas = [];
+  const qs = cargasSAP();
   barras(tipo, n).forEach(([x1, y1, x2, y2, g], k) => {
     const f = k + 1;
     const ji = y1 ? jSup(x1) : jInf(x1), jj = y2 ? jSup(x2) : jInf(x2);
@@ -1103,6 +1119,7 @@ function generarS2K() {
     asig.push({ Frame: f, SectionType: secGrupo[g].tipoSAP, AutoSelect: "N.A.", AnalSect: secGrupo[g].nom, DesignSect: secGrupo[g].nom, MatProp: "Default" });
     if (g === "di" || g === "mo") lib.push({ Frame: f, PI: "No", V2I: "No", V3I: "No", TI: "No", M2I: "Yes", M3I: "Yes", PJ: "No", V2J: "No", V3J: "No", TJ: "No", M2J: "Yes", M3J: "Yes", PartialFix: "No" });
     grupos.push({ GroupName: NOMG[g], ObjectType: "Frame", ObjectLabel: f });
+    if (g === "cs") for (const [pat, w] of Object.entries(qs)) if (w) cargas.push({ Frame: f, LoadPat: pat, CoordSys: "GLOBAL", Type: "Force", Dir: "Gravity", DistType: "RelDist", RelDistA: 0, RelDistB: 1, AbsDistA: 0, AbsDistB: q(Lt / n), FOverLA: q(w), FOverLB: q(w) });
   });
 
   const pats = [["D", "Dead", 1], ["L", "Live", 0], ["Lr", "Roof Live", 0], ["W", "Wind", 0]];
@@ -1138,11 +1155,21 @@ function generarS2K() {
     + tabla("LOAD CASE DEFINITIONS", pats.map(([p, t]) => ({ Case: p, Type: "LinStatic", InitialCond: "Zero", DesignType: t, DesignAct: "Non-Composite", RunCase: "Yes" })))
     + tabla("CASE - STATIC 1 - LOAD ASSIGNMENTS", pats.map(([p]) => ({ Case: p, LoadType: "Load pattern", LoadName: p, LoadSF: 1 })))
     + tabla("COMBINATION DEFINITIONS", combos)
+    + (cargas.length ? tabla("FRAME LOADS - DISTRIBUTED", cargas) : "")
     // Preferencias de diseño (mismas tablas que exporta SAP2000 v26): AISC 360-16 LRFD y AISI-16 LRFD
     + tabla("PREFERENCES - STEEL DESIGN - AISC 360-16", [{ THDesign: "Envelopes", FrameType: "OMF", PatLLF: 0.75, SRatioLimit: 1, MaxIter: 1, SDC: "D", SeisCode: "No", SeisLoad: "No", ImpFactor: 1, SystemRho: 1, SystemSds: 0.5, SystemR: 8, SystemCd: 5.5, Omega0: 3, Provision: "LRFD", AMethod: "Direct Analysis", SOMethod: "General 2nd Order", SRMethod: "Tau-b Fixed", NLCoeff: 0.002, PhiB: 0.9, PhiC: 0.9, PhiTY: 0.9, PhiTF: 0.75, PhiV: 0.9, PhiVRolledI: 1, PhiVT: 0.9, PlugWeld: "Yes", HSSWelding: "ERW", HSSReduceT: "No", CheckDefl: "No", DLRat: 120, SDLAndLLRat: 120, LLRat: 360, TotalRat: 240, NetRat: 240 }])
     + tabla("PREFERENCES - COLD FORMED DESIGN - AISI-16", [{ THDesign: "Envelopes", FrameType: "Braced Frame", SRatioLimit: 1, SOMethod: "General 2nd Order", Provision: "LRFD", LatFact: 1.3333333333333333, UseLatFact: "No", PhiTy: 0.9, PhiTr: 0.75, PhiC: 0.85, PhiB: 0.9, PhiBPipe: 0.95, PhiV: 0.95 }])
     + tabla("DATABASE FORMAT TYPES", [{ UnitsCurr: "Yes", OverrideE: "No" }])
     + "END TABLE DATA\n";
+}
+// Cargas lineales sobre el cordón superior [kgf/m]; positivas hacia abajo (dirección Gravity de SAP)
+function cargasSAP() {
+  const B = num("sB");
+  return { D: num("sD") * B, L: num("sL") * B, Lr: num("sLr") * B, W: num("sW") * B };
+}
+function pintarCargasSAP() {
+  const c = cargasSAP();
+  $("sOut").innerHTML = `Cordón superior: D = <b>${fmt(c.D, 1)}</b> · L = <b>${fmt(c.L, 1)}</b> · L<sub>r</sub> = <b>${fmt(c.Lr, 1)}</b> · W = <b>${fmt(c.W, 1)}</b> kgf/m${c.W < 0 ? " (W hacia arriba)" : ""}`;
 }
 function descargarS2K() {
   if (!ultimoTex) { alert("Corrija los datos inválidos antes de exportar el modelo."); return; }
