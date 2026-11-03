@@ -230,6 +230,7 @@
         <button class="btn sec" type="button" onclick="window.print()">Imprimir</button>
         <button class="btn" type="button" onclick="descargarTex()">Descargar memoria (.tex)</button>
         <button class="btn" type="button" onclick="descargarZipMemoria(ultimoTex, ultimoNombre, document.body)">Descargar .zip (Overleaf)</button>
+        <button class="btn sec" type="button" onclick="descargarDXF()" title="Plano en formato DXF (AutoCAD), en milímetros y por capas">Descargar plano (.dxf)</button>
         <button class="btn sec" type="button" onclick="descargarS2K()" title="Mismo modelo que resuelve AURA, para comprobar en SAP2000: File → Import → SAP2000 .s2k Text File">Comprobar en SAP2000 (.s2k)</button>
       </div>
       <div class="memo" id="memo"></div>
@@ -1399,7 +1400,7 @@ ${filas.map(({ g, v }) => `${g} & ${tn(v.T, 0)} (${v.cT}) & ${tn(v.C, 0)} (${v.c
 // ---------------------------------------------------------------------------
 // Cálculo principal
 // ---------------------------------------------------------------------------
-let ultimoTex = "", ultimoNombre = "memoria_reticulada.tex";
+let ultimoTex = "", ultimoNombre = "memoria_reticulada.tex", ultimoRes = null;
 
 function calcular() {
   pintarPrediseno();
@@ -1524,6 +1525,7 @@ ${pl.map(([, kt, v, dd, u]) => `${kt} & ${v === null ? uTex(u).replace(/,/g, "{,
   $("memo").innerHTML = m.html();
 
   ultimoTex = documentoTex({ acero, Fy, Fu, tipo, Lt, h, n, res, D, Dadm, lim, dcF, dcMax, ok, f, modoC, ext }, m.texto());
+  ultimoRes = { res, D, dcF, lim, acero, Fy, tipo, Lt, h, n, modoC, ext };
   ultimoNombre = `memoria_reticulada_${tipo}_${String(Lt).replace(".", "-")}m_${acero}.tex`;
 }
 
@@ -1763,6 +1765,217 @@ function descargarS2K() {
   if (malos.length) { alert("Para exportar el modelo, todas las barras necesitan una sección válida (también los grupos no incluidos en la verificación):\n\n" + malos.join("\n")); return; }
   const nombre = `modelo_reticulada_${$("gTipo").value}_${String(num("gL")).replace(".", "-")}m.s2k`;
   descargarBlob(new Blob([generarS2K().replace(/\n/g, "\r\n")], { type: "text/plain;charset=utf-8" }), nombre);
+}
+
+// ---------------------------------------------------------------------------
+// Plano DXF (R12, milímetros, por capas): elevación, detalles de secciones, cuadro de barras y notas
+// ---------------------------------------------------------------------------
+class Dxf {
+  constructor() { this.e = []; }
+  _p(...pares) { for (let i = 0; i < pares.length; i += 2) this.e.push(String(pares[i]), typeof pares[i + 1] === "number" ? (+pares[i + 1].toFixed(4)).toString() : pares[i + 1]); }
+  line(ly, x1, y1, x2, y2) { this._p(0, "LINE", 8, ly, 10, x1, 20, y1, 30, 0, 11, x2, 21, y2, 31, 0); }
+  poly(ly, pts, cerrada = true) {
+    this._p(0, "POLYLINE", 8, ly, 66, 1, 10, 0, 20, 0, 30, 0, 70, cerrada ? 1 : 0);
+    for (const [x, y] of pts) this._p(0, "VERTEX", 8, ly, 10, x, 20, y, 30, 0);
+    this._p(0, "SEQEND", 8, ly);
+  }
+  circle(ly, x, y, r) { this._p(0, "CIRCLE", 8, ly, 10, x, 20, y, 30, 0, 40, r); }
+  // h: alineación horizontal (0 izq, 1 centro, 2 der); v: vertical (0 base, 1 abajo, 2 medio, 3 arriba)
+  text(ly, x, y, alto, txt, h = 0, v = 0, rot = 0) {
+    this._p(0, "TEXT", 8, ly, 10, x, 20, y, 30, 0, 40, alto, 1, txt, 50, rot, 7, "STANDARD");
+    if (h || v) this._p(72, h, 11, x, 21, y, 31, 0, 73, v);
+  }
+  archivo(capas) {
+    const c = [];
+    const p = (...a) => { for (let i = 0; i < a.length; i += 2) c.push(String(a[i]), String(a[i + 1])); };
+    p(0, "SECTION", 2, "HEADER", 9, "$ACADVER", 1, "AC1009", 9, "$DWGCODEPAGE", 3, "ANSI_1252", 9, "$INSBASE", 10, 0, 20, 0, 30, 0, 0, "ENDSEC");
+    p(0, "SECTION", 2, "TABLES");
+    p(0, "TABLE", 2, "LTYPE", 70, 2);
+    p(0, "LTYPE", 2, "CONTINUOUS", 70, 0, 3, "Solid line", 72, 65, 73, 0, 40, 0);
+    p(0, "LTYPE", 2, "CENTER", 70, 0, 3, "Center ____ _ ____", 72, 65, 73, 4, 40, 50, 49, 32, 49, -6, 49, 6, 49, -6);
+    p(0, "ENDTAB");
+    p(0, "TABLE", 2, "LAYER", 70, capas.length);
+    for (const [n, col, lt] of capas) p(0, "LAYER", 2, n, 70, 0, 62, col, 6, lt || "CONTINUOUS");
+    p(0, "ENDTAB");
+    p(0, "TABLE", 2, "STYLE", 70, 1, 0, "STYLE", 2, "STANDARD", 70, 0, 40, 0, 41, 1, 50, 0, 71, 0, 42, 2.5, 3, "txt", 4, "", 0, "ENDTAB");
+    p(0, "ENDSEC");
+    c.push("0", "SECTION", "2", "ENTITIES", ...this.e, "0", "ENDSEC", "0", "EOF");
+    // Windows-1252: caracteres fuera del juego se reemplazan
+    const txt = c.join("\r\n") + "\r\n";
+    const map = { "—": "-", "–": "-", "≤": "<=", "≥": ">=", "φ": "phi", "Δ": "Delta", "λ": "lambda", "→": "->", "π": "pi" };
+    const limpio = txt.replace(/[—–≤≥φΔλ→π]/g, (ch) => map[ch]).replace(/[^\x00-\xff]/g, "?");
+    return Uint8Array.from(limpio, (ch) => ch.charCodeAt(0));
+  }
+}
+
+// Envoltorio que escala (k) y traslada (x0, y0) las entidades de un detalle
+function detalle(dx, x0, y0, k) {
+  const P = (x, y) => [x0 + x * k, y0 + y * k];
+  return {
+    line: (ly, x1, y1, x2, y2) => dx.line(ly, ...P(x1, y1), ...P(x2, y2)),
+    poly: (ly, pts, c) => dx.poly(ly, pts.map(([x, y]) => P(x, y)), c),
+    circle: (ly, x, y, r) => dx.circle(ly, ...P(x, y), r * k),
+    text: (ly, x, y, h, t, a, v, rot) => dx.text(ly, ...P(x, y), h * k, t, a, v, rot),
+  };
+}
+function generarDXF() {
+  const R = ultimoRes, tipo = $("gTipo").value, Lt = num("gL") * 1000, H = num("gH") * 1000, n = Math.round(num("gN"));
+  const geo = geometria(tipo, n), X = (i) => geo.nudos[i][0] * Lt / n, Y = (i) => geo.nudos[i][1] * H;
+  const dx = new Dxf(), NOM = { cs: "CORDÓN SUPERIOR", ci: "CORDÓN INFERIOR", di: "DIAGONALES", mo: "MONTANTES" };
+  const CAPA = { cs: "CORDONES", ci: "CORDONES", di: "DIAGONALES", mo: "MONTANTES" };
+  const sec = {}, prof = {};
+  for (const g of GRUPOS) {
+    const s = leerSeccion(g.id); sec[g.id] = s;
+    // Profundidad visible en elevación (mm) y ancho fuera del plano
+    prof[g.id] = s.tipo === "C" ? s.h * 10 : s.tipo === "R" ? s.H * 10 : s.tipo === "M" ? Math.sqrt(12 * s.Ix / s.A) * 10 : s.a * 10;
+  }
+  const th = Math.max(20, Math.round(Lt / 140 / 5) * 5);   // altura de texto en la elevación [mm]
+  const dS = prof.cs, dI = prof.ci;
+
+  // --- Elevación: ejes y contornos
+  geo.barras.forEach(([i, j, g], k) => {
+    const x1 = X(i), y1 = Y(i), x2 = X(j), y2 = Y(j);
+    dx.line("EJES", x1, y1, x2, y2);
+    if (g === "cs" || g === "ci") return;
+    // Diagonales y montantes: contorno entre las caras interiores de los cordones
+    const w = prof[g] / 2, L = Math.hypot(x2 - x1, y2 - y1), ux = (x2 - x1) / L, uy = (y2 - y1) / L, nx = -uy, ny = ux;
+    const yA = dI / 2, yB = H - dS / 2;
+    for (const o of [-w, w]) {
+      const px = x1 + nx * o, py = y1 + ny * o;
+      const t = (yv) => (yv - py) / uy;
+      const ta = Math.min(t(yA), t(yB)), tb = Math.max(t(yA), t(yB));
+      dx.line(CAPA[g], px + ux * ta, py + uy * ta, px + ux * tb, py + uy * tb);
+    }
+    // Número de barra
+    dx.circle("NUMERACION", (x1 + x2) / 2, (y1 + y2) / 2, th * 0.55);
+    dx.text("NUMERACION", (x1 + x2) / 2, (y1 + y2) / 2, th * 0.5, String(k + 1), 1, 2);
+  });
+  // Cordones: contorno continuo de extremo a extremo
+  for (const [g, yc, d] of [["cs", H, dS], ["ci", 0, dI]]) {
+    const xs = geo.barras.filter(b => b[2] === g).flatMap(([i, j]) => [X(i), X(j)]), xa = Math.min(...xs), xb = Math.max(...xs);
+    dx.poly("CORDONES", [[xa, yc - d / 2], [xb, yc - d / 2], [xb, yc + d / 2], [xa, yc + d / 2]]);
+    geo.barras.forEach(([i, j, gg], k) => { if (gg === g) dx.text("NUMERACION", (X(i) + X(j)) / 2, yc + (g === "cs" ? -1 : 1) * (d / 2 + th * 0.8), th * 0.5, String(k + 1), 1, 2); });
+  }
+  // Nudos
+  geo.nudos.forEach((_, i) => { dx.circle("NUDOS", X(i), Y(i), th * 0.15); dx.text("NUDOS", X(i) + th * 0.3, Y(i) + (Y(i) > 0 ? dS / 2 + th * 0.4 : -dI / 2 - th * 1.2), th * 0.45, "N" + (i + 1)); });
+  // Apoyos
+  const sA = th * 2.2, yAp = -dI / 2;
+  for (const [x, desl] of [[0, false], [Lt, true]]) {
+    dx.poly("APOYOS", [[x, yAp], [x - sA * 0.6, yAp - sA], [x + sA * 0.6, yAp - sA]]);
+    if (desl) { dx.circle("APOYOS", x - sA * 0.3, yAp - sA * 1.15, sA * 0.15); dx.circle("APOYOS", x + sA * 0.3, yAp - sA * 1.15, sA * 0.15); }
+    dx.line("APOYOS", x - sA * 0.9, yAp - sA * (desl ? 1.3 : 1.05), x + sA * 0.9, yAp - sA * (desl ? 1.3 : 1.05));
+  }
+  // Etiquetas de perfiles (cordón superior sobre la viga; el resto en una leyenda bajo el título)
+  dx.text("TEXTOS", Lt / 2, H + dS / 2 + th * 1.6, th, `${NOM.cs}: ${sec.cs.nombre}`, 1, 1);
+  dx.text("TEXTOS", 0, H + dS / 2 + th * 3.2, th * 0.75, `Cordón inferior: ${sec.ci.nombre}   ·   Diagonales: ${sec.di.nombre}   ·   Montantes: ${sec.mo.nombre}   ·   N = nudo, (k) = barra`);
+
+  // --- Cotas
+  const tick = th * 0.4, cota = (x1, y1, x2, y2, txt, vertical = false) => {
+    dx.line("COTAS", x1, y1, x2, y2);
+    for (const [x, y] of [[x1, y1], [x2, y2]]) dx.line("COTAS", x - tick, y - tick, x + tick, y + tick);
+    if (vertical) dx.text("COTAS", x1 - th * 0.6, (y1 + y2) / 2, th * 0.8, txt, 1, 2, 90);
+    else dx.text("COTAS", (x1 + x2) / 2, y1 + th * 0.5, th * 0.8, txt, 1, 0);
+  };
+  const yC1 = yAp - sA * 1.6 - th * 1.5, yC2 = yC1 - th * 2.5;
+  const xsInf = [...new Set(geo.nudos.filter(([, y]) => y === 0).map(([x]) => x * Lt / n))].sort((a, b) => a - b);
+  for (let k = 1; k < xsInf.length; k++) cota(xsInf[k - 1], yC1, xsInf[k], yC1, fmt(xsInf[k] - xsInf[k - 1], 0));
+  xsInf.forEach(x => dx.line("COTAS", x, yC1 + tick * 2, x, yAp - sA * 1.4));
+  cota(0, yC2, Lt, yC2, `L = ${fmt(Lt, 0)} mm`);
+  const xH = Lt + sA + th * 2.5;
+  cota(xH, 0, xH, H, `h = ${fmt(H, 0)} mm (ejes)`, true);
+  dx.line("COTAS", Lt + th * 0.5, 0, xH + tick * 2, 0); dx.line("COTAS", Lt + th * 0.5, H, xH + tick * 2, H);
+  dx.text("TEXTOS", 0, H + dS / 2 + th * 5, th * 1.4, `ELEVACIÓN VIGA RETICULADA ${tipo.toUpperCase()} - L = ${fmt(Lt / 1000, 2)} m`);
+
+  // --- Detalles de secciones (escala real, en mm)
+  const ySec = yC2 - th * 9;
+  dx.text("TEXTOS", 0, ySec + th * 3, th * 1.2, "DETALLES DE SECCIONES (cotas reales en mm; dibujo ampliado a la escala indicada)");
+  let xSec = 0;
+  const hObj = th * 9;          // altura objetivo de cada detalle en el dibujo
+  for (const g of GRUPOS) {
+    const s = sec[g.id];
+    const ks = [1, 2, 2.5, 4, 5, 8, 10, 20].reduce((a, k) => (prof[g.id] * k <= hObj ? k : a), 1);
+    const ts = th * 0.6 / ks;     // texto en unidades del detalle (se amplía con él)
+    const ox = 0, oy = 0;         // el detalle se dibuja en su sistema y luego se escala y traslada
+    const d = detalle(dx, xSec, ySec, ks);
+    let w = 0, hh = 0;
+    const mm = (v) => fmt(v, v % 1 ? 1 : 0);
+    if (s.tipo === "C") {
+      const h = s.h * 10, b = s.b * 10, tw = s.tw * 10, tf = s.tf * 10; w = b; hh = h;
+      d.poly("SECCIONES", [[ox, oy], [ox + b, oy], [ox + b, oy - tf], [ox + tw, oy - tf], [ox + tw, oy - h + tf], [ox + b, oy - h + tf], [ox + b, oy - h], [ox, oy - h]]);
+      d.text("SECCIONES", ox + b + ts, oy - h / 2, ts, `tw = ${mm(tw)}  tf = ${mm(tf)}`, 0, 2);
+    } else if (s.tipo === "L") {
+      const a = s.a * 10, b = s.b * 10, t = s.t * 10; w = b; hh = a;
+      d.poly("SECCIONES", [[ox, oy], [ox + t, oy], [ox + t, oy - a + t], [ox + b, oy - a + t], [ox + b, oy - a], [ox, oy - a]]);
+      d.text("SECCIONES", ox + b + ts, oy - a / 2, ts, `t = ${mm(t)}`, 0, 2);
+    } else if (s.tipo === "2L") {
+      const a = s.a * 10, b = s.b * 10, t = s.t * 10, sp = s.s * 10; w = 2 * b + sp; hh = a;
+      const xm = ox + b + sp / 2;
+      d.poly("SECCIONES", [[xm + sp / 2, oy], [xm + sp / 2 + t, oy], [xm + sp / 2 + t, oy - a + t], [xm + sp / 2 + b, oy - a + t], [xm + sp / 2 + b, oy - a], [xm + sp / 2, oy - a]]);
+      d.poly("SECCIONES", [[xm - sp / 2, oy], [xm - sp / 2 - t, oy], [xm - sp / 2 - t, oy - a + t], [xm - sp / 2 - b, oy - a + t], [xm - sp / 2 - b, oy - a], [xm - sp / 2, oy - a]]);
+      d.line("EJES", xm, oy + ts, xm, oy - a - ts);
+      d.text("SECCIONES", ox + w + ts, oy - a / 2, ts, `t = ${mm(t)}  cartela ${mm(sp)}`, 0, 2);
+    } else if (s.tipo === "R") {
+      const Hh = s.H * 10, B = s.B * 10, e = s.e * 10; w = B; hh = Hh;
+      d.poly("SECCIONES", [[ox, oy], [ox + B, oy], [ox + B, oy - Hh], [ox, oy - Hh]]);
+      d.poly("SECCIONES", [[ox + e, oy - e], [ox + B - e, oy - e], [ox + B - e, oy - Hh + e], [ox + e, oy - Hh + e]]);
+      d.text("SECCIONES", ox + B + ts, oy - Hh / 2, ts, `e = ${mm(e)}  Ri = e`, 0, 2);
+    } else {
+      w = prof[g.id]; hh = prof[g.id];
+      d.circle("SECCIONES", ox + w / 2, oy - hh / 2, w / 2);
+      d.text("SECCIONES", ox + w + ts, oy - hh / 2, ts, `A = ${fmt(s.A, 2)} cm² (propiedades a mano)`, 0, 2);
+    }
+    // Cotas del detalle
+    d.line("COTAS", ox, oy + ts * 1.2, ox + w, oy + ts * 1.2); d.text("COTAS", ox + w / 2, oy + ts * 1.6, ts * 0.9, mm(w), 1, 0);
+    d.line("COTAS", ox - ts * 1.2, oy, ox - ts * 1.2, oy - hh); d.text("COTAS", ox - ts * 1.6, oy - hh / 2, ts * 0.9, mm(hh), 1, 0, 90);
+    d.text("TEXTOS", ox, oy - hh - ts * 2.2, ts * 1.2, NOM[g.id]);
+    d.text("TEXTOS", ox, oy - hh - ts * 4, ts, s.nombre);
+    dx.text("TEXTOS", xSec, ySec - hh * ks - th * 4.6, th * 0.6, ks > 1 ? `Escala ${fmt(ks, ks % 1 ? 1 : 0)}:1` : "Escala 1:1");
+    xSec += Math.max((w + ts * 14) * ks, Lt / 4.5);
+  }
+
+  // --- Cuadro de barras
+  const yT = ySec - hObj - th * 9, cols = [0, 11, 22, 27, 45, 54, 63].map(c => c * th);
+  dx.text("TEXTOS", 0, yT + th * 1.5, th * 1.2, "CUADRO DE BARRAS");
+  const fila = (y, vals) => vals.forEach((v, c) => dx.text("CUADRO", cols[c] + th * 0.3, y - th * 1.1, th * 0.7, String(v)));
+  const cab = ["Grupo", "Perfil", "Cant.", "Longitudes [mm]", "Long. [m]", "Peso [kgf]"];
+  let y = yT, pesoTot = 0;
+  fila(y, cab);
+  const filas = GRUPOS.map(g => {
+    const ls = geo.barras.filter(b => b[2] === g.id).map(([i, j]) => Math.hypot(X(j) - X(i), Y(j) - Y(i)));
+    const tot = ls.reduce((a, b) => a + b, 0) / 1000, pesoM = sec[g.id].peso || sec[g.id].A * 0.785, peso = tot * pesoM;
+    pesoTot += peso;
+    const unicos = [...new Set(ls.map(l => Math.round(l)))].sort((a, b) => a - b);
+    return [NOM[g.id].toLowerCase().replace(/^./, c => c.toUpperCase()), sec[g.id].nombre, ls.length, unicos.map(v => fmt(v, 0)).join(" / "), fmt(tot, 2), fmt(peso, 1)];
+  });
+  filas.forEach(fv => { y -= th * 1.8; fila(y, fv); });
+  y -= th * 1.8; fila(y, ["Total", "", "", "", "", fmt(pesoTot, 1)]);
+  const yFin = y - th * 1.8;
+  for (let yy = yT; yy >= yFin - 1; yy -= th * 1.8) dx.line("CUADRO", 0, yy, cols[6], yy);
+  cols.forEach(xc => dx.line("CUADRO", xc, yT, xc, yFin));
+  dx.text("CUADRO", 0, yFin - th * 1.2, th * 0.6, "Longitudes entre ejes de nudos. Peso sin cartelas, soldaduras ni pernos.");
+
+  // --- Notas y viñeta
+  const xN = cols[6] + th * 4, q = cargasSAP();
+  const notas = [
+    `VIGA RETICULADA ${tipo.toUpperCase()}  L = ${fmt(Lt / 1000, 2)} m  h = ${fmt(H / 1000, 2)} m  ${n} paneles`,
+    `Acero ${R ? R.acero : $("acero").value} (Fy = ${ACEROS[$("acero").value].Fy} kgf/cm²). Diseño AISC 360-16 LRFD, combinaciones NCh 3171.`,
+    `Cargas de servicio sobre el cordón superior: D = ${fmt(q.D, 0)} (+ peso propio), L = ${fmt(q.L, 0)}, Lr = ${fmt(q.Lr, 0)}, W = ${fmt(q.W, 0)} kgf/m.`,
+    `Costaneras ${$("sModo").value === "nudos" ? "sobre los nudos (barras articuladas)" : "entre nudos (cordones continuos)"}.`,
+    ...(R ? R.res.map(r => `${r.g.nombre}: ${r.s.nombre}  -  razón D/C = ${Number.isFinite(r.dc) ? fmt(r.dc, 3) : "sin verificar"}`) : []),
+    ...(R ? [`Flecha de servicio ${fmt(R.D, 2)} cm  (admisible L/${R.lim}).`] : []),
+    "Uniones (cartelas, soldaduras, pernos) no diseñadas en este plano: detallar según su cálculo.",
+    `Generado por AURA - ${new Date().toLocaleDateString("es-CL")}`,
+  ];
+  dx.text("TEXTOS", xN, yT + th * 1.5, th * 1.2, "NOTAS");
+  notas.forEach((t, k) => dx.text("TEXTOS", xN, yT - th * (1.2 + k * 1.5), th * 0.7, t));
+  dx.poly("VINETA", [[xN - th, yT + th * 3], [xN + th * 75, yT + th * 3], [xN + th * 75, yT - th * (2 + notas.length * 1.5)], [xN - th, yT - th * (2 + notas.length * 1.5)]]);
+
+  return dx.archivo([["EJES", 8, "CENTER"], ["CORDONES", 1], ["DIAGONALES", 3], ["MONTANTES", 5], ["NUDOS", 6], ["NUMERACION", 6], ["APOYOS", 7], ["COTAS", 2], ["TEXTOS", 7], ["SECCIONES", 4], ["CUADRO", 7], ["VINETA", 7]]);
+}
+function descargarDXF() {
+  if (!ultimoTex) { alert("Corrija los datos inválidos antes de descargar el plano."); return; }
+  const nombre = `plano_reticulada_${$("gTipo").value}_${String(num("gL")).replace(".", "-")}m.dxf`;
+  descargarBlob(new Blob([generarDXF()], { type: "application/dxf" }), nombre);
 }
 
 function descargarTex() {
