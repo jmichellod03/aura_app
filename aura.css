@@ -1,5 +1,6 @@
 /* Estilo común de AURA (pantalla). Se carga después de los estilos propios de cada página y solo cambia
-   el aspecto: no toca los cálculos ni la impresión de la memoria. */
+   el aspecto: no toca los cálculos ni la impresión de la memoria.
+   Concepto «Plano»: lámina técnica con retícula, líneas finas y cifras monoespaciadas. */
 :root {
   --azul: #00008B;          /* primario: barras, botones principales, isotipo */
   --azul-hover: #1a1aa8;
@@ -7,62 +8,113 @@
   --acero: #e3e6ea;         /* gris acero claro: separa las zonas de trabajo */
   --acero-osc: #c3c9d1;
   --nieve: #fffafa;         /* blanco nieve: paneles de entrada */
-  --naranja: #e65c00;       /* naranja seguridad: acciones críticas y máximos */
-  --sombra: 0 1px 2px rgba(10,16,48,.06), 0 4px 14px rgba(10,16,48,.06);
+  --naranja: #bf4b00;       /* naranja seguridad: acciones críticas y máximos (4,97:1 con blanco) */
+  --sombra: 0 1px 2px rgba(10,16,48,.07);
+  --trazo: #c9ced6;         /* línea fina de la lámina */
+  --reticula: rgba(0,0,139,.045);
+  --mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --cab: 86px;              /* alto de la barra superior en páginas de cálculo */
 }
 
 /* ---------- Logo MMP (el archivo trae márgenes transparentes; aquí se recorta al dibujo) ---------- */
 .logo { display: block; position: relative; overflow: hidden; height: 34px; width: auto; aspect-ratio: 1643 / 568; flex: 0 0 auto; align-self: flex-start; }
 .logo img { position: absolute; width: 107.97%; left: -4.93%; top: -28.52%; height: auto; max-width: none; }
-.logo-tile { display: inline-flex; background: #fff; border-radius: 8px; padding: 5px 9px; box-shadow: 0 1px 0 rgba(255,255,255,.4) inset; }
+.logo-tile { display: inline-flex; background: #fff; border-radius: 4px; padding: 5px 9px; box-shadow: 0 1px 0 rgba(255,255,255,.4) inset; }
 
 @media screen {
-  body { background: var(--acero); }
+  /* Colores con contraste de al menos 4,5:1 sobre sus fondos. La memoria impresa conserva los de cada página. */
+  :root { --muted: #4f5a68; --ok: #17713d; }
 
-  /* ---------- Barra superior ---------- */
-  header { position: sticky; top: 0; z-index: 50; background: var(--azul); color: #fff; padding: 8px 24px; min-height: 60px;
-           display: flex; align-items: center; gap: 6px 14px; flex-wrap: wrap; box-shadow: 0 2px 10px rgba(0,0,60,.25); }
+  body { background-color: var(--acero);
+         background-image: linear-gradient(var(--reticula) 1px, transparent 1px), linear-gradient(90deg, var(--reticula) 1px, transparent 1px);
+         background-size: 24px 24px; }
+
+  /* ---------- Barra superior: termina en una regla graduada ---------- */
+  header { position: sticky; top: 0; z-index: 50; background: var(--azul); color: #fff; padding: 8px 24px 12px; min-height: 60px;
+           display: flex; align-items: center; gap: 4px 14px; flex-wrap: wrap; }
+  header::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 5px; pointer-events: none;
+                  background: repeating-linear-gradient(90deg, rgba(255,255,255,.55) 0 1px, transparent 1px 24px); }
   header .marca { display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; }
-  header h1 { margin: 0; font-size: 17px; font-weight: 600; }
-  header > span { color: #c8cbe8; font-size: 12.5px; flex-basis: 100%; order: 9; padding-left: 2px; }
-  header a.home { color: #fff; text-decoration: none; font-size: 13px; border: 1px solid rgba(255,255,255,.3); border-radius: 999px; padding: 4px 12px; transition: background .15s; }
+  header h1 { margin: 0; font-size: 16px; font-weight: 600; }
+  header > span { color: #c8cbe8; font-size: 12px; flex-basis: 100%; order: 9; padding-left: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  header a.home { color: #fff; text-decoration: none; font-size: 13px; border: 1px solid rgba(255,255,255,.35); border-radius: 4px; padding: 4px 10px; transition: background .15s; }
   header a.home:hover { background: rgba(255,255,255,.12); }
-  @media (max-width: 680px) { header { position: static; padding: 8px 16px; } header > span { font-size: 11.5px; } header h1 { font-size: 15px; flex-basis: 100%; } }
+  @media (max-width: 680px) { header { position: static; padding: 8px 16px 12px; } header > span { font-size: 11.5px; white-space: normal; } header h1 { font-size: 15px; flex-basis: 100%; } }
 
   /* ---------- Páginas de cálculo: paneles, campos y resultados ---------- */
-  .panel { background: var(--nieve); border: 1px solid #d9dde3; border-radius: 12px; box-shadow: var(--sombra); }
-  .panel > h2 { color: var(--azul); font-weight: 700; letter-spacing: .08em; padding: 12px 18px; background: #fff; border-radius: 12px 12px 0 0; display: flex; align-items: center; gap: 8px; }
-  .panel > h2::before { content: ""; width: 4px; height: 14px; border-radius: 2px; background: var(--azul); flex: 0 0 4px; }
-  main { gap: 22px; }
+  .panel { background: var(--nieve); border: 1px solid var(--trazo); border-radius: 4px; box-shadow: var(--sombra); }
+  .panel > h2 { color: var(--azul); font-family: var(--mono); font-size: 12px; font-weight: 600; letter-spacing: .1em; padding: 10px 16px; background: #fff;
+                border-bottom: 1px solid var(--trazo); border-radius: 4px 4px 0 0; display: flex; align-items: center; gap: 8px; }
+  .panel > h2::before { content: ""; width: 8px; height: 8px; border: 2px solid var(--azul); flex: 0 0 8px; }
+  main { gap: 16px; }
 
-  select, input[type=number], input[type=text], textarea { border-radius: 7px; border-color: #cfd5dd; padding: 8px 10px; transition: border-color .15s, box-shadow .15s; }
-  select:hover, input[type=number]:hover, input[type=text]:hover { border-color: #9aa3ae; }
-  select:focus, input:focus, textarea:focus { outline: none; border-color: var(--azul); box-shadow: 0 0 0 3px rgba(0,0,139,.15); }
+  select, input[type=number], input[type=text], textarea { border-radius: 3px; border-color: #b9c0ca; padding: 7px 9px; transition: border-color .15s, box-shadow .15s; }
+  input[type=number] { font-family: var(--mono); font-size: 13px; }
+  select:hover, input[type=number]:hover, input[type=text]:hover { border-color: #7f8896; }
+  select:focus, input:focus, textarea:focus { outline: none; border-color: var(--azul); box-shadow: 0 0 0 2px rgba(0,0,139,.25); }
   label { font-weight: 500; }
 
-  .tabs { border: 0; background: var(--acero); border-radius: 9px; padding: 3px; gap: 3px; }
-  .tabs button { background: transparent; color: #3b4556; border-radius: 7px; transition: background .15s, color .15s; }
-  .tabs button:hover:not(.on) { background: rgba(255,255,255,.6); }
-  .tabs button.on { background: var(--azul); color: #fff; box-shadow: 0 1px 3px rgba(0,0,60,.3); }
+  .tabs { border: 1px solid var(--trazo); background: #fff; border-radius: 4px; padding: 2px; gap: 2px; }
+  .tabs button { background: transparent; color: #3b4556; border-radius: 3px; transition: background .15s, color .15s; }
+  .tabs button:hover:not(.on) { background: var(--azul-tinte); }
+  .tabs button.on { background: var(--azul); color: #fff; }
 
-  fieldset { border-color: #d9dde3; border-radius: 10px; background: #fff; }
-  legend { color: var(--azul); font-weight: 700; }
-  details { border-radius: 8px; border-color: #cfd5dd; background: #fff; }
+  /* Grupos de datos: una línea con su título, en vez de otra caja dentro del panel */
+  fieldset { border: 0; border-top: 1px solid var(--trazo); border-radius: 0; background: transparent; margin-top: 16px; padding: 2px 0 4px; }
+  legend { color: var(--azul); font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: .03em; padding: 0 8px 0 0; }
+  details { border-radius: 3px; border-color: var(--trazo); background: #fff; }
   details summary { color: var(--azul); }
 
-  .btn { border-radius: 7px; font-weight: 600; padding: 8px 16px; border-color: var(--azul); background: var(--azul); transition: background .15s; }
+  .btn { border-radius: 3px; font-weight: 600; padding: 8px 14px; border-color: var(--azul); background: var(--azul); transition: background .15s; }
   .btn:hover { background: var(--azul-hover); }
   .btn.sec { background: #fff; color: var(--azul); border-color: var(--acero-osc); }
   .btn.sec:hover { background: var(--azul-tinte); }
-  .mini { border-radius: 6px; border-color: var(--acero-osc); color: var(--azul); }
+  .mini { border-radius: 3px; border-color: var(--acero-osc); color: var(--azul); }
   .mini:hover { background: var(--azul-tinte); }
 
-  .card { background: #fff; border-color: #d9dde3; border-radius: 10px; box-shadow: var(--sombra); }
-  .card .v { color: var(--azul); }
-  .bar { height: 7px; border-radius: 4px; }
-  .verdict { border-radius: 10px; border-left: 5px solid currentColor; }
-  .memo h3 { border-bottom-color: var(--azul); color: var(--azul); }
+  /* Resultados: cifra grande monoespaciada y barra graduada, donde el extremo es D/C = 1 */
+  .card, .tile { background: #fff; border: 1px solid var(--trazo); border-top: 2px solid var(--azul); border-radius: 2px; }
+  .card .t, .tile .t { font-weight: 500; color: var(--muted); }
+  .card .v, .tile .v { color: var(--azul); font-family: var(--mono); font-size: 21px; letter-spacing: -.02em; }
+  .bar { height: 8px; border-radius: 0; background: #e9ebef; position: relative; }
+  .bar::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+                background: repeating-linear-gradient(90deg, transparent 0 calc(25% - 1px), rgba(255,255,255,.95) calc(25% - 1px) 25%); }
+  .verdict { border-radius: 2px; border: 1px solid currentColor; border-left-width: 6px; }
+  table.calc td.v, table.alt td, table.par td, .tablaWrap td, .cbOut { font-family: var(--mono); font-size: 12.5px; }
+  .memo h3 { border-bottom: 1px solid var(--azul); color: var(--azul); }
   .memo h4 { color: var(--azul); }
-  .ref { color: var(--azul); border-color: #b9bfe6; background: var(--azul-tinte); }
+  .ref { color: var(--azul); border-color: #b9bfe6; background: var(--azul-tinte); border-radius: 2px; font-family: var(--mono); }
+  /* Con «main» delante, porque memo.js agrega sus estilos después de esta hoja */
+  main .todasEq, main .vereq { color: var(--azul); border-color: var(--acero-osc); border-radius: 3px; background: #fff; }
+  main .chev { color: var(--azul); }
+  .tag { border-radius: 2px; }
+  .note { border-radius: 2px; border-left: 3px solid currentColor; }
   footer { padding-top: 6px; }
+
+  /* Mesa de trabajo: con pantalla ancha, los datos y el veredicto quedan a la vista mientras se recorre la memoria */
+  @media (min-width: 901px) {
+    main > .panel:first-child { position: sticky; top: calc(var(--cab) + 12px); align-self: start; max-height: calc(100vh - var(--cab) - 24px); overflow-y: auto; scrollbar-width: thin; }
+    main > .panel:first-child > h2 { position: sticky; top: 0; z-index: 2; }
+    div:has(> .verdict) { position: sticky; top: var(--cab); z-index: 20; background: var(--nieve); padding-top: 10px; }
+  }
+
+  /* ---------- Inicio ---------- */
+  .eyebrow { font-family: var(--mono); font-weight: 600; letter-spacing: .1em; }
+  .inicio { background-color: #f6f7fb; }
+  .buscar input { border-radius: 4px; }
+  .filtros button { border-radius: 3px; }
+  .tool, .proy, .proy-vacio, .sinres { border-radius: 4px; }
+  .tool { border-color: var(--trazo); }
+  a.tool:hover, a.tool:focus-visible { box-shadow: 0 0 0 1px var(--azul); }
+  .tool .ico { border-radius: 3px; }
+  .tool .norma, .tool .normas a { border-radius: 2px; font-family: var(--mono); font-weight: 600; }
+  .visor { border-radius: 4px; }
+  .pb { border-radius: 3px; }
+  .proy-act { border-radius: 2px; }
+  dialog { border-radius: 4px; }
+  dialog input { border-radius: 3px; }
+}
+
+@media screen and (prefers-reduced-motion: reduce) {
+  * { transition: none !important; scroll-behavior: auto !important; }
 }
