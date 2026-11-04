@@ -269,6 +269,7 @@
       <div class="dibujo" id="dibujo"></div>
       <div class="toolbar">
         <button class="btn sec" type="button" onclick="window.print()">Imprimir</button>
+        <button class="btn sec" type="button" onclick="descargarDXF()" title="Plano en formato DXF (AutoCAD), en milímetros y por capas">Descargar plano (.dxf)</button>
         <button class="btn" type="button" onclick="descargarZipMemoria(ultimoTex, ultimoNombre, document.body)">Descargar memoria (.zip)</button>
       </div>
       <div class="memo" id="memo"></div>
@@ -855,7 +856,13 @@ function verificar(d, m) {
       ["Zapata, transversal cara opuesta", barraTex(d.dbZr, aZc.s)], ["Zapata, longitudinal (cada cara)", barraTex(d.dbZr, aZl.s)],
     ],
   };
-  return { E, B, H, N, Mr, Ka, Kp, Kas, th, Csh, Csv, Ps, Pq, Ep, dEa, dEq, e1, e2, conSismo, checks, dcMax, ok, sinVerificar, arm };
+  // Diámetros [cm] y espaciamientos [cm] para el plano
+  const armD = {
+    P: [d.dbP, fP.s], Pc: [d.dbPc, aPc.s], H: [d.dbH, aH.s],
+    inf: d.Bp > 0 ? [d.dbZp, fPie.s] : [d.dbZr, aZc.s], sup: d.Bt > 0 ? [d.dbZt, fTal.s] : [d.dbZr, aZc.s],
+    C: [d.dbZr, aZc.s], L: [d.dbZr, aZl.s],
+  };
+  return { E, B, H, N, Mr, Ka, Kp, Kas, th, Csh, Csv, Ps, Pq, Ep, dEa, dEq, e1, e2, conSismo, checks, dcMax, ok, sinVerificar, arm, armD };
 }
 
 // ---------------------------------------------------------------------------
@@ -941,6 +948,189 @@ ${d.Bt > 0 ? L`\fill[brown!15] (${f(xs)},${f(d.Hf)}) rectangle (${f(B)},${f(H)})
 \caption{Sección transversal del muro (cotas en m, armaduras esquemáticas).}
 \end{figure}
 `;
+}
+
+
+// ---------------------------------------------------------------------------
+// Plano DXF (R12, milímetros, por capas): corte típico del muro con el relleno, el terreno, las
+// armaduras dibujadas y rotuladas, las cotas, el cuadro de armaduras y las notas.
+// Clase Dxf igual a la de reticulada.html y placa.html.
+// ---------------------------------------------------------------------------
+class Dxf {
+  constructor() { this.e = []; }
+  _p(...pares) { for (let i = 0; i < pares.length; i += 2) this.e.push(String(pares[i]), typeof pares[i + 1] === "number" ? (+pares[i + 1].toFixed(4)).toString() : pares[i + 1]); }
+  line(ly, x1, y1, x2, y2) { this._p(0, "LINE", 8, ly, 10, x1, 20, y1, 30, 0, 11, x2, 21, y2, 31, 0); }
+  poly(ly, pts, cerrada = true) {
+    this._p(0, "POLYLINE", 8, ly, 66, 1, 10, 0, 20, 0, 30, 0, 70, cerrada ? 1 : 0);
+    for (const [x, y] of pts) this._p(0, "VERTEX", 8, ly, 10, x, 20, y, 30, 0);
+    this._p(0, "SEQEND", 8, ly);
+  }
+  circle(ly, x, y, r) { this._p(0, "CIRCLE", 8, ly, 10, x, 20, y, 30, 0, 40, r); }
+  // h: alineación horizontal (0 izq, 1 centro, 2 der); v: vertical (0 base, 1 abajo, 2 medio, 3 arriba)
+  text(ly, x, y, alto, txt, h = 0, v = 0, rot = 0) {
+    this._p(0, "TEXT", 8, ly, 10, x, 20, y, 30, 0, 40, alto, 1, txt, 50, rot, 7, "STANDARD");
+    if (h || v) this._p(72, h, 11, x, 21, y, 31, 0, 73, v);
+  }
+  archivo(capas) {
+    const c = [];
+    const p = (...a) => { for (let i = 0; i < a.length; i += 2) c.push(String(a[i]), String(a[i + 1])); };
+    p(0, "SECTION", 2, "HEADER", 9, "$ACADVER", 1, "AC1009", 9, "$DWGCODEPAGE", 3, "ANSI_1252", 9, "$INSBASE", 10, 0, 20, 0, 30, 0, 0, "ENDSEC");
+    p(0, "SECTION", 2, "TABLES");
+    p(0, "TABLE", 2, "LTYPE", 70, 3);
+    p(0, "LTYPE", 2, "CONTINUOUS", 70, 0, 3, "Solid line", 72, 65, 73, 0, 40, 0);
+    p(0, "LTYPE", 2, "CENTER", 70, 0, 3, "Center ____ _ ____", 72, 65, 73, 4, 40, 50, 49, 32, 49, -6, 49, 6, 49, -6);
+    p(0, "LTYPE", 2, "DASHED", 70, 0, 3, "Dashed __ __ __", 72, 65, 73, 2, 40, 120, 49, 80, 49, -40);
+    p(0, "ENDTAB");
+    p(0, "TABLE", 2, "LAYER", 70, capas.length);
+    for (const [n, col, lt] of capas) p(0, "LAYER", 2, n, 70, 0, 62, col, 6, lt || "CONTINUOUS");
+    p(0, "ENDTAB");
+    p(0, "TABLE", 2, "STYLE", 70, 1, 0, "STYLE", 2, "STANDARD", 70, 0, 40, 0, 41, 1, 50, 0, 71, 0, 42, 2.5, 3, "txt", 4, "", 0, "ENDTAB");
+    p(0, "ENDSEC");
+    c.push("0", "SECTION", "2", "ENTITIES", ...this.e, "0", "ENDSEC", "0", "EOF");
+    const txt = c.join("\r\n") + "\r\n";
+    // La fuente txt.shx no trae algunos símbolos: se reemplazan (φ se escribe %%c, el símbolo de diámetro)
+    const map = { "—": "-", "–": "-", "≤": "<=", "≥": ">=", "φ": "%%c", "Δ": "Delta", "→": "->", "·": "-", "²": "2", "³": "3", "×": "x", "γ": "gamma" };
+    const limpio = txt.replace(/[—–≤≥φΔ→·²³×γ]/g, (ch) => map[ch]).replace(/[^\x00-\xff]/g, "?");
+    return Uint8Array.from(limpio, (ch) => ch.charCodeAt(0));
+  }
+}
+
+function generarDXF() {
+  const d = ultimoD, r = ultimoR, A = r.armD;
+  const dx = new Dxf();
+  const K = 10;                                                     // cm → mm
+  const B = r.B * K, H = r.H * K, Hf = d.Hf * K, Hm = d.Hm * K, Bp = d.Bp * K, eb = d.eb * K, ec = d.ec * K, Bt = d.Bt * K;
+  const xs = Bp + eb, rec = d.rec * K, Df = d.Df * K, bd = d.bd * K, hd = d.bd > 0 && d.hd > 0 ? d.hd * K : 0, xd = d.xd * K;
+  const th = Math.min(120, Math.max(25, Math.round(Math.max(B, H) / 75 / 5) * 5));   // altura de texto [mm]
+  const n0 = (v) => fmt(v, 0).replace(/\./g, "");
+  const bTxt = ([db, s]) => `%%c${fmt(db * 10, 0)}@${fmt(s, s % 1 ? 1 : 0)}`;
+  const cota = (x1, y1, x2, y2, txt, vertical = false) => {
+    dx.line("COTAS", x1, y1, x2, y2);
+    const k = th * 0.35;
+    for (const [x, y] of [[x1, y1], [x2, y2]]) dx.line("COTAS", x - k, y - k, x + k, y + k);
+    if (vertical) dx.text("COTAS", x1 - th * 0.5, (y1 + y2) / 2, th * 0.8, txt, 1, 0, 90);
+    else dx.text("COTAS", (x1 + x2) / 2, y1 + th * 0.4, th * 0.8, txt, 1, 0);
+  };
+  const ext = (x1, y1, x2, y2) => dx.line("COTAS", x1, y1, x2, y2);   // línea de extensión
+  const rotulo = (x1, y1, x2, y2, txt, der) => {                      // línea de referencia con texto
+    dx.line("TEXTOS", x1, y1, x2, y2);
+    dx.circle("TEXTOS", x1, y1, th * 0.12);
+    dx.text("TEXTOS", x2 + (der ? th * 0.4 : -th * 0.4), y2, th * 0.8, txt, der ? 0 : 2, 2);
+  };
+
+  // Hormigón: contorno de la pantalla, la zapata y el dentellón
+  dx.poly("MURO", contorno(d).map(([x, y]) => [x * K, y * K]));
+  // Relleno sobre el talón con achurado a 45°
+  if (Bt > 0) {
+    dx.line("RELLENO", B, Hf, B, H);
+    const sp = th * 2.2;
+    for (let c = Hf - B; c < H - xs; c += sp) {
+      const x1 = Math.max(xs, Hf - c), x2 = Math.min(B, H - c);
+      if (x2 - x1 > 1) dx.line("RELLENO", x1, x1 + c, x2, x2 + c);
+    }
+  }
+  // Terreno: superficie del relleno y terreno frente al muro, con marcas de suelo
+  const terreno = (x1, x2, y) => {
+    dx.line("TERRENO", x1, y, x2, y);
+    const t = th * 0.6;
+    for (let x = x1; x <= x2 - t; x += t) dx.line("TERRENO", x, y, x + t, y + t);
+  };
+  const largo = Math.max(600, 0.2 * B);
+  terreno(xs, B + largo, H);
+  const xFrente = (y) => Bp + (xs - ec - Bp) * Math.max(0, y - Hf) / Hm;
+  if (Df > 0) terreno(-largo, xFrente(Df), Df);
+
+  // Armaduras
+  const db = (a) => a[0] * K;
+  const yInf = rec + db(A.inf) / 2, ySup = Hf - rec - db(A.sup) / 2;
+  const gancho = Math.max(0, Math.min(ySup - yInf, 12 * db(A.inf)));
+  dx.poly("ARMADURA", [[rec, yInf + gancho], [rec, yInf], [B - rec, yInf], [B - rec, yInf + gancho]], false);        // inferior
+  dx.poly("ARMADURA", [[rec, ySup - gancho], [rec, ySup], [B - rec, ySup], [B - rec, ySup - gancho]], false);        // superior
+  const xP = xs - rec - db(A.P) / 2;                                                                                  // trasdós
+  const pataP = Math.min(xP - rec, Math.max(300, 12 * db(A.P)));
+  dx.poly("ARMADURA", [[xP, H - rec], [xP, yInf + db(A.inf)], [xP - pataP, yInf + db(A.inf)]], false);
+  // Cara exterior: paralela a la cara inclinada, a un recubrimiento
+  const ux = xs - ec - Bp, uy = Hm, ul = Math.hypot(ux, uy);
+  const off = rec + db(A.Pc) / 2;
+  // Distancia horizontal entre dos rectas paralelas separadas "off": off / cos(inclinación)
+  const xF = (y) => Bp + ux * (y - Hf) / uy + off * ul / uy;
+  const yA = H - rec, yB = ySup - db(A.sup);
+  dx.line("ARMADURA", xF(yA), yA, xF(yB), yB);
+  // Barras horizontales de la pantalla (puntos) en ambas caras, y longitudinales de la zapata
+  const rH = Math.max(db(A.H) / 2, th * 0.08), sH = A.H[1] * K;
+  for (let y = Hf + sH / 2; y < H - rec; y += sH) {
+    dx.circle("ARMADURA", xP - db(A.P) / 2 - rH, y, rH);
+    dx.circle("ARMADURA", xF(y) + db(A.Pc) / 2 + rH, y, rH);
+  }
+  const rL = Math.max(db(A.L) / 2, th * 0.08), sL = A.L[1] * K;
+  for (let x = rec + sL / 2; x < B - rec; x += sL) {
+    dx.circle("ARMADURA", x, yInf + db(A.inf) / 2 + rL, rL);
+    dx.circle("ARMADURA", x, ySup - db(A.sup) / 2 - rL, rL);
+  }
+
+  // Rótulos de las armaduras
+  const xDer = B + largo * 0.5 + th * 4, xIzq = Math.min(-largo * 0.6, -th * 6);
+  rotulo(xP, Hf + Hm * 0.62, xDer, Hf + Hm * 0.62, `${bTxt(A.P)} vertical cara relleno`, true);
+  rotulo(B - rec - th * 2, ySup, xDer, Hf + th * 2.5, `${bTxt(A.sup)} superior zapata${d.Bt > 0 ? " (talon)" : ""}`, true);
+  rotulo(xF(Hf + Hm * 0.7), Hf + Hm * 0.7, xIzq, Hf + Hm * 0.7, `${bTxt(A.Pc)} vertical cara exterior`, false);
+  const yHr = Hf + sH * (Math.floor(Hm * 0.45 / sH) + 0.5);
+  rotulo(xF(yHr) + db(A.Pc) / 2 + rH, yHr, xIzq, Hf + Hm * 0.45, `${bTxt(A.H)} horizontal c/cara`, false);
+  rotulo(rec + th * 2, yInf, xIzq, Math.min(Df, Hf) * 0.4 - th * 1.5, `${bTxt(A.inf)} inferior zapata${d.Bp > 0 ? " (pie)" : ""}`, false);
+  rotulo(rec + sL * 1.5, ySup - db(A.sup) / 2 - rL, xIzq, Hf + th * 3.2, `${bTxt(A.L)} longitudinal zapata c/cara`, false);
+
+  // Cotas [mm]
+  const y1 = -hd - th * 2.5, y2 = y1 - th * 2;
+  for (const x of [0, Bp, xs, B]) ext(x, -hd - th * 0.5, x, y2 - th * 0.4);
+  if (Bp > 0) cota(0, y1, Bp, y1, n0(Bp));
+  cota(Bp, y1, xs, y1, n0(eb));
+  if (Bt > 0) cota(xs, y1, B, y1, n0(Bt));
+  cota(0, y2, B, y2, n0(B));
+  const yT = H + th * 2.2;
+  ext(xs - ec, H + th * 0.5, xs - ec, yT + th * 0.4); ext(xs, H + th * 0.5, xs, yT + th * 0.4);
+  cota(xs - ec, yT, xs, yT, n0(ec));
+  const xv1 = B + largo * 0.25, xv2 = xv1 + th * 2;
+  for (const y of [0, Hf, H]) ext(B + th * 0.5, y, xv2 + th * 0.4, y);
+  cota(xv1, 0, xv1, Hf, n0(Hf), true);
+  cota(xv1, Hf, xv1, H, n0(Hm), true);
+  cota(xv2, 0, xv2, H, n0(H), true);
+  if (Df > 0) { const xq = -largo * 0.25; ext(xq - th * 0.4, 0, 0, 0); cota(xq, 0, xq, Df, n0(Df), true); }
+  if (hd > 0) {
+    const xq = xd - th * 1.5;
+    ext(xq - th * 0.4, -hd, xd, -hd);
+    cota(xq, -hd, xq, 0, n0(hd), true);
+    dx.text("TEXTOS", xd + bd + th * 0.5, -hd / 2, th * 0.7, `DENTELLON ${n0(bd)}x${n0(hd)}`, 0, 2);
+  }
+
+  // Título, cuadro de armaduras y notas
+  let y = y2 - th * 4;
+  const x0 = Math.min(xIzq - th * 14, -largo);
+  dx.text("TEXTOS", x0, y, th * 1.4, `MURO DE CONTENCION H = ${fmt(r.H / 100, 2)} m - CORTE TIPICO (cotas en mm)`);
+  y -= th * 3;
+  dx.text("TEXTOS", x0, y, th, "CUADRO DE ARMADURAS (por metro de muro)");
+  y -= th * 1.8;
+  for (const [ubic, a] of r.arm.tex) {
+    dx.text("TEXTOS", x0, y, th * 0.8, ubic.replace(/ó/g, "o").replace(/á/g, "a"));
+    dx.text("TEXTOS", x0 + th * 30, y, th * 0.8, a.replace(/\$\\phi\$/g, "%%c").replace(/\{,\}/g, ",").replace(/\\,/g, "").replace(/ @ /, "@").replace(/ cm$/, ""));
+    y -= th * 1.4;
+  }
+  y -= th * 1.4;
+  const notas = [
+    "NOTAS",
+    `1. Hormigon f'c = ${n0(d.fc)} kgf/cm2. Acero fy = ${n0(d.fy)} kgf/cm2${d.fy === 4200 ? " (A630-420H)" : ""}.`,
+    `2. Recubrimiento libre ${fmt(d.rec, 1)} cm.`,
+    `3. Relleno granular: phi = ${fmt(d.phiR, 0)} grados, peso especifico ${fmt(d.gR * 1000, 2)} tf/m3. Se supone drenaje (barbacanas y material filtrante).`,
+    `4. Suelo de fundacion: tension admisible ${fmt(d.su / d.fsT, 2)} kgf/cm2 (estatica).`,
+    "5. Armaduras segun la memoria de calculo AURA. Barras horizontales y longitudinales en ambas caras.",
+    "6. Longitudes de anclaje, empalmes y ganchos a definir por el ingeniero (no verificados).",
+    ...(hd > 0 ? ["7. Armadura del dentellon a definir (no se diseña en la memoria)."] : []),
+  ];
+  notas.forEach((t, i) => { dx.text("TEXTOS", x0, y, i ? th * 0.8 : th, t.replace(/ñ/g, "n")); y -= th * 1.5; });
+
+  return dx.archivo([["MURO", 7], ["ARMADURA", 1], ["RELLENO", 33], ["TERRENO", 32], ["COTAS", 2], ["TEXTOS", 7]]);
+}
+function descargarDXF() {
+  if (!ultimoR) { alert("Corrija los datos inválidos antes de descargar el plano."); return; }
+  descargarBlob(new Blob([generarDXF()], { type: "application/dxf" }), `plano_muro_contencion_H${fmt(ultimoR.H / 100, 2).replace(",", "-")}m.dxf`);
 }
 
 // ---------------------------------------------------------------------------
@@ -1073,7 +1263,7 @@ ${r.sinVerificar.length
 // ---------------------------------------------------------------------------
 // Cálculo e interfaz
 // ---------------------------------------------------------------------------
-let ultimoTex = "", ultimoNombre = "memoria.tex", ultimoR = null;
+let ultimoTex = "", ultimoNombre = "memoria.tex", ultimoR = null, ultimoD = null;
 
 function calcular() {
   const sismo = $("zona").value !== "0";
@@ -1086,7 +1276,7 @@ function calcular() {
     $("resTitle").textContent = "Resultados";
     $("summary").innerHTML = ""; $("memo").innerHTML = ""; $("dibujo").innerHTML = "";
     $("verdict").innerHTML = avisoInvalidos(malos);
-    ultimoTex = ""; ultimoR = null;
+    ultimoTex = ""; ultimoR = null; ultimoD = null;
     return;
   }
   const d = leerDatos();
@@ -1117,7 +1307,7 @@ function calcular() {
   $("dibujo").innerHTML = svgMuro(d, r);
   $("memo").innerHTML = m.html();
 
-  ultimoR = r;
+  ultimoR = r; ultimoD = d;
   ultimoTex = documentoTex(d, r, m.texto());
   ultimoNombre = `memoria_muro_contencion_H${fmt(M(r.H), 2).replace(",", "_")}.tex`;
 }
