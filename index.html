@@ -169,6 +169,10 @@
           <span class="ico"><svg viewBox="0 0 32 32" fill="none" stroke="#00008B" stroke-width="2" stroke-linejoin="round"><path d="M3 10h26M3 23h26M3 23l6-13 6 13 6-13 6 13M9 10v13M21 10v13"/></svg></span>
           <span class="tx"><b>Vigas reticuladas</b><small>Cordones, diagonales y montantes · plano DXF y modelo SAP2000</small><span class="norma">AISC 360-16</span></span>
         </a>
+        <a class="tool" href="placa.html" data-cat="acero hormigon" data-q="placa colaborante losa instadeck deck metalica conectores sdi cintac">
+          <span class="ico"><svg viewBox="0 0 32 32" fill="none" stroke="#00008B" stroke-width="2" stroke-linejoin="round"><path d="M3 12h26"/><path d="M3 20l3-6h4l3 6h4l3-6h4l3 6"/><path d="M3 20h26" stroke-width="1.4"/></svg></span>
+          <span class="tx"><b>Placa colaborante</b><small>Losa con placa Instadeck 0,8 mm · tablas Cintac (SDI) · conectores</small><span class="norma">AISC 360-16 Cap. I</span></span>
+        </a>
         <a class="tool" href="hormigon.html" data-cat="hormigon" data-q="hormigon armado vigas losas muros aci">
           <span class="ico"><svg viewBox="0 0 32 32" fill="none" stroke="#00008B" stroke-width="2"><rect x="6" y="4" width="20" height="24" rx="1.5"/><g fill="#00008B" stroke="none"><circle cx="11" cy="23" r="1.8"/><circle cx="16" cy="23" r="1.8"/><circle cx="21" cy="23" r="1.8"/><circle cx="11" cy="9" r="1.4"/><circle cx="21" cy="9" r="1.4"/></g></svg></span>
           <span class="tx"><b>Hormigón armado</b><small>Vigas, losas y muros</small><span class="norma">ACI 318-08</span></span>
@@ -239,7 +243,7 @@
   </form>
 </dialog>
 <script src="memo.js?v=31"></script>
-<script src="proyectos.js?v=32"></script>
+<script src="proyectos.js?v=33"></script>
 <script src="modelo3d.js?v=3"></script>
 
 <script>
@@ -253,7 +257,7 @@ function filtrar() {
   const q = normal(document.getElementById("buscar").value).split(/\s+/).filter(Boolean);
   let n = 0;
   for (const t of herramientas) {
-    const ver = (!categoria || t.dataset.cat === categoria) && q.every(p => t.dataset.texto.includes(p));
+    const ver = (!categoria || t.dataset.cat.split(" ").includes(categoria)) && q.every(p => t.dataset.texto.includes(p));
     t.hidden = !ver; if (ver) n++;
   }
   document.getElementById("sinRes").style.display = n ? "none" : "block";

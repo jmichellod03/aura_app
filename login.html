@@ -159,7 +159,7 @@ async function enviar(form, fn) {
   try { await fn(); } catch (e) { mensaje(errorEnEspanol(e)); } finally { b.disabled = false; }
 }
 // Solo se vuelve a páginas propias de la app (lista blanca); cualquier otro valor va al inicio
-const PAGINAS_APP = ["index.html", "acero.html", "reticulada.html", "hormigon.html", "madera.html", "mle.html", "espectros.html", "vial.html", "rigido.html"];
+const PAGINAS_APP = ["index.html", "acero.html", "reticulada.html", "placa.html", "hormigon.html", "madera.html", "mle.html", "espectros.html", "vial.html", "rigido.html"];
 const destino = () => {
   const v = new URLSearchParams(location.search).get("volver");
   if (!v) return "index.html";

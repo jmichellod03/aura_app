@@ -1,0 +1,1142 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#00008B">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="AURA">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js" integrity="sha384-K0oxqktRvaThvYgGL4G+OK2Ih6VS6Uyu7j3+7WJgp/uWM0Yv6Xi4YEiw0BB+mPfi" crossorigin="anonymous"></script>
+<script src="nube.js?v=28"></script>
+<style>
+  /* PWA: sin zoom automático de iOS al enfocar campos y texto estable al rotar */
+  html { -webkit-text-size-adjust: 100%; }
+  @media (max-width: 900px) { input, select, textarea { font-size: 16px !important; } }
+  main > *, .row2 > *, .row3 > *, fieldset { min-width: 0; }
+  input, select { min-width: 0; max-width: 100%; }
+  .memo, .tablaWrap { overflow-x: auto; }
+  svg { max-width: 100%; }
+</style>
+<title>Placa Colaborante</title>
+<style>
+  :root {
+    --bg: #e3e6ea;
+    --panel: #fffafa;
+    --ink: #1d2330;
+    --muted: #5f6b7a;
+    --line: #dde1e7;
+    --accent: #e8711c;
+    --accent-ink: #ffffff;
+    --head: #00008B;
+    --ok: #1f8a4c;
+    --ok-bg: #e6f4ec;
+    --bad: #c62828;
+    --bad-bg: #fbe9e9;
+    --warn: #9a6400;
+    --warn-bg: #fff4dc;
+    --mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 "Segoe UI", system-ui, -apple-system, sans-serif; }
+  header { background: var(--head); color: #fff; padding: 10px 24px; display: flex; align-items: center; gap: 8px 16px; flex-wrap: wrap; }
+  header h1 { margin: 0; font-size: 19px; font-weight: 600; }
+  header a.home { color: #fff; text-decoration: none; font-size: 13px; border: 1px solid rgba(255,255,255,.35); border-radius: 4px; padding: 3px 9px; }
+  header a.home:hover { background: #1c1ca6; }
+  header span { color: #c8cbe8; font-size: 13px; }
+  main { display: grid; grid-template-columns: 360px 1fr; gap: 20px; padding: 20px 24px; max-width: 1400px; margin: 0 auto; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; padding: 16px; } }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+  .panel > h2 { margin: 0; padding: 10px 16px; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); border-bottom: 1px solid var(--line); }
+  .body { padding: 14px 16px; }
+  .tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border: 1px solid var(--accent); border-radius: 6px; overflow: hidden; margin-bottom: 14px; }
+  .tabs button { border: 0; background: #fff; color: var(--accent); padding: 9px; font: inherit; font-weight: 600; cursor: pointer; }
+  .tabs button.on { background: var(--accent); color: var(--accent-ink); }
+  label { display: block; font-size: 12px; color: var(--muted); margin: 10px 0 4px; }
+  select, input[type=number] { width: 100%; padding: 7px 9px; border: 1px solid var(--line); border-radius: 5px; font: inherit; background: #fff; color: var(--ink); }
+  select:focus, input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .unit { color: var(--muted); font-size: 11px; }
+  fieldset { border: 1px solid var(--line); border-radius: 6px; margin: 14px 0 0; padding: 4px 12px 12px; }
+  legend { font-size: 12px; font-weight: 600; color: var(--head); padding: 0 4px; }
+  details { margin-top: 10px; border: 1px dashed var(--line); border-radius: 6px; padding: 6px 10px; }
+  details summary { cursor: pointer; font-size: 12px; color: var(--head); font-weight: 600; }
+  .mini { font-size: 12px; padding: 5px 9px; border: 1px solid var(--accent); color: var(--accent); background: #fff; border-radius: 4px; cursor: pointer; margin-top: 8px; }
+  .mini:hover { background: #fff3ea; }
+  .cbOut { display: block; padding: 7px 9px; border: 1px dashed var(--line); border-radius: 5px; background: #f7f8fa; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .cbTit { font-size: 12px; font-weight: 600; color: var(--head); margin: 12px 0 -4px; }
+  .chk { display: flex; gap: 8px; align-items: center; margin-top: 12px; font-size: 13px; color: var(--ink); }
+  .hidden { display: none !important; }
+
+  .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; padding: 14px 16px; }
+  .card { border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; }
+  .card .t { font-size: 12px; color: var(--muted); }
+  .card .v { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .card .s { font-size: 12px; color: var(--muted); }
+  .bar { height: 6px; background: #eceef1; border-radius: 3px; margin-top: 6px; overflow: hidden; }
+  .bar > i { display: block; height: 100%; background: var(--ok); }
+  .bar.bad > i { background: var(--bad); }
+  .verdict { margin: 0 16px 14px; padding: 12px 14px; border-radius: 6px; font-weight: 600; font-size: 15px; }
+  .verdict.ok { background: var(--ok-bg); color: var(--ok); }
+  .verdict.bad { background: var(--bad-bg); color: var(--bad); }
+  .note { margin: 8px 0; padding: 8px 10px; border-radius: 5px; background: var(--warn-bg); color: var(--warn); font-size: 12.5px; }
+
+  .memo { padding: 4px 16px 16px; }
+  .memo h3 { font-size: 14px; margin: 18px 0 6px; padding-bottom: 4px; border-bottom: 2px solid var(--accent); color: var(--head); }
+  .memo h4 { font-size: 13px; margin: 12px 0 4px; color: var(--head); }
+  table.calc { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.calc td { padding: 4px 8px; border-bottom: 1px solid #eef0f3; vertical-align: top; }
+  table.calc td.k { color: var(--ink); }
+  table.calc td.v { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; font-weight: 600; }
+  .ref { display: inline-block; font-size: 10.5px; color: var(--accent); border: 1px solid #f3c7a5; border-radius: 3px; padding: 0 4px; margin-left: 6px; font-weight: 500; }
+  .tag { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 11.5px; font-weight: 600; }
+  .tag.ok { background: var(--ok-bg); color: var(--ok); }
+  .tag.bad { background: var(--bad-bg); color: var(--bad); }
+  .tag.warn { background: var(--warn-bg); color: var(--warn); }
+  table.alt { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.alt th { text-align: left; font-size: 11.5px; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--line); padding: 5px 8px; }
+  table.alt td { padding: 5px 8px; border-bottom: 1px solid #eef0f3; font-variant-numeric: tabular-nums; }
+  .esquema { display: block; width: 100%; max-width: 320px; margin: 8px auto 4px; }
+  .formula { font-size: 12px; color: var(--ink); background: #f7f8fa; border-radius: 5px; padding: 8px 10px; line-height: 1.55; }
+  .secwrap { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
+  .secwrap svg { flex: 0 0 auto; width: 300px; max-width: 100%; }
+  .secwrap .props { flex: 1 1 260px; }
+  .props { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 4px 14px; font-size: 12.5px; }
+  .props div b { font-variant-numeric: tabular-nums; }
+  .toolbar { display: flex; justify-content: flex-end; padding: 10px 16px 0; gap: 8px; }
+  .btn { padding: 7px 14px; border-radius: 5px; border: 1px solid var(--head); background: var(--head); color: #fff; font: inherit; font-size: 13px; cursor: pointer; }
+  .btn.sec { background: #fff; color: var(--head); }
+  footer { text-align: center; color: var(--muted); font-size: 12px; padding: 10px 0 24px; }
+
+  @media print {
+    body { background: #fff; }
+    header { background: #fff; color: #000; border-bottom: 2px solid #000; }
+    header span { color: #333; }
+    header a.home { display: none; }
+    main { display: block; padding: 0; }
+    #inputs, .toolbar, #altPanel, footer { display: none; }
+    .panel { border: 0; }
+    .memo h3 { break-after: avoid; }
+    table.calc tr { break-inside: avoid; }
+  }
+</style>
+<link rel="stylesheet" href="aura.css?v=2">
+</head>
+<body>
+<header>
+  <a class="marca" href="index.html" aria-label="Inicio"><span class="logo-tile"><span class="logo"><img src="icons/logo-mmp.webp" alt="MMP"></span></span></a>
+  <a class="home" href="index.html">← Inicio</a>
+  <h1>Diseño de placa colaborante</h1>
+  <span>Placa Instadeck Cintac 0,8 mm · Tablas del fabricante (SDI 1991) · Conectores AISC 360-16 Cap. I · Unidades kgf – cm</span>
+</header>
+
+<main>
+  <!-- ===================== ENTRADAS ===================== -->
+  <section class="panel" id="inputs">
+    <h2>Datos de entrada</h2>
+    <div class="body">
+      <svg class="esquema" viewBox="0 0 320 120" aria-label="Esquema de la sección de la losa colaborante">
+        <rect x="10" y="22" width="300" height="34" fill="#eceef1" stroke="#9aa3ad"/>
+        <path d="M10 56 L30 56 L42 92 L78 92 L90 56 L130 56 L142 92 L178 92 L190 56 L230 56 L242 92 L278 92 L290 56 L310 56 L310 56"
+              fill="#eceef1" stroke="none"/>
+        <path d="M10 56 L30 56 L42 92 L78 92 L90 56 L130 56 L142 92 L178 92 L190 56 L230 56 L242 92 L278 92 L290 56 L310 56"
+              fill="none" stroke="#e8711c" stroke-width="2.5"/>
+        <line x1="10" y1="31" x2="310" y2="31" stroke="#3d4450" stroke-dasharray="5 3"/>
+        <text x="16" y="28" font-size="9" fill="#3d4450">malla de retracción (2,5 cm bajo la cara superior)</text>
+        <line x1="60" y1="92" x2="60" y2="40" stroke="#3d4450" stroke-width="3"/>
+        <rect x="53" y="36" width="14" height="5" fill="#3d4450"/>
+        <text x="66" y="78" font-size="9" fill="#3d4450">conector</text>
+        <line x1="300" y1="22" x2="300" y2="56" stroke="#5f6b7a"/><text x="262" y="44" font-size="10" fill="#5f6b7a">e<tspan font-size="7" dy="2">h</tspan></text>
+        <line x1="306" y1="56" x2="306" y2="92" stroke="#5f6b7a"/><text x="270" y="80" font-size="10" fill="#5f6b7a">63,5</text>
+        <text x="10" y="112" font-size="9" fill="#5f6b7a">Esquema, no a escala · avance útil 950 mm · 3 nervios · mm</text>
+      </svg>
+
+      <fieldset>
+        <legend>1. Geometría</legend>
+        <div class="row2">
+          <div><label for="L">Separación entre vigas de apoyo L <span class="unit">[m, entre ejes]</span></label><input id="L" type="number" step="0.01" value="1.88"></div>
+          <div><label for="tramos">Tramos continuos de placa</label>
+            <select id="tramos"><option value="1">1 tramo (simple)</option><option value="2">2 tramos (doble)</option><option value="3" selected>3 o más (triple)</option></select></div>
+        </div>
+        <label for="eh">Espesor de hormigón sobre la cresta e<sub>h</sub></label>
+        <select id="eh">
+          <option value="auto" selected>Automático: el menor que cumple</option>
+          <option value="5">5 cm (e<sub>t</sub> = 11,35 cm)</option>
+          <option value="6">6 cm (e<sub>t</sub> = 12,35 cm)</option>
+          <option value="8">8 cm (e<sub>t</sub> = 14,35 cm)</option>
+          <option value="10">10 cm (e<sub>t</sub> = 16,35 cm)</option>
+          <option value="12">12 cm (e<sub>t</sub> = 18,35 cm)</option>
+        </select>
+      </fieldset>
+
+      <fieldset>
+        <legend>2. Cargas de servicio</legend>
+        <div class="row2">
+          <div><label for="qL">Sobrecarga de uso <span class="unit">[kgf/m²]</span></label><input id="qL" type="number" step="10" value="500"></div>
+          <div><label for="qD">Carga permanente adicional (terminaciones, tabiques) <span class="unit">[kgf/m²]</span></label><input id="qD" type="number" step="10" value="0"></div>
+        </div>
+        <label for="flechaLim">Límite de flecha (peso propio + cargas de servicio)</label>
+        <select id="flechaLim"><option value="240">L/240</option><option value="300">L/300</option><option value="360" selected>L/360</option></select>
+        <label class="chk"><input id="ppDem" type="checkbox"> Sumar el peso propio de la losa a la demanda (criterio conservador)</label>
+        <label class="chk"><input id="puntual" type="checkbox"> Hay cargas puntuales (carga equivalente +30 %)</label>
+        <label class="chk"><input id="heli" type="checkbox"> Afinado superficial con helicóptero</label>
+      </fieldset>
+
+      <fieldset>
+        <legend>3. Malla de retracción</legend>
+        <div class="row2">
+          <div><label for="dMalla">Diámetro de la barra φ <span class="unit">[mm]</span></label><input id="dMalla" type="number" step="0.1" value="6"></div>
+          <div><label for="sMalla">Espaciamiento s <span class="unit">[cm]</span></label><input id="sMalla" type="number" step="0.5" value="15"></div>
+        </div>
+        <label>Área en cada dirección A<sub>s</sub> = (π φ²/4) · 100/s</label>
+        <output id="asOut" class="cbOut">—</output>
+        <div class="unit" style="margin-top:4px">Misma malla en ambas direcciones. Acero A63-42H mínimo.</div>
+      </fieldset>
+
+      <fieldset>
+        <legend>4. Conectores de corte</legend>
+        <div class="row2">
+          <div><label for="cnv">Conectores por valle en cada apoyo</label>
+            <select id="cnv"><option value="0">Sin conectores</option><option value="1" selected>1</option><option value="2">2</option></select></div>
+          <div><label for="cd">Diámetro del conector</label>
+            <select id="cd"><option value="5/8">5/8" (15,9 mm)</option><option value="3/4" selected>3/4" (19,1 mm)</option></select></div>
+          <div><label for="hs">Altura del conector instalado h<sub>s</sub> <span class="unit">[mm]</span></label><input id="hs" type="number" step="1" value="102"></div>
+          <div><label for="pos">Posición en el valle</label>
+            <select id="pos"><option value="debil" selected>Débil (R<sub>p</sub> = 0,60)</option><option value="fuerte">Fuerte, e<sub>mid-ht</sub> ≥ 51 mm (R<sub>p</sub> = 0,75)</option></select></div>
+          <div><label for="fc">Resistencia del hormigón f'<sub>c</sub> <span class="unit">[kgf/cm², mín. 214]</span></label><input id="fc" type="number" step="5" value="250"></div>
+          <div><label for="QnUser">Q<sub>n</sub> del fabricante <span class="unit">[tf] (vacío = AISC I8-1)</span></label><input id="QnUser" type="number" step="0.1" value=""></div>
+        </div>
+        <div class="cbTit">Viga de apoyo</div>
+        <div class="row2">
+          <div><label for="serieV">Serie</label><select id="serieV"><option>HEA</option><option>HEB</option><option selected>IPE</option><option>IPN</option><option value="otro">Otro (ingresar área)</option></select></div>
+          <div><label for="perfilV">Perfil</label><select id="perfilV"></select></div>
+        </div>
+        <div id="asvBox" class="hidden"><label for="Asv">Área del perfil A<sub>s</sub> <span class="unit">[cm²]</span></label><input id="Asv" type="number" step="0.1" value="23.9"></div>
+        <div id="perfilInfo" class="unit" style="margin-top:4px"></div>
+        <label class="chk"><input id="cViga" type="checkbox"> Calcular los conectores de la viga de apoyo (acción compuesta completa)</label>
+        <div id="vigaBox" class="hidden">
+          <div class="row2">
+            <div><label for="Lv">Luz de la viga <span class="unit">[m]</span></label><input id="Lv" type="number" step="0.05" value="3.85"></div>
+            <div><label for="aceroV">Acero de la viga</label>
+              <select id="aceroV"><option selected>A37-24ES</option><option>A42-27ES</option><option>A52-34ES</option></select></div>
+          </div>
+          <div class="unit" style="margin-top:4px">Viga interior, simplemente apoyada, con los nervios perpendiculares a ella. La separación entre vigas es L.</div>
+        </div>
+      </fieldset>
+    </div>
+  </section>
+
+  <!-- ===================== RESULTADOS ===================== -->
+  <section>
+    <div class="panel">
+      <h2 id="resTitle">Resultados</h2>
+      <div class="summary" id="summary"></div>
+      <div id="verdict"></div>
+      <div class="toolbar">
+        <button class="btn sec" type="button" onclick="window.print()">Imprimir</button>
+        <button class="btn sec" type="button" onclick="descargarDXF()" title="Plano en formato DXF (AutoCAD), en milímetros y por capas">Descargar plano (.dxf)</button>
+        <button class="btn" type="button" onclick="descargarZipMemoria(ultimoTex, ultimoNombre, document.body)">Descargar memoria (.zip)</button>
+      </div>
+      <div class="memo" id="memo"></div>
+    </div>
+    <div class="panel" id="altPanel" style="margin-top:20px">
+      <h2>Comparación de espesores de hormigón</h2>
+      <div class="body" id="alt"></div>
+    </div>
+  </section>
+</main>
+<footer>Herramienta de apoyo académico basada en las tablas del fabricante (Ficha y Manual Técnico Instadeck, Cintac). No reemplaza la memoria de cálculo del ingeniero del proyecto. Verifique siempre los resultados.</footer>
+
+<script src="memo.js?v=31"></script>
+<script>
+"use strict";
+// ---------------------------------------------------------------------------
+// Placa Instadeck 0,8 mm (Cintac). Tablas de la ficha técnica y del manual técnico.
+// Las tablas se basan en el SDI 1991, hormigón H25 mínimo. Valores tal como los publica el fabricante.
+// ---------------------------------------------------------------------------
+const PLACA = { nombre: "Instadeck", e: 0.08, hr: 6.35, avance: 95, nervios: 3, peso: 8.0, I: 74.60, Ineg: 69.39, S: 18.62, Sneg: 19.23 };
+const SEP_VALLE = PLACA.avance / PLACA.nervios;          // cm entre valles (31,67 cm)
+const EH = [5, 6, 8, 10, 12];                             // cm de hormigón sobre la cresta
+// Tabla I — Sobrecarga admisible de la losa compuesta [kgf/m²] por e_h y separación entre apoyos [m]
+const LUCES = [1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0, 3.2, 3.4, 3.6, 3.8, 4.0];
+const TABLA_I = {
+  5: [2000, 1957, 1624, 1337, 1138, 949, 799, 677, 578, 496, 427, 369, 319],
+  6: [2000, 2000, 1818, 1497, 1281, 1075, 905, 768, 656, 563, 485, 419, 363],
+  8: [2000, 2000, 2000, 1815, 1554, 1328, 1119, 950, 812, 698, 602, 521, 452],
+  10: [2000, 2000, 2000, 2000, 1827, 1581, 1333, 1132, 968, 832, 719, 622, 540],
+  12: [2000, 2000, 2000, 2000, 2000, 1822, 1546, 1314, 1124, 967, 835, 724, 628],
+};
+// Tabla II — Distancia máxima entre apoyos por deformación [cm] (1, 2 y 3 tramos), por espesor total
+const TABLA_II = { 5: [250, 306, 363], 6: [272, 333, 395], 8: [316, 387, 459], 10: [360, 441, 523], 12: [404, 495, 587] };
+// Tabla III — Longitud máxima sin alzaprimado [cm] (tramo simple, doble y triple)
+const TABLA_III = { 5: [209, 277, 285], 6: [200, 267, 274], 8: [187, 250, 256], 10: [175, 236, 241], 12: [166, 224, 229] };
+// Tabla IV — Cubicación y peso propio: e_t [cm], volumen [m³/m²], hormigón y total [kgf/m²]; inercia compuesta [cm⁴/m]
+const TABLA_IV = {
+  5: { et: 11.35, V: 0.085, ppH: 204, pp: 212, Ic: 10132 },
+  6: { et: 12.35, V: 0.095, ppH: 228, pp: 236, Ic: 12660 },
+  8: { et: 14.35, V: 0.115, ppH: 276, pp: 284, Ic: 18826 },
+  10: { et: 16.35, V: 0.135, ppH: 324, pp: 332, Ic: 26619 },
+  12: { et: 18.35, V: 0.155, ppH: 372, pp: 380, Ic: 36220 },
+};
+const FC_MIN = 214;          // kgf/cm² (21 MPa): mínimo de AISC 360-16 I1.3 para hormigón de peso normal
+const AS_MIN = 1.8;            // cm²/m, armadura de retracción mínima en cada dirección
+const V_APOYO = 11200;         // kgf por metro de ancho: resistencia última de los conectores en cada apoyo
+const FU_CON = 4570;           // kgf/cm² (65 ksi), conectores AWS D1.1 tipo B
+const CONECTOR = { "5/8": { d: 1.588, txt: "5/8\"" }, "3/4": { d: 1.905, txt: "3/4\"" } };
+const ACEROS = { "A37-24ES": 2400, "A42-27ES": 2700, "A52-34ES": 3400 };
+// Geometría de la placa para el plano [mm]. Solo la altura (63,5) y el avance (950) están acotados en la
+// ficha; el ancho de la cresta, del valle y de las almas se midió del dibujo de la ficha (aproximado).
+const DECK = { p: 950 / 3, ct: 139, w: 29 };
+DECK.vb = DECK.p - DECK.ct - 2 * DECK.w;
+
+// Catálogo Cintac de vigas laminadas (el mismo de acero.html).
+// [nombre, h, b, tw, tf, r (mm), peso (kgf/m), A (cm²), Ix (cm⁴), Wx (cm³), Iy (cm⁴), Wy (cm³)]
+const CATALOGO = {
+  HEA: [
+    ["HEA 100", 96, 100, 5.0, 8.0, 12, 16.7, 21.2, 349, 72.8, 134, 26.8],
+    ["HEA 120", 114, 120, 5.0, 8.0, 12, 19.9, 25.3, 606, 106, 231, 38.5],
+    ["HEA 140", 133, 140, 5.5, 8.5, 12, 24.7, 31.4, 1030, 155, 389, 55.6],
+    ["HEA 160", 152, 160, 6.0, 9.0, 15, 30.4, 38.8, 1670, 220, 616, 76.9],
+    ["HEA 180", 171, 180, 6.0, 9.5, 15, 35.5, 45.3, 2510, 294, 925, 103],
+    ["HEA 200", 190, 200, 6.5, 10.0, 18, 42.3, 53.8, 3690, 389, 1340, 134],
+    ["HEA 220", 210, 220, 7.0, 11.0, 18, 50.5, 64.3, 5410, 515, 1950, 178],
+    ["HEA 240", 230, 240, 7.5, 12.0, 21, 60.3, 76.8, 7760, 675, 2770, 231],
+    ["HEA 260", 250, 260, 7.5, 12.5, 24, 68.2, 86.8, 10450, 836, 3670, 282],
+    ["HEA 280", 270, 280, 8.0, 13.0, 24, 76.4, 97.3, 13670, 1010, 4760, 340],
+    ["HEA 300", 290, 300, 8.5, 14.0, 27, 88.3, 112.0, 18260, 1260, 6310, 421],
+    ["HEA 320", 310, 300, 9.0, 15.5, 27, 97.6, 124.4, 22928, 1480, 6985, 466],
+    ["HEA 340", 330, 300, 9.5, 16.5, 27, 105.0, 133.5, 27693, 1680, 7436, 496],
+    ["HEA 360", 350, 300, 10.0, 17.5, 27, 112.0, 142.8, 33090, 1890, 7887, 526],
+    ["HEA 400", 390, 300, 11.0, 19.0, 27, 125.0, 159.0, 45069, 2310, 8564, 571],
+    ["HEA 450", 440, 300, 11.5, 21.0, 27, 140.0, 178.0, 63722, 2900, 9465, 631],
+    ["HEA 500", 490, 300, 12.0, 23.0, 27, 155.0, 197.5, 86975, 3550, 10367, 691],
+  ],
+  HEB: [
+    ["HEB 100", 100, 100, 6.0, 10.0, 12, 20.4, 26.0, 450, 89.9, 167, 33.5],
+    ["HEB 120", 120, 120, 6.5, 11.0, 12, 26.7, 34.0, 864, 144, 318, 52.9],
+    ["HEB 140", 140, 140, 7.0, 12.0, 12, 33.7, 43.0, 1510, 216, 550, 78.5],
+    ["HEB 160", 160, 160, 8.0, 13.0, 15, 42.6, 54.3, 2490, 311, 889, 111],
+    ["HEB 180", 180, 180, 8.5, 14.0, 15, 51.2, 65.3, 3830, 426, 1360, 151],
+    ["HEB 200", 200, 200, 9.0, 15.0, 18, 61.3, 78.1, 5700, 570, 2000, 200],
+    ["HEB 220", 220, 220, 9.5, 16.0, 18, 71.5, 91.0, 8090, 736, 2840, 258],
+    ["HEB 240", 240, 240, 10.0, 17.0, 21, 83.2, 106.0, 11260, 938, 3920, 327],
+    ["HEB 260", 260, 260, 10.0, 17.5, 24, 93.0, 118.0, 14920, 1150, 5130, 395],
+    ["HEB 280", 280, 280, 10.5, 18.0, 24, 103.0, 131.0, 19270, 1380, 6590, 471],
+    ["HEB 300", 300, 300, 11.0, 19.0, 27, 117.0, 149.0, 25170, 1680, 8560, 571],
+    ["HEB 320", 320, 300, 11.5, 20.5, 27, 127.0, 161.3, 30820, 1930, 9239, 616],
+    ["HEB 340", 340, 300, 12.0, 21.5, 27, 134.0, 170.9, 36656, 2160, 9690, 646],
+    ["HEB 360", 360, 300, 12.5, 22.5, 27, 142.0, 180.6, 43193, 2400, 10141, 676],
+    ["HEB 400", 400, 300, 13.5, 24.0, 27, 155.0, 197.8, 57680, 2880, 10819, 721],
+    ["HEB 450", 450, 300, 14.0, 26.0, 27, 171.0, 218.0, 79887, 3550, 11721, 781],
+    ["HEB 500", 500, 300, 14.5, 28.0, 27, 187.0, 238.6, 107176, 4290, 12624, 842],
+  ],
+  IPE: [
+    ["IPE 80", 80, 46, 3.8, 5.2, 5, 6.0, 7.64, 80.1, 20.0, 8.49, 3.69],
+    ["IPE 100", 100, 55, 4.1, 5.7, 7, 8.1, 10.3, 171, 34.2, 15.9, 5.79],
+    ["IPE 120", 120, 64, 4.4, 6.3, 7, 10.4, 13.2, 318, 53.0, 27.7, 8.65],
+    ["IPE 140", 140, 73, 4.7, 6.9, 7, 12.9, 16.4, 541, 77.3, 44.9, 12.3],
+    ["IPE 160", 160, 82, 5.0, 7.4, 9, 15.8, 20.1, 869, 109, 68.3, 16.7],
+    ["IPE 180", 180, 91, 5.3, 8.0, 9, 18.8, 23.9, 1320, 146, 101, 22.2],
+    ["IPE 200", 200, 100, 5.6, 8.5, 12, 22.4, 28.5, 1940, 194, 142, 28.5],
+    ["IPE 220", 220, 110, 5.9, 9.2, 12, 26.2, 33.4, 2770, 252, 205, 37.3],
+    ["IPE 240", 240, 120, 6.2, 9.8, 11, 30.7, 39.1, 3890, 324, 284, 47.3],
+    ["IPE 270", 270, 135, 6.6, 10.2, 15, 36.1, 45.9, 5790, 429, 420, 62.2],
+    ["IPE 300", 300, 150, 7.1, 10.7, 15, 42.2, 53.8, 8360, 557, 604, 80.5],
+    ["IPE 330", 330, 160, 7.5, 11.5, 18, 49.1, 62.6, 11770, 713, 788, 98.5],
+    ["IPE 360", 360, 170, 8.0, 12.7, 18, 57.1, 72.7, 16270, 904, 1040, 123],
+    ["IPE 400", 400, 180, 8.6, 13.5, 21, 66.3, 84.5, 23130, 1160, 1320, 146],
+    ["IPE 450", 450, 190, 9.4, 14.6, 21, 77.7, 98.8, 33740, 1500, 1680, 176],
+    ["IPE 500", 500, 200, 10.2, 16.0, 24, 90.7, 115.5, 48200, 1930, 2140, 214],
+    ["IPE 550", 550, 210, 11.1, 17.2, 24, 106.0, 134.0, 67120, 2440, 2670, 254],
+    ["IPE 600", 600, 220, 12.0, 19.0, 24, 122.0, 156.0, 92080, 3070, 3387, 308],
+  ],
+  IPN: [
+    ["IPN 80", 80, 42, 3.9, 5.9, 3.9, 5.95, 7.58, 77.8, 19.5, 6.29, 3.00],
+    ["IPN 100", 100, 50, 4.5, 6.8, 4.5, 8.32, 10.6, 171, 34.2, 12.2, 4.88],
+    ["IPN 120", 120, 58, 5.1, 7.7, 5.1, 11.2, 14.2, 328, 54.7, 21.5, 7.41],
+    ["IPN 140", 140, 66, 5.7, 8.6, 5.7, 14.4, 18.3, 573, 81.9, 35.2, 10.7],
+    ["IPN 160", 160, 74, 6.3, 9.5, 6.3, 17.9, 22.8, 935, 117, 54.7, 14.8],
+    ["IPN 180", 180, 82, 6.9, 10.4, 6.9, 21.9, 27.9, 1450, 161, 81.3, 19.8],
+    ["IPN 200", 200, 90, 7.5, 11.3, 7.5, 26.3, 33.5, 2140, 214, 117, 26.0],
+    ["IPN 220", 220, 98, 8.1, 12.2, 8.1, 31.1, 39.6, 3060, 278, 162, 33.1],
+    ["IPN 240", 240, 106, 8.7, 13.1, 8.7, 36.2, 46.1, 4250, 354, 221, 41.7],
+    ["IPN 260", 260, 113, 9.4, 14.1, 9.4, 41.9, 53.4, 5740, 442, 288, 51.0],
+    ["IPN 300", 300, 125, 10.8, 16.2, 10.8, 54.2, 69.1, 9800, 653, 451, 72.2],
+    ["IPN 340", 340, 137, 12.2, 18.3, 12.2, 68.1, 86.8, 15700, 923, 674, 98.4],
+    ["IPN 360", 360, 143, 13.0, 19.5, 13.0, 76.2, 97.1, 19610, 1090, 818, 114],
+    ["IPN 400", 400, 155, 14.4, 21.6, 14.4, 92.6, 118.0, 29210, 1460, 1160, 149],
+    ["IPN 450", 450, 170, 16.2, 24.3, 16.2, 115.0, 147.0, 45850, 2040, 1730, 203],
+    ["IPN 500", 500, 185, 18.0, 27.0, 18.0, 141.0, 180.0, 68740, 2750, 2480, 268],
+    ["IPN 550", 550, 200, 19.0, 30.0, 19.0, 167.0, 213.0, 99180, 3610, 3490, 349],
+  ],
+};
+
+// ---------------------------------------------------------------------------
+// Utilidades de formato
+// ---------------------------------------------------------------------------
+const fmt = (x, d = 2) => Number.isFinite(x)
+  ? x.toLocaleString("es-CL", { minimumFractionDigits: d, maximumFractionDigits: d })
+  : "—";
+const $ = (id) => document.getElementById(id);
+const num = (id) => { const v = parseFloat($(id).value); return Number.isFinite(v) ? v : 0; };
+const L = String.raw;
+const tn = (x, d = 2) => Number.isFinite(x)
+  ? fmt(x, d).replace(/,/g, "{,}").replace(/\./g, "\\,")
+  : "\\infty";
+const LE = L`\le`, GE = L`\ge`;
+const cmp = (a, b) => (a <= b + 1e-9 ? LE : ">");
+const texTxt = (t) => t.replace(/—/g, "---").replace(/%/g, "\\%");
+const estado = (dc) => (dc <= 1 + 1e-9 ? "Cumple" : "No cumple");
+const tag = (ok, txt) => `<span class="tag ${ok ? "ok" : "bad"}">${txt}</span>`;
+const tagDC = (dc) => tag(dc <= 1 + 1e-9, `D/C = ${fmt(dc, 3)}`);
+
+class Memo {
+  constructor() { this.out = []; this.tex = []; this.n = 0; }
+  h(t) { memoTexCerrar(this); this.n++; this.out.push(`<h3>${this.n}. ${t}</h3>`); this.tex.push(`\\section{${texTxt(t)}}`); }
+  sub(t) { memoTexCerrar(this); this.out.push(`<h4>${t}</h4>`); this.tex.push(`\\subsection{${texTxt(t)}}`); }
+  row(k, v, ref) { this.out.push({ k, v, ref }); }
+  note(t, tt) { this.out.push(`<div class="note">${t}</div>`); if (tt) this.tex.push(`\\textit{${tt}}\n`); }
+  eq(s, ref) { this.tex.push(texDisplay(s, ref)); this.out.push({ tex: s + (ref ? `\\tag*{(${ref})}` : ""), eq: true }); }
+  p(s, soloTex) { memoTexP(this, s); if (!soloTex) this.out.push({ tex: s }); }
+  raw(t) { memoTexCerrar(this); this.tex.push(t); }
+  texto() { memoTexCerrar(this); return this.tex.join("\n"); }
+  html() { return memoHTML(this.out); }
+}
+const NOMEMO = { h() {}, sub() {}, row() {}, note() {}, eq() {}, p() {}, raw() {} };
+
+// ---------------------------------------------------------------------------
+// Datos
+// ---------------------------------------------------------------------------
+function leerDatos() {
+  const qn = $("QnUser").value.trim();
+  return {
+    L: num("L") * 100, tramos: +$("tramos").value, ehSel: $("eh").value,
+    qL: num("qL"), qD: num("qD"), flechaLim: +$("flechaLim").value, ppDem: $("ppDem").checked, puntual: $("puntual").checked, heli: $("heli").checked,
+    dM: num("dMalla"), sM: num("sMalla"),
+    As: Math.PI * (num("dMalla") / 10) ** 2 / 4 * 100 / num("sMalla"),
+    cnv: +$("cnv").value, cd: $("cd").value, hs: num("hs") / 10, pos: $("pos").value, fc: num("fc"),
+    QnUser: qn === "" ? null : num("QnUser") * 1000,
+    viga: $("cViga").checked, Lv: num("Lv") * 100, aceroV: $("aceroV").value,
+    ...perfilViga(),
+  };
+}
+function reglasDatos() {
+  const r = [["L", 0, true], ["qL", 0], ["qD", 0], ["dMalla", 0, true], ["sMalla", 0, true], ["fc", FC_MIN]];
+  if ($("cnv").value !== "0") r.push(["hs", 0, true]);
+  if ($("QnUser").value.trim() !== "") r.push(["QnUser", 0, true]);
+  if ($("cViga").checked) r.push(["Lv", 0, true]);
+  if ($("cViga").checked && $("serieV").value === "otro") r.push(["Asv", 0, true]);
+  return r;
+}
+
+// Perfil de la viga de apoyo: del catálogo (dimensiones en cm) o solo el área si es "Otro"
+function perfilViga() {
+  const serie = $("serieV").value;
+  if (serie === "otro") return { pv: null, Asv: num("Asv") };
+  const row = CATALOGO[serie][$("perfilV").selectedIndex] || CATALOGO[serie][0];
+  const [nombre, h, b, tw, tf, , peso, A] = row;
+  return { pv: { nombre, h: h / 10, b: b / 10, tw: tw / 10, tf: tf / 10, peso, A }, Asv: A };
+}
+function llenarPerfilesV() {
+  const serie = $("serieV").value, otro = serie === "otro";
+  $("asvBox").classList.toggle("hidden", !otro);
+  $("perfilV").disabled = otro;
+  if (otro) { $("perfilV").innerHTML = ""; return; }
+  const prev = $("perfilV").value;
+  $("perfilV").innerHTML = CATALOGO[serie].map(r => `<option>${r[0]}</option>`).join("");
+  if ([...$("perfilV").options].some(o => o.value === prev)) $("perfilV").value = prev;
+}
+
+// Sobrecarga admisible de la Tabla I: se usa la columna de la primera luz tabulada ≥ L (sin interpolar,
+// del lado seguro). Devuelve { q, Lt } o { q: NaN } si L supera la mayor luz de la tabla.
+function tablaI(eh, Lcm) {
+  const Lm = Lcm / 100;
+  const i = LUCES.findIndex(x => x >= Lm - 1e-9);
+  if (i < 0) return { q: NaN, Lt: NaN };
+  return { q: TABLA_I[eh][i], Lt: LUCES[i] };
+}
+
+// Resistencia nominal de un conector embebido en losa con placa de nervios perpendiculares (AISC 360-16 I8-1)
+function conector(d, m) {
+  const D = CONECTOR[d.cd];
+  const Asa = Math.PI * D.d ** 2 / 4;
+  const Ec = 15100 * Math.sqrt(d.fc);
+  const Rg = d.cnv >= 2 ? 0.85 : 1.0;
+  const Rp = d.pos === "fuerte" ? 0.75 : 0.60;
+  const Q1 = 0.5 * Asa * Math.sqrt(d.fc * Ec);
+  const Q2 = Rg * Rp * Asa * FU_CON;
+  const QnA = Math.min(Q1, Q2);
+  const Qn = d.QnUser ?? QnA;
+  m.row(`Conector ${D.txt}: A<sub>sa</sub> = π d²/4`, `${fmt(Asa, 2)} cm²`);
+  m.row("Módulo elástico del hormigón E<sub>c</sub> = 15.100 √f'<sub>c</sub>", `${fmt(Ec, 0)} kgf/cm²`, "ACI 318-08 8.5.1");
+  m.row(`R<sub>g</sub> (${d.cnv} por valle) ; R<sub>p</sub> (posición ${d.pos === "fuerte" ? "fuerte" : "débil"})`, `${fmt(Rg, 2)} ; ${fmt(Rp, 2)}`, "I8.2a");
+  m.eq(L`E_c = 15\,100\sqrt{f'_c} = 15\,100\sqrt{${tn(d.fc, 0)}} = ${tn(Ec, 0)}\ \mathrm{kgf/cm^2}`);
+  m.eq(L`Q_n = 0{,}5\,A_{sa}\sqrt{f'_c E_c} = 0{,}5 \cdot ${tn(Asa, 3)}\sqrt{${tn(d.fc, 0)} \cdot ${tn(Ec, 0)}} = ${tn(Q1, 0)}\ \mathrm{kgf}`, "I8-1");
+  m.eq(L`Q_n \le R_g R_p A_{sa} F_u = ${tn(Rg, 2)} \cdot ${tn(Rp, 2)} \cdot ${tn(Asa, 3)} \cdot ${tn(FU_CON, 0)} = ${tn(Q2, 0)}\ \mathrm{kgf}`, "I8-1");
+  m.row("Q<sub>n</sub> según AISC 360-16", `${fmt(QnA / 1000, 2)} tf`, "I8-1");
+  if (d.QnUser != null) m.row("Q<sub>n</sub> usado (dato del fabricante del conector)", `${fmt(Qn / 1000, 2)} tf`);
+  return { Asa, Ec, Rg, Rp, Q1, Q2, QnA, Qn, D };
+}
+
+// ---------------------------------------------------------------------------
+// Verificación para un espesor de hormigón sobre la cresta e_h [cm]
+// ---------------------------------------------------------------------------
+function verificar(eh, d, m) {
+  const t4 = TABLA_IV[eh];
+  const et = t4.et;
+  const cond = Math.min(d.tramos, 3) - 1;                 // 0 simple, 1 doble, 2 triple
+  const nomTramo = ["simple", "doble", "triple"][cond];
+  const checks = [];
+  let sinVerificar = [];
+
+  // 1. Peso propio y cubicación (Tabla IV)
+  m.h("Peso propio y cubicación");
+  m.row("Espesor de hormigón sobre la cresta e<sub>h</sub>", `${fmt(eh, 1)} cm`);
+  m.row("Espesor total e<sub>t</sub> = h<sub>r</sub> + e<sub>h</sub>", `${fmt(et, 2)} cm`, "Tabla IV");
+  m.row("Volumen de hormigón", `${fmt(t4.V, 3)} m³/m²`, "Tabla IV");
+  m.row("Peso propio: hormigón + placa", `${fmt(t4.ppH, 0)} + ${fmt(PLACA.peso, 0)} = ${fmt(t4.pp, 0)} kgf/m²`, "Tabla IV");
+  m.row("Inercia de la sección compuesta (deformaciones)", `${fmt(t4.Ic, 0)} cm⁴/m`, "Ficha técnica");
+  m.eq(L`e_t = h_r + e_h = ${tn(PLACA.hr, 2)} + ${tn(eh, 1)} = ${tn(et, 2)}\ \mathrm{cm}`);
+  m.p(L`El peso propio se obtiene de la tabla de cubicación del fabricante (Tabla IV), sin considerar pérdidas de hormigón.`, true);
+
+  // 2. Capacidad de carga (Tabla I)
+  m.h("Capacidad de carga de la losa compuesta");
+  const qSC = d.qD + d.qL;
+  const qBase = qSC + (d.ppDem ? t4.pp : 0);
+  const fP = d.puntual ? 1.3 : 1;
+  const qDem = qBase * fP;
+  const t1 = tablaI(eh, d.L);
+  m.row("Carga permanente adicional + sobrecarga de uso", `${fmt(d.qD, 0)} + ${fmt(d.qL, 0)} = ${fmt(qSC, 0)} kgf/m²`);
+  if (d.ppDem) m.row("Peso propio sumado a la demanda (criterio conservador)", `${fmt(t4.pp, 0)} kgf/m²`);
+  if (d.puntual) m.row("Amplificación por cargas puntuales", "× 1,30", "Manual, pto. 7");
+  m.row("Sobrecarga solicitante q", `${fmt(qDem, 0)} kgf/m²`);
+  m.eq(L`q = \left(q_D + q_L${d.ppDem ? L` + PP` : ""}\right)${d.puntual ? L`\cdot 1{,}30` : ""} = \left(${tn(d.qD, 0)} + ${tn(d.qL, 0)}${d.ppDem ? L` + ${tn(t4.pp, 0)}` : ""}\right)${d.puntual ? L`\cdot 1{,}30` : ""} = ${tn(qDem, 0)}\ \mathrm{kgf/m^2}`);
+  let dc1;
+  if (!Number.isFinite(t1.q)) {
+    dc1 = Infinity;
+    sinVerificar.push("la separación entre apoyos supera la mayor luz de la Tabla I (4,0 m)");
+    m.note("La separación entre apoyos supera 4,0 m, la mayor luz de la Tabla I. Fuera del alcance de las tablas del fabricante.",
+      L`La separación entre apoyos supera 4,0 m, la mayor luz de la Tabla I; queda fuera del alcance de las tablas del fabricante.`);
+  } else {
+    dc1 = qDem / t1.q;
+    m.row(`Columna de la tabla: primera luz tabulada ≥ L = ${fmt(d.L / 100, 2)} m`, `${fmt(t1.Lt, 1)} m`);
+    m.row("Sobrecarga admisible q<sub>adm</sub>", `${fmt(t1.q, 0)} kgf/m²`, "Tabla I");
+    m.row("q / q<sub>adm</sub>", tagDC(dc1));
+    m.p(L`La sobrecarga admisible de la Tabla I considera el peso propio de la placa y del hormigón, y es la menor entre flexión, deflexión ($L/360$) y corte (SDI 1991). Para separaciones intermedias se usa, del lado seguro, la columna de la primera luz tabulada mayor o igual a la de diseño.`, true);
+    m.eq(L`\frac{q}{q_{adm}} = \frac{${tn(qDem, 0)}}{${tn(t1.q, 0)}} = ${tn(dc1, 3)} ${dc1 <= 1 ? LE : ">"} 1{,}0`, "Tabla I");
+  }
+  checks.push({ k: "Capacidad de carga (Tabla I)", dem: L`$q = ${tn(qDem, 0)}$ kgf/m$^2$`, cap: Number.isFinite(t1.q) ? L`$q_{adm} = ${tn(t1.q, 0)}$ kgf/m$^2$` : "fuera de tabla", dc: dc1, html: "Capacidad (Tabla I)" });
+
+  // 3. Control de deformaciones (Tabla II)
+  m.h("Control de deformaciones y condiciones de servicio");
+  const L2 = TABLA_II[eh][cond];
+  const dc2 = d.L / L2;
+  m.row(`Distancia máxima entre apoyos (${Math.min(d.tramos, 3)}${d.tramos >= 3 ? " o más" : ""} tramo${d.tramos > 1 ? "s" : ""}, e<sub>t</sub> = ${fmt(et, 2)} cm)`, `${fmt(L2, 0)} cm`, "Tabla II");
+  m.row("L / L<sub>máx</sub>", tagDC(dc2));
+  m.eq(L`\frac{L}{L_{m\acute{a}x}} = \frac{${tn(d.L, 0)}}{${tn(L2, 0)}} = ${tn(dc2, 3)} ${dc2 <= 1 ? LE : ">"} 1{,}0`, "Tabla II");
+  if (d.tramos > 1) m.note("Con tramos continuos se requiere armadura superior (negativa) en los apoyos intermedios, a definir por el ingeniero calculista.",
+    L`Con tramos continuos se requiere armadura superior (negativa) en los apoyos intermedios, a definir por el ingeniero calculista del proyecto.`);
+  // Flecha de servicio. Sin alzaprimas, el peso propio (hormigón fresco + placa) lo resiste la placa sola
+  // (I⁺ de la ficha, con E del acero); las cargas posteriores al fraguado van sobre la sección compuesta
+  // (inercia de la ficha referida al hormigón, ASCE, con E_c). Con alzaprimas, todo va sobre la compuesta.
+  m.sub("Flecha de servicio");
+  const alzaprimada = d.L > TABLA_III[eh][cond] + 1e-9 || d.heli;
+  const EcF = 15100 * Math.sqrt(d.fc), ES = 2100000;
+  const fl = (q, EI) => 5 * (q / 100) * d.L ** 4 / (384 * EI);
+  const qComp = (alzaprimada ? t4.pp : 0) + d.qD + d.qL;   // kgf/m² sobre la sección compuesta
+  const fPlaca = alzaprimada ? 0 : fl(t4.pp, ES * PLACA.I);
+  const fComp = fl(qComp, EcF * t4.Ic);
+  const flecha = fPlaca + fComp;
+  const fAdm = d.L / d.flechaLim;
+  const dcF = flecha / fAdm;
+  m.row("E<sub>c</sub> = 15.100 √f'<sub>c</sub> ; I<sub>c</sub> compuesta (referida al hormigón)", `${fmt(EcF, 0)} kgf/cm² ; ${fmt(t4.Ic, 0)} cm⁴/m`, "Ficha técnica");
+  if (!alzaprimada) {
+    m.row(`Placa sola con el peso propio (sin alzaprimas): ${fmt(t4.pp, 0)} kgf/m², E<sub>s</sub> · I<sup>+</sup> = 2.100.000 · ${fmt(PLACA.I, 2)}`, `δ<sub>1</sub> = ${fmt(fPlaca, 3)} cm`, "Ficha técnica");
+    m.row(`Sección compuesta con q<sub>D</sub> + q<sub>L</sub> = ${fmt(d.qD, 0)} + ${fmt(d.qL, 0)} = ${fmt(qComp, 0)} kgf/m²`, `δ<sub>2</sub> = ${fmt(fComp, 3)} cm`);
+    m.row("Flecha total δ = δ<sub>1</sub> + δ<sub>2</sub>", `${fmt(flecha, 3)} cm`);
+  } else {
+    m.row(`Sección compuesta con PP + q<sub>D</sub> + q<sub>L</sub> = ${fmt(t4.pp, 0)} + ${fmt(d.qD, 0)} + ${fmt(d.qL, 0)} = ${fmt(qComp, 0)} kgf/m² (losa alzaprimada)`, `δ = ${fmt(flecha, 3)} cm`);
+  }
+  m.row(`δ<sub>adm</sub> = L/${d.flechaLim}`, `${fmt(fAdm, 3)} cm`);
+  m.row("δ / δ<sub>adm</sub>", tagDC(dcF));
+  if (!alzaprimada) {
+    m.eq(L`\delta_1 = \frac{5\,PP\,L^4}{384\,E_s I^+} = \frac{5 \cdot ${tn(t4.pp / 100, 2)} \cdot ${tn(d.L, 0)}^4}{384 \cdot 2\,100\,000 \cdot ${tn(PLACA.I, 2)}} = ${tn(fPlaca, 3)}\ \mathrm{cm}`);
+    m.eq(L`\delta_2 = \frac{5\,(q_D + q_L)\,L^4}{384\,E_c I_c} = \frac{5 \cdot ${tn(qComp / 100, 2)} \cdot ${tn(d.L, 0)}^4}{384 \cdot ${tn(EcF, 0)} \cdot ${tn(t4.Ic, 0)}} = ${tn(fComp, 3)}\ \mathrm{cm}`);
+    m.eq(L`\frac{\delta_1 + \delta_2}{\delta_{adm}} = \frac{${tn(fPlaca, 3)} + ${tn(fComp, 3)}}{${tn(d.L, 0)}/${d.flechaLim}} = ${tn(dcF, 3)} ${dcF <= 1 ? LE : ">"} 1{,}0`);
+  } else {
+    m.eq(L`\delta = \frac{5\,(PP + q_D + q_L)\,L^4}{384\,E_c I_c} = \frac{5 \cdot ${tn(qComp / 100, 2)} \cdot ${tn(d.L, 0)}^4}{384 \cdot ${tn(EcF, 0)} \cdot ${tn(t4.Ic, 0)}} = ${tn(flecha, 3)}\ \mathrm{cm}`);
+    m.eq(L`\frac{\delta}{\delta_{adm}} = \frac{${tn(flecha, 3)}}{${tn(d.L, 0)}/${d.flechaLim}} = ${tn(dcF, 3)} ${dcF <= 1 ? LE : ">"} 1{,}0`);
+  }
+  m.p(alzaprimada
+    ? L`Con alzaprimas, el peso propio actúa sobre la sección compuesta al retirarlas. Se usa la inercia de la sección compuesta de la ficha, referida al hormigón según la ASCE, combinada con $E_c$. Las cargas se expresan en kgf/cm en una franja de 1 m. La fórmula de viga simplemente apoyada es conservadora para tramos continuos. No se incluyen los efectos diferidos (fluencia lenta y retracción).`
+    : L`Sin alzaprimas, el peso del hormigón fresco y de la placa lo resiste la placa sola (inercia efectiva $I^+$ de la ficha con el módulo del acero); las cargas aplicadas después del fraguado actúan sobre la sección compuesta, con la inercia de la ficha referida al hormigón y $E_c$. Las cargas se expresan en kgf/cm en una franja de 1 m. La fórmula de viga simplemente apoyada es conservadora para tramos continuos. No se incluyen los efectos diferidos (fluencia lenta y retracción).`, true);
+  checks.push({ k: L`Flecha de servicio ($L/${d.flechaLim}$)`, dem: L`$\delta = ${tn(flecha, 3)}$ cm`, cap: L`$\delta_{adm} = ${tn(fAdm, 3)}$ cm`, dc: dcF, html: "Flecha de servicio" });
+  checks.push({ k: "Deformaciones (Tabla II)", dem: L`$L = ${tn(d.L, 0)}$ cm`, cap: L`$L_{m\acute{a}x} = ${tn(L2, 0)}$ cm`, dc: dc2, html: "Deformación (Tabla II)" });
+
+  // 4. Alzaprimado temporal (Tabla III)
+  m.h("Alzaprimado temporal");
+  const L3 = TABLA_III[eh][cond];
+  const porLuz = d.L > L3 + 1e-9;
+  const nAlz = porLuz ? Math.ceil(d.L / L3 - 1e-9) - 1 : (d.heli ? 1 : 0);
+  const sepAlz = d.L / (nAlz + 1);
+  m.row(`Longitud máxima sin alzaprimado (tramo ${nomTramo})`, `${fmt(L3, 0)} cm`, "Tabla III");
+  m.row("¿Requiere alzaprimas?", nAlz > 0 ? `<span class="tag warn">Sí — ${nAlz} por tramo, a ${fmt(sepAlz, 0)} cm</span>` : tag(true, "No"));
+  m.eq(L`L = ${tn(d.L, 0)}\ \mathrm{cm} ${cmp(d.L, L3)} L_{s/a} = ${tn(L3, 0)}\ \mathrm{cm}`, "Tabla III");
+  if (porLuz) m.eq(L`n = \left\lceil \frac{L}{L_{s/a}} \right\rceil - 1 = \left\lceil \frac{${tn(d.L, 0)}}{${tn(L3, 0)}} \right\rceil - 1 = ${nAlz} \quad\Rightarrow\quad s = \frac{L}{n+1} = ${tn(sepAlz, 0)}\ \mathrm{cm}`);
+  m.p(nAlz > 0
+    ? L`Se requieren ${nAlz} línea${nAlz > 1 ? "s" : ""} de alzaprimas equidistantes por tramo${porLuz ? "" : L`, porque el afinado con helicóptero puede inducir vibraciones que afecten la adherencia entre el hormigón y la placa`}. Las alzaprimas se retiran cuando el hormigón alcance al menos el 80\,\% de su resistencia especificada (no antes de 10 días).`
+    : L`La placa resiste la etapa constructiva sin alzaprimas (peso del hormigón fresco y carga de construcción de 100 kgf/m$^2$ o 200 kgf puntual, SDI 1991).`, true);
+  if (d.heli && !porLuz) m.note("Afinado con helicóptero: el fabricante pide alzaprimas temporales aunque la luz no las exija.");
+
+  // 5. Malla de retracción
+  m.h("Armadura de retracción");
+  const dc4 = AS_MIN / d.As;
+  m.row("Malla en cada dirección", `φ${fmt(d.dM, 1)} a ${fmt(d.sM, 1)} cm`);
+  m.row("A<sub>s</sub> = (π φ²/4) · 100/s", `${fmt(d.As, 2)} cm²/m`);
+  m.eq(L`A_s = \frac{\pi\,\phi^2}{4}\cdot\frac{100}{s} = \frac{\pi \cdot ${tn(d.dM / 10, 2)}^2}{4}\cdot\frac{100}{${tn(d.sM, 1)}} = ${tn(d.As, 2)}\ \mathrm{cm^2/m}`);
+  m.row("A<sub>s,mín</sub>", `${fmt(AS_MIN, 2)} cm²/m`, "Tabla IV, nota 3");
+  m.row("A<sub>s,mín</sub> / A<sub>s</sub>", tagDC(dc4));
+  m.eq(L`\frac{A_{s,m\acute{\imath}n}}{A_s} = \frac{${tn(AS_MIN, 2)}}{${tn(d.As, 2)}} = ${tn(dc4, 3)} ${dc4 <= 1 ? LE : ">"} 1{,}0`);
+  const asACI = 0.0018 * 100 * eh;
+  m.p(L`La malla se ubica a 2,5 cm de la cara superior del hormigón, con acero A63-42H como mínimo. Se usa el mínimo del fabricante; como referencia, la cuantía $0{,}0018\,b\,e_h$ del ACI 318 aplicada al hormigón sobre la cresta daría ${tn(asACI, 2)} cm$^2$/m.`, true);
+  checks.push({ k: "Malla de retracción", dem: L`$A_{s,m\acute{\imath}n} = ${tn(AS_MIN, 2)}$ cm$^2$/m`, cap: L`$A_s = ${tn(d.As, 2)}$ cm$^2$/m`, dc: dc4, html: "Malla de retracción" });
+  const sMaxM = Math.min(5 * eh, 45);
+  const dc4b = d.sM / sMaxM;
+  m.row("Espaciamiento máximo s<sub>máx</sub> = mín(5 e<sub>h</sub> ; 45 cm)", `${fmt(d.sM, 1)} ${dc4b <= 1 + 1e-9 ? "≤" : ">"} ${fmt(sMaxM, 1)} cm ${tagDC(dc4b)}`, "ACI 318-08 7.12.2.2");
+  m.eq(L`s = ${tn(d.sM, 1)}\ \mathrm{cm} ${cmp(d.sM, sMaxM)} s_{m\acute{a}x} = \min(5 e_h;\ 45) = \min(${tn(5 * eh, 0)};\ 45) = ${tn(sMaxM, 1)}\ \mathrm{cm}`, "ACI 318-08 7.12.2.2");
+  checks.push({ k: "Espaciamiento de la malla", dem: L`$s = ${tn(d.sM, 1)}$ cm`, cap: L`$s_{m\acute{a}x} = ${tn(sMaxM, 1)}$ cm`, dc: dc4b, html: "Espaciamiento de la malla" });
+
+  // 6. Conectores de corte en los apoyos
+  m.h("Conectores de corte en los apoyos");
+  let con = null, viga = null;
+  if (d.cnv === 0) {
+    sinVerificar.push("no hay conectores de corte, y las tablas del fabricante suponen 11,2 tf/m en cada apoyo");
+    m.note("Sin conectores de corte. Las sobrecargas admisibles de la Tabla I suponen conectores con una resistencia última de 11,2 tf por metro de ancho en todos los apoyos, por lo que la losa queda sin verificar.",
+      L`Sin conectores de corte. Las sobrecargas admisibles de la Tabla I suponen conectores con una resistencia última de 11,2 tf por metro de ancho en todos los apoyos, por lo que la losa queda sin verificar.`);
+  } else {
+    con = conector(d, m);
+    const vpm = 100 / SEP_VALLE;
+    const R = d.cnv * vpm * con.Qn;
+    const dc5 = V_APOYO / R;
+    m.sub("Resistencia por metro de ancho");
+    m.row("Valles por metro de ancho (3 por cada 95 cm)", fmt(vpm, 3));
+    m.row("Resistencia de los conectores por metro", `${fmt(R / 1000, 2)} tf/m`);
+    m.row("Mínimo exigido por el fabricante", `${fmt(V_APOYO / 1000, 1)} tf/m`, "Tabla I, nota d");
+    m.row("11,2 / R", tagDC(dc5));
+    m.p(L`Se compara la resistencia nominal $Q_n$, sin factor $\phi$, igual que en el Capítulo I del AISC 360-16. Conviene confirmar con Cintac si la resistencia última de 11,2 tf/m de la nota d se refiere a $Q_n$ o a $\phi Q_n$.`, true);
+    m.eq(L`R = n_v \cdot \frac{100}{${tn(SEP_VALLE, 2)}} \cdot Q_n = ${d.cnv} \cdot ${tn(vpm, 3)} \cdot ${tn(con.Qn, 0)} = ${tn(R, 0)}\ \mathrm{kgf/m}`);
+    m.eq(L`\frac{11\,200}{R} = \frac{11\,200}{${tn(R, 0)}} = ${tn(dc5, 3)} ${dc5 <= 1 ? LE : ">"} 1{,}0`, "Tabla I, nota d");
+    checks.push({ k: "Conectores en apoyos", dem: L`$11{,}2$ tf/m`, cap: L`$R = ${tn(R / 1000, 2)}$ tf/m`, dc: dc5, html: "Conectores en apoyos" });
+
+    m.sub("Altura y recubrimiento del conector");
+    const sobre = d.hs - PLACA.hr, recub = et - d.hs;
+    const dc6a = sobre > 0 ? 3.8 / sobre : Infinity, dc6b = recub > 0 ? 1.3 / recub : Infinity;
+    m.row("Altura sobre la cresta h<sub>s</sub> − h<sub>r</sub> (mínimo 38 mm)", `${fmt(sobre * 10, 1)} mm ${tagDC(dc6a)}`, "I8.2d");
+    m.row("Recubrimiento sobre el conector e<sub>t</sub> − h<sub>s</sub> (mínimo 13 mm)", `${fmt(recub * 10, 1)} mm ${tagDC(dc6b)}`, "I8.2d");
+    m.eq(L`h_s - h_r = ${tn(d.hs * 10, 1)} - ${tn(PLACA.hr * 10, 1)} = ${tn(sobre * 10, 1)}\ \mathrm{mm} ${cmp(38, sobre * 10) === LE ? GE : "<"} 38\ \mathrm{mm}`, "I8.2d");
+    m.eq(L`e_t - h_s = ${tn(et * 10, 1)} - ${tn(d.hs * 10, 1)} = ${tn(recub * 10, 1)}\ \mathrm{mm} ${cmp(13, recub * 10) === LE ? GE : "<"} 13\ \mathrm{mm}`, "I8.2d");
+    if (sobre + recub < 3.8 + 1.3) m.note(`Con e<sub>h</sub> = ${fmt(eh, 0)} cm no cabe un conector que sobresalga 38 mm de la cresta y quede con 13 mm de recubrimiento (se necesitan 51 mm sobre la cresta).`,
+      L`Con $e_h = ${tn(eh, 0)}$ cm no cabe un conector que sobresalga 38 mm de la cresta y quede con 13 mm de recubrimiento (se necesitan 51 mm de hormigón sobre la cresta).`);
+    checks.push({ k: L`Altura del conector sobre la cresta`, dem: "38 mm", cap: L`${tn(sobre * 10, 1)} mm`, dc: dc6a, html: "Altura del conector" });
+    checks.push({ k: L`Recubrimiento del conector`, dem: "13 mm", cap: L`${tn(recub * 10, 1)} mm`, dc: dc6b, html: "Recubrimiento del conector" });
+
+    m.sub("Conectores sobre el ala de la viga");
+    if (d.pv) {
+      const dd = con.D.d, tf = d.pv.tf, bf = d.pv.b;
+      const dc8 = dd / (2.5 * tf);
+      const bNec = (d.cnv - 1) * 4 * dd + 1.6 * dd;
+      const dc9 = bNec / bf;
+      m.row(`Perfil ${d.pv.nombre}: b<sub>f</sub> ; t<sub>f</sub>`, `${fmt(bf * 10, 0)} mm ; ${fmt(tf * 10, 1)} mm`);
+      m.row("Diámetro del conector d ≤ 2,5 t<sub>f</sub>", `${fmt(dd * 10, 1)} ${dc8 <= 1 + 1e-9 ? "≤" : ">"} ${fmt(2.5 * tf * 10, 1)} mm ${tagDC(dc8)}`, "I8.1");
+      m.row(`Ancho del ala para ${d.cnv} conector${d.cnv > 1 ? "es" : ""}: ${d.cnv > 1 ? "4d entre ejes + " : ""}cabeza ≈ 1,6d`, `${fmt(bNec * 10, 0)} ${dc9 <= 1 + 1e-9 ? "≤" : ">"} ${fmt(bf * 10, 0)} mm ${tagDC(dc9)}`, "I8.2d");
+      m.eq(L`d = ${tn(dd * 10, 1)}\ \mathrm{mm} ${cmp(dd, 2.5 * tf)} 2{,}5\,t_f = 2{,}5 \cdot ${tn(tf * 10, 1)} = ${tn(2.5 * tf * 10, 1)}\ \mathrm{mm}`, "I8.1");
+      m.eq(L`b_{nec} = ${d.cnv > 1 ? L`(${d.cnv} - 1)\cdot 4d + ` : ""}1{,}6\,d = ${tn(bNec * 10, 0)}\ \mathrm{mm} ${cmp(bNec, bf)} b_f = ${tn(bf * 10, 0)}\ \mathrm{mm}`, "I8.2d");
+      m.p(L`El límite $d \le 2{,}5\,t_f$ no se aplica si el conector queda directamente sobre el alma. El ancho necesario considera la separación transversal mínima de $4d$ entre ejes y el diámetro de la cabeza del conector (criterio práctico).`, true);
+      checks.push({ k: L`Diámetro del conector ($d \le 2{,}5\,t_f$)`, dem: L`${tn(dd * 10, 1)} mm`, cap: L`${tn(2.5 * tf * 10, 1)} mm`, dc: dc8, html: "Conector y ala (d ≤ 2,5 tf)", viga: true });
+      checks.push({ k: "Ancho del ala para los conectores", dem: L`${tn(bNec * 10, 0)} mm`, cap: L`${tn(bf * 10, 0)} mm`, dc: dc9, html: "Ancho del ala", viga: true });
+    } else {
+      m.note("Perfil de la viga no definido: verifique d ≤ 2,5 t<sub>f</sub> (I8.1) y que el ala tenga ancho para los conectores (4d entre ejes, I8.2d).",
+        L`Perfil de la viga no definido: se debe verificar $d \le 2{,}5\,t_f$ (I8.1) y que el ala tenga ancho para los conectores ($4d$ entre ejes, I8.2d).`);
+    }
+
+    // 7. Conectores de la viga compuesta (opcional)
+    if (d.viga) {
+      m.h("Conectores de la viga de apoyo (acción compuesta completa)");
+      const Fy = ACEROS[d.aceroV];
+      const bef = Math.min(d.Lv / 4, d.L);
+      const Ac = bef * eh;
+      const C = 0.85 * d.fc * Ac, T = d.Asv * Fy, Vh = Math.min(C, T);
+      const nMit = Math.ceil(Vh / con.Qn - 1e-9);
+      const nValles = Math.floor(d.Lv / 2 / SEP_VALLE + 1e-9);
+      const nMax = nValles * d.cnv;
+      const dc7 = nMax > 0 ? nMit / nMax : Infinity;
+      const sMax = Math.min(8 * et, 90);
+      if (d.pv) m.row(`Perfil ${d.pv.nombre} (${d.aceroV}): A<sub>s</sub>`, `${fmt(d.Asv, 2)} cm²`, "Catálogo Cintac");
+      const wr = (DECK.vb + DECK.w) / 10;                  // ancho medio del nervio de hormigón [cm]
+      const dcW = 5 / wr;
+      m.row("Ancho medio del nervio de hormigón w<sub>r</sub> (geometría aproximada de la ficha)", `${fmt(wr * 10, 0)} ≥ 50 mm ${tagDC(dcW)}`, "I3.2c");
+      m.row("Altura del nervio h<sub>r</sub> ≤ 75 mm ; hormigón sobre la cresta ≥ 50 mm", `${fmt(PLACA.hr * 10, 1)} mm ; ${fmt(eh * 10, 0)} mm`, "I3.2c");
+      checks.push({ k: L`Ancho medio del nervio ($w_r \ge 50$ mm)`, dem: "50 mm", cap: L`${tn(wr * 10, 0)} mm`, dc: dcW, html: "Ancho del nervio", viga: true });
+      m.row("Ancho efectivo b = mín(L<sub>v</sub>/4 ; s)", `${fmt(bef, 1)} cm`, "I3.1a");
+      m.row("Área de hormigón sobre la cresta A<sub>c</sub> = b · e<sub>h</sub>", `${fmt(Ac, 0)} cm²`, "I3.2c");
+      m.row("0,85 f'<sub>c</sub> A<sub>c</sub>", `${fmt(C / 1000, 2)} tf`, "I3-1a");
+      m.row(`A<sub>s</sub> F<sub>y</sub> (${d.aceroV})`, `${fmt(T / 1000, 2)} tf`, "I3-1b");
+      m.row("Corte horizontal V'", `${fmt(Vh / 1000, 2)} tf`, "I3.2d");
+      m.row("Conectores entre el apoyo y el centro de la viga n = V'/Q<sub>n</sub>", `${nMit}`);
+      m.row("Conectores totales en la viga (2n)", `${2 * nMit}`);
+      m.row(`Máximo que cabe en media viga (${nValles} valles × ${d.cnv})`, `${nMax} ${tagDC(dc7)}`);
+      m.eq(L`b = \min\left(\frac{L_v}{4};\ s\right) = \min\left(\frac{${tn(d.Lv, 0)}}{4};\ ${tn(d.L, 0)}\right) = ${tn(bef, 1)}\ \mathrm{cm}`, "I3.1a");
+      m.eq(L`0{,}85 f'_c A_c = 0{,}85 \cdot ${tn(d.fc, 0)} \cdot ${tn(bef, 1)} \cdot ${tn(eh, 1)} = ${tn(C, 0)}\ \mathrm{kgf}`, "I3-1a");
+      m.eq(L`A_s F_y = ${tn(d.Asv, 2)} \cdot ${tn(Fy, 0)} = ${tn(T, 0)}\ \mathrm{kgf}`, "I3-1b");
+      m.eq(L`n = \left\lceil \frac{V'}{Q_n} \right\rceil = \left\lceil \frac{${tn(Vh, 0)}}{${tn(con.Qn, 0)}} \right\rceil = ${nMit}`, "I8.2c");
+      m.p(L`Con los nervios perpendiculares a la viga se desprecia el hormigón bajo la cresta de la placa (I3.2c). El número $n$ se dispone a cada lado del punto de momento máximo, por lo que la viga simplemente apoyada lleva $2n = ${2 * nMit}$ conectores.`, true);
+      if (dc7 <= 1) m.row("Disposición", `${d.cnv} conector${d.cnv > 1 ? "es" : ""} en todos los valles, cada ${fmt(SEP_VALLE, 1)} cm ≤ ${fmt(sMax, 1)} cm (también lo exige la nota d)`, "I8.2d");
+      else m.note("No caben los conectores para la acción compuesta completa: use acción compuesta parcial (verificar la viga con I3) o más conectores por valle.",
+        L`No caben los conectores para la acción compuesta completa: se debe usar acción compuesta parcial (verificar la viga con la sección I3) o más conectores por valle.`);
+      m.note("La placa debe quedar anclada a la viga a no más de 45 cm (conectores, soldadura tapón o tornillos), I3.2c(4). La resistencia a flexión de la viga compuesta no se verifica aquí.",
+        L`La placa debe quedar anclada a la viga a no más de 45 cm (conectores, soldadura tapón o tornillos), según I3.2c(4). La resistencia a flexión de la viga compuesta no se verifica en esta memoria.`);
+      checks.push({ k: "Conectores de la viga", dem: L`$n = ${nMit}$`, cap: L`$n_{m\acute{a}x} = ${nMax}$`, dc: dc7, html: "Conectores de la viga", viga: true });
+      viga = { Fy, bef, Ac, C, T, Vh, nMit, nMax, sMax };
+    }
+  }
+
+  const dcMax = Math.max(...checks.map(c => c.dc));
+  const ok = dcMax <= 1 + 1e-9 && sinVerificar.length === 0;
+  // La losa sola (sin los conectores de la viga): sirve para elegir el espesor automáticamente
+  const okLosa = Math.max(...checks.filter(c => !c.viga).map(c => c.dc)) <= 1 + 1e-9 && sinVerificar.length === 0;
+  return { eh, et, t4, qDem, t1, L2, L3, nAlz, sepAlz, checks, dcMax, ok, okLosa, sinVerificar, con, viga, nomTramo };
+}
+
+// ---------------------------------------------------------------------------
+// Memoria .tex
+// ---------------------------------------------------------------------------
+function documentoTex(d, r, cuerpo) {
+  const fecha = new Date().toLocaleDateString("es-CL", { day: "numeric", month: "long", year: "numeric" });
+  const fila = (a, b) => `${a} & ${b}\\\\`;
+  const datos = [
+    fila("Placa colaborante", L`Instadeck (Cintac), espesor ${tn(PLACA.e * 10, 1)} mm, acero estructural grado 37, galvanizado G-90`),
+    fila(L`Altura del nervio $h_r$ ; avance útil`, L`${tn(PLACA.hr * 10, 1)} mm ; ${tn(PLACA.avance * 10, 0)} mm (${PLACA.nervios} nervios)`),
+    fila(L`Separación entre vigas de apoyo $L$`, `${tn(d.L / 100, 2)} m`),
+    fila("Tramos continuos", d.tramos >= 3 ? "3 o más" : `${d.tramos}`),
+    fila(L`Espesor de hormigón sobre la cresta $e_h$`, `${tn(r.eh, 0)} cm${d.ehSel === "auto" ? " (el menor que cumple)" : ""}`),
+    fila(L`Sobrecarga de uso $q_L$`, L`${tn(d.qL, 0)} kgf/m$^2$`),
+    fila(L`Carga permanente adicional $q_D$`, L`${tn(d.qD, 0)} kgf/m$^2$`),
+    fila(L`Hormigón $f'_c$`, L`${tn(d.fc, 0)} kgf/cm$^2$ (mínimo 21 MPa, AISC 360-16 I1.3)`),
+    fila(L`Malla de retracción`, L`$\phi$${tn(d.dM, 1)} a ${tn(d.sM, 1)} cm en cada dirección ($A_s = ${tn(d.As, 2)}$ cm$^2$/m)`),
+    fila("Conectores en los apoyos", d.cnv ? `${d.cnv} por valle, ${CONECTOR[d.cd].txt}, $h_s = ${tn(d.hs * 10, 0)}$ mm` : "sin conectores"),
+  ].join("\n");
+  const resumen = r.checks.map(c => `${c.k} & ${c.dem} & ${c.cap} & ${tn(c.dc, 3)} & ${estado(c.dc)}\\\\`).join("\n");
+  const alcance = [
+    L`El diseño se basa en las tablas de la Ficha Técnica y del Manual Técnico de la placa Instadeck de Cintac (espesor 0,8 mm), calculadas por el fabricante según el Steel Deck Institute (1991). Los valores no se recalculan.`,
+    L`Las tablas suponen hormigón H25 como mínimo (se recomienda confirmar con Cintac a qué versión de la NCh 170 se refieren; según la NCh 170:2016, H25 corresponde a $f'_c = 25$ MPa), la placa fijada a la estructura en todos los valles, el giro restringido en los bordes discontinuos y conectores de corte con 11,2 tf por metro de ancho en cada apoyo.`,
+    L`No son aplicables a losas simplemente apoyadas con bordes laterales sin apoyo ni a losas con cargas vivas móviles (estacionamientos); en esos casos se debe consultar al fabricante.`,
+    d.ppDem ? L`Por criterio conservador, la demanda incluye el peso propio, aunque la Tabla I ya lo considera.` : L`La demanda se compara con la Tabla I sin sumar el peso propio, porque las sobrecargas admisibles del fabricante ya lo consideran (nota b).`,
+    L`Para luces intermedias se usa la columna de la primera luz tabulada mayor o igual a la de diseño, sin interpolar.`,
+    d.puntual ? L`Las cargas puntuales se representan con una carga uniforme equivalente amplificada en 30\,\%, como prediseño; no se verifica el punzonamiento del hormigón.` : L`No se consideran cargas puntuales; si existen, se debe usar una carga equivalente amplificada en 30\,\% y verificar el punzonamiento.`,
+    L`No se diseñan la armadura negativa sobre los apoyos intermedios, los voladizos, las aberturas ni la viga compuesta a flexión: deben ser definidos por el ingeniero calculista del proyecto.`,
+    ...(d.cnv && !d.pv ? [L`Sin perfil del catálogo no se verifican el diámetro del conector respecto del ala de la viga ($d \le 2{,}5\,t_f$, I8.1) ni el ancho del ala para los conectores, que se deben confirmar con el perfil real.`] : []),
+    ...(d.viga ? [L`El ancho medio del nervio $w_r$ se obtiene de la geometría de la placa medida del dibujo de la ficha (aproximada); se recomienda confirmarlo con Cintac.`] : []),
+    L`La resistencia de los conectores sigue la ecuación I8-1 del AISC 360-16 con los factores $R_g$ y $R_p$ para placas con nervios perpendiculares a la viga.`,
+  ].map(t => `\\item ${t}`).join("\n");
+  return L`\documentclass[11pt,letterpaper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-tabla,es-noshorthands,es-nolists]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+${TEX_ESTILO}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{fancyhdr}
+\setlength{\headheight}{14pt}
+\pagestyle{fancy}
+\fancyhf{}
+\chead{Diseño de losa colaborante}
+\lfoot{Memoria de cálculo --- Placa Instadeck (Cintac) y AISC 360-16 Cap. I}
+\rfoot{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+\allowdisplaybreaks
+
+\begin{document}
+
+\begin{center}
+{\Large\bfseries Memoria de Cálculo}\\[4pt]
+{\large Diseño de losa con placa colaborante}\\[2pt]
+Placa Instadeck 0,8 mm --- $L = ${tn(d.L / 100, 2)}$ m --- $e_h = ${tn(r.eh, 0)}$ cm\\[2pt]
+{\small ${fecha}}
+\end{center}
+
+\section{Datos de diseño}
+\begin{table}[H]
+\centering
+\caption{Datos de la losa colaborante.}
+\begin{tabular}{lp{8.5cm}}
+\toprule
+Parámetro & Valor\\
+\midrule
+${datos}
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Metodología}
+Se sigue el procedimiento del fabricante: con la separación entre vigas y la sobrecarga de uso se determina el espesor de hormigón requerido (Tabla I); luego se verifica el control de deformaciones (Tabla II) y la necesidad de alzaprimas temporales (Tabla III), y se obtienen la cubicación y el peso propio (Tabla IV). Además se verifican la malla de retracción y los conectores de corte en los apoyos según el AISC 360-16, Capítulo I.
+
+${cuerpo}
+
+\section{Alcance, hipótesis y limitaciones}
+\begin{itemize}
+${alcance}
+\end{itemize}
+
+\section{Resumen de resultados}
+\begin{table}[H]
+\centering
+\small
+\caption{Comparación demanda versus capacidad --- losa colaborante, $e_h = ${tn(r.eh, 0)}$ cm.}
+\begin{tabular}{lllcc}
+\toprule
+Verificación & Demanda & Capacidad & D/C & Estado\\
+\midrule
+${resumen}
+\bottomrule
+\end{tabular}
+\end{table}
+
+${r.nAlz > 0 ? L`Durante la construcción se requieren ${r.nAlz} línea${r.nAlz > 1 ? "s" : ""} de alzaprimas por tramo, a ${tn(r.sepAlz, 0)} cm.` : L`No se requieren alzaprimas durante la construcción.`}
+
+${r.sinVerificar.length
+    ? L`La losa \textbf{queda sin verificar}: ${texTxt(r.sinVerificar.join("; "))}.`
+    : L`Por lo tanto, como la relación demanda-capacidad máxima es $D/C = ${tn(r.dcMax, 3)}$ ${r.dcMax <= 1 ? L`$\le 1{,}0$` : L`$> 1{,}0$`}, la losa con placa Instadeck de 0,8 mm y $e_h = ${tn(r.eh, 0)}$ cm (espesor total ${tn(r.et, 2)} cm) \textbf{${r.ok ? "cumple" : "no cumple"}} con las verificaciones indicadas.`}
+
+\end{document}
+`;
+}
+
+// ---------------------------------------------------------------------------
+// Cálculo e interfaz
+// ---------------------------------------------------------------------------
+let ultimoTex = "", ultimoNombre = "memoria.tex", ultimoD = null, ultimoR = null;
+
+function calcular() {
+  $("vigaBox").classList.toggle("hidden", !$("cViga").checked);
+  ["cd", "hs", "pos", "cViga"].forEach(id => { $(id).disabled = $("cnv").value === "0"; });
+  limpiarInvalidos($("inputs"));
+  const malos = datosInvalidos(reglasDatos());
+  if (malos.length) {
+    $("resTitle").textContent = "Resultados";
+    $("summary").innerHTML = ""; $("memo").innerHTML = ""; $("alt").innerHTML = "";
+    $("verdict").innerHTML = avisoInvalidos(malos);
+    $("asOut").textContent = "—";
+    ultimoTex = ""; ultimoR = null;
+    return;
+  }
+  const d = leerDatos();
+  $("perfilInfo").innerHTML = d.pv
+    ? `h = ${fmt(d.pv.h * 10, 0)} mm · b<sub>f</sub> = ${fmt(d.pv.b * 10, 0)} mm · t<sub>f</sub> = ${fmt(d.pv.tf * 10, 1)} mm · A = ${fmt(d.pv.A, 2)} cm² · ${fmt(d.pv.peso, 1)} kgf/m`
+    : "Sin perfil del catálogo: el plano dibuja una viga genérica.";
+  $("asOut").textContent = `${fmt(d.As, 2)} cm²/m`;
+  if (d.cnv === 0) d.viga = false;
+
+  // Todos los espesores, para elegir el menor que cumple y para la tabla comparativa
+  const todos = EH.map(eh => verificar(eh, d, NOMEMO));
+  let eh;
+  if (d.ehSel === "auto") {
+    const primero = todos.find(t => t.okLosa);
+    eh = primero ? primero.eh : EH[EH.length - 1];
+  } else eh = +d.ehSel;
+
+  const m = new Memo();
+  m.out.push(`<h3>Datos de la placa</h3>`);
+  m.row("Placa", `Instadeck Cintac, e = ${fmt(PLACA.e * 10, 1)} mm, grado 37, G-90`);
+  m.row("Altura del nervio h<sub>r</sub> ; avance útil", `${fmt(PLACA.hr * 10, 1)} mm ; ${fmt(PLACA.avance * 10, 0)} mm`);
+  m.row("Peso de la placa", `${fmt(PLACA.peso, 2)} kgf/m²`);
+  m.row("I<sup>+</sup> ; S<sup>+</sup> (sección efectiva)", `${fmt(PLACA.I, 2)} cm⁴/m ; ${fmt(PLACA.S, 2)} cm³/m`, "Ficha técnica");
+  if (d.ehSel === "auto") m.note(todos.some(t => t.okLosa)
+    ? `Espesor elegido automáticamente: e<sub>h</sub> = ${eh} cm, el menor de la tabla que cumple todas las verificaciones.`
+    : "Ningún espesor de la tabla cumple: se muestra el de 12 cm. Reduzca la separación entre vigas o revise los datos.");
+  const r = verificar(eh, d, m);
+
+  // Tarjetas de resumen
+  const cards = [
+    { t: "Espesor total", v: `${fmt(r.et, 2)} cm`, s: `e<sub>h</sub> = ${eh} cm · PP = ${fmt(r.t4.pp, 0)} kgf/m²`, r: 0, sin: true },
+    ...[r.checks.find(c => c.html.startsWith("Capacidad")), r.checks.find(c => c.html.startsWith("Deformación"))].map(c => ({ t: c.html, v: fmt(c.dc, 3), s: c.html.startsWith("Capacidad") ? `q = ${fmt(r.qDem, 0)} / ${fmt(r.t1.q, 0)} kgf/m²` : `L = ${fmt(d.L, 0)} / ${fmt(r.L2, 0)} cm`, r: c.dc })),
+    { t: "Alzaprimas", v: r.nAlz ? `${r.nAlz} por tramo` : "No", s: r.nAlz ? `separación ${fmt(r.sepAlz, 0)} cm` : `L ≤ ${fmt(r.L3, 0)} cm`, r: 0, sin: true },
+  ];
+  const otra = r.checks.filter(c => !/^(Capacidad|Deformación)/.test(c.html)).reduce((a, c) => (c.dc > (a?.dc ?? -1) ? c : a), null);
+  if (otra) cards.push({ t: otra.html, v: fmt(otra.dc, 3), s: "verificación más exigida del resto", r: otra.dc });
+  $("summary").innerHTML = cards.map(c => {
+    const w = Math.min(100, Math.max(0, c.r * 100));
+    return `<div class="card"><div class="t">${c.t}</div><div class="v">${c.v}</div>
+      ${c.sin ? "" : `<div class="bar ${c.r > 1 ? "bad" : ""}"><i style="width:${w}%"></i></div>`}<div class="s">${c.s}</div></div>`;
+  }).join("");
+
+  $("resTitle").textContent = `Resultados — Losa colaborante Instadeck · L = ${fmt(d.L / 100, 2)} m · e<sub>h</sub> = ${eh} cm`.replace(/<\/?sub>/g, "");
+  const rm = Number.isFinite(r.dcMax) ? fmt(r.dcMax, 3) : "∞";
+  $("verdict").innerHTML = r.sinVerificar.length
+    ? `<div class="verdict bad">✘ La losa queda SIN VERIFICAR — ${r.sinVerificar.join("; ")} · razón máxima = ${rm}</div>`
+    : `<div class="verdict ${r.ok ? "ok" : "bad"}">${r.ok ? "✔ La losa CUMPLE" : r.okLosa ? `✘ La losa cumple, pero no la viga de apoyo (${r.checks.filter(c => c.viga && c.dc > 1 + 1e-9).map(c => c.html.toLowerCase()).join(", ")})` : "✘ La losa NO CUMPLE"} — razón máxima = ${rm}${r.nAlz ? ` · requiere ${r.nAlz} línea${r.nAlz > 1 ? "s" : ""} de alzaprimas por tramo` : ""}</div>`;
+  $("memo").innerHTML = m.html();
+
+  // Tabla comparativa de espesores
+  $("alt").innerHTML = `<div class="tablaWrap"><table class="alt"><tr><th>e<sub>h</sub> [cm]</th><th>e<sub>t</sub> [cm]</th><th>PP [kgf/m²]</th><th>Hormigón [m³/m²]</th><th>Tabla I</th><th>Tabla II</th><th>Flecha</th><th>Alzaprimas</th><th>Estado</th><th></th></tr>${todos.map(t => {
+    const c1 = t.checks.find(c => c.html.startsWith("Capacidad")).dc, c2 = t.checks.find(c => c.html.startsWith("Deformación")).dc,
+      cF = t.checks.find(c => c.html.startsWith("Flecha")).dc;
+    return `<tr><td>${t.eh}</td><td>${fmt(t.et, 2)}</td><td>${fmt(t.t4.pp, 0)}</td><td>${fmt(t.t4.V, 3)}</td><td>${fmt(c1, 3)}</td><td>${fmt(c2, 3)}</td><td>${fmt(cF, 3)}</td><td>${t.nAlz ? `${t.nAlz} a ${fmt(t.sepAlz, 0)} cm` : "no"}</td><td>${t.sinVerificar.length ? '<span class="tag warn">sin verificar</span>' : tag(t.okLosa, t.okLosa ? "cumple" : "no cumple")}</td><td>${t.eh === eh ? '<span class="tag ok">seleccionado</span>' : ""}</td></tr>`;
+  }).join("")}</table></div>
+  <div class="unit" style="margin-top:8px">Mismas cargas, luz y conectores. Tabla I, Tabla II y flecha: razón D/C. El estado incluye también la malla y los conectores en los apoyos (no los de la viga).</div>`;
+
+  ultimoD = d; ultimoR = r;
+  ultimoTex = documentoTex(d, r, m.texto());
+  ultimoNombre = `memoria_placa_colaborante_L${fmt(d.L / 100, 2).replace(",", "_")}_eh${eh}.tex`;
+}
+
+// ---------------------------------------------------------------------------
+// Plano DXF (R12, milímetros, por capas): elevación de la losa entre vigas, elevación de la viga con los
+// conectores, cortes A-A y B-B ampliados y notas. Clase Dxf y detalle() iguales a reticulada.html.
+// ---------------------------------------------------------------------------
+class Dxf {
+  constructor() { this.e = []; }
+  _p(...pares) { for (let i = 0; i < pares.length; i += 2) this.e.push(String(pares[i]), typeof pares[i + 1] === "number" ? (+pares[i + 1].toFixed(4)).toString() : pares[i + 1]); }
+  line(ly, x1, y1, x2, y2) { this._p(0, "LINE", 8, ly, 10, x1, 20, y1, 30, 0, 11, x2, 21, y2, 31, 0); }
+  poly(ly, pts, cerrada = true) {
+    this._p(0, "POLYLINE", 8, ly, 66, 1, 10, 0, 20, 0, 30, 0, 70, cerrada ? 1 : 0);
+    for (const [x, y] of pts) this._p(0, "VERTEX", 8, ly, 10, x, 20, y, 30, 0);
+    this._p(0, "SEQEND", 8, ly);
+  }
+  circle(ly, x, y, r) { this._p(0, "CIRCLE", 8, ly, 10, x, 20, y, 30, 0, 40, r); }
+  // h: alineación horizontal (0 izq, 1 centro, 2 der); v: vertical (0 base, 1 abajo, 2 medio, 3 arriba)
+  text(ly, x, y, alto, txt, h = 0, v = 0, rot = 0) {
+    this._p(0, "TEXT", 8, ly, 10, x, 20, y, 30, 0, 40, alto, 1, txt, 50, rot, 7, "STANDARD");
+    if (h || v) this._p(72, h, 11, x, 21, y, 31, 0, 73, v);
+  }
+  archivo(capas) {
+    const c = [];
+    const p = (...a) => { for (let i = 0; i < a.length; i += 2) c.push(String(a[i]), String(a[i + 1])); };
+    p(0, "SECTION", 2, "HEADER", 9, "$ACADVER", 1, "AC1009", 9, "$DWGCODEPAGE", 3, "ANSI_1252", 9, "$INSBASE", 10, 0, 20, 0, 30, 0, 0, "ENDSEC");
+    p(0, "SECTION", 2, "TABLES");
+    p(0, "TABLE", 2, "LTYPE", 70, 2);
+    p(0, "LTYPE", 2, "CONTINUOUS", 70, 0, 3, "Solid line", 72, 65, 73, 0, 40, 0);
+    p(0, "LTYPE", 2, "CENTER", 70, 0, 3, "Center ____ _ ____", 72, 65, 73, 4, 40, 50, 49, 32, 49, -6, 49, 6, 49, -6);
+    p(0, "ENDTAB");
+    p(0, "TABLE", 2, "LAYER", 70, capas.length);
+    for (const [n, col, lt] of capas) p(0, "LAYER", 2, n, 70, 0, 62, col, 6, lt || "CONTINUOUS");
+    p(0, "ENDTAB");
+    p(0, "TABLE", 2, "STYLE", 70, 1, 0, "STYLE", 2, "STANDARD", 70, 0, 40, 0, 41, 1, 50, 0, 71, 0, 42, 2.5, 3, "txt", 4, "", 0, "ENDTAB");
+    p(0, "ENDSEC");
+    c.push("0", "SECTION", "2", "ENTITIES", ...this.e, "0", "ENDSEC", "0", "EOF");
+    // Windows-1252: caracteres fuera del juego se reemplazan
+    const txt = c.join("\r\n") + "\r\n";
+    // La fuente txt.shx de AutoCAD no trae "·", "²" ni "³": se reemplazan por equivalentes simples
+    const map = { "—": "-", "–": "-", "≤": "<=", "≥": ">=", "φ": "phi", "Δ": "Delta", "λ": "lambda", "→": "->", "π": "pi", "·": "-", "²": "2", "³": "3", "×": "x" };
+    const limpio = txt.replace(/[—–≤≥φΔλ→π·²³×]/g, (ch) => map[ch]).replace(/[^\x00-\xff]/g, "?");
+    return Uint8Array.from(limpio, (ch) => ch.charCodeAt(0));
+  }
+}
+
+// Envoltorio que escala (k) y traslada (x0, y0) las entidades de un detalle
+function detalle(dx, x0, y0, k) {
+  const P = (x, y) => [x0 + x * k, y0 + y * k];
+  return {
+    line: (ly, x1, y1, x2, y2) => dx.line(ly, ...P(x1, y1), ...P(x2, y2)),
+    poly: (ly, pts, c) => dx.poly(ly, pts.map(([x, y]) => P(x, y)), c),
+    circle: (ly, x, y, r) => dx.circle(ly, ...P(x, y), r * k),
+    text: (ly, x, y, h, t, a, v, rot) => dx.text(ly, ...P(x, y), h * k, t, a, v, rot),
+  };
+}
+function generarDXF() {
+  const d = ultimoD, r = ultimoR;
+  const dx = new Dxf();
+  const hr = PLACA.hr * 10, et = r.et * 10, eh = r.eh * 10, Lm = d.L * 10;
+  const pv = d.pv ? { nombre: d.pv.nombre, h: d.pv.h * 10, b: d.pv.b * 10, tw: d.pv.tw * 10, tf: d.pv.tf * 10 }
+    : { nombre: "PERFIL A DEFINIR", h: 200, b: 100, tw: 6, tf: 9, gen: true };
+  const dS = d.cnv ? CONECTOR[d.cd].d * 10 : 19.05, hs = d.hs * 10;
+  const th = 40;                                   // altura de texto en el plano [mm]
+  const K = 5;                                     // ampliación de los cortes
+  const capaVig = pv.gen ? "OCULTAS" : "VIGAS";
+
+  const E = detalle(dx, 0, 0, 1);
+  const tick = (D, t) => t * 0.35;
+  const cota = (D, x1, y1, x2, y2, txt, t, vertical = false) => {
+    D.line("COTAS", x1, y1, x2, y2);
+    const k = tick(D, t);
+    for (const [x, y] of [[x1, y1], [x2, y2]]) D.line("COTAS", x - k, y - k, x + k, y + k);
+    if (vertical) D.text("COTAS", x1 - t * 0.6, (y1 + y2) / 2, t * 0.8, txt, 1, 2, 90);
+    else D.text("COTAS", (x1 + x2) / 2, y1 + t * 0.5, t * 0.8, txt, 1, 0);
+  };
+  // Perfil I con el borde superior del ala en (xc, yt)
+  const perfilI = (D, xc, yt, ly) => {
+    const { h, b, tw, tf } = pv, X = (x) => xc + x, Y = (y) => yt + y;
+    D.poly(ly, [[-b / 2, 0], [b / 2, 0], [b / 2, -tf], [tw / 2, -tf], [tw / 2, -(h - tf)], [b / 2, -(h - tf)], [b / 2, -h],
+      [-b / 2, -h], [-b / 2, -(h - tf)], [-tw / 2, -(h - tf)], [-tw / 2, -tf], [-b / 2, -tf]].map(([x, y]) => [X(x), Y(y)]));
+  };
+  // Conector: vástago de diámetro d y cabeza de 1,6d; base en (xc, yb)
+  const conector = (D, xc, yb) => {
+    const hc = Math.max(0.5 * dS, 8);
+    D.poly("CONECTORES", [[xc - dS / 2, yb], [xc + dS / 2, yb], [xc + dS / 2, yb + hs - hc], [xc - dS / 2, yb + hs - hc]]);
+    D.poly("CONECTORES", [[xc - 0.8 * dS, yb + hs - hc], [xc + 0.8 * dS, yb + hs - hc], [xc + 0.8 * dS, yb + hs], [xc - 0.8 * dS, yb + hs]]);
+  };
+  // Perfil de la placa (valle en y = 0, cresta en y = hr) desde x0, con n pasos que parten en un valle
+  const perfilPlaca = (n, x0 = 0) => {
+    const pts = [];
+    for (let i = 0; i < n; i++) {
+      const b = x0 + i * DECK.p;
+      pts.push([b, 0], [b + DECK.vb, 0], [b + DECK.vb + DECK.w, hr], [b + DECK.vb + DECK.w + DECK.ct, hr]);
+    }
+    pts.push([x0 + n * DECK.p, 0]);
+    return pts;
+  };
+  const mallaTxt = `MALLA %%c${fmt(d.dM, 1)} a ${fmt(d.sM, 1)} cm en ambas direcciones (As = ${fmt(d.As, 2)} cm2/m), a 25 mm de la cara superior`;
+  const conTxt = d.cnv ? `CONECTOR %%c${CONECTOR[d.cd].txt} h = ${fmt(hs, 0)} mm, ${d.cnv} por valle` : "SIN CONECTORES";
+
+  // ===== 1. Elevación de la losa entre vigas (sentido de los nervios)
+  const nt = Math.min(d.tramos, 3), Lt = nt * Lm;
+  E.text("TEXTOS", 0, et + th * 5, th * 1.4, `ELEVACIÓN DE LA LOSA ENTRE VIGAS (sentido de los nervios) - ${nt}${d.tramos >= 3 ? " o más" : ""} tramo${nt > 1 ? "s" : ""}`);
+  E.text("TEXTOS", 0, et + th * 3, th * 0.8, `Placa Instadeck 0,8 mm + hormigón: eh = ${fmt(eh, 0)} mm sobre la cresta, espesor total ${fmt(et, 1)} mm`);
+  const xa = -pv.b, xb = Lt + pv.b;
+  E.line("PLACA", xa, 0, xb, 0);                          // valle (apoyado en las vigas)
+  E.line("OCULTAS", xa, hr, xb, hr);                      // cresta de los nervios
+  E.poly("HORMIGON", [[xa, 0], [xa, et], [xb, et], [xb, 0]], false);
+  E.line("MALLA", xa, et - 25, xb, et - 25);
+  for (let i = 0; i <= nt; i++) {
+    perfilI(E, i * Lm, 0, capaVig);
+    E.line("EJES", i * Lm, et + th, i * Lm, -pv.h - th);
+    if (i > 0 && i < nt) E.text("TEXTOS", i * Lm, et + th * 0.6, th * 0.6, "ARMADURA NEGATIVA SEGÚN CÁLCULO", 1, 0);
+  }
+  E.text("TEXTOS", 0, -pv.h - th * 1.8, th * 0.8, `Vigas ${pv.nombre}`, 1, 0);
+  // Alzaprimas
+  const yAlz = -pv.h - 300;
+  if (r.nAlz > 0) for (let i = 0; i < nt; i++) for (let k = 1; k <= r.nAlz; k++) {
+    const x = i * Lm + k * r.sepAlz * 10;
+    E.line("ALZAPRIMAS", x, 0, x, yAlz);
+    E.line("ALZAPRIMAS", x - 60, 0, x + 60, 0);
+    E.line("ALZAPRIMAS", x - 100, yAlz, x + 100, yAlz);
+  }
+  const yC1 = yAlz - th * 3, yC2 = yC1 - th * 2.2;
+  for (let i = 0; i < nt; i++) {
+    cota(E, i * Lm, yC1, (i + 1) * Lm, yC1, `L = ${fmt(Lm, 0)}`, th);
+    if (r.nAlz > 0) for (let k = 0; k <= r.nAlz; k++) {
+      const x1 = i * Lm + k * r.sepAlz * 10, x2 = x1 + r.sepAlz * 10;
+      cota(E, x1, yC2, x2, yC2, fmt(r.sepAlz * 10, 0), th * 0.8);
+    }
+  }
+  E.text("TEXTOS", 0, yC2 - th * 2, th * 0.8, r.nAlz > 0
+    ? `ALZAPRIMAS: ${r.nAlz} línea${r.nAlz > 1 ? "s" : ""} por tramo, a ${fmt(r.sepAlz * 10, 0)} mm. Retirar con el 80 % de f'c (no antes de 10 días).`
+    : "Sin alzaprimas (longitud máxima sin alzaprimado según Tabla III).");
+  let y0 = yC2 - th * 6;
+
+  // ===== 2. Elevación de la viga de apoyo con los conectores (solo si se calculó la viga)
+  if (d.viga && d.cnv) {
+    const Lv = d.Lv * 10, top = y0 - et - th * 4;
+    const V = detalle(dx, 0, top, 1);
+    V.text("TEXTOS", 0, et + th * 3.5, th * 1.4, `ELEVACIÓN DE LA VIGA DE APOYO ${pv.nombre} - CONECTORES`);
+    V.poly(capaVig, [[0, 0], [Lv, 0], [Lv, -pv.h], [0, -pv.h]]);
+    V.line(capaVig, 0, -pv.tf, Lv, -pv.tf); V.line(capaVig, 0, -(pv.h - pv.tf), Lv, -(pv.h - pv.tf));
+    const n = Math.floor(Lv / DECK.p);
+    V.poly("PLACA", perfilPlaca(n), false);
+    V.line("HORMIGON", 0, et, n * DECK.p, et);
+    V.line("MALLA", 0, et - 25, n * DECK.p, et - 25);
+    let nc = 0;
+    for (let i = 0; i < n; i++) { conector(V, i * DECK.p + DECK.vb / 2, 0); nc++; }
+    for (const x of [0, Lv]) V.poly("APOYOS", [[x, -pv.h], [x - 80, -pv.h - 140], [x + 80, -pv.h - 140]]);
+    cota(V, 0, -pv.h - th * 5, Lv, -pv.h - th * 5, `Lv = ${fmt(Lv, 0)}`, th);
+    cota(V, DECK.vb / 2, et + th, DECK.vb / 2 + DECK.p, et + th, fmt(DECK.p, 1), th * 0.8);
+    V.text("TEXTOS", 0, -pv.h - th * 7.5, th * 0.8, `${conTxt} en todos los valles (cada ${fmt(DECK.p, 1)} mm): ${nc * d.cnv} conectores en la viga; se requieren ${2 * r.viga.nMit} (${r.viga.nMit} por mitad).`);
+    if (r.viga.nMit > r.viga.nMax) V.text("TEXTOS", 0, -pv.h - th * 9, th * 0.8, "NO CABEN para la acción compuesta completa: verificar con acción compuesta parcial (AISC 360-16 I3).");
+    y0 = top - pv.h - th * 13;
+  }
+
+  // ===== 3. Cortes ampliados (cotas reales en mm)
+  const t3 = th / K;
+  const topS = y0 - (et + 40) * K - th * 3;
+  const A = detalle(dx, 0, topS, K);
+  dx.text("TEXTOS", 0, topS + (et + 40) * K + th * 1.5, th * 1.2, `CORTE A-A: LOSA SOBRE LA VIGA, POR EL EJE DE LA VIGA (escala ${K}:1, cotas en mm)`);
+  A.poly("PLACA", perfilPlaca(3), false);
+  A.poly("HORMIGON", [[0, 0], [0, et], [950, et], [950, 0]], false);
+  A.line("MALLA", 0, et - 25, 950, et - 25);
+  for (let x = d.sM * 10 / 2; x < 950; x += d.sM * 10) A.circle("MALLA", x, et - 25 - d.dM / 2, d.dM / 2);
+  A.line(capaVig, -30, 0, 980, 0); A.line(capaVig, -30, -pv.tf, 980, -pv.tf);
+  A.line("OCULTAS", -30, -40, 980, -40);
+  if (d.cnv) for (let i = 0; i < 3; i++) conector(A, i * DECK.p + DECK.vb / 2, 0);
+  cota(A, 990, 0, 990, hr, `hr = ${fmt(hr, 1)}`, t3, true);
+  cota(A, 1060, hr, 1060, et, `eh = ${fmt(eh, 0)}`, t3, true);
+  cota(A, 1130, 0, 1130, et, `et = ${fmt(et, 1)}`, t3, true);
+  cota(A, 0, -60, 950, -60, "Avance útil 950", t3);
+  cota(A, DECK.vb / 2, et + 20, DECK.vb / 2 + DECK.p, et + 20, fmt(DECK.p, 1), t3);
+  if (d.cnv) cota(A, -40, 0, -40, hs, `hs = ${fmt(hs, 0)}`, t3, true);
+  A.text("TEXTOS", 0, -110, t3 * 0.8, "Placa Instadeck 0,8 mm (geometría de cresta y valle aproximada, medida de la ficha)");
+  A.text("TEXTOS", 0, -150, t3 * 0.8, `Ala de la viga ${pv.nombre}`);
+
+  const xB = 1600 * K, B = detalle(dx, xB, topS, K), wB = Math.max(500, pv.b / 2 + 200);
+  dx.text("TEXTOS", xB - wB * K, topS + (et + 40) * K + th * 1.5, th * 1.2, `CORTE B-B: POR UN VALLE, TRANSVERSAL A LA VIGA (escala ${K}:1, cotas en mm)`);
+  perfilI(B, 0, 0, capaVig);
+  B.line("PLACA", -wB, 0, wB, 0);
+  B.line("OCULTAS", -wB, hr, wB, hr);
+  B.poly("HORMIGON", [[-wB, 0], [-wB, et], [wB, et], [wB, 0]], false);
+  B.line("MALLA", -wB, et - 25 - d.dM, wB, et - 25 - d.dM);
+  for (let x = -wB + d.sM * 10 / 2; x < wB; x += d.sM * 10) B.circle("MALLA", x, et - 25 - d.dM / 2, d.dM / 2);
+  if (d.cnv) {
+    const xs = d.cnv === 1 ? [0] : [-2 * dS, 2 * dS];
+    xs.forEach(x => conector(B, x, 0));
+    if (d.cnv > 1) cota(B, xs[0], hs + 25, xs[1], hs + 25, fmt(4 * dS, 0), t3);
+    cota(B, wB + 30, 0, wB + 30, hs, `hs = ${fmt(hs, 0)}`, t3, true);
+    cota(B, wB + 30, hs, wB + 30, et, fmt(et - hs, 1), t3, true);
+  }
+  cota(B, wB + 100, 0, wB + 100, et, `et = ${fmt(et, 1)}`, t3, true);
+  cota(B, -pv.b / 2, -pv.h - 30, pv.b / 2, -pv.h - 30, `bf = ${fmt(pv.b, 0)}`, t3);
+  cota(B, -wB - 30, -pv.h, -wB - 30, 0, `h = ${fmt(pv.h, 0)}`, t3, true);
+  B.text("TEXTOS", -wB, -pv.h - 80, t3 * 0.8, `${pv.nombre}${pv.gen ? " (genérico)" : ""}`);
+
+  // ===== 4. Notas
+  let yN = topS - Math.max(pv.h + 160, 200) * K - th * 2;
+  const notas = [
+    "NOTAS",
+    `1. Placa colaborante Instadeck (Cintac), espesor 0,8 mm, acero grado 37 galvanizado G-90. Avance útil 950 mm.`,
+    `2. Hormigón f'c = ${fmt(d.fc, 0)} kgf/cm2 (H25 mínimo según el fabricante). Espesor sobre la cresta eh = ${fmt(eh, 0)} mm; espesor total ${fmt(et, 1)} mm.`,
+    `3. ${mallaTxt}.`,
+    `4. ${conTxt}${d.cnv ? `, soldado a la viga a través de la placa en todos los valles de cada apoyo` : ""}.`,
+    `5. Fijar la placa a las vigas en todos los valles y entre placas cada 50 cm. La unión transversal de placas va sobre las vigas.`,
+    nt > 1 ? `6. Con tramos continuos, armadura negativa sobre los apoyos intermedios según el cálculo del ingeniero.` : `6. Losa de un tramo: restringir el giro en los bordes discontinuos.`,
+    r.nAlz > 0 ? `7. Alzaprimas: ${r.nAlz} por tramo a ${fmt(r.sepAlz * 10, 0)} mm; retirarlas con el 80 % de f'c, no antes de 10 días.` : `7. No requiere alzaprimas${d.heli ? "" : " (sin afinado con helicóptero)"}.`,
+    `8. Dibujo de apoyo generado por AURA; las uniones y la armadura negativa no están dibujadas. Verificar con el proyecto.`,
+  ];
+  notas.forEach((t, i) => { dx.text("TEXTOS", 0, yN, i ? th * 0.8 : th * 1.1, t); yN -= th * 1.6; });
+
+  return dx.archivo([["PLACA", 4], ["HORMIGON", 8], ["MALLA", 3], ["CONECTORES", 1], ["VIGAS", 5], ["ALZAPRIMAS", 30],
+    ["APOYOS", 7], ["EJES", 9, "CENTER"], ["OCULTAS", 8, "CENTER"], ["COTAS", 2], ["TEXTOS", 7]]);
+}
+function descargarDXF() {
+  if (!ultimoR) { alert("Corrija los datos inválidos antes de descargar el plano."); return; }
+  const nombre = `plano_placa_colaborante_L${fmt(ultimoD.L / 100, 2).replace(",", "-")}m_eh${ultimoR.eh}.dxf`;
+  descargarBlob(new Blob([generarDXF()], { type: "application/dxf" }), nombre);
+}
+
+function init() {
+  llenarPerfilesV();
+  $("perfilV").value = "IPE 180";
+  $("serieV").addEventListener("change", () => { llenarPerfilesV(); calcular(); });
+  $("inputs").addEventListener("input", (e) => { if (e.target.tagName === "INPUT" && e.target.type !== "checkbox") calcular(); });
+  $("inputs").addEventListener("change", () => calcular());
+  calcular();
+}
+init();
+// Integración con proyectos (proyectos.js): datos para guardar y restaurar este cálculo
+window.AURA_MEMO = {
+  tipo: "Losa colaborante",
+  elemento: () => "", tex: () => ultimoTex, nombre: () => ultimoNombre,
+  recalcular: (v) => { llenarPerfilesV(); if (v && v.perfilV) $("perfilV").value = v.perfilV; if ($("perfilV").selectedIndex < 0) $("perfilV").selectedIndex = 0; calcular(); },
+};
+</script>
+<script src="proyectos.js?v=33"></script>
+<script>
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
+</script>
+</body>
+</html>

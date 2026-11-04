@@ -14,6 +14,7 @@ Las rutas de esta guía son relativas a la raíz del repositorio. Las normas y d
 |---|---|---|---|
 | Acero | `acero.html` | AISC 360-16 | `../Acero/AISC360-16.pdf`, `../Acero/vigas_laminadas_H.pdf` (catálogo) |
 | Vigas reticuladas | `reticulada.html` | AISC 360-16 LRFD; combinaciones NCh 3171 en el `.s2k` | ver la sección Vigas reticuladas |
+| Placa colaborante | `placa.html` | Tablas Instadeck (Cintac, SDI 1991); conectores AISC 360-16 Cap. I | ficha y manual técnico Instadeck (carpeta "Placa Colaborante" del usuario) |
 | Hormigón armado | `hormigon.html` | ACI 318-08 (y 318S-14 para detallamiento), NCh 430 | `../hormigon/ACI_318_08_Espanol (1).pdf`, `../hormigon/Requisitos_del_reglamento_ACI_318S_14_en.pdf`, `../hormigon/NORMA_CHILENA_OFICIAL_NCh430_Of2008 (1).pdf`, `../hormigon/Manual detallamiento.pdf`, `../hormigon/Tabla Marcus Czerny.pdf` |
 | Madera aserrada | `madera.html` | NCh 1198:2024 | `../madera/nch1198-2024-madera-construcciones-en-madera-calculo.pdf` |
 | Madera laminada (MLE) | `mle.html` | NCh 2165:2023 + NCh 1198:2024 (y NCh 432 para viento, si aplica) | ver la sección MLE |
