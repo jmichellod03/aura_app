@@ -112,7 +112,7 @@
     .panel { border: 0; }
   }
 </style>
-<link rel="stylesheet" href="aura.css?v=2">
+<link rel="stylesheet" href="aura.css?v=3">
 </head>
 <body>
 <header>
@@ -298,6 +298,7 @@
 <footer>Herramienta de apoyo académico basada en el Manual de Carreteras, Volumen N° 3 (Edición 2025), Capítulo 3.600. Verifique siempre los resultados.</footer>
 
 <script src="memo.js?v=32"></script>
+<script src="modelo3d.js?v=4"></script>
 <script>
 "use strict";
 // ---------------------------------------------------------------------------
@@ -805,6 +806,7 @@ ${s}\end{tikzpicture}
 // Interfaz
 // ---------------------------------------------------------------------------
 let ultimoTex = "", ultimoNombre = "memoria_pavimento_flexible.tex";
+let ultimoPav = null;   // datos y resultados del último cálculo, para la vista 3D
 
 // Reglas de datos obligatorios [id, mínimo, estricto] según las opciones activas
 function reglasVial() {
@@ -874,6 +876,7 @@ function actualizar() {
   const d = leer();
   const m = new Memo();
   const r = calcular(d, m);
+  ultimoPav = { d, r };                      // para la vista 3D
   if (!man) { $("m2").value = r.m2.toFixed(2); $("m3").value = r.m3.toFixed(2); }
   $("rangoM").textContent = `Rango de la tabla: ${fmt(r.dr[1], 2)} – ${fmt(r.dr[0], 2)}.`;
   // valores calculados mostrados en los campos deshabilitados
@@ -992,6 +995,25 @@ function init() {
   actualizar();
 }
 init();
+
+// ---------------------------------------------------------------------------
+// Vista 2D / 3D (modelo3d.js): bloque de 1,5 × 1,5 m del paquete estructural, cada capa con su espesor real (mm)
+// ---------------------------------------------------------------------------
+Zona2D3D.montar({
+  antes: document.querySelector(".toolbar"),
+  fuente2D: () => $("svgPaq").querySelector("svg"),
+  observar: [$("verdict"), $("svgPaq")],
+  capas: [["subrasante", "Subrasante"]],
+  construir: () => {
+    if (!ultimoTex || !ultimoPav) return null;
+    const { d, r } = ultimoPav, capas = listaDibujo(d, r), A = 1500, e = new Geo3D.Escena();
+    const MATC = { asf: "asfalto", asf2: [0.32, 0.32, 0.35], base: "base", sb: "subbase", mej: [0.70, 0.66, 0.50] };
+    let y = 0;
+    for (const c of capas.slice().reverse()) { e.caja({ mat: MATC[c.tipo] || "base" }, 0, A, y, y + c.h, 0, A); y += c.h; }
+    e.caja({ mat: "subrasante", grupo: "subrasante" }, 0, A, -300, 0, 0, A);
+    return e;
+  },
+});
 // Integración con proyectos (proyectos.js): datos para guardar y restaurar este cálculo
 window.AURA_MEMO = {
   tipo: "Pavimento flexible", elemento: () => "", tex: () => ultimoTex, nombre: () => ultimoNombre,

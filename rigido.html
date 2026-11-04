@@ -105,7 +105,7 @@
     .panel { border: 0; }
   }
 </style>
-<link rel="stylesheet" href="aura.css?v=2">
+<link rel="stylesheet" href="aura.css?v=3">
 </head>
 <body>
 <header>
@@ -291,6 +291,7 @@
 <footer>Herramienta de apoyo académico basada en el Manual de Carreteras, Volumen N° 3 (Edición 2025), Tópico 3.604.2. Verifique siempre los resultados.</footer>
 
 <script src="memo.js?v=32"></script>
+<script src="modelo3d.js?v=4"></script>
 <script>
 "use strict";
 // ---------------------------------------------------------------------------
@@ -816,6 +817,7 @@ ${s}\end{tikzpicture}
 // Interfaz
 // ---------------------------------------------------------------------------
 let ultimoTex = "", ultimoNombre = "memoria_pavimento_rigido.tex";
+let ultimoPav = null;   // datos y resultados del último cálculo, para la vista 3D
 
 // Reglas de datos obligatorios [id, mínimo, estricto] según las opciones activas
 function reglasRigido() {
@@ -868,6 +870,7 @@ function actualizar() {
   const d = leer();
   const m = new Memo();
   const r = calcular(d, m);
+  ultimoPav = { d, r };                      // para la vista 3D
 
   const items = [
     ["D requerido / D adoptado", r.Dreq / r.D, `${fmt(r.Dreq, 1)} / ${fmt(r.D, 0)} mm`],
@@ -996,6 +999,27 @@ function init() {
   actualizar();
 }
 init();
+
+// ---------------------------------------------------------------------------
+// Vista 2D / 3D (modelo3d.js): una pista de 3,5 m con dos losas de largo L, la junta de contracción, la base y,
+// si se usan, las barras de traspaso (separación 300 mm y largo 450 mm, referenciales). mm; x = sentido del tránsito.
+// ---------------------------------------------------------------------------
+Zona2D3D.montar({
+  antes: document.querySelector(".toolbar"),
+  fuente2D: () => $("svgPaq").querySelector("svg"),
+  observar: [$("verdict"), $("svgPaq")],
+  capas: [["hormigon", "Losas"], ["subrasante", "Subrasante"]],
+  construir: () => {
+    if (!ultimoTex || !ultimoPav) return null;
+    const { d, r } = ultimoPav, D = r.D, Hb = d.Hb, L = d.Lj * 1000, B = 3500, junta = 6, e = new Geo3D.Escena();
+    e.caja({ mat: "subrasante", grupo: "subrasante" }, 0, 2 * L, -Hb - 300, -Hb, 0, B);
+    e.caja({ mat: "base" }, 0, 2 * L, -Hb, 0, 0, B);
+    e.caja({ mat: "hormigon", alfa: d.barras ? 0.45 : 1, grupo: "hormigon" }, 0, L - junta / 2, 0, D, 0, B);
+    e.caja({ mat: "hormigon", alfa: d.barras ? 0.45 : 1, grupo: "hormigon" }, L + junta / 2, 2 * L, 0, D, 0, B);
+    if (d.barras && d.dowel > 0) for (let z = 150; z < B; z += 300) e.tubo({ mat: "acero" }, [L - 225, D / 2, z], [L + 225, D / 2, z], d.dowel / 2, 10);
+    return e;
+  },
+});
 // Integración con proyectos (proyectos.js): datos para guardar y restaurar este cálculo
 window.AURA_MEMO = { tipo: "Pavimento rígido", elemento: () => "", tex: () => ultimoTex, nombre: () => ultimoNombre, recalcular: () => actualizar() };
 </script>
