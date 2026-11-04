@@ -145,7 +145,7 @@
   .memo { font-size: 14px; line-height: 1.55; }
   .memo table.calc td { padding: 7px 8px; border-bottom-color: #eef0f4; }
   .memo table.calc tr:hover td { background: #f8f9fc; }
-  .memo table.calc td.v { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 13px; color: #141a26; }
+  .memo table.calc td.v { font-family: inherit; font-size: 13.5px; font-weight: 600; font-variant-numeric: tabular-nums; color: #141a26; }
   .memo table.calc td.k { color: #2b3342; }
   .memo h4 { font-size: 13px; letter-spacing: .02em; margin: 14px 0 4px; }
   .memo .ref { border-radius: 999px; padding: 0 7px; }
