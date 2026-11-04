@@ -652,11 +652,29 @@ function estiloMemoria(tex, oficina) {
 `;
   return pre + estilo + tex.slice(ini);
 }
+// Vista 3D de la página (Zona2D3D de modelo3d.js), tal como se ve en pantalla, al final de la memoria
+function figura3D(fig) {
+  let url = null;
+  try { url = typeof window.AURA_3D === "function" ? window.AURA_3D() : null; } catch { url = null; }
+  if (!url || !/^data:image\/png;base64,/.test(url)) return fig;
+  const bin = atob(url.split(",")[1]), u8 = Uint8Array.from(bin, (c) => c.charCodeAt(0)), ruta = "figuras/modelo3d.png";
+  let tex = fig.tex.replace(/\\end\{document\}\s*$/, String.raw`\section*{Modelo 3D del elemento}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\linewidth]{${ruta}}
+\caption{Modelo 3D a escala real generado por AURA con las dimensiones y la armadura o conexiones de esta memoria (vista referencial).}
+\end{figure}
+\end{document}
+`);
+  if (!/\\usepackage\{graphicx\}/.test(tex)) tex = tex.replace(/\\begin\{document\}/, "\\usepackage{graphicx}\n\\begin{document}");
+  if (!/\\usepackage\{float\}/.test(tex)) tex = tex.replace(/\\begin\{document\}/, "\\usepackage{float}\n\\begin{document}");
+  return { tex, archivos: [...fig.archivos, { nombre: ruta, datos: u8 }] };
+}
 // Arma y descarga el .zip de una memoria: .tex con citas, referencias.bib y figuras PNG
 async function descargarZipMemoria(tex, nombre, contenedor) {
   if (!tex) { alert("Corrija los datos inválidos antes de descargar la memoria."); return; }
   const base = nombre.replace(/\.tex$/i, "");
-  const fig = await prepararFiguras(tex, contenedor);
+  const fig = figura3D(await prepararFiguras(tex, contenedor));
   const { tex: conRef, usadas } = conCitas(estiloMemoria(fig.tex, oficinaMemoria()));
   const archivos = [{ nombre: `${base}.tex`, datos: texUnicode(conRef) }];
   if (usadas.length) archivos.push({ nombre: "referencias.bib", datos: usadas.map(u => u.bib).join("\n\n") + "\n" });

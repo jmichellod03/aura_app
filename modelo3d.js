@@ -221,7 +221,8 @@ const Modelo3D = (() => {
     canvas.addEventListener("pointerup", soltar); canvas.addEventListener("pointercancel", soltar);
     if (opciones.zoom) canvas.addEventListener("wheel", (e) => { e.preventDefault(); zoom = Math.max(0.08, Math.min(4, zoom * Math.exp(e.deltaY * 0.0012))); redibujar(); }, { passive: false });
 
-    new ResizeObserver(() => { medir(); dibujar(); }).observe(canvas);
+    // En el cuadro siguiente: cambiar el tamaño del canvas dentro del aviso provocaría un bucle de ResizeObserver
+    new ResizeObserver(() => requestAnimationFrame(() => { medir(); dibujar(); })).observe(canvas);
     new IntersectionObserver((es) => { visible = es[es.length - 1].isIntersecting; seguir(); }).observe(canvas);
     document.addEventListener("visibilitychange", seguir);
     medir();
@@ -424,7 +425,16 @@ const Zona2D3D = (() => {
     const obs = new MutationObserver(actualizar);
     for (const el of observar) if (el) obs.observe(el, { childList: true, subtree: true, characterData: true });
     actualizar();
-    return { actualizar, capturar: () => (visor?.capturar ? visor.capturar() : null) };
+    const zona = {
+      actualizar,
+      // PNG de la vista 3D si está a la vista (la página puede tener más de una zona, como hormigón con viga y losa)
+      capturar: () => (visor?.capturar && !z.classList.contains("z23-sin3d") && canvas.getBoundingClientRect().width > 0 ? visor.capturar() : null),
+    };
+    zonas.push(zona);
+    return zona;
   }
+  // Para la memoria (memo.js): imagen 3D de la primera zona visible
+  const zonas = [];
+  window.AURA_3D = () => { for (const zn of zonas) { const u = zn.capturar(); if (u) return u; } return null; };
   return { montar };
 })();
