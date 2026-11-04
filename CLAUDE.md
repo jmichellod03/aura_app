@@ -6,7 +6,14 @@ Todo el texto de la interfaz, las memorias y los commits va en **español (Chile
 
 ## Estructura
 
-- `index.html`: inicio, proyectos y enlaces a cada herramienta.
+- `index.html`: inicio con buscador y filtros de herramientas, visor 3D y proyectos.
+- `login.html`: acceso (Supabase) con visor 3D.
+- `aura.css`: estilo común de pantalla (colores, cabecera, logo MMP, paneles y campos). Se carga después de los estilos de cada página (en `login.html`, antes) y solo aplica en `@media screen`, salvo el recorte del logo.
+  - Colores: azul `#00008B` (barras y botones principales), gris acero `#e3e6ea` (fondo), blanco nieve `#fffafa` (paneles) y naranja `#e65c00` (acciones críticas y máximos).
+- `modelo3d.js`: visor WebGL propio, sin dependencias, para modelos `.glb` sin texturas. Lo usan el inicio y el acceso con `modelos/torre.glb`.
+  - El modelo es «Skyscraper Tower» de VertaScan (Sketchfab), licencia CC BY 4.0: el crédito bajo el visor es obligatorio.
+  - No está en `ARCHIVOS` de `sw.js` (4,6 MB): se guarda en caché la primera vez que se abre con conexión.
+- `icons/logo-mmp.webp`: logo MMP (fondo transparente; `aura.css` lo recorta al dibujo).
 - Páginas de cálculo, cada una autónoma (HTML + CSS + JS en el mismo archivo):
   - `acero.html`: vigas y columnas laminadas, AISC 360-16 LRFD.
   - `reticulada.html`: vigas reticuladas (cordones, diagonales y montantes), AISC 360-16 LRFD.
@@ -57,13 +64,13 @@ Todo el texto de la interfaz, las memorias y los commits va en **español (Chile
 
 ## Al agregar o cambiar una página de cálculo
 
-1. **Página:** copiar la cabecera y los estilos de `acero.html` para mantener el aspecto.
+1. **Página:** copiar la cabecera (con el logo MMP) y los estilos de `acero.html`, y cargar `aura.css` al final del `<head>`, para mantener el aspecto.
 2. **Integración con proyectos:** definir `window.AURA_MEMO = { tipo, elemento(), tex(), nombre(), recalcular(valores) }`. Todos los campos del formulario deben estar dentro de `<main>` y tener `id`, porque así se guardan y se restauran.
 3. **Registro en la app:**
    - agregar la página a `PAGINAS_CALCULO` en `proyectos.js`;
    - agregar el enlace en `index.html`;
    - agregarla a `ARCHIVOS` en `sw.js`.
-4. **Versiones y caché:** al publicar cambios, subir `VERSION` en `sw.js` para que los dispositivos actualicen la copia sin conexión. Si se modifica `memo.js` o `proyectos.js`, subir también el `?v=N` con que lo cargan las páginas.
+4. **Versiones y caché:** al publicar cambios, subir `VERSION` en `sw.js` para que los dispositivos actualicen la copia sin conexión. Si se modifica `memo.js`, `proyectos.js`, `aura.css` o `modelo3d.js`, subir también el `?v=N` con que lo cargan las páginas.
 5. **Recursos externos:** solo KaTeX (cdnjs) y supabase-js (jsdelivr). No agregar otras dependencias externas.
 
 ## Catálogos de perfiles
