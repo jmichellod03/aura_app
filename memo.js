@@ -445,6 +445,24 @@ const REFERENCIAS = [
   address      = {Santiago, Chile},
   year         = {1971}
 }` },
+  { clave: "nch433of96", patron: /NCh\s?433\s?Of\.?\s?1996/, bib: String.raw`@manual{nch433of96,
+  title        = {{NCh 433.Of1996. Diseño sísmico de edificios}},
+  organization = {Instituto Nacional de Normalización (INN)},
+  address      = {Santiago, Chile},
+  year         = {1996}
+}` },
+  { clave: "nch433", patron: /NCh\s?433:2026/, bib: String.raw`@manual{nch433,
+  title        = {{NCh 433:2026. Diseño sísmico de edificios}},
+  organization = {Instituto Nacional de Normalización (INN)},
+  address      = {Santiago, Chile},
+  year         = {2026}
+}` },
+  { clave: "nch2369", patron: /NCh\s?2369(?::2025)?/, bib: String.raw`@manual{nch2369,
+  title        = {{NCh 2369:2025. Diseño sísmico de estructuras e instalaciones industriales}},
+  organization = {Instituto Nacional de Normalización (INN)},
+  address      = {Santiago, Chile},
+  year         = {2025}
+}` },
   { clave: "aisc360", patron: /AISC\s?360(?:-16)?/, bib: String.raw`@manual{aisc360,
   title        = {{ANSI/AISC 360-16. Specification for Structural Steel Buildings}},
   organization = {American Institute of Steel Construction},
