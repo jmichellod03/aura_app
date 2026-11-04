@@ -463,6 +463,19 @@ const REFERENCIAS = [
   address      = {Santiago, Chile},
   year         = {2025}
 }` },
+  { clave: "cintacmanual", patron: /Manual Técnico(?: Instadeck)?/, bib: String.raw`@manual{cintacmanual,
+  title        = {{Manual Técnico Instadeck}},
+  organization = {Cintac},
+  address      = {Santiago, Chile},
+  month        = {noviembre},
+  year         = {2010}
+}` },
+  { clave: "cintacficha", patron: /Ficha Técnica/, bib: String.raw`@manual{cintacficha,
+  title        = {{Placas Colaborantes Instadeck. Ficha técnica}},
+  organization = {Cintac},
+  address      = {Santiago, Chile},
+  note         = {Sin fecha de edición; archivo PDF de 2019}
+}` },
   { clave: "aisc360", patron: /AISC\s?360(?:-16)?/, bib: String.raw`@manual{aisc360,
   title        = {{ANSI/AISC 360-16. Specification for Structural Steel Buildings}},
   organization = {American Institute of Steel Construction},
