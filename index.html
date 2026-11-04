@@ -128,7 +128,7 @@
   dialog .dlg-acc { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
 </style>
 <link rel="stylesheet" href="aura.css?v=9">
-<script src="lateral.js?v=2"></script>
+<script src="lateral.js?v=3"></script>
 </head>
 <body>
 <header class="solo-movil">
@@ -149,6 +149,7 @@
         <button type="button" data-cat="" aria-pressed="true">Todas</button>
         <button type="button" data-cat="acero" aria-pressed="false">Acero</button>
         <button type="button" data-cat="hormigon" aria-pressed="false">Hormigón</button>
+        <button type="button" data-cat="fundaciones" aria-pressed="false">Fundaciones</button>
         <button type="button" data-cat="madera" aria-pressed="false">Madera</button>
         <button type="button" data-cat="sismico" aria-pressed="false">Sísmico</button>
         <button type="button" data-cat="vial" aria-pressed="false">Vial</button>
@@ -176,6 +177,10 @@
         <a class="tool" href="muro.html" data-cat="hormigon" data-q="muro de contencion voladizo empuje rankine mononobe okabe volcamiento deslizamiento pantalla pie talon dentellon">
           <span class="ico"><svg viewBox="0 0 32 32" fill="none" stroke="#00008B" stroke-width="2" stroke-linejoin="round"><path d="M12 4h4v18h10v5H4v-5h6z"/><path d="M16 6l10 0M16 4v18" stroke-width="1.2" stroke-dasharray="2 2"/><path d="M23 9v11" stroke="#e65c00" stroke-width="1.6"/></svg></span>
           <span class="tx"><b>Muros de contención</b><small>Muro en voladizo · volcamiento, deslizamiento y tensión de contacto · pantalla, pie y talón</small><span class="norma">Rankine · M-O · ACI 318-08</span></span>
+        </a>
+        <a class="tool" href="zapata.html" data-cat="fundaciones hormigon" data-q="zapata aislada fundacion superficial cimiento punzonamiento tension de contacto sello pedestal sismo">
+          <span class="ico"><svg viewBox="0 0 32 32" fill="none" stroke="#00008B" stroke-width="2" stroke-linejoin="round"><path d="M13 4h6v15h-6z"/><path d="M4 19h24v7H4z"/><path d="M6 23.5h20" stroke="#e65c00" stroke-width="1.4" stroke-dasharray="2 2"/></svg></span>
+          <span class="tx"><b>Zapata aislada</b><small>Tensiones de contacto, corte, punzonamiento y flexión · sismo por verificar</small><span class="norma">ACI 318-08</span></span>
         </a>
         <a class="tool" href="madera.html" data-cat="madera" data-q="madera aserrada envigados pies derechos tabiques pilares muros de corte pino radiata">
           <span class="ico"><svg viewBox="0 0 32 32" fill="none" stroke="#00008B" stroke-width="2"><rect x="4" y="9" width="24" height="14" rx="1.5"/><path d="M8 13c4 2 8-2 12 0s4 2 5 1M8 18c4 2 8-2 12 0" stroke-width="1.4"/></svg></span>
@@ -242,8 +247,8 @@
     <div class="dlg-acc"><button type="button" class="pb sec" id="dlgCancelar">Cancelar</button><button type="submit" class="pb">Guardar proyecto</button></div>
   </form>
 </dialog>
-<script src="memo.js?v=37"></script>
-<script src="proyectos.js?v=36"></script>
+<script src="memo.js?v=38"></script>
+<script src="proyectos.js?v=37"></script>
 <script src="modelo3d.js?v=6"></script>
 
 <script>
