@@ -80,6 +80,7 @@
   .verdict { margin: 0 16px 14px; padding: 12px 14px; border-radius: 6px; font-weight: 600; font-size: 15px; }
   .verdict.ok { background: var(--ok-bg); color: var(--ok); }
   .verdict.bad { background: var(--bad-bg); color: var(--bad); }
+  .verdict.warn { background: var(--warn-bg); color: var(--warn); }
   .avisos { margin: 0 16px; }
   .note { margin: 8px 0; padding: 8px 10px; border-radius: 5px; background: var(--warn-bg); color: var(--warn); font-size: 12.5px; }
   .dibujo { margin: 0 16px 10px; border: 1px solid var(--line); border-radius: 6px; padding: 10px; }
@@ -446,7 +447,7 @@ function leer() {
 // Cálculo y memoria
 // ---------------------------------------------------------------------------
 function calcular(d, m) {
-  const r = { avisos: [] };
+  const r = { avisos: [], fueraManual: [] };
 
   // 1. Solicitaciones
   m.h("Solicitaciones — ejes equivalentes (3.603.202 y 3.604.204)");
@@ -550,8 +551,15 @@ function calcular(d, m) {
   if (d.Sc < scMin || d.Sc > scMax) r.avisos.push(`S′<sub>c</sub> = ${fmt(d.Sc, 2)} MPa está fuera del rango recomendado para el tipo de vía (${fmt(scMin, 1)}–${fmt(scMax, 1)} MPa, Tabla 3.604.207.A).`);
   if (base[1] !== null && (Eb < base[1] || Eb > base[2])) r.avisos.push(`E<sub>b</sub> = ${fmt(Eb, 0)} MPa está fuera del rango de la Tabla 3.604.208.A para ${base[0].toLowerCase()} (${fmt(base[1], 1)}–${fmt(base[2], 1)} MPa).`);
   if (d.tipoBase === "cal" && d.fric === 1) r.avisos.push("La Tabla 3.604.208.A no entrega fricción media para arcilla estabilizada con cal; se usa el promedio de los valores bajo y alto (4,15).");
-  if (d.Hb < 150) r.avisos.push("El Manual exige una base granular de 150 mm de espesor compactado (3.604.211).");
-  if (d.Lj < 3 || d.Lj > 5) r.avisos.push("La distancia entre juntas de contracción debe estar entre 3 y 5 m (3.604.211).");
+  // 3.604.211: términos generales del Manual, salvo instrucción o aprobación especial de la Dirección de Vialidad
+  if (d.Hb < 150) {
+    r.avisos.push("El Manual exige una base granular de 150 mm de espesor compactado, salvo instrucción o aprobación especial de la Dirección de Vialidad (3.604.211).");
+    r.fueraManual.push(`base de ${fmt(d.Hb, 0)} mm (el Manual exige 150 mm, 3.604.211)`);
+  }
+  if (d.Lj < 3 || d.Lj > 5) {
+    r.avisos.push("La distancia entre juntas de contracción debe estar entre 3 y 5 m, salvo instrucción o aprobación especial de la Dirección de Vialidad (3.604.211).");
+    r.fueraManual.push(`juntas cada ${fmt(d.Lj, 2)} m (el Manual exige entre 3 y 5 m, 3.604.211)`);
+  }
 
   // 5. Espesor de losa
   m.h("Espesor de losa (3.604.202 y 3.604.212)");
@@ -879,9 +887,13 @@ function actualizar() {
     <div class="bar ${v > 1 ? "bad" : ""}"><i style="width:${Math.min(100, v * 100)}%"></i></div><div class="s">${s}</div></div>`).join("") +
     `<div class="card"><div class="t">Espesor de losa</div><div class="v">${fmt(r.D, 0)} mm</div><div class="s">k = ${fmt(r.k, 1)} MPa/m · S′c = ${fmt(d.Sc, 1)} MPa</div></div>`;
   const dc = Math.max(...items.map(i => i[1]));
-  const ok = dc <= 1 + 1e-9;
+  // Sin barras falta la carga de esquina (3.604.212(4)), que no se calcula: no se puede concluir que cumple
+  const ok = dc <= 1 + 1e-9 && !r.fueraManual.length;
+  const sinVerificar = ok && !d.barras;
   $("resTitle").textContent = `Resultados — EE = ${fmt(r.EEm, 2)} millones · D = ${fmt(r.D, 0)} mm`;
-  $("verdict").innerHTML = `<div class="verdict ${ok ? "ok" : "bad"}">${ok ? "✔ El pavimento CUMPLE" : "✘ El pavimento NO CUMPLE"} — losa ${fmt(r.D, 0)} mm sobre base ${fmt(d.Hb, 0)} mm, juntas cada ${fmt(d.Lj, 2)} m${d.barras ? ` con barras Ø${fmt(d.dowel, 0)} mm` : " sin barras (falta verificar carga de esquina)"}</div>`;
+  const titulo = !ok ? "✘ El pavimento NO CUMPLE" : sinVerificar ? "⚠ El pavimento queda SIN VERIFICAR" : "✔ El pavimento CUMPLE";
+  const motivos = [...r.fueraManual, ...(d.barras ? [] : ["falta la verificación por carga de esquina (3.604.212(4))"])];
+  $("verdict").innerHTML = `<div class="verdict ${!ok ? "bad" : sinVerificar ? "warn" : "ok"}">${titulo} — razón máxima = ${fmt(dc, 3)}${motivos.map(x => ` · ${x}`).join("")} · losa ${fmt(r.D, 0)} mm sobre base ${fmt(d.Hb, 0)} mm, juntas cada ${fmt(d.Lj, 2)} m${d.barras ? ` con barras Ø${fmt(d.dowel, 0)} mm` : " sin barras"}</div>`;
   $("avisos").innerHTML = r.avisos.map(a => `<div class="note">${a}</div>`).join("");
   $("svgPaq").innerHTML = dibujarSVG(d, r);
   $("memo").innerHTML = m.html();
@@ -889,7 +901,15 @@ function actualizar() {
   // Memoria .tex
   const fecha = new Date().toLocaleDateString("es-CL", { day: "numeric", month: "long", year: "numeric" });
   const texTxt = (s) => s.replace(/<sub>/g, "$_{").replace(/<\/sub>/g, "}$").replace(/\$\$/g, "").replace(/<[^>]+>/g, "");
-  const filas = items.map(([t, v, s]) => `${texTxt(t)} & ${texTxt(s).replace(/,/g, "{,}").replace(/\./g, "\\,")} & ${tn(v, 3)} & ${v <= 1 + 1e-9 ? "Cumple" : "No cumple"}\\\\`).join("\n");
+  const filas = items.map(([t, v, s]) => `${texTxt(t)} & ${texTxt(s).replace(/,/g, "{,}").replace(/\./g, "\\,")} & ${tn(v, 3)} & ${v <= 1 + 1e-9 ? "Cumple" : "No cumple"}\\\\`)
+    .concat(r.fueraManual.length ? ["Estructuración (3.604.211) & Base y juntas & --- & No cumple\\\\"] : [], d.barras ? [] : ["Carga de esquina (3.604.212(4)) & No incluida & --- & Sin verificar\\\\"]).join("\n");
+  const adoptado = `El pavimento adoptado (losa de ${tn(r.D, 0)} mm sobre base de ${tn(d.Hb, 0)} mm, juntas cada ${tn(d.Lj, 2)} m${d.barras ? `, con barras de traspaso de ${tn(d.dowel, 0)} mm` : ", sin barras de traspaso"})`;
+  const faltaEsquina = "la verificación por carga de esquina (3.604.212(4), Láminas 3.604.211.A1 a A7), que esta herramienta no realiza";
+  const conclusion = !ok
+    ? `${adoptado} \\textbf{no cumple} con los requisitos del Tópico 3.604.2 del Manual de Carreteras${r.fueraManual.length ? `: ${r.fueraManual.join("; ").replace(/(\d),(\d)/g, "$1{,}$2")}` : ""}.${d.barras ? "" : ` Además, falta ${faltaEsquina}.`}`
+    : sinVerificar
+      ? `${adoptado} \\textbf{queda sin verificar}: cumple las verificaciones de espesor y escalonamiento del Tópico 3.604.2 del Manual de Carreteras, pero falta ${faltaEsquina}.`
+      : `${adoptado} \\textbf{cumple} con los requisitos del Tópico 3.604.2 del Manual de Carreteras.`;
   const avisosTex = r.avisos.length ? L`\paragraph{Observaciones.}
 \begin{itemize}
 ${r.avisos.map(a => `\\item ${texTxt(a).replace(/≤/g, "$\\le$").replace(/≥/g, "$\\ge$").replace(/%/g, "\\%").replace(/·/g, "$\\cdot$").replace(/–/g, "--").replace(/′/g, "'").replace(/(\d),(\d)/g, "$1{,}$2")}`).join("\n")}
@@ -954,7 +974,7 @@ ${filas}
 \bottomrule
 \end{tabular}
 \end{table}
-El pavimento adoptado (losa de ${tn(r.D, 0)} mm sobre base de ${tn(d.Hb, 0)} mm, juntas cada ${tn(d.Lj, 2)} m${d.barras ? `, con barras de traspaso de ${tn(d.dowel, 0)} mm` : ", sin barras de traspaso"}) \textbf{${ok ? "cumple" : "no cumple"}} con los requisitos del Tópico 3.604.2 del Manual de Carreteras.
+${conclusion}
 ${avisosTex}
 \end{document}
 `;
@@ -999,7 +1019,7 @@ init();
 // Integración con proyectos (proyectos.js): datos para guardar y restaurar este cálculo
 window.AURA_MEMO = { tipo: "Pavimento rígido", elemento: () => "", tex: () => ultimoTex, nombre: () => ultimoNombre, recalcular: () => actualizar() };
 </script>
-<script src="proyectos.js?v=34"></script>
+<script src="proyectos.js?v=35"></script>
 <script>
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
 </script>

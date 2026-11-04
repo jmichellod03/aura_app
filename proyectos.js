@@ -165,7 +165,10 @@ function estadoActual() {
   const ver = [...document.querySelectorAll(".verdict")].find(e => e.getBoundingClientRect().width > 0);
   if (!ver) return { ok: null, texto: "" };
   const m = ver.textContent.match(/razón máxima = ([\d.,∞]+)/);
-  return { ok: ver.classList.contains("ok"), texto: m ? `razón máx. ${m[1]}` : "" };
+  const razon = m ? `razón máx. ${m[1]}` : "";
+  // "Sin verificar" no es cumple ni no cumple: el panel y la memoria no muestran ninguno de los dos
+  if (/SIN VERIFICAR/.test(ver.textContent)) return { ok: null, texto: razon ? `sin verificar · ${razon}` : "sin verificar" };
+  return { ok: ver.classList.contains("ok"), texto: razon };
 }
 function tituloSugerido() {
   const t = document.getElementById("resTitle");

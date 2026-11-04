@@ -391,6 +391,8 @@ const ACEROS = { 4200: "A630-420H", 2800: "A440-280H" };
 const fmt = (x, d = 2) => Number.isFinite(x)
   ? x.toLocaleString("es-CL", { minimumFractionDigits: d, maximumFractionDigits: d })
   : "—";
+const razonTxt = (dc) => (Number.isFinite(dc) ? `${fmt(dc, 3)} (${fmt(dc * 100, 1)} %)` : "∞");
+const motivosTex = (lista) => (lista.length ? `: ${lista.join("; ").replace(/(\d),(\d)/g, "$1{,}$2")}` : "");
 const $ = (id) => document.getElementById(id);
 const num = (id) => { const v = parseFloat($(id).value); return Number.isFinite(v) ? v : 0; };
 const L = String.raw;
@@ -519,7 +521,7 @@ function flexion(cara, Mu, db, g, m) {
   const MnP = As * fy * (d - a / 2);
   const phiMn = phi * MnP;
   const okEt = et >= 0.004;
-  const dc = Mu / phiMn;
+  const dc = phiMn > 0 ? Mu / phiMn : Infinity;   // sin solución con armadura simple no hay capacidad
   m.row("Profundidad del bloque de compresión ; eje neutro: a ; c", `${fmt(a, 2)} ; ${fmt(c, 2)} cm`, "10.2.7");
   m.row("Deformación del acero en tracción ; factor de reducción: ε<sub>t</sub> ; φ", `${fmt(et, 4)} ${tag(okEt, okEt ? "cumple" : "no cumple")} ; ${fmt(phi, 3)}`, "10.3.5 / 9.3.2");
   m.row("<b>Resistencia de diseño a flexión: φM<sub>n</sub></b>", `<b>${fmt(phiMn / 100, 1)} kgf·m</b>`);
@@ -529,10 +531,17 @@ function flexion(cara, Mu, db, g, m) {
   m.eq(L`\varepsilon_t = \varepsilon_{cu}\frac{d - c}{c} = 0{,}003\cdot\frac{${tn(d)} - ${tn(c, 3)}}{${tn(c, 3)}} = ${tn(et, 4)} \;${okEt ? GE : "<"}\; 0{,}004 \;\Rightarrow\; \phi = ${tn(phi, 3)}`, "10.3.5");
   m.eq(L`\phi M_n = \phi\,A_s f_y\left(d - \frac{a}{2}\right) = ${tn(phi, 3)}\cdot ${tn(As, 3)}\cdot ${tn(fy, 0)}\left(${tn(d)} - \frac{${tn(a, 3)}}{2}\right) = ${tn(phiMn, 0)}${KGCM} = ${tn(phiMn / 100, 1)}${KGM}`);
   m.eq(L`\frac{D}{C} = \frac{${Msym}}{\phi M_n} = \frac{${tn(Mu / 100, 1)}}{${tn(phiMn / 100, 1)}} = ${tn(dc, 3)} ${cmp(dc, 1)} 1{,}0`);
-  m.p(L`Por lo tanto, la armadura ${cara === "inf" ? "inferior" : "superior"} de ${Nb}$\phi${db}$ ${dc <= 1 && okEt ? L`\textbf{cumple}` : L`\textbf{no cumple}`} la verificación a flexión, utilizando el ${tn(dc * 100, 1)}\,\% de su capacidad.`, true);
-
+  // Requisitos que no entran en la razón D/C: sin ellos, el veredicto no explicaría un "no cumple" con D/C bajo
   const ok = resuelve && okRho && okSmin && okSmax && okEt && dc <= 1;
-  return { d, Nb, db, As, Asreq, rho, rmin, rhoD, phiMn, dc, ok, okSmin };
+  const fallas = !resuelve ? ["la sección no resiste el momento con armadura simple"] : [
+    !okRho && "cuantía mayor que la máxima (10.3.5)",
+    !okSmin && "las barras no caben en una capa (7.6.1)",
+    !okSmax && `separación entre barras de ${fmt(sCC, 2)} cm mayor que el máximo de ${fmt(sMax, 2)} cm (10.6.4)`,
+    !okEt && "deformación del acero en tracción menor que 0,004 (10.3.5)",
+  ].filter(Boolean);
+  m.p(L`Por lo tanto, la armadura ${cara === "inf" ? "inferior" : "superior"} de ${Nb}$\phi${db}$ ${ok ? L`\textbf{cumple}` : L`\textbf{no cumple}`} la verificación a flexión, utilizando el $${tn(dc * 100, 1)}$\,\% de su capacidad${motivosTex(fallas)}.`, true);
+
+  return { d, Nb, db, As, Asreq, rho, rmin, rhoD, phiMn, dc, ok, okSmin, fallas };
 }
 
 // ---------------------------------------------------------------------------
@@ -609,7 +618,7 @@ function corte(Vu, g, d, dbMin, criterio, m) {
   m.eq(L`\phi V_n = \phi(V_c + V_{s,\text{disp}}) = 0{,}75\,(${tn(Vc, 0)} + ${tn(VsP, 0)}) = ${tn(phiVn, 0)}${KG} \qquad \frac{D}{C} = \frac{V_u}{\phi V_n} = \frac{${tn(Vu, 0)}}{${tn(phiVn, 0)}} = ${tn(dc, 3)} ${cmp(dc, 1)} 1{,}0`, "11-1");
   m.p(L`Por lo tanto, con estribos E$\phi${de}$ @ ${s} cm la viga \textbf{${dc <= 1 && okVs ? "cumple" : "no cumple"}} la verificación a corte.`, true);
 
-  return { Vc, phiVc, phiVn, dc, s, ok: okVs && dc <= 1 };
+  return { Vc, phiVc, phiVn, dc, s, ok: okVs && dc <= 1, fallas: okVs ? [] : ["corte del acero mayor que el máximo de la sección (11.4.7.9)"] };
 }
 
 // ---------------------------------------------------------------------------
@@ -851,7 +860,8 @@ function calcularViga() {
   }).join("");
   const rhoTxt = (r) => `ρ = ${fmt(r.rhoD, 4)}${r.rho < r.rmin ? " (mín)" : ""}`;
   $("armado").innerHTML = `<span>Inferior: ${inf.Nb}φ${inf.db} (${fmt(inf.As, 2)} cm²) · ${rhoTxt(inf)}</span><span>Superior: ${sup.Nb}φ${sup.db} (${fmt(sup.As, 2)} cm²) · ${rhoTxt(sup)}</span><span>Estribos: E φ${g.de} @ ${v.s} cm · ${g.ramas} ramas · ganchos 135° (ext. ${fmt(g.hk.ext, 1)} cm) · L = ${fmt(g.hk.Lt, 0)} cm</span>`;
-  $("verdict").innerHTML = `<div class="verdict ${ok ? "ok" : "bad"}">${ok ? "✔ La viga CUMPLE" : "✘ La viga NO CUMPLE"} — D/C máximo = ${fmt(dc, 3)} (${fmt(dc * 100, 1)} %)</div>`;
+  const motivos = [...inf.fallas.map(f => `armadura inferior: ${f}`), ...sup.fallas.map(f => `armadura superior: ${f}`), ...v.fallas.map(f => `corte: ${f}`)];
+  $("verdict").innerHTML = `<div class="verdict ${ok ? "ok" : "bad"}">${ok ? "✔ La viga CUMPLE" : "✘ La viga NO CUMPLE"} — razón máxima = ${razonTxt(dc)}${motivos.map(x => ` · ${x}`).join("")}</div>`;
   $("memo").innerHTML = datos.html() + m.html();
 
   const resumen = [
@@ -859,16 +869,16 @@ function calcularViga() {
     { k: "Flexión superior", dem: L`$M_u^{-} = ${tn(g.Mneg / 100, 1)}$ kgf$\cdot$m`, cap: L`$\phi M_n = ${tn(sup.phiMn / 100, 1)}$ kgf$\cdot$m`, dc: sup.dc, arm: L`${sup.Nb}$\phi$${sup.db}`, ok: sup.ok },
     { k: "Corte", dem: L`$V_u = ${tn(g.Vu, 0)}$ kgf`, cap: L`$\phi V_n = ${tn(v.phiVn, 0)}$ kgf`, dc: v.dc, arm: L`E$\phi$${g.de} @ ${v.s} cm`, ok: v.ok },
   ];
-  ultimoTex = documentoTexViga(g, inf, sup, m.texto(), resumen, dc, ok);
+  ultimoTex = documentoTexViga(g, inf, sup, m.texto(), resumen, dc, ok, motivos);
   ultimoNombre = `memoria_viga_${g.b}x${g.h}_${GRADOS[g.fc]}.tex`;
 }
 
-function documentoTexViga(g, inf, sup, cuerpo, resumen, dc, ok) {
+function documentoTexViga(g, inf, sup, cuerpo, resumen, dc, ok, motivos) {
   const fila = (a, b) => `${a} & ${b}\\\\`;
   const unidades = $("vunidad").value;
   const criterios = { general: "general ACI 11.4.5", d4: "conservador $d/4$", sismico: "sísmico ACI 21.5.3.2" };
   const fecha = new Date().toLocaleDateString("es-CL", { day: "numeric", month: "long", year: "numeric" });
-  const filas = resumen.map(r => `${r.k} & ${r.dem} & ${r.cap} & ${tn(r.dc, 3)} & ${r.arm} & ${r.ok ? "Cumple" : "No cumple"}\\\\`).join("\n");
+  const filas = resumen.map(r => `${r.k} & ${r.dem} & ${r.cap} & $${tn(r.dc, 3)}$ & ${r.arm} & ${r.ok ? "Cumple" : "No cumple"}\\\\`).join("\n");
   return L`\documentclass[11pt,letterpaper]{article}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
@@ -956,7 +966,7 @@ ${filas}
 \end{tabular}
 \end{table}
 
-Por lo tanto, con una relación demanda-capacidad máxima $D/C = ${tn(dc, 3)}$ (${tn(dc * 100, 1)}\,\%), la viga de ${tn(g.b, 0)} $\times$ ${tn(g.h, 0)} cm con armadura inferior ${inf.Nb}$\phi$${inf.db}, superior ${sup.Nb}$\phi$${sup.db} y estribos E$\phi$${g.de} @ ${g.s} cm \textbf{${ok ? "cumple" : "no cumple"}} con los requisitos del ACI 318-08.
+Por lo tanto, con una relación demanda-capacidad máxima $D/C = ${tn(dc, 3)}$ ($${tn(dc * 100, 1)}$\,\%), la viga de ${tn(g.b, 0)} $\times$ ${tn(g.h, 0)} cm con armadura inferior ${inf.Nb}$\phi$${inf.db}, superior ${sup.Nb}$\phi$${sup.db} y estribos E$\phi$${g.de} @ ${g.s} cm \textbf{${ok ? "cumple" : "no cumple"}} con los requisitos del ACI 318-08${motivosTex(motivos)}.
 
 \end{document}
 `;
@@ -1139,7 +1149,7 @@ function disenoFaja(t, Mu, db, d, g, dosDir, m) {
   const a = AsP * fy / (0.85 * fc * b), c = a / beta1(fc);
   const et = ECU * (d - c) / c, phi = phiEt(et), okEt = et >= 0.004;
   const phiMn = phi * AsP * fy * (d - a / 2);
-  const dc = MuC / phiMn;
+  const dc = resuelve && phiMn > 0 ? MuC / phiMn : Infinity;   // sin solución con armadura simple no hay capacidad
   m.row("Momento último ; altura útil: M<sub>u</sub> ; d", `${fmt(Mu, 1)} kgf·m/m ; ${fmt(d, 2)} cm`);
   m.row("Momento reducido ; profundidad relativa ; cuantía: μ ; α ; ρ", `${fmt(mu, 4)} ; ${fmt(alpha, 4)} ; ${fmt(rho, 5)}`);
   m.row("Armadura requerida: A<sub>s</sub>", `máx(${fmt(AsCalc, 3)} ; ${fmt(AsMin, 3)}) = ${fmt(As, 3)} cm²/m`, "7.12.2.1");
@@ -1163,7 +1173,8 @@ function disenoFaja(t, Mu, db, d, g, dosDir, m) {
   m.eq(L`\phi M_n = \phi\,A_s f_y\left(d - \frac{a}{2}\right) = ${tn(phi, 2)}\cdot ${tn(AsP, 2)}\cdot ${tn(fy, 0)}\left(${tn(d, 2)} - \frac{${tn(a, 3)}}{2}\right) = ${tn(phiMn / 100, 1)}\ \mathrm{kgf\cdot m/m}`);
   m.eq(L`\frac{D}{C} = \frac{M_u}{\phi M_n} = \frac{${tn(Mu, 1)}}{${tn(phiMn / 100, 1)}} = ${tn(dc, 3)} ${cmp(dc, 1)} 1{,}0`);
   m.p(L`Por lo tanto, la armadura $\phi${db}$ @ ${s} cm \textbf{${resuelve && okEt && dc <= 1 ? "cumple" : "no cumple"}} la verificación a flexión.`, true);
-  return { db, s, As, AsP, phiMn, dc, d, sCalc, sMax, rho, rmin, ok: resuelve && okEt && dc <= 1 };
+  const fallas = !resuelve ? ["la sección no resiste el momento con armadura simple"] : okEt ? [] : ["deformación del acero en tracción menor que 0,004 (10.3.5)"];
+  return { db, s, As, AsP, phiMn, dc, d, sCalc, sMax, rho, rmin, ok: resuelve && okEt && dc <= 1, fallas };
 }
 
 // Propuesta: menor diámetro que entrega una separación ≥ 15 cm
@@ -1520,7 +1531,8 @@ function calcularLosa() {
   const dc = Math.max(...activos.map(k => R[k].dc));
   const ok = activos.every(k => R[k].ok);
   ultimoLosa = { g, R, sol, plano, detalles, dc, ok };
-  $("lverdict").innerHTML = `<div class="verdict ${ok ? "ok" : "bad"}">${ok ? "✔ La losa CUMPLE" : "✘ La losa NO CUMPLE"} — D/C máximo = ${fmt(dc, 3)} (${fmt(dc * 100, 1)} %)</div>`;
+  const motivos = activos.flatMap(k => R[k].fallas.map(f => `${nombres[k].split(" (")[0]}: ${f}`));
+  $("lverdict").innerHTML = `<div class="verdict ${ok ? "ok" : "bad"}">${ok ? "✔ La losa CUMPLE" : "✘ La losa NO CUMPLE"} — razón máxima = ${razonTxt(dc)}${motivos.map(x => ` · ${x}`).join("")}</div>`;
 
   const datos = new Memo();
   datos.out.push(`<h3>Datos generales</h3>`);
@@ -1534,13 +1546,13 @@ function calcularLosa() {
   const filasRes = claves.filter(k => R[k]).map(k => {
     const r = R[k];
     const n = { Xi: "Inferior X", Yi: "Inferior Y", Xs: "Superior X", Ys: "Superior Y" }[k];
-    return `${n} & ${tn(M[k], 1)} & ${tn(r.phiMn / 100, 1)} & ${tn(r.dc, 3)} & $\\phi${r.db}$ @ ${r.s} cm & ${r.ok ? "Cumple" : "No cumple"}\\\\`;
+    return `${n} & $${tn(M[k], 1)}$ & $${tn(r.phiMn / 100, 1)}$ & $${tn(r.dc, 3)}$ & $\\phi${r.db}$ @ ${r.s} cm & ${r.ok ? "Cumple" : "No cumple"}\\\\`;
   }).join("\n");
-  ultimoTexLosa = documentoTexLosa(g, sol, m.texto(),tikzPlano(plano) + tikzGanchos(detalles), filasRes, dc, ok);
+  ultimoTexLosa = documentoTexLosa(g, sol, m.texto(),tikzPlano(plano) + tikzGanchos(detalles), filasRes, dc, ok, motivos);
   ultimoNombreLosa = `memoria_losa_${g.nombre.replace(/[^\w-]+/g, "")}_${GRADOS[g.fc]}.tex`;
 }
 
-function documentoTexLosa(g, sol, cuerpo, plano, filasRes, dc, ok) {
+function documentoTexLosa(g, sol, cuerpo, plano, filasRes, dc, ok, motivos) {
   const fila = (a, b, u) => `${a} & ${b} & ${u}\\\\`;
   const bordeTxt = (v) => (v ? "continuo" : "apoyado");
   const fecha = new Date().toLocaleDateString("es-CL", { day: "numeric", month: "long", year: "numeric" });
@@ -1615,7 +1627,7 @@ ${filasRes}
 \end{tabular}
 \end{table}
 
-Por lo tanto, con una relación demanda-capacidad máxima $D/C = ${tn(dc, 3)}$ (${tn(dc * 100, 1)}\,\%), la losa ${g.nombre} \textbf{${ok ? "cumple" : "no cumple"}} con los requisitos de flexión del ACI 318-08.
+Por lo tanto, con una relación demanda-capacidad máxima $D/C = ${tn(dc, 3)}$ ($${tn(dc * 100, 1)}$\,\%), la losa ${g.nombre} \textbf{${ok ? "cumple" : "no cumple"}} con los requisitos de flexión del ACI 318-08${motivosTex(motivos)}.
 
 \end{document}
 `;
@@ -1893,7 +1905,7 @@ window.AURA_MEMO = {
   recalcular: () => (elActual() === "losa" ? calcularLosa() : calcularViga()),
 };
 </script>
-<script src="proyectos.js?v=34"></script>
+<script src="proyectos.js?v=35"></script>
 <script>
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
 </script>

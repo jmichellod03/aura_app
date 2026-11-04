@@ -70,6 +70,7 @@ Todo el texto de la interfaz, las memorias y los commits va en **español (Chile
   - `raw()`: LaTeX directo (tablas).
 - Validar las entradas con `datosInvalidos(reglas)` de `memo.js`. Con datos inválidos no se calcula y `ultimoTex` queda vacío, para no mostrar un "CUMPLE" falso.
 - El veredicto usa la clase `.verdict ok|bad`. Para que `proyectos.js` lea el resumen, el texto debe contener `razón máxima = X`.
+- Si falta una verificación exigida que la página no calcula, el veredicto y la memoria dicen `SIN VERIFICAR`, no `CUMPLE`; `proyectos.js` lo guarda sin estado de cumple o no cumple. Un requisito que no entra en la razón D/C y falla se indica como motivo en el veredicto.
 
 ## Al agregar o cambiar una página de cálculo
 
