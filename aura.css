@@ -66,6 +66,92 @@
   .ref { color: var(--azul); border-color: #b9bfe6; background: var(--azul-tinte); }
   footer { padding-top: 6px; }
 
+  /* ---------- Presentación de resultados (tablero.js) ---------- */
+  /* Panel de datos plegable */
+  .plegar { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font: inherit; font-size: 11.5px; font-weight: 700; letter-spacing: .06em;
+            text-transform: uppercase; color: var(--azul); background: var(--azul-tinte); border: 0; border-radius: 999px; padding: 4px 11px; cursor: pointer; }
+  .plegar:hover { background: #dfe2f6; }
+  .plegar-ic { font-size: 15px; line-height: 1; transition: transform .2s; }
+  @media (min-width: 901px) {
+    main.datos-plegados { grid-template-columns: 54px minmax(0, 1fr) !important; }
+    main.datos-plegados > section.panel:first-child { position: sticky; top: calc(var(--alto-cab, 64px) + 12px); align-self: start; }
+    main.datos-plegados > section.panel:first-child > :not(h2) { display: none !important; }
+    main.datos-plegados > section.panel:first-child > h2 { writing-mode: vertical-rl; padding: 14px 0; border-radius: 12px; justify-content: flex-start; min-height: 180px; }
+    main.datos-plegados > section.panel:first-child > h2::before { display: none; }
+    main.datos-plegados .plegar { margin: 0 0 0 0; writing-mode: horizontal-tb; flex-direction: column; padding: 8px 6px; order: -1; }
+    main.datos-plegados .plegar-ic { transform: rotate(180deg); }
+  }
+  @media (max-width: 900px) {
+    main.datos-plegados > section.panel:first-child > :not(h2) { display: none !important; }
+    .plegar-ic { transform: rotate(-90deg); }
+    main.datos-plegados .plegar-ic { transform: rotate(90deg); }
+  }
+
+  /* Tablero: medidor + veredicto arriba, tarjetas de resumen debajo */
+  .tablero { margin: 14px 16px 10px; border: 1px solid #d9dde3; border-radius: 14px; background: #fff; overflow: hidden; }
+  .tablero-cab { display: flex; align-items: center; gap: 16px; padding: 14px 16px; background: linear-gradient(90deg, #f6f7fb, #fff); border-bottom: 1px solid #e3e6ea; }
+  .tablero.ok .tablero-cab { background: linear-gradient(90deg, #eaf6ef, #fff); }
+  .tablero.bad .tablero-cab { background: linear-gradient(90deg, #fff1e8, #fff); }
+  .tablero-cab > [id] { flex: 1; min-width: 0; }
+  .tablero .verdict { margin: 0; border-left: 0; background: transparent !important; padding: 0; font-size: 17px; line-height: 1.35; }
+  .tablero .verdict .note, .tablero .verdict div { font-size: 13px; }
+  .medidor { position: relative; flex: 0 0 84px; width: 84px; height: 84px; }
+  .medidor[hidden] { display: none; }
+  .medidor svg { display: block; }
+  .med-fondo { fill: none; stroke: #e3e6ea; stroke-width: 8; }
+  .med-arco { fill: none; stroke: #1f8a4c; stroke-width: 8; stroke-linecap: round; transition: stroke-dasharray .4s; }
+  .tablero.bad .med-arco { stroke: var(--naranja); }
+  .med-lim { stroke: #1d2330; stroke-width: 2; }
+  .med-tx { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.1; }
+  .med-tx b { font-size: 15px; color: var(--ink, #1d2330); font-variant-numeric: tabular-nums; }
+  .med-tx small { font-size: 9.5px; color: #7b8494; letter-spacing: .04em; text-transform: uppercase; }
+  .tablero .summary { padding: 14px 16px; gap: 12px; }
+  .card { position: relative; overflow: hidden; padding: 12px 14px 12px 18px; }
+  .card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: #d3d8de; }
+  .card.nv-ok::before { background: #1f8a4c; } .card.nv-alerta::before { background: #c98a00; } .card.nv-mal::before { background: var(--naranja); }
+  .card.nv-mal .v { color: var(--naranja); }
+  .card .t { font-weight: 600; color: #3b4556; }
+  .card .v { font-size: 26px; font-weight: 700; letter-spacing: -.01em; }
+  .card.nv-ok .bar > i { background: #1f8a4c; } .card.nv-alerta .bar > i { background: #c98a00; } .card.nv-mal .bar > i { background: var(--naranja); }
+  @media (max-width: 560px) { .tablero-cab { flex-direction: column; align-items: flex-start; } }
+
+  /* Procedimiento en tarjetas con índice */
+  .mindice { position: sticky; top: var(--alto-cab, 64px); z-index: 5; display: flex; gap: 6px; overflow-x: auto; padding: 8px 16px; margin: 6px 0 0;
+             background: rgba(255,250,250,.94); backdrop-filter: blur(4px); border-bottom: 1px solid #e3e6ea; scrollbar-width: thin; }
+  .mindice-t { flex: 0 0 auto; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #7b8494; align-self: center; margin-right: 4px; }
+  .mindice a { flex: 0 0 auto; font-size: 12.5px; text-decoration: none; color: var(--azul); background: #fff; border: 1px solid #d3d8de; border-radius: 999px; padding: 4px 11px; white-space: nowrap; }
+  .mindice a:hover { border-color: var(--azul); background: var(--azul-tinte); }
+  .mindice a.ok::before, .mindice a.bad::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; background: #1f8a4c; }
+  .mindice a.bad { border-color: #f3c2a5; } .mindice a.bad::before { background: var(--naranja); }
+  .memo .mcard { margin: 14px 0; border: 1px solid #d9dde3; border-radius: 12px; background: #fff; overflow: hidden; scroll-margin-top: calc(var(--alto-cab, 64px) + 56px); }
+  .memo .mcard.est-bad { border-color: #f3c2a5; }
+  .mcard-cab { all: unset; box-sizing: border-box; width: 100%; display: flex; align-items: center; gap: 10px; padding: 11px 14px; cursor: pointer; background: #fafbfd; border-bottom: 1px solid #eceef2; }
+  .mcard-cab:hover { background: var(--azul-tinte); }
+  .mcard-cab:focus-visible { outline: 2px solid var(--azul); outline-offset: -2px; }
+  .mcard-n { flex: 0 0 24px; height: 24px; border-radius: 7px; display: grid; place-items: center; font-size: 12px; font-weight: 700; color: #fff; background: var(--azul); }
+  .mcard.est-bad .mcard-n { background: var(--naranja); }
+  .mcard-t { flex: 1; min-width: 0; font-weight: 700; font-size: 14.5px; color: var(--azul); }
+  .mcard-estado { font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; border-radius: 999px; padding: 2px 9px; }
+  .mcard-estado:empty { display: none; }
+  .mcard.est-ok .mcard-estado { color: #1e7a46; background: #e3f3ea; } .mcard.est-bad .mcard-estado { color: #a8400a; background: #fde9dc; }
+  .mcard-chev { color: #7b8494; transition: transform .2s; }
+  .mcard.plegada .mcard-chev { transform: rotate(-90deg); }
+  .mcard.plegada .mcard-cuerpo { display: none; }
+  .mcard-cuerpo { padding: 6px 14px 12px; }
+  .memo .mcard-h3 { display: none; }
+
+  /* Lectura del procedimiento: filas más aireadas, valores alineados y ecuaciones destacadas */
+  .memo { font-size: 14px; line-height: 1.55; }
+  .memo table.calc td { padding: 7px 8px; border-bottom-color: #eef0f4; }
+  .memo table.calc tr:hover td { background: #f8f9fc; }
+  .memo table.calc td.v { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 13px; color: #141a26; }
+  .memo table.calc td.k { color: #2b3342; }
+  .memo h4 { font-size: 13px; letter-spacing: .02em; margin: 14px 0 4px; }
+  .memo .ref { border-radius: 999px; padding: 0 7px; }
+  .memo .eqs { background: #f5f7fc; border-left-color: var(--azul); border-radius: 0 8px 8px 0; padding: 10px 14px; }
+  .memo .tag { letter-spacing: .02em; }
+  .todasEq { border-radius: 999px !important; border-color: var(--azul) !important; color: var(--azul) !important; }
+
   /* ---------- Zona 2D / 3D (modelo3d.js) ---------- */
   .zona23 { margin: 6px 16px 16px; border: 1px solid #d9dde3; border-radius: 12px; background: #fff; overflow: hidden; }
   .z23-cab { display: flex; align-items: center; gap: 10px; padding: 9px 14px; border-bottom: 1px solid #e3e6ea; flex-wrap: wrap; }
@@ -90,4 +176,8 @@
   .zona23.z23-sin3d .z23-aviso { display: block; }
   @media (max-width: 900px) { .z23-cuerpo { grid-template-columns: 1fr; } .z23-2d { border-right: 0; border-bottom: 1px solid #e3e6ea; } }
 }
-@media print { .zona23 { display: none; } }
+@media print {
+  .zona23, .plegar, .mindice, .mcard-cab, .medidor { display: none !important; }
+  .memo .mcard-h3 { display: block !important; }
+  .mcard.plegada .mcard-cuerpo { display: block !important; }
+}
