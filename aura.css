@@ -97,6 +97,10 @@
     main > .panel:first-child > h2 { position: sticky; top: 0; z-index: 2; }
     div:has(> .verdict) { position: sticky; top: var(--cab); z-index: 20; background: var(--nieve); padding-top: 10px; }
   }
+  /* Con el panel del proyecto abierto (empuja la página desde 1180 px), los datos ceden ancho a los resultados */
+  @media (min-width: 1180px) and (max-width: 1599px) {
+    body.ap-abierto main { grid-template-columns: 300px minmax(0, 1fr); gap: 12px; padding-left: 16px; padding-right: 16px; }
+  }
 
   /* ---------- Inicio ---------- */
   .eyebrow { font-family: var(--mono); font-weight: 600; letter-spacing: .1em; }
