@@ -127,7 +127,7 @@
     table.calc tr { break-inside: avoid; }
   }
 </style>
-<link rel="stylesheet" href="aura.css?v=2">
+<link rel="stylesheet" href="aura.css?v=3">
 </head>
 <body>
 <header>
@@ -373,6 +373,7 @@
 
 <script src="memo.js?v=32"></script>
 <script src="dxf.js?v=1"></script>
+<script src="modelo3d.js?v=4"></script>
 <script>
 "use strict";
 // ---------------------------------------------------------------------------
@@ -1884,6 +1885,66 @@ function descargarDXFLosa() {
 }
 
 init();
+
+// ---------------------------------------------------------------------------
+// Vista 2D / 3D (modelo3d.js), a escala real en mm. Hormigón semitransparente; se oculta para ver la armadura.
+// ---------------------------------------------------------------------------
+// Viga: tramo de 1,5 m (la página no pide la luz) con barras longitudinales y estribos cerrados con ganchos de 135°
+Zona2D3D.montar({
+  antes: document.querySelector("#resViga .toolbar"),
+  fuente2D: () => $("memo").querySelector(".secwrap svg"),
+  observar: [$("verdict"), $("memo")],
+  capas: [["hormigon", "Hormigón"]],
+  construir: () => {
+    if (!ultimoTex || !ultimoViga) return null;
+    const { g, inf, sup, v } = ultimoViga;
+    if (!Number.isFinite(inf.Nb) || !Number.isFinite(sup.Nb)) return null;
+    const b = g.b * 10, h = g.h * 10, r = g.rec * 10, de = g.de, s = v.s * 10, Lv = 1500, ARM = { mat: "armadura" };
+    const e = new Geo3D.Escena();
+    e.caja({ mat: "hormigon", alfa: 0.3, grupo: "hormigon" }, 0, Lv, 0, h, -b / 2, b / 2);
+    for (const [N, db, y] of [[inf.Nb, inf.db, r + de + inf.db / 2], [sup.Nb, sup.db, h - r - de - sup.db / 2]])
+      posBarras(N, -b / 2 + r + de + db / 2, b / 2 - r - de - db / 2).forEach(z => e.tubo(ARM, [0, y, z], [Lv, y, z], db / 2, 10));
+    const z0 = -b / 2 + r + de / 2, z1 = b / 2 - r - de / 2, y0 = r + de / 2, y1 = h - r - de / 2, lg = g.hk.ext * 10 / Math.SQRT2;
+    for (let x = s / 2; x < Lv; x += s) {
+      e.barra({ mat: "armadura", grupo: "estribos" }, [[x, y1 - lg - 2 * de, z0 + lg], [x, y1 - 2 * de, z0], [x, y0, z0], [x, y0, z1], [x, y1, z1], [x, y1, z0 + 2 * de], [x, y1 - lg, z0 + 2 * de + lg]], de / 2);
+    }
+    return e;
+  },
+});
+// Losa: paño completo con mallas inferiores, suples sobre los bordes continuos y muros o vigas de apoyo
+Zona2D3D.montar({
+  antes: document.querySelector("#resLosa .toolbar"),
+  fuente2D: () => $("lplano").querySelector("svg"),
+  observar: [$("lverdict"), $("lplano")],
+  capas: [["hormigon", "Hormigón"], ["apoyos", "Apoyos"]],
+  construir: () => {
+    if (!ultimoTexLosa || !ultimoLosa) return null;
+    const { g, R, sol } = ultimoLosa, Lx = g.Lx * 1000, Ly = g.Ly * 1000, e = g.e * 10, rec = g.rec * 10;
+    const es = new Geo3D.Escena(), INF = { mat: "armadura" }, SUP = { mat: "armadura", grupo: "suples" };
+    // Planta en el plano x-z (z = dirección Y de la losa), espesor en y
+    es.caja({ mat: "hormigon", alfa: 0.28, grupo: "hormigon" }, 0, Lx, 0, e, 0, Ly);
+    for (const [x0, x1, z0, z1] of [[-150, 0, -150, Ly + 150], [Lx, Lx + 150, -150, Ly + 150], [0, Lx, -150, 0], [0, Lx, Ly, Ly + 150]])
+      es.caja({ mat: "hormigon", grupo: "apoyos" }, x0, x1, -600, 0, z0, z1);
+    const cortaX = sol.corta === "X", dXi = R.Xi?.db || 8, dYi = R.Yi?.db || 8, dXs = R.Xs?.db || 8, dYs = R.Ys?.db || 8;
+    const yXi = cortaX ? rec + dXi / 2 : rec + dYi + dXi / 2, yYi = cortaX ? rec + dXi + dYi / 2 : rec + dYi / 2;
+    const yXs = cortaX ? e - rec - dXs / 2 : e - rec - dYs - dXs / 2, yYs = cortaX ? e - rec - dXs - dYs / 2 : e - rec - dYs / 2;
+    const cada = (s, L, f) => { if (s > 0) for (let t = s / 2; t < L; t += s) f(t); };
+    if (R.Xi) cada(R.Xi.s * 10, Ly, (z) => es.tubo(INF, [0, yXi, z], [Lx, yXi, z], dXi / 2, 6));
+    if (R.Yi) cada(R.Yi.s * 10, Lx, (x) => es.tubo(INF, [x, yYi, 0], [x, yYi, Ly], dYi / 2, 6));
+    // Suples: L/4 de la luz hacia el interior desde cada borde continuo (o ambos si no hay bordes continuos), con pata de 90°
+    const extX = ceil5(g.Lx / 4) * 1000, extY = ceil5(g.Ly / 4) * 1000, b = g.bordes;
+    const pataX = R.Xs?.hk ? Math.min(R.Xs.hk.alto * 10, e - 2 * rec) : 0, pataY = R.Ys?.hk ? Math.min(R.Ys.hk.alto * 10, e - 2 * rec) : 0;
+    if (R.Xs) for (const x0 of [0, Lx].filter(x => (x === 0 ? b.izq : b.der) || (!b.izq && !b.der))) {
+      const xin = x0 === 0 ? extX : Lx - extX;
+      cada(R.Xs.s * 10, Ly, (z) => es.barra(SUP, [[x0, yXs, z], [xin, yXs, z], [xin, yXs - pataX, z]], dXs / 2));
+    }
+    if (R.Ys) for (const z0 of [0, Ly].filter(z => (z === 0 ? b.sup : b.inf) || (!b.sup && !b.inf))) {
+      const zin = z0 === 0 ? extY : Ly - extY;
+      cada(R.Ys.s * 10, Lx, (x) => es.barra(SUP, [[x, yYs, z0], [x, yYs, zin], [x, yYs - pataY, zin]], dYs / 2));
+    }
+    return es;
+  },
+});
 // Integración con proyectos (proyectos.js): datos para guardar y restaurar este cálculo
 const elActual = () => document.querySelector(".tabs button.on")?.dataset.el || "viga";
 window.AURA_MEMO = {
