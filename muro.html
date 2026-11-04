@@ -1,0 +1,1104 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#3d4450">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="AURA">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js" integrity="sha384-K0oxqktRvaThvYgGL4G+OK2Ih6VS6Uyu7j3+7WJgp/uWM0Yv6Xi4YEiw0BB+mPfi" crossorigin="anonymous"></script>
+<script src="nube.js?v=28"></script>
+<style>
+  /* PWA: sin zoom automático de iOS al enfocar campos y texto estable al rotar */
+  html { -webkit-text-size-adjust: 100%; }
+  @media (max-width: 900px) { input, select, textarea { font-size: 16px !important; } }
+  main > *, .row2 > *, .row3 > *, fieldset { min-width: 0; }
+  input, select { min-width: 0; max-width: 100%; }
+  .memo, .tablaWrap { overflow-x: auto; }
+  svg { max-width: 100%; }
+</style>
+<title>Muro de Contención</title>
+<style>
+  :root {
+    --bg: #f4f5f7;
+    --panel: #ffffff;
+    --ink: #1d2330;
+    --muted: #5f6b7a;
+    --line: #dde1e7;
+    --accent: #5b7c99;
+    --accent-ink: #ffffff;
+    --head: #3d4450;
+    --ok: #1f8a4c;
+    --ok-bg: #e6f4ec;
+    --bad: #c62828;
+    --bad-bg: #fbe9e9;
+    --warn: #9a6400;
+    --warn-bg: #fff4dc;
+    --mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 "Segoe UI", system-ui, -apple-system, sans-serif; }
+  header { background: var(--head); color: #fff; padding: 14px 24px; display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+  header h1 { margin: 0; font-size: 19px; font-weight: 600; }
+  header a.home { color: #fff; text-decoration: none; font-size: 13px; border: 1px solid #6b7380; border-radius: 4px; padding: 3px 9px; }
+  header a.home:hover { background: #4d5562; }
+  header span { color: #c9ced6; font-size: 13px; }
+  main { display: grid; grid-template-columns: 380px 1fr; gap: 20px; padding: 20px 24px; max-width: 1400px; margin: 0 auto; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; padding: 16px; } }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+  .panel > h2 { margin: 0; padding: 10px 16px; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); border-bottom: 1px solid var(--line); }
+  .body { padding: 14px 16px; }
+  label { display: block; font-size: 12px; color: var(--muted); margin: 10px 0 4px; }
+  select, input[type=number] { width: 100%; padding: 7px 9px; border: 1px solid var(--line); border-radius: 5px; font: inherit; background: #fff; color: var(--ink); }
+  select:focus, input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .unit { color: var(--muted); font-size: 11px; }
+  fieldset { border: 1px solid var(--line); border-radius: 6px; margin: 14px 0 0; padding: 4px 12px 12px; }
+  legend { font-size: 12px; font-weight: 600; color: var(--head); padding: 0 4px; }
+  details { margin-top: 10px; border: 1px dashed var(--line); border-radius: 6px; padding: 6px 10px; }
+  details summary { cursor: pointer; font-size: 12px; color: var(--head); font-weight: 600; }
+  .cbTit { font-size: 12px; font-weight: 600; color: var(--head); margin: 12px 0 -4px; }
+  .chk { display: flex; gap: 8px; align-items: center; margin-top: 12px; font-size: 13px; color: var(--ink); }
+  .hidden { display: none !important; }
+
+  .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; padding: 14px 16px; }
+  .card { border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; }
+  .card .t { font-size: 12px; color: var(--muted); }
+  .card .v { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .card .s { font-size: 12px; color: var(--muted); }
+  .bar { height: 6px; background: #eceef1; border-radius: 3px; margin-top: 6px; overflow: hidden; }
+  .bar > i { display: block; height: 100%; background: var(--ok); }
+  .bar.bad > i { background: var(--bad); }
+  .verdict { margin: 0 16px 14px; padding: 12px 14px; border-radius: 6px; font-weight: 600; font-size: 15px; }
+  .verdict.ok { background: var(--ok-bg); color: var(--ok); }
+  .verdict.bad { background: var(--bad-bg); color: var(--bad); }
+  .note { margin: 8px 0; padding: 8px 10px; border-radius: 5px; background: var(--warn-bg); color: var(--warn); font-size: 12.5px; }
+
+  .memo { padding: 4px 16px 16px; }
+  .memo h3 { font-size: 14px; margin: 18px 0 6px; padding-bottom: 4px; border-bottom: 2px solid var(--accent); color: var(--head); }
+  .memo h4 { font-size: 13px; margin: 12px 0 4px; color: var(--head); }
+  table.calc { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.calc td { padding: 4px 8px; border-bottom: 1px solid #eef0f3; vertical-align: top; }
+  table.calc td.k { color: var(--ink); }
+  table.calc td.v { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; font-weight: 600; }
+  .ref { display: inline-block; font-size: 10.5px; color: var(--accent); border: 1px solid #c3d0dc; border-radius: 3px; padding: 0 4px; margin-left: 6px; font-weight: 500; }
+  .tag { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 11.5px; font-weight: 600; }
+  .tag.ok { background: var(--ok-bg); color: var(--ok); }
+  .tag.bad { background: var(--bad-bg); color: var(--bad); }
+  .tag.warn { background: var(--warn-bg); color: var(--warn); }
+  table.alt { width: 100%; border-collapse: collapse; font-size: 12.5px; margin: 6px 0 10px; }
+  table.alt th { text-align: right; font-size: 11.5px; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--line); padding: 5px 7px; white-space: nowrap; }
+  table.alt th:first-child, table.alt td:first-child { text-align: left; }
+  table.alt td { padding: 4px 7px; border-bottom: 1px solid #eef0f3; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+  table.alt tr.tot td { font-weight: 600; border-top: 1px solid var(--line); }
+  .esquema { display: block; width: 100%; max-width: 330px; margin: 8px auto 4px; }
+  .dibujo { display: flex; justify-content: center; padding: 6px 16px 4px; }
+  .dibujo svg { width: 560px; }
+  .toolbar { display: flex; justify-content: flex-end; padding: 10px 16px 0; gap: 8px; flex-wrap: wrap; }
+  .btn { padding: 7px 14px; border-radius: 5px; border: 1px solid var(--head); background: var(--head); color: #fff; font: inherit; font-size: 13px; cursor: pointer; }
+  .btn.sec { background: #fff; color: var(--head); }
+  footer { text-align: center; color: var(--muted); font-size: 12px; padding: 10px 0 24px; }
+
+  @media print {
+    body { background: #fff; }
+    header { background: #fff; color: #000; border-bottom: 2px solid #000; }
+    header span { color: #333; }
+    header a.home { display: none; }
+    main { display: block; padding: 0; }
+    #inputs, .toolbar, footer { display: none; }
+    .panel { border: 0; }
+    .memo h3 { break-after: avoid; }
+    table.calc tr { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <a class="home" href="index.html">← Inicio</a>
+  <h1>Muro de contención en voladizo</h1>
+  <span>Estabilidad (Rankine y Mononobe-Okabe) · Diseño de pantalla, pie y talón ACI 318-08 · Por metro de muro · Unidades tf – m</span>
+</header>
+
+<main>
+  <!-- ===================== ENTRADAS ===================== -->
+  <section class="panel" id="inputs">
+    <h2>Datos de entrada</h2>
+    <div class="body">
+      <svg class="esquema" viewBox="0 0 330 250" aria-label="Esquema de las dimensiones del muro">
+        <path d="M30 170 L270 170 L270 196 L104 196 L104 222 L80 222 L80 196 L30 196 Z" fill="#e3e8ee" stroke="#3d4450" stroke-width="1.4"/>
+        <path d="M110 170 L120 30 L140 30 L140 170 Z" fill="#e3e8ee" stroke="#3d4450" stroke-width="1.4"/>
+        <rect x="140" y="30" width="130" height="140" fill="#f1e7d3" stroke="none"/>
+        <line x1="140" y1="30" x2="270" y2="30" stroke="#9a7b45" stroke-dasharray="4 3"/>
+        <text x="190" y="104" font-size="10" fill="#7a5f2c">relleno</text>
+        <path d="M150 22 L262 22" stroke="#5b7c99" stroke-width="1.2"/>
+        <text x="178" y="17" font-size="10" fill="#5b7c99">q (sobrecarga)</text>
+        <path d="M0 150 L30 150" stroke="#9a7b45" stroke-dasharray="4 3"/>
+        <text x="2" y="146" font-size="9" fill="#7a5f2c">terreno</text>
+        <g font-size="10" fill="#3d4450">
+          <line x1="30" y1="236" x2="110" y2="236" stroke="#5f6b7a"/><text x="62" y="248">B<tspan font-size="7" dy="2">p</tspan></text>
+          <line x1="110" y1="236" x2="140" y2="236" stroke="#5f6b7a"/><text x="117" y="248">e<tspan font-size="7" dy="2">b</tspan></text>
+          <line x1="140" y1="236" x2="270" y2="236" stroke="#5f6b7a"/><text x="200" y="248">B<tspan font-size="7" dy="2">t</tspan></text>
+          <text x="120" y="25">e<tspan font-size="7" dy="2">c</tspan></text>
+          <line x1="285" y1="30" x2="285" y2="170" stroke="#5f6b7a"/><text x="290" y="104">H<tspan font-size="7" dy="2">m</tspan></text>
+          <line x1="285" y1="170" x2="285" y2="196" stroke="#5f6b7a"/><text x="290" y="187">H<tspan font-size="7" dy="2">f</tspan></text>
+          <line x1="16" y1="150" x2="16" y2="196" stroke="#5f6b7a"/><text x="2" y="178">D<tspan font-size="7" dy="2">f</tspan></text>
+          <text x="58" y="215">b<tspan font-size="7" dy="2">d</tspan> × h<tspan font-size="7" dy="2">d</tspan></text>
+          <line x1="30" y1="206" x2="80" y2="206" stroke="#5f6b7a" stroke-dasharray="2 2"/><text x="40" y="204" font-size="8">x<tspan font-size="6" dy="2">d</tspan></text>
+        </g>
+      </svg>
+      <div class="unit" style="text-align:center">Trasdós vertical, talud de la pantalla hacia el pie, relleno horizontal</div>
+
+      <fieldset>
+        <legend>1. Geometría [m]</legend>
+        <div class="row3">
+          <div><label for="Hm">Altura pantalla H<sub>m</sub></label><input id="Hm" type="number" step="0.05" value="6.8"></div>
+          <div><label for="Hf">Espesor zapata H<sub>f</sub></label><input id="Hf" type="number" step="0.05" value="0.7"></div>
+          <div><label for="Df">Prof. fundación D<sub>f</sub></label><input id="Df" type="number" step="0.05" value="1.2"></div>
+          <div><label for="Bp">Pie B<sub>p</sub></label><input id="Bp" type="number" step="0.05" value="1.5"></div>
+          <div><label for="eb">Espesor base e<sub>b</sub></label><input id="eb" type="number" step="0.05" value="0.75"></div>
+          <div><label for="Bt">Talón B<sub>t</sub></label><input id="Bt" type="number" step="0.05" value="2.4"></div>
+        </div>
+        <div class="row2">
+          <div><label for="ec">Espesor coronamiento e<sub>c</sub></label><input id="ec" type="number" step="0.05" value="0.3"></div>
+          <div></div>
+        </div>
+        <div class="cbTit">Dentellón (0 = sin dentellón)</div>
+        <div class="row3">
+          <div><label for="bd">Ancho b<sub>d</sub></label><input id="bd" type="number" step="0.05" value="0.75"></div>
+          <div><label for="hd">Alto h<sub>d</sub></label><input id="hd" type="number" step="0.05" value="0.65"></div>
+          <div><label for="xd">Desde el pie x<sub>d</sub></label><input id="xd" type="number" step="0.05" value="1.5"></div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>2. Relleno y suelo de fundación</legend>
+        <div class="cbTit">Relleno (trasdós)</div>
+        <div class="row2">
+          <div><label for="phiR">Ángulo de fricción φ<sub>r</sub> <span class="unit">[°]</span></label><input id="phiR" type="number" step="1" value="34"></div>
+          <div><label for="gR">Peso específico γ<sub>r</sub> <span class="unit">[tf/m³]</span></label><input id="gR" type="number" step="0.05" value="1.9"></div>
+        </div>
+        <div class="cbTit">Suelo de fundación</div>
+        <div class="row2">
+          <div><label for="phiS">Ángulo de fricción φ<sub>s</sub> <span class="unit">[°]</span></label><input id="phiS" type="number" step="1" value="32"></div>
+          <div><label for="gS">Peso específico γ<sub>s</sub> <span class="unit">[tf/m³]</span></label><input id="gS" type="number" step="0.05" value="1.85"></div>
+          <div><label for="cS">Cohesión c<sub>s</sub> <span class="unit">[kgf/cm²]</span></label><input id="cS" type="number" step="0.05" value="0.25"></div>
+          <div><label for="su">Capacidad última σ<sub>u</sub> <span class="unit">[kgf/cm²]</span></label><input id="su" type="number" step="0.1" value="4.5"></div>
+        </div>
+        <label for="pasivo">Empuje pasivo al deslizamiento</label>
+        <select id="pasivo">
+          <option value="dentellon" selected>Solo en el dentellón (no en la puntera)</option>
+          <option value="total">Desde la superficie hasta la base (D<sub>f</sub> + h<sub>d</sub>)</option>
+          <option value="no">No considerar</option>
+        </select>
+      </fieldset>
+
+      <fieldset>
+        <legend>3. Cargas y sismo</legend>
+        <div class="row2">
+          <div><label for="q">Sobrecarga q <span class="unit">[tf/m²]</span></label><input id="q" type="number" step="0.05" value="1.14"></div>
+          <div><label for="zona">Zona sísmica (NCh 433)</label>
+            <select id="zona"><option value="0">Sin sismo</option><option value="1">Zona 1 (A<sub>0</sub> = 0,20 g)</option><option value="2">Zona 2 (A<sub>0</sub> = 0,30 g)</option><option value="3" selected>Zona 3 (A<sub>0</sub> = 0,40 g)</option></select></div>
+        </div>
+        <label class="chk"><input id="qEstab" type="checkbox" checked> La sobrecarga sobre el talón aporta peso estabilizante (como el ejemplo del curso)</label>
+        <div id="sismoBox">
+          <div class="row2">
+            <div><label for="Ri">Factor R<sub>i</sub> del relleno <span class="unit">[MC Vol. 3]</span></label><input id="Ri" type="number" step="0.05" value="0.3"></div>
+            <div><label for="critPant">Sismo en la pantalla</label>
+              <select id="critPant"><option value="curso" selected>Como el ejemplo del curso (H y todas las fuerzas)</option><option value="pantalla">Solo la pantalla (H<sub>m</sub> y su inercia)</option></select></div>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>4. Factores de seguridad mínimos</legend>
+        <div class="row3">
+          <div><label for="fsV">Volcamiento</label><input id="fsV" type="number" step="0.05" value="1.5"></div>
+          <div><label for="fsD">Deslizamiento</label><input id="fsD" type="number" step="0.05" value="1.5"></div>
+          <div><label for="fsT">Tensión (σ<sub>u</sub>/FS)</label><input id="fsT" type="number" step="0.5" value="3"></div>
+        </div>
+        <div class="row3 sismoF">
+          <div><label for="fsVs">Volc. sísmico</label><input id="fsVs" type="number" step="0.005" value="1.265"></div>
+          <div><label for="fsDs">Desl. sísmico</label><input id="fsDs" type="number" step="0.05" value="1.1"></div>
+          <div><label for="fsTs">Tensión sísmica</label><input id="fsTs" type="number" step="0.5" value="2"></div>
+        </div>
+        <div class="unit" style="margin-top:4px">Valores del ejemplo del curso: volcamiento sísmico 1,15 × 1,1.</div>
+      </fieldset>
+
+      <fieldset>
+        <legend>5. Materiales y armaduras</legend>
+        <div class="row2">
+          <div><label for="fc">Hormigón f'<sub>c</sub> <span class="unit">[kgf/cm²]</span></label><input id="fc" type="number" step="10" value="250"></div>
+          <div><label for="fy">Acero f<sub>y</sub> <span class="unit">[kgf/cm²]</span></label><input id="fy" type="number" step="100" value="4200"></div>
+          <div><label for="gH">Peso esp. hormigón γ<sub>h</sub> <span class="unit">[tf/m³]</span></label><input id="gH" type="number" step="0.05" value="2.4"></div>
+          <div><label for="rec">Recubrimiento <span class="unit">[cm]</span></label><input id="rec" type="number" step="0.5" value="5"></div>
+        </div>
+        <div class="cbTit">Diámetros de barra [mm]</div>
+        <div class="row3">
+          <div><label for="dbP">Pantalla, trasdós</label><input id="dbP" type="number" step="1" value="25"></div>
+          <div><label for="dbPc">Pantalla, cara ext.</label><input id="dbPc" type="number" step="1" value="12"></div>
+          <div><label for="dbH">Pantalla, horizontal</label><input id="dbH" type="number" step="1" value="10"></div>
+          <div><label for="dbZp">Pie (inferior)</label><input id="dbZp" type="number" step="1" value="18"></div>
+          <div><label for="dbZt">Talón (superior)</label><input id="dbZt" type="number" step="1" value="22"></div>
+          <div><label for="dbZr">Zapata, repartición</label><input id="dbZr" type="number" step="1" value="12"></div>
+        </div>
+        <div class="unit" style="margin-top:4px">Espaciamiento propuesto: el mayor múltiplo de 2,5 cm que da el área requerida, con s ≤ mín(3h ; 45 cm).</div>
+      </fieldset>
+    </div>
+  </section>
+
+  <!-- ===================== RESULTADOS ===================== -->
+  <section>
+    <div class="panel">
+      <h2 id="resTitle">Resultados</h2>
+      <div class="summary" id="summary"></div>
+      <div id="verdict"></div>
+      <div class="dibujo" id="dibujo"></div>
+      <div class="toolbar">
+        <button class="btn sec" type="button" onclick="window.print()">Imprimir</button>
+        <button class="btn" type="button" onclick="descargarZipMemoria(ultimoTex, ultimoNombre, document.body)">Descargar memoria (.zip)</button>
+      </div>
+      <div class="memo" id="memo"></div>
+    </div>
+  </section>
+</main>
+<footer>Herramienta de apoyo académico basada en el procedimiento del curso Diseño de Proyectos de Ingeniería (muros de contención). No reemplaza la memoria de cálculo del ingeniero del proyecto. Verifique siempre los resultados.</footer>
+
+<script src="memo.js?v=31"></script>
+<script>
+"use strict";
+// ---------------------------------------------------------------------------
+// Muro de contención en voladizo (ménsula) de hormigón armado, por metro de muro.
+// Unidades internas: kgf y cm. Se muestran en tf, m y tf·m como en el ejemplo del curso.
+// Ejes: x desde la punta del pie hacia el talón, y desde la base de la zapata hacia arriba.
+// ---------------------------------------------------------------------------
+const ZONAS = { "0": 0, "1": 0.2, "2": 0.3, "3": 0.4 };
+const PHI_F = 0.9, PHI_V = 0.75;              // ACI 318-08 9.3.2.1 y 9.3.2.3
+const RHO_MIN = 0.0018, RHO_MIN_C = 0.0015, RHO_H = 0.001;   // criterio del curso
+const BW = 100;                                // ancho de diseño [cm]
+
+// ---------------------------------------------------------------------------
+// Utilidades de formato
+// ---------------------------------------------------------------------------
+const fmt = (x, d = 2) => Number.isFinite(x)
+  ? x.toLocaleString("es-CL", { minimumFractionDigits: d, maximumFractionDigits: d })
+  : "—";
+const $ = (id) => document.getElementById(id);
+const num = (id) => { const v = parseFloat($(id).value); return Number.isFinite(v) ? v : 0; };
+const L = String.raw;
+const tn = (x, d = 2) => Number.isFinite(x)
+  ? fmt(x, d).replace(/,/g, "{,}").replace(/\./g, "\\,")
+  : "\\infty";
+const LE = L`\le`, GE = L`\ge`;
+const texTxt = (t) => t.replace(/—/g, "---").replace(/%/g, "\\%");
+const estado = (dc) => (dc <= 1 + 1e-9 ? "Cumple" : "No cumple");
+const tag = (ok, txt) => `<span class="tag ${ok ? "ok" : "bad"}">${txt}</span>`;
+const tagDC = (dc) => tag(dc <= 1 + 1e-9, `D/C = ${fmt(dc, 3)}`);
+// Conversiones de salida
+const T = (kgf) => kgf / 1000;                 // kgf → tf
+const TM = (kgfcm) => kgfcm / 1e5;             // kgf·cm → tf·m
+const M = (cm) => cm / 100;                    // cm → m
+const S = (kgfcm2) => kgfcm2 * 10;             // kgf/cm² → tf/m²
+const R = Math.PI / 180;
+
+class Memo {
+  constructor() { this.out = []; this.tex = []; this.n = 0; }
+  h(t) { memoTexCerrar(this); this.n++; this.out.push(`<h3>${this.n}. ${t}</h3>`); this.tex.push(`\\section{${texTxt(t)}}`); }
+  sub(t) { memoTexCerrar(this); this.out.push(`<h4>${t}</h4>`); this.tex.push(`\\subsection{${texTxt(t)}}`); }
+  row(k, v, ref) { this.out.push({ k, v, ref }); }
+  note(t, tt) { this.out.push(`<div class="note">${t}</div>`); if (tt) this.tex.push(`\\textit{${tt}}\n`); }
+  eq(s, ref) { this.tex.push(texDisplay(s, ref)); this.out.push({ tex: s + (ref ? `\\tag*{(${ref})}` : ""), eq: true }); }
+  p(s, soloTex) { memoTexP(this, s); if (!soloTex) this.out.push({ tex: s }); }
+  html_(h) { this.out.push(h); }
+  raw(t) { memoTexCerrar(this); this.tex.push(t); }
+  texto() { memoTexCerrar(this); return this.tex.join("\n"); }
+  html() { return memoHTML(this.out); }
+}
+
+// ---------------------------------------------------------------------------
+// Datos
+// ---------------------------------------------------------------------------
+function leerDatos() {
+  const m = (id) => num(id) * 100;
+  const zona = $("zona").value;
+  return {
+    Hm: m("Hm"), Hf: m("Hf"), Df: m("Df"), Bp: m("Bp"), eb: m("eb"), ec: m("ec"), Bt: m("Bt"),
+    bd: m("bd"), hd: m("hd"), xd: m("xd"),
+    phiR: num("phiR"), gR: num("gR") / 1000, phiS: num("phiS"), gS: num("gS") / 1000,
+    cS: num("cS"), su: num("su"), pasivo: $("pasivo").value,
+    q: num("q") / 10, qEstab: $("qEstab").checked,
+    zona, Ao: ZONAS[zona], Ri: num("Ri"), critPant: $("critPant").value,
+    fsV: num("fsV"), fsD: num("fsD"), fsT: num("fsT"), fsVs: num("fsVs"), fsDs: num("fsDs"), fsTs: num("fsTs"),
+    fc: num("fc"), fy: num("fy"), gH: num("gH") / 1000, rec: num("rec"),
+    dbP: num("dbP") / 10, dbPc: num("dbPc") / 10, dbH: num("dbH") / 10,
+    dbZp: num("dbZp") / 10, dbZt: num("dbZt") / 10, dbZr: num("dbZr") / 10,
+  };
+}
+function reglasDatos() {
+  const r = [["Hm", 0, true], ["Hf", 0, true], ["Df", 0], ["Bp", 0], ["eb", 0, true], ["ec", 0, true], ["Bt", 0],
+    ["bd", 0], ["hd", 0], ["xd", 0],
+    ["phiR", 0, true], ["gR", 0, true], ["phiS", 0, true], ["gS", 0, true], ["cS", 0], ["su", 0, true],
+    ["q", 0], ["fsV", 0, true], ["fsD", 0, true], ["fsT", 0, true],
+    ["fc", 0, true], ["fy", 0, true], ["gH", 0, true], ["rec", 0, true],
+    ["dbP", 0, true], ["dbPc", 0, true], ["dbH", 0, true], ["dbZp", 0, true], ["dbZt", 0, true], ["dbZr", 0, true]];
+  if ($("zona").value !== "0") r.push(["Ri", 0], ["fsVs", 0, true], ["fsDs", 0, true], ["fsTs", 0, true]);
+  return r;
+}
+function reglasMaximos() {
+  const B = num("Bp") + num("eb") + num("Bt");
+  return [
+    ["ec", num("eb"), "El espesor del coronamiento e<sub>c</sub> no puede superar el de la base e<sub>b</sub>"],
+    ["xd", Math.max(0, B - num("bd")), "El dentellón debe quedar bajo la zapata (x<sub>d</sub> + b<sub>d</sub> ≤ B)"],
+    ["phiR", 50, "φ<sub>r</sub> debe ser menor o igual a 50°"],
+    ["phiS", 50, "φ<sub>s</sub> debe ser menor o igual a 50°"],
+    ["rec", Math.min(num("eb"), num("Hf")) * 100 / 3, "El recubrimiento es demasiado grande para los espesores de la pantalla y la zapata"],
+  ];
+}
+
+// ---------------------------------------------------------------------------
+// Cálculo
+// ---------------------------------------------------------------------------
+// Coeficiente de empuje activo sísmico de Mononobe-Okabe (ángulos en grados)
+function kasMO(phi, delta, theta, psi = 90, beta = 0) {
+  const f = phi * R, dl = delta * R, t = theta * R, ps = psi * R, b = beta * R;
+  if (f - b - t <= 0) return NaN;
+  const raiz = Math.sqrt(Math.sin(f + dl) * Math.sin(f - b - t) / (Math.sin(ps - dl - t) * Math.sin(ps + b)));
+  return Math.sin(ps + f - t) ** 2 / (Math.cos(t) * Math.sin(ps) ** 2 * Math.sin(ps - dl - t) * (1 + raiz) ** 2);
+}
+
+// Elementos del muro: peso, brazos y fuerza inercial (por metro de muro)
+function elementos(d, Csh) {
+  const B = d.Bp + d.eb + d.Bt, H = d.Hf + d.Hm, xs = d.Bp + d.eb;   // xs: cara del trasdós
+  const el = [];
+  const add = (nom, tipo, b, h, W, dx, dy, fi) => el.push({ nom, tipo, b, h, W, dx, dy, F: W * fi, Mx: W * dx, My: W * fi * dy });
+  add("Fundación", "h", B, d.Hf, B * d.Hf * d.gH * BW, B / 2, d.Hf / 2, Csh);
+  add("Pantalla rectangular", "h", d.ec, d.Hm, d.ec * d.Hm * d.gH * BW, xs - d.ec / 2, d.Hf + d.Hm / 2, Csh);
+  if (d.eb - d.ec > 1e-9) add("Pantalla triangular", "h", d.eb - d.ec, d.Hm, (d.eb - d.ec) * d.Hm / 2 * d.gH * BW, d.Bp + 2 / 3 * (d.eb - d.ec), d.Hf + d.Hm / 3, Csh);
+  if (d.bd > 0 && d.hd > 0) add("Dentellón", "h", d.bd, d.hd, d.bd * d.hd * d.gH * BW, d.xd + d.bd / 2, -d.hd / 2, Csh);
+  if (d.Bt > 0) add("Relleno", "r", d.Bt, d.Hm, d.Bt * d.Hm * d.gR * BW, xs + d.Bt / 2, d.Hf + d.Hm / 2, Csh * d.Ri);
+  if (d.q > 0) add("Sobrecarga", "q", d.Bt + d.ec, 0, (d.Bt + d.ec) * d.q * BW, xs - d.ec + (d.Bt + d.ec) / 2, H, Csh);
+  return { el, B, H, xs };
+}
+
+// Ubicación de la resultante y tensiones de contacto (kgf/cm²). p(x): presión a la distancia x del pie
+function contacto(N, Mr, Mv, B) {
+  const x = (Mr - Mv) / N, e = B / 2 - x;
+  if (!(x > 0) || x >= B) return { x, e, smax: Infinity, s1: Infinity, s2: Infinity, tri: true, Lc: 0, p: () => NaN, vuelca: true };
+  if (Math.abs(e) <= B / 6 + 1e-9) {
+    const s1 = N / (BW * B) * (1 + 6 * e / B), s2 = N / (BW * B) * (1 - 6 * e / B);
+    return { x, e, s1, s2, smax: Math.max(s1, s2), tri: false, Lc: B, p: (xx) => s1 + (s2 - s1) * xx / B };
+  }
+  if (e > 0) {
+    const Lc = 3 * x, s1 = 2 * N / (3 * x * BW);
+    return { x, e, s1, s2: 0, smax: s1, tri: true, Lc, p: (xx) => Math.max(0, s1 * (1 - xx / Lc)) };
+  }
+  const xh = B - x, Lc = 3 * xh, s2 = 2 * N / (3 * xh * BW);
+  return { x, e, s1: 0, s2, smax: s2, tri: true, Lc, p: (xx) => Math.max(0, s2 * (1 - (B - xx) / Lc)) };
+}
+// Fuerza y momento de la presión del suelo sobre el pie, respecto de la cara de la pantalla (Simpson)
+function presionPie(c, Bp, xa = Bp) {
+  // Fuerza de la presión entre la punta y xa, y momento respecto de la cara de la pantalla (x = Bp)
+  if (!(xa > 0)) return { F: 0, M: 0 };
+  const n = 200, h = xa / n;
+  let F = 0, Mo = 0;
+  for (let i = 0; i <= n; i++) {
+    const x = i * h, w = (i === 0 || i === n) ? 1 : (i % 2 ? 4 : 2);
+    const p = c.p(x) * BW;
+    F += w * p; Mo += w * p * (Bp - x);
+  }
+  return { F: F * h / 3, M: Mo * h / 3 };
+}
+const beta1 = (fc) => Math.min(0.85, Math.max(0.65, 0.85 - 0.05 * (fc - 280) / 70));
+
+// Armadura de flexión por metro: requerida, propuesta y verificación con φMn
+function flexion(Mu, h, db, d0, ref) {
+  const { fc, fy, rec } = d0;
+  const d = h - rec - db / 2;
+  const mu = Mu / (PHI_F * 0.85 * fc * BW * d * d);
+  const insuf = !(2 * mu < 1);
+  const alfa = insuf ? NaN : 1 - Math.sqrt(1 - 2 * mu);
+  const rho = insuf ? NaN : 0.85 * fc * alfa / fy;
+  const rhoReq = insuf ? NaN : Math.max(rho, RHO_MIN);
+  const As = rhoReq * BW * d;
+  const Ab = Math.PI * db * db / 4;
+  const sMaxN = Math.min(3 * h, 45);
+  const sCalc = BW * Ab / As;
+  const s = Math.min(sMaxN, Math.floor(sCalc / 2.5 + 1e-9) * 2.5);
+  const Asp = s > 0 ? BW * Ab / s : NaN;
+  const a = Asp * fy / (0.85 * fc * BW);
+  const phiMn = PHI_F * Asp * fy * (d - a / 2);
+  const rb = 0.85 * beta1(fc) * fc / fy * 6300 / (6300 + fy);
+  const rhoMax = 0.75 * rb;
+  const rhoP = Asp / (BW * d);
+  return { Mu, h, db, d, mu, alfa, rho, rhoReq, As, Ab, sCalc, s, sMaxN, Asp, a, phiMn, rb, rhoMax, rhoP, insuf,
+    dc: insuf || !(s > 0) ? Infinity : Mu / phiMn, dcRho: rhoP / rhoMax, ref };
+}
+function minima(rho, h, dEf, db) {
+  const As = rho * BW * dEf, Ab = Math.PI * db * db / 4;
+  const s = Math.min(Math.min(3 * h, 45), Math.floor(BW * Ab / As / 2.5 + 1e-9) * 2.5);
+  return { As, Ab, s, sCalc: BW * Ab / As, Asp: BW * Ab / s };
+}
+const barra = (db, s) => `φ${fmt(db * 10, 0)} @ ${fmt(s, s % 1 ? 1 : 0)} cm`;
+const barraTex = (db, s) => L`$\phi$${tn(db * 10, 0)} @ ${tn(s, s % 1 ? 1 : 0)} cm`;
+
+// ---------------------------------------------------------------------------
+// Memoria: flexión y corte de una sección
+// ---------------------------------------------------------------------------
+function memoFlexion(m, f, d0, cara) {
+  m.row("Altura útil d = h − rec − d<sub>b</sub>/2", `${fmt(f.h, 1)} − ${fmt(d0.rec, 1)} − ${fmt(f.db / 2, 2)} = ${fmt(f.d, 2)} cm`);
+  m.eq(L`d = h - r_{ec} - \frac{d_b}{2} = ${tn(f.h, 1)} - ${tn(d0.rec, 1)} - \frac{${tn(f.db, 1)}}{2} = ${tn(f.d, 2)}\ \mathrm{cm}`);
+  m.eq(L`\mu = \frac{M_u}{\phi\,0{,}85\,f'_c\,b\,d^2} = \frac{${tn(f.Mu, 0)}}{0{,}9\cdot 0{,}85\cdot ${tn(d0.fc, 0)}\cdot 100\cdot ${tn(f.d, 2)}^2} = ${tn(f.mu, 4)}`);
+  if (f.insuf) {
+    m.row("μ", `${fmt(f.mu, 4)} ${tag(false, "sección insuficiente")}`);
+    m.note("2μ ≥ 1: la sección no alcanza a resistir el momento con armadura simple. Aumente el espesor.",
+      L`$2\mu \ge 1$: la sección no alcanza a resistir el momento con armadura simple; se debe aumentar el espesor.`);
+    return;
+  }
+  m.row("μ ; α = 1 − √(1 − 2μ)", `${fmt(f.mu, 4)} ; ${fmt(f.alfa, 4)}`);
+  m.eq(L`\alpha = 1 - \sqrt{1 - 2\mu} = ${tn(f.alfa, 4)} \qquad \rho = \frac{0{,}85\,f'_c\,\alpha}{f_y} = ${tn(f.rho, 5)}`);
+  m.row("ρ calculada ; ρ<sub>mín</sub>", `${fmt(f.rho, 5)} ; ${fmt(RHO_MIN, 4)}`, "criterio del curso");
+  m.row(`A<sub>s</sub> requerida = máx(ρ ; ρ<sub>mín</sub>) · b · d (${cara})`, `${fmt(f.As, 2)} cm²/m`);
+  m.eq(L`A_s = \max(\rho;\ \rho_{m\acute{i}n})\,b\,d = ${tn(f.rhoReq, 5)}\cdot 100\cdot ${tn(f.d, 2)} = ${tn(f.As, 2)}\ \mathrm{cm^2/m}`);
+  m.row(`Separación: 100·A<sub>b</sub>/A<sub>s</sub> = ${fmt(f.sCalc, 1)} cm ; s<sub>máx</sub> = mín(3h ; 45) = ${fmt(f.sMaxN, 1)} cm`, `<b>${barra(f.db, f.s)}</b>`, "ACI 318-08 7.6.5");
+  m.eq(L`s \le \frac{100\,A_b}{A_s} = \frac{100\cdot ${tn(f.Ab, 3)}}{${tn(f.As, 2)}} = ${tn(f.sCalc, 1)}\ \mathrm{cm} \;\Rightarrow\; s = ${tn(f.s, 1)}\ \mathrm{cm}`, "ACI 318-08 7.6.5");
+  if (f.s < 10) m.note(`Separación de ${fmt(f.s, 1)} cm: considere un diámetro mayor.`, L`Separación reducida (${tn(f.s, 1)} cm); se recomienda un diámetro mayor.`);
+  m.row("φM<sub>n</sub> con la armadura dispuesta", `${fmt(TM(f.phiMn), 2)} tf·m ${tagDC(f.dc)}`, "ACI 318-08 10.2");
+  m.eq(L`a = \frac{A_s f_y}{0{,}85\,f'_c\,b} = ${tn(f.a, 2)}\ \mathrm{cm} \qquad \phi M_n = 0{,}9\,A_s f_y\left(d - \frac{a}{2}\right) = ${tn(TM(f.phiMn), 2)}\ \mathrm{tf\,m}`);
+  m.eq(L`\frac{M_u}{\phi M_n} = \frac{${tn(TM(f.Mu), 2)}}{${tn(TM(f.phiMn), 2)}} = ${tn(f.dc, 3)} ${f.dc <= 1 ? LE : ">"} 1{,}0`);
+  m.row("ρ dispuesta / ρ<sub>máx</sub> = 0,75 ρ<sub>b</sub>", `${fmt(f.rhoP, 5)} / ${fmt(f.rhoMax, 4)} ${tagDC(f.dcRho)}`, "criterio del curso");
+  m.eq(L`\rho_b = 0{,}85\,\beta_1\frac{f'_c}{f_y}\,\frac{6300}{6300 + f_y} = ${tn(f.rb, 4)} \qquad \frac{\rho}{0{,}75\,\rho_b} = \frac{${tn(f.rhoP, 5)}}{${tn(f.rhoMax, 4)}} = ${tn(f.dcRho, 3)} ${f.dcRho <= 1 ? LE : ">"} 1{,}0`);
+}
+function memoCorte(m, Vu, dEf, d0) {
+  const Vc = 0.53 * Math.sqrt(d0.fc) * BW * dEf;
+  const dc = Vu / (PHI_V * Vc);
+  m.row("V<sub>c</sub> = 0,53 √f'<sub>c</sub> b d ; φ = 0,75", `${fmt(T(Vc), 2)} tf ; φV<sub>c</sub> = ${fmt(T(PHI_V * Vc), 2)} tf`, "ACI 318-08 11-3");
+  m.row("V<sub>u</sub> / φV<sub>c</sub>", tagDC(dc));
+  m.eq(L`V_c = 0{,}53\sqrt{f'_c}\,b\,d = 0{,}53\sqrt{${tn(d0.fc, 0)}}\cdot 100\cdot ${tn(dEf, 2)} = ${tn(T(Vc), 2)}\ \mathrm{tf}`, "ACI 318-08 11-3");
+  m.eq(L`\frac{V_u}{\phi V_c} = \frac{${tn(T(Vu), 2)}}{0{,}75\cdot ${tn(T(Vc), 2)}} = ${tn(dc, 3)} ${dc <= 1 ? LE : ">"} 1{,}0`);
+  return { Vc, dc };
+}
+
+// Tabla de pesos (HTML y LaTeX)
+function tablaPesos(m, E, conSismo, tit) {
+  const filas = E.el.map(e => ({ ...e, usa: e.tipo !== "q" || ultimoQEstab }));
+  const sum = (f) => filas.reduce((a, e) => a + (e.usa ? f(e) : 0), 0);
+  const N = sum(e => e.W), Mx = sum(e => e.Mx), F = E.el.reduce((a, e) => a + e.F, 0), My = E.el.reduce((a, e) => a + e.My, 0);
+  const hTxt = (e) => e.tipo === "q" ? `${fmt(S(e.W / (e.b * BW)), 2)} tf/m²` : fmt(M(e.h), 2);
+  let h = `<div class="tablaWrap"><table class="alt"><tr><th>Elemento</th><th>b [m]</th><th>h [m]</th><th>W<sub>i</sub> [tf]</th>${conSismo ? "<th>F<sub>i</sub> [tf]</th>" : ""}<th>d<sub>x</sub> [m]</th><th>d<sub>y</sub> [m]</th><th>W<sub>i</sub>·d<sub>x</sub> [tf·m]</th>${conSismo ? "<th>F<sub>i</sub>·d<sub>y</sub> [tf·m]</th>" : ""}</tr>`;
+  h += filas.map(e => `<tr><td>${e.nom}${e.usa ? "" : " *"}</td><td>${fmt(M(e.b), 2)}</td><td>${hTxt(e)}</td><td>${fmt(T(e.W), 3)}</td>${conSismo ? `<td>${fmt(T(e.F), 3)}</td>` : ""}<td>${fmt(M(e.dx), 3)}</td><td>${fmt(M(e.dy), 3)}</td><td>${fmt(TM(e.Mx), 3)}</td>${conSismo ? `<td>${fmt(TM(e.My), 3)}</td>` : ""}</tr>`).join("");
+  h += `<tr class="tot"><td>Total</td><td></td><td></td><td>${fmt(T(N), 3)}</td>${conSismo ? `<td>${fmt(T(F), 3)}</td>` : ""}<td></td><td></td><td>${fmt(TM(Mx), 3)}</td>${conSismo ? `<td>${fmt(TM(My), 3)}</td>` : ""}</tr></table></div>`;
+  if (!ultimoQEstab && E.el.some(e => e.tipo === "q")) h += `<div class="unit">* La sobrecarga no se suma al peso estabilizante ni al momento resistente.</div>`;
+  m.html_(h);
+  const hT = (e) => e.tipo === "q" ? `${tn(S(e.W / (e.b * BW)), 2)} tf/m$^2$` : tn(M(e.h), 2);
+  const cols = conSismo ? "lrrrrrrrr" : "lrrrrrr";
+  const filasT = filas.map(e => `${e.nom}${e.usa ? "" : "$^*$"} & ${tn(M(e.b), 2)} & ${hT(e)} & ${tn(T(e.W), 3)}${conSismo ? ` & ${tn(T(e.F), 3)}` : ""} & ${tn(M(e.dx), 3)} & ${tn(M(e.dy), 3)} & ${tn(TM(e.Mx), 3)}${conSismo ? ` & ${tn(TM(e.My), 3)}` : ""}\\\\`).join("\n");
+  m.raw(L`\begin{table}[H]
+\centering
+\small
+\caption{${tit}}
+\begin{tabular}{${cols}}
+\toprule
+Elemento & $b$ [m] & $h$ [m] & $W_i$ [tf]${conSismo ? " & $F_i$ [tf]" : ""} & $d_x$ [m] & $d_y$ [m] & $W_i d_x$ [tf m]${conSismo ? " & $F_i d_y$ [tf m]" : ""}\\
+\midrule
+${filasT}
+\midrule
+Total & & & ${tn(T(N), 3)}${conSismo ? ` & ${tn(T(F), 3)}` : ""} & & & ${tn(TM(Mx), 3)}${conSismo ? ` & ${tn(TM(My), 3)}` : ""}\\
+\bottomrule
+\end{tabular}
+\end{table}
+${!ultimoQEstab && E.el.some(e => e.tipo === "q") ? L`{\small $^*$ La sobrecarga no se suma al peso estabilizante ni al momento resistente.}` : ""}
+`);
+  return { N, Mx, F, My };
+}
+let ultimoQEstab = true;
+
+// ---------------------------------------------------------------------------
+// Verificación completa
+// ---------------------------------------------------------------------------
+function verificar(d, m) {
+  ultimoQEstab = d.qEstab;
+  const sismo = d.Ao > 0;
+  const Csh = 0.5 * d.Ao, Csv = 0.7 * Csh;
+  const E = elementos(d, Csh);
+  const { B, H } = E;
+  const checks = [], sinVerificar = [];
+  const ck = (k, dem, cap, dc, html, grupo) => checks.push({ k, dem, cap, dc, html, grupo });
+
+  // ---------- 1. Geometría y pesos ----------
+  m.h("Geometría, pesos y momento resistente");
+  m.row("Ancho de la zapata B = B<sub>p</sub> + e<sub>b</sub> + B<sub>t</sub>", `${fmt(M(d.Bp), 2)} + ${fmt(M(d.eb), 2)} + ${fmt(M(d.Bt), 2)} = ${fmt(M(B), 2)} m`);
+  m.row("Altura total H = H<sub>f</sub> + H<sub>m</sub>", `${fmt(M(d.Hf), 2)} + ${fmt(M(d.Hm), 2)} = ${fmt(M(H), 2)} m`);
+  m.eq(L`B = B_p + e_b + B_t = ${tn(M(d.Bp), 2)} + ${tn(M(d.eb), 2)} + ${tn(M(d.Bt), 2)} = ${tn(M(B), 2)}\ \mathrm{m} \qquad H = H_f + H_m = ${tn(M(d.Hf), 2)} + ${tn(M(d.Hm), 2)} = ${tn(M(H), 2)}\ \mathrm{m}`);
+  m.sub("Pesos y brazos");
+  m.p(L`Los pesos se calculan por metro de muro. Las distancias $d_x$ se miden desde la punta del pie y las $d_y$ desde la base de la zapata. El suelo sobre el pie no se considera como peso estabilizante.`, true);
+  const P = tablaPesos(m, E, false, "Pesos propios, relleno y sobrecarga, con sus brazos respecto de la punta del pie.");
+  const N = P.N, Mr = P.Mx;
+  m.row("Peso total N = ΣW<sub>i</sub> ; momento resistente M<sub>R</sub> = ΣW<sub>i</sub>·d<sub>x</sub>", `${fmt(T(N), 3)} tf ; ${fmt(TM(Mr), 3)} tf·m`);
+  m.eq(L`N = \sum W_i = ${tn(T(N), 3)}\ \mathrm{tf} \qquad M_R = \sum W_i\,d_{x,i} = ${tn(TM(Mr), 3)}\ \mathrm{tf\,m}`);
+
+  // ---------- 2. Empujes estáticos ----------
+  m.h("Caso 1: empujes de tierra más sobrecarga");
+  const sR = Math.sin(d.phiR * R), sS = Math.sin(d.phiS * R);
+  const Ka = (1 - sR) / (1 + sR);
+  const Ps = 0.5 * Ka * d.gR * H * H * BW, Pq = Ka * d.q * H * BW;
+  m.p(L`Se considera empuje activo sobre el plano vertical que pasa por el extremo del talón, porque el muro puede desplazarse en su parte superior. El relleno es horizontal y el trasdós vertical, por lo que el empuje es horizontal (Rankine).`, true);
+  m.row("K<sub>a</sub> = (1 − sen φ<sub>r</sub>)/(1 + sen φ<sub>r</sub>)", fmt(Ka, 4), "Rankine");
+  m.row("Empuje del relleno P<sub>s</sub> = ½ K<sub>a</sub> γ<sub>r</sub> H², a H/3", `${fmt(T(Ps), 3)} tf`);
+  m.row("Empuje de la sobrecarga P<sub>q</sub> = K<sub>a</sub> q H, a H/2", `${fmt(T(Pq), 3)} tf`);
+  m.eq(L`K_a = \frac{1 - \sin\phi_r}{1 + \sin\phi_r} = \frac{1 - \sin ${tn(d.phiR, 1)}^\circ}{1 + \sin ${tn(d.phiR, 1)}^\circ} = ${tn(Ka, 4)}`);
+  m.eq(L`P_s = \tfrac{1}{2}K_a\,\gamma_r\,H^2 = 0{,}5\cdot ${tn(Ka, 4)}\cdot ${tn(d.gR * 1000, 2)}\cdot ${tn(M(H), 2)}^2 = ${tn(T(Ps), 3)}\ \mathrm{tf} \qquad P_q = K_a\,q\,H = ${tn(Ka, 4)}\cdot ${tn(S(d.q), 2)}\cdot ${tn(M(H), 2)} = ${tn(T(Pq), 3)}\ \mathrm{tf}`);
+
+  const Kp = (1 + sS) / (1 - sS);
+  let Ep = 0;
+  m.sub("Empuje pasivo");
+  m.row("K<sub>p</sub> = (1 + sen φ<sub>s</sub>)/(1 − sen φ<sub>s</sub>)", fmt(Kp, 4), "Rankine");
+  m.eq(L`K_p = \frac{1 + \sin\phi_s}{1 - \sin\phi_s} = \frac{1 + \sin ${tn(d.phiS, 1)}^\circ}{1 - \sin ${tn(d.phiS, 1)}^\circ} = ${tn(Kp, 4)}`);
+  if (d.pasivo === "no") {
+    m.row("Empuje pasivo E<sub>p</sub>", "no se considera");
+  } else if (d.pasivo === "dentellon") {
+    if (d.hd > 0 && d.bd > 0) {
+      const sp1 = Kp * d.gS * d.Df, sp2 = Kp * d.gS * (d.Df + d.hd);
+      Ep = (sp1 + sp2) / 2 * d.hd * BW;
+      m.p(L`El empuje pasivo de la puntera no se considera, porque no se asegura su compactación ni que mantenga sus condiciones en el tiempo; solo se considera el desarrollado en el dentellón.`, true);
+      m.row("σ<sub>p1</sub> = K<sub>p</sub> γ<sub>s</sub> D<sub>f</sub> ; σ<sub>p2</sub> = K<sub>p</sub> γ<sub>s</sub> (D<sub>f</sub> + h<sub>d</sub>)", `${fmt(S(sp1), 3)} ; ${fmt(S(sp2), 3)} tf/m²`);
+      m.row("E<sub>p</sub> = (σ<sub>p1</sub> + σ<sub>p2</sub>)/2 · h<sub>d</sub> (solo el dentellón)", `${fmt(T(Ep), 3)} tf`);
+      m.eq(L`\sigma_{p1} = K_p\,\gamma_s\,D_f = ${tn(Kp, 4)}\cdot ${tn(d.gS * 1000, 2)}\cdot ${tn(M(d.Df), 2)} = ${tn(S(sp1), 3)}\ \mathrm{tf/m^2} \qquad \sigma_{p2} = K_p\,\gamma_s\,(D_f + h_d) = ${tn(S(sp2), 3)}\ \mathrm{tf/m^2}`);
+      m.eq(L`E_p = \frac{\sigma_{p1} + \sigma_{p2}}{2}\,h_d = \frac{${tn(S(sp1), 3)} + ${tn(S(sp2), 3)}}{2}\cdot ${tn(M(d.hd), 2)} = ${tn(T(Ep), 3)}\ \mathrm{tf}`);
+    } else {
+      m.row("Empuje pasivo E<sub>p</sub> (sin dentellón)", "0 tf");
+    }
+  } else {
+    const hp = d.Df + d.hd;
+    Ep = 0.5 * Kp * d.gS * hp * hp * BW;
+    m.row("E<sub>p</sub> = ½ K<sub>p</sub> γ<sub>s</sub> (D<sub>f</sub> + h<sub>d</sub>)²", `${fmt(T(Ep), 3)} tf`);
+    m.eq(L`E_p = \tfrac{1}{2}K_p\,\gamma_s\,(D_f + h_d)^2 = 0{,}5\cdot ${tn(Kp, 4)}\cdot ${tn(d.gS * 1000, 2)}\cdot ${tn(M(hp), 2)}^2 = ${tn(T(Ep), 3)}\ \mathrm{tf}`);
+  }
+
+  // ---------- 3. Estabilidad estática ----------
+  m.h("Caso 1: estabilidad del muro");
+  const mu = Math.tan(2 / 3 * d.phiS * R), cp = 0.5 * d.cS;
+  const FR = mu * N + cp * B * BW + Ep;
+  const estab = (tit, Mv, FD, fsV, fsD, fsT, eqMv, eqFD, sufijo) => {
+    m.sub(`${tit}: volcamiento`);
+    const FSv = Mr / Mv;
+    m.row("Momento volcante M<sub>V</sub>", `${fmt(TM(Mv), 3)} tf·m`);
+    m.eq(eqMv);
+    m.row(`FS = M<sub>R</sub>/M<sub>V</sub> ≥ ${fmt(fsV, 3)}`, `${fmt(FSv, 3)} ${tagDC(fsV / FSv)}`);
+    m.eq(L`FS = \frac{M_R}{M_V} = \frac{${tn(TM(Mr), 3)}}{${tn(TM(Mv), 3)}} = ${tn(FSv, 3)} ${FSv >= fsV ? GE : "<"} ${tn(fsV, 3)}`);
+    ck(`Volcamiento${sufijo}`, `$FS = ${tn(FSv, 2)}$`, `$FS_{m\acute{i}n} = ${tn(fsV, 3)}$`, fsV / FSv, `Volcamiento${sufijo}`, "estab");
+
+    m.sub(`${tit}: deslizamiento`);
+    const FSd = FR / FD;
+    m.row("μ = tan(2φ<sub>s</sub>/3) ; c' = 0,5 c<sub>s</sub>", `${fmt(mu, 4)} ; ${fmt(S(cp), 3)} tf/m²`);
+    m.row("Fuerza resistente F<sub>R</sub> = μ N + c' B + E<sub>p</sub>", `${fmt(T(FR), 3)} tf`);
+    m.eq(L`F_R = \mu\,N + c'\,B + E_p = ${tn(mu, 4)}\cdot ${tn(T(N), 3)} + ${tn(S(cp), 3)}\cdot ${tn(M(B), 2)} + ${tn(T(Ep), 3)} = ${tn(T(FR), 3)}\ \mathrm{tf}`);
+    m.row("Fuerza deslizante F<sub>D</sub>", `${fmt(T(FD), 3)} tf`);
+    m.eq(eqFD);
+    m.row(`FS = F<sub>R</sub>/F<sub>D</sub> ≥ ${fmt(fsD, 3)}`, `${fmt(FSd, 3)} ${tagDC(fsD / FSd)}`);
+    m.eq(L`FS = \frac{F_R}{F_D} = \frac{${tn(T(FR), 3)}}{${tn(T(FD), 3)}} = ${tn(FSd, 3)} ${FSd >= fsD ? GE : "<"} ${tn(fsD, 3)}`);
+    ck(`Deslizamiento${sufijo}`, `$FS = ${tn(FSd, 2)}$`, `$FS_{m\acute{i}n} = ${tn(fsD, 3)}$`, fsD / FSd, `Deslizamiento${sufijo}`, "estab");
+
+    m.sub(`${tit}: tensión en el sello de fundación`);
+    const c = contacto(N, Mr, Mv, B);
+    const sadm = d.su / fsT;
+    if (c.vuelca) {
+      m.note("La resultante cae fuera de la base: el muro vuelca.", L`La resultante cae fuera de la base: el muro vuelca.`);
+      ck(`Tensión de contacto${sufijo}`, "vuelca", L`$\sigma_{adm} = ${tn(S(sadm), 2)}$ tf/m$^2$`, Infinity, `Tensión de contacto${sufijo}`, "estab");
+      return { FSv, FSd, c, sadm, Mv, FD };
+    }
+    m.row("x = (M<sub>R</sub> − M<sub>V</sub>)/N ; e = B/2 − x ; B/6", `${fmt(M(c.x), 3)} ; ${fmt(M(c.e), 3)} ; ${fmt(M(B / 6), 3)} m`);
+    m.eq(L`x = \frac{M_R - M_V}{N} = \frac{${tn(TM(Mr), 3)} - ${tn(TM(Mv), 3)}}{${tn(T(N), 3)}} = ${tn(M(c.x), 3)}\ \mathrm{m} \qquad e = \frac{B}{2} - x = ${tn(M(c.e), 3)}\ \mathrm{m}`);
+    if (!c.tri) {
+      m.row("Resultante en el tercio central: σ = N/(B·L) (1 ± 6e/B)", `σ<sub>máx</sub> = ${fmt(S(c.smax), 2)} ; σ<sub>mín</sub> = ${fmt(S(Math.min(c.s1, c.s2)), 2)} tf/m²`);
+      m.eq(L`|e| = ${tn(M(Math.abs(c.e)), 3)} \le \frac{B}{6} = ${tn(M(B / 6), 3)}\ \mathrm{m} \;\Rightarrow\; \sigma = \frac{N}{B\,L}\left(1 \pm \frac{6e}{B}\right) = ${tn(S(c.smax), 2)}\ ;\ ${tn(S(Math.min(c.s1, c.s2)), 2)}\ \mathrm{tf/m^2}`);
+    } else {
+      const xx = c.e > 0 ? c.x : B - c.x;
+      m.row("Resultante fuera del tercio central: σ<sub>máx</sub> = 2N/(3x·L)", `${fmt(S(c.smax), 2)} tf/m² (contacto en ${fmt(M(c.Lc), 2)} m)`);
+      m.eq(L`|e| = ${tn(M(Math.abs(c.e)), 3)} > \frac{B}{6} = ${tn(M(B / 6), 3)}\ \mathrm{m} \;\Rightarrow\; \sigma_{m\acute{a}x} = \frac{2N}{3\,x\,L} = \frac{2\cdot ${tn(T(N), 3)}}{3\cdot ${tn(M(xx), 3)}\cdot 1} = ${tn(S(c.smax), 2)}\ \mathrm{tf/m^2}`);
+      if (!sufijo) m.note("En la condición estática se recomienda que la resultante caiga en el tercio central de la base (sin tracciones en el sello).",
+        L`En la condición estática se recomienda que la resultante caiga en el tercio central de la base.`);
+    }
+    const dcT = c.smax / sadm;
+    m.row(`σ<sub>adm</sub> = σ<sub>u</sub>/FS = ${fmt(d.su, 2)}/${fmt(fsT, 2)}`, `${fmt(S(sadm), 2)} tf/m² ${tagDC(dcT)}`);
+    m.eq(L`\sigma_{adm} = \frac{\sigma_u}{FS} = \frac{${tn(S(d.su), 1)}}{${tn(fsT, 2)}} = ${tn(S(sadm), 2)}\ \mathrm{tf/m^2} \qquad \frac{\sigma_{m\acute{a}x}}{\sigma_{adm}} = \frac{${tn(S(c.smax), 2)}}{${tn(S(sadm), 2)}} = ${tn(dcT, 3)} ${dcT <= 1 ? LE : ">"} 1{,}0`);
+    ck(`Tensión de contacto${sufijo}`, L`$\sigma_{m\acute{a}x} = ${tn(S(c.smax), 2)}$ tf/m$^2$`, L`$\sigma_{adm} = ${tn(S(sadm), 2)}$ tf/m$^2$`, dcT, `Tensión de contacto${sufijo}`, "estab");
+    return { FSv, FSd, c, sadm, Mv, FD };
+  };
+  const Mv1 = Ps * H / 3 + Pq * H / 2, FD1 = Ps + Pq;
+  const e1 = estab("Caso 1", Mv1, FD1, d.fsV, d.fsD, d.fsT,
+    L`M_V = P_s\frac{H}{3} + P_q\frac{H}{2} = ${tn(T(Ps), 3)}\cdot\frac{${tn(M(H), 2)}}{3} + ${tn(T(Pq), 3)}\cdot\frac{${tn(M(H), 2)}}{2} = ${tn(TM(Mv1), 3)}\ \mathrm{tf\,m}`,
+    L`F_D = P_s + P_q = ${tn(T(Ps), 3)} + ${tn(T(Pq), 3)} = ${tn(T(FD1), 3)}\ \mathrm{tf}`, "");
+
+  // ---------- 4. Sismo ----------
+  let e2 = null, th = 0, delta = 2 / 3 * d.phiR, Kas = NaN, dEa = 0, dEq = 0, F = 0, MyS = 0, sinSismoMO = false;
+  if (sismo) {
+    m.h("Caso 2: empujes de tierra más sobrecarga más sismo");
+    th = Math.atan(Csh / (1 - Csv)) / R;
+    Kas = kasMO(d.phiR, delta, th);
+    m.row("Coeficientes sísmicos C<sub>sh</sub> = 0,5 A<sub>0</sub> ; C<sub>sv</sub> = 0,7 C<sub>sh</sub>", `${fmt(Csh, 3)} ; ${fmt(Csv, 3)}`);
+    m.row("θ = arctan(C<sub>sh</sub>/(1 − C<sub>sv</sub>)) ; δ = 2φ<sub>r</sub>/3 ; ψ = 90° ; β = 0°", `${fmt(th, 3)}° ; ${fmt(delta, 3)}°`);
+    m.eq(L`C_{sh} = 0{,}5\,A_0 = 0{,}5\cdot ${tn(d.Ao, 2)} = ${tn(Csh, 3)} \qquad C_{sv} = 0{,}7\,C_{sh} = ${tn(Csv, 3)}`);
+    m.eq(L`\theta = \arctan\frac{C_{sh}}{1 - C_{sv}} = \arctan\frac{${tn(Csh, 3)}}{1 - ${tn(Csv, 3)}} = ${tn(th, 3)}^\circ \qquad \delta = \tfrac{2}{3}\phi_r = ${tn(delta, 3)}^\circ`);
+    if (!Number.isFinite(Kas)) {
+      sinSismoMO = true;
+      sinVerificar.push("φ_r − θ ≤ 0: la ecuación de Mononobe-Okabe no tiene solución");
+      m.note("φ<sub>r</sub> − θ ≤ 0: la ecuación de Mononobe-Okabe no tiene solución. El caso sísmico queda sin verificar.",
+        L`$\phi_r - \theta \le 0$: la ecuación de Mononobe-Okabe no tiene solución; el caso sísmico queda sin verificar.`);
+    } else {
+      m.row("K<sub>as</sub> (Mononobe-Okabe)", fmt(Kas, 4), "Mononobe-Okabe");
+      m.eq(L`K_{as} = \frac{\sin^2(\psi + \phi_r - \theta)}{\cos\theta\,\sin^2\psi\,\sin(\psi - \delta - \theta)\left[1 + \sqrt{\dfrac{\sin(\phi_r + \delta)\,\sin(\phi_r - \beta - \theta)}{\sin(\psi - \delta - \theta)\,\sin(\psi + \beta)}}\right]^2} = ${tn(Kas, 4)}`, "M-O");
+      dEa = 0.5 * d.gR * H * H * (Kas - Ka) * (1 - Csv) * BW;
+      dEq = d.q * H * (Kas - Ka) * (1 - Csv) * BW;
+      m.row("ΔDE<sub>a</sub> = ½ γ<sub>r</sub> H² (K<sub>as</sub> − K<sub>a</sub>)(1 − C<sub>sv</sub>), a 2H/3", `${fmt(T(dEa), 3)} tf`);
+      m.row("ΔDE<sub>q</sub> = q H (K<sub>as</sub> − K<sub>a</sub>)(1 − C<sub>sv</sub>), a H/2", `${fmt(T(dEq), 3)} tf`);
+      m.eq(L`\Delta DE_a = \tfrac{1}{2}\gamma_r H^2 (K_{as} - K_a)(1 - C_{sv}) = 0{,}5\cdot ${tn(d.gR * 1000, 2)}\cdot ${tn(M(H), 2)}^2\cdot(${tn(Kas, 4)} - ${tn(Ka, 4)})(1 - ${tn(Csv, 3)}) = ${tn(T(dEa), 3)}\ \mathrm{tf}`);
+      m.eq(L`\Delta DE_q = q\,H\,(K_{as} - K_a)(1 - C_{sv}) = ${tn(S(d.q), 2)}\cdot ${tn(M(H), 2)}\cdot(${tn(Kas, 4)} - ${tn(Ka, 4)})(1 - ${tn(Csv, 3)}) = ${tn(T(dEq), 3)}\ \mathrm{tf}`);
+      m.sub("Fuerzas inerciales");
+      m.p(L`Las fuerzas inerciales son $F_i = C_{sh}\,W_i$ para el muro y la sobrecarga, y $F_i = C_{sh}\,W_i\,R_i$ para el relleno sobre el talón, con $R_i = ${tn(d.Ri, 2)}$ (Manual de Carreteras Vol. 3, lámina 3.1003.403(2)F).`);
+      const PS = tablaPesos(m, E, true, "Pesos y fuerzas inerciales (caso sísmico).");
+      F = PS.F; MyS = PS.My;
+      m.row("ΣF<sub>i</sub> ; ΣF<sub>i</sub>·d<sub>y</sub>", `${fmt(T(F), 3)} tf ; ${fmt(TM(MyS), 3)} tf·m`);
+      m.h("Caso 2: estabilidad del muro");
+      const Mv2 = Mv1 + MyS + dEa * 2 * H / 3 + dEq * H / 2, FD2 = FD1 + F + dEa + dEq;
+      m.p(L`La componente vertical del sismo no se descuenta del peso estabilizante, como en el procedimiento del curso. La fuerza resistente al deslizamiento es la misma del caso estático.`, true);
+      e2 = estab("Caso 2", Mv2, FD2, d.fsVs, d.fsDs, d.fsTs,
+        L`M_V = P_s\frac{H}{3} + P_q\frac{H}{2} + \sum F_i d_{y,i} + \Delta DE_a\frac{2H}{3} + \Delta DE_q\frac{H}{2} = ${tn(TM(Mv1), 3)} + ${tn(TM(MyS), 3)} + ${tn(TM(dEa * 2 * H / 3), 3)} + ${tn(TM(dEq * H / 2), 3)} = ${tn(TM(Mv2), 3)}\ \mathrm{tf\,m}`,
+        L`F_D = P_s + P_q + \sum F_i + \Delta DE_a + \Delta DE_q = ${tn(T(FD1), 3)} + ${tn(T(F), 3)} + ${tn(T(dEa), 3)} + ${tn(T(dEq), 3)} = ${tn(T(FD2), 3)}\ \mathrm{tf}`, " (sismo)");
+    }
+  }
+  const conSismo = sismo && !sinSismoMO;
+
+  // ---------- 5. Pantalla ----------
+  m.h("Diseño de la pantalla");
+  m.p(L`La pantalla se diseña como un voladizo empotrado en la zapata; la sección crítica está en su base, con espesor $e_b$. Las cargas laterales del suelo se mayoran por 1,6 (ACI 318-08 9.2) y el sismo por 1,0.`);
+  const Psm = 0.5 * Ka * d.gR * d.Hm * d.Hm * BW, Pqm = Ka * d.q * d.Hm * BW;
+  const Vu1 = 1.6 * (Psm + Pqm), Mu1 = 1.6 * (Psm * d.Hm / 3 + Pqm * d.Hm / 2);
+  m.sub("Solicitaciones estáticas (1,6 H)");
+  m.row("P<sub>s</sub> = ½ K<sub>a</sub> γ<sub>r</sub> H<sub>m</sub>² ; P<sub>q</sub> = K<sub>a</sub> q H<sub>m</sub>", `${fmt(T(Psm), 3)} ; ${fmt(T(Pqm), 3)} tf`);
+  m.row("V<sub>u</sub> = 1,6 (P<sub>s</sub> + P<sub>q</sub>) ; M<sub>u</sub> = 1,6 (P<sub>s</sub> H<sub>m</sub>/3 + P<sub>q</sub> H<sub>m</sub>/2)", `${fmt(T(Vu1), 3)} tf ; ${fmt(TM(Mu1), 3)} tf·m`);
+  m.eq(L`P_s = \tfrac{1}{2}K_a\gamma_r H_m^2 = ${tn(T(Psm), 3)}\ \mathrm{tf} \qquad P_q = K_a\,q\,H_m = ${tn(T(Pqm), 3)}\ \mathrm{tf}`);
+  m.eq(L`V_u = 1{,}6\,(P_s + P_q) = ${tn(T(Vu1), 3)}\ \mathrm{tf} \qquad M_u = 1{,}6\left(P_s\frac{H_m}{3} + P_q\frac{H_m}{2}\right) = ${tn(TM(Mu1), 3)}\ \mathrm{tf\,m}`);
+  let VuP = Vu1, MuP = Mu1, govP = "estático";
+  if (conSismo) {
+    m.sub("Solicitaciones sísmicas (1,6 H + 1,0 E)");
+    let Vu2, Mu2;
+    if (d.critPant === "curso") {
+      Vu2 = Vu1 + dEa + dEq + F;
+      Mu2 = Mu1 + dEa * 2 * H / 3 + dEq * H / 2 + MyS;
+      m.p(L`Como en el ejemplo del curso, se suman a las solicitaciones estáticas los incrementos dinámicos calculados con la altura total $H$ y todas las fuerzas inerciales del muro, el relleno y la sobrecarga, con sus brazos desde la base de la zapata (criterio conservador).`);
+      m.eq(L`V_u = ${tn(T(Vu1), 3)} + \Delta DE_a + \Delta DE_q + \sum F_i = ${tn(T(Vu1), 3)} + ${tn(T(dEa), 3)} + ${tn(T(dEq), 3)} + ${tn(T(F), 3)} = ${tn(T(Vu2), 3)}\ \mathrm{tf}`);
+      m.eq(L`M_u = ${tn(TM(Mu1), 3)} + \Delta DE_a\frac{2H}{3} + \Delta DE_q\frac{H}{2} + \sum F_i d_{y,i} = ${tn(TM(Mu2), 3)}\ \mathrm{tf\,m}`);
+    } else {
+      const dEam = 0.5 * d.gR * d.Hm * d.Hm * (Kas - Ka) * (1 - Csv) * BW, dEqm = d.q * d.Hm * (Kas - Ka) * (1 - Csv) * BW;
+      const pant = E.el.filter(e => e.nom.startsWith("Pantalla"));
+      const Fp = pant.reduce((a, e) => a + e.F, 0), Mp = pant.reduce((a, e) => a + e.F * (e.dy - d.Hf), 0);
+      Vu2 = Vu1 + dEam + dEqm + Fp;
+      Mu2 = Mu1 + dEam * 2 * d.Hm / 3 + dEqm * d.Hm / 2 + Mp;
+      m.p(L`Los incrementos dinámicos se calculan con la altura de la pantalla $H_m$ y se agrega solo la fuerza inercial de la pantalla, con brazos medidos desde su base.`);
+      m.eq(L`\Delta DE_{a,m} = \tfrac{1}{2}\gamma_r H_m^2(K_{as} - K_a)(1 - C_{sv}) = ${tn(T(dEam), 3)}\ \mathrm{tf} \qquad \Delta DE_{q,m} = q H_m (K_{as} - K_a)(1 - C_{sv}) = ${tn(T(dEqm), 3)}\ \mathrm{tf}`);
+      m.eq(L`V_u = ${tn(T(Vu1), 3)} + ${tn(T(dEam), 3)} + ${tn(T(dEqm), 3)} + ${tn(T(Fp), 3)} = ${tn(T(Vu2), 3)}\ \mathrm{tf}`);
+      m.eq(L`M_u = ${tn(TM(Mu1), 3)} + \Delta DE_{a,m}\frac{2H_m}{3} + \Delta DE_{q,m}\frac{H_m}{2} + \sum F_{i,p}\,(d_{y,i} - H_f) = ${tn(TM(Mu2), 3)}\ \mathrm{tf\,m}`);
+    }
+    m.row("V<sub>u</sub> ; M<sub>u</sub> sísmicos", `${fmt(T(Vu2), 3)} tf ; ${fmt(TM(Mu2), 3)} tf·m`);
+    if (Mu2 > MuP) { MuP = Mu2; govP = "sísmico"; }
+    VuP = Math.max(VuP, Vu2);
+  }
+  m.sub(`Armadura vertical del trasdós (controla el caso ${govP})`);
+  m.row("M<sub>u</sub> de diseño ; V<sub>u</sub> de diseño", `${fmt(TM(MuP), 3)} tf·m ; ${fmt(T(VuP), 3)} tf`);
+  const fP = flexion(MuP, d.eb, d.dbP, d);
+  memoFlexion(m, fP, d, "cara del relleno");
+  ck("Pantalla: flexión", L`$M_u = ${tn(TM(MuP), 2)}$ tf m`, L`$\phi M_n = ${tn(TM(fP.phiMn), 2)}$ tf m`, fP.dc, "Pantalla: flexión", "hor");
+  if (!fP.insuf) ck("Pantalla: cuantía máxima", L`$\rho = ${tn(fP.rhoP, 4)}$`, L`$0{,}75\rho_b = ${tn(fP.rhoMax, 4)}$`, fP.dcRho, "Pantalla: cuantía", "hor");
+  m.sub("Corte en la base de la pantalla");
+  const cP = memoCorte(m, VuP, fP.d, d);
+  ck("Pantalla: corte", L`$V_u = ${tn(T(VuP), 2)}$ tf`, L`$\phi V_c = ${tn(T(PHI_V * cP.Vc), 2)}$ tf`, cP.dc, "Pantalla: corte", "hor");
+  m.sub("Armaduras mínimas de la pantalla");
+  const dPc = d.eb - d.rec - d.dbPc / 2;
+  const aPc = minima(RHO_MIN_C, d.eb, dPc, d.dbPc);
+  const aH = minima(RHO_H, d.eb, d.eb, d.dbH);
+  m.row(`Vertical cara exterior: 0,0015 · b · d' = 0,0015 · 100 · ${fmt(dPc, 1)}`, `${fmt(aPc.As, 2)} cm²/m → <b>${barra(d.dbPc, aPc.s)}</b>`, "criterio del curso");
+  m.row(`Horizontal, por cara: 0,001 · b · e<sub>b</sub> = 0,001 · 100 · ${fmt(d.eb, 1)}`, `${fmt(aH.As, 2)} cm²/m → <b>${barra(d.dbH, aH.s)}</b> en cada cara`, "criterio del curso");
+  m.eq(L`A'_s = 0{,}0015\,b\,d' = 0{,}0015\cdot 100\cdot ${tn(dPc, 1)} = ${tn(aPc.As, 2)}\ \mathrm{cm^2/m} \;\Rightarrow\; s = ${tn(aPc.s, 1)}\ \mathrm{cm}`);
+  m.eq(L`A_{s,h} = 0{,}001\,b\,e_b = 0{,}001\cdot 100\cdot ${tn(d.eb, 1)} = ${tn(aH.As, 2)}\ \mathrm{cm^2/m\ por\ cara} \;\Rightarrow\; s = ${tn(aH.s, 1)}\ \mathrm{cm}`);
+  m.p(L`Como el espesor de la pantalla es variable, la armadura horizontal se calcula con el espesor de la base (del lado seguro); puede reducirse por tramos con el espesor de cada tramo.`, true);
+
+  // ---------- 6. Pie ----------
+  m.h("Diseño de la zapata: pie (puntera)");
+  m.p(L`Cálculo simplificado del curso: la presión de servicio del suelo bajo el pie se mayora por 1,6 en el caso estático y por un factor ponderado en el caso sísmico. El peso propio del pie, que se opone, se mayora por 0,9 (ACI 318-08 9.2) y el suelo sobre el pie se desprecia (del lado seguro). La sección crítica de flexión está en la cara de la pantalla y la de corte a una distancia $d$ de ella (ACI 318-08 15.5.2 y 11.11.1.1).`);
+  const Wpie = d.Hf * d.Bp * d.gH * BW;
+  const dPie = d.Hf - d.rec - d.dbZp / 2, xv = Math.max(0, d.Bp - dPie);
+  const pieCaso = (c, U, nom, Ufmt) => {
+    if (c.vuelca) return { Vu: Infinity, Mu: Infinity };
+    const pr = presionPie(c, d.Bp), pv = presionPie(c, d.Bp, xv);
+    const Wv = d.Hf * xv * d.gH * BW;
+    const Mu = U * pr.M - 0.9 * Wpie * d.Bp / 2, Vu = Math.max(0, U * pv.F - 0.9 * Wv);
+    m.row(`${nom}: presión en la punta y en la cara (servicio)`, `${fmt(S(c.p(0)), 2)} ; ${fmt(S(c.p(d.Bp)), 2)} tf/m²`);
+    m.row(`${nom}: momento de la presión en la cara M<sub>R</sub> ; M<sub>u</sub> = U·M<sub>R</sub> − 0,9 W<sub>pie</sub> B<sub>p</sub>/2 (U = ${fmt(U, 3)})`, `${fmt(TM(pr.M), 3)} ; ${fmt(TM(Mu), 3)} tf·m`);
+    m.row(`${nom}: corte a d = ${fmt(dPie, 1)} cm de la cara: V<sub>u</sub> = U·R<sub>d</sub> − 0,9 W<sub>d</sub>`, `${fmt(T(Vu), 3)} tf`);
+    m.eq(L`M_u = ${Ufmt}\cdot ${tn(TM(pr.M), 3)} - 0{,}9\cdot ${tn(T(Wpie), 3)}\cdot\frac{${tn(M(d.Bp), 2)}}{2} = ${tn(TM(Mu), 3)}\ \mathrm{tf\,m}`);
+    m.eq(L`V_u = ${Ufmt}\cdot ${tn(T(pv.F), 3)} - 0{,}9\cdot ${tn(T(Wv), 3)} = ${tn(T(Vu), 3)}\ \mathrm{tf} \quad (\text{tramo de } ${tn(M(xv), 3)}\ \mathrm{m\ desde\ la\ punta})`, "ACI 318-08 15.5.2");
+    return { Vu, Mu };
+  };
+  m.row("Peso propio del pie W<sub>pie</sub> = H<sub>f</sub> B<sub>p</sub> γ<sub>h</sub>", `${fmt(T(Wpie), 3)} tf`);
+  let pie = { Vu: 0, Mu: 0 }, govPie = "estático";
+  if (d.Bp > 0) {
+    pie = pieCaso(e1.c, 1.6, "Estático", "1{,}6");
+    if (conSismo && e2) {
+      const nU = 1.6 * (Ps + Pq) + dEa + dEq + F, den = Ps + Pq + dEa + dEq + F;
+      const U = nU / den;
+      m.row("Factor ponderado sísmico U = [1,6 (P<sub>s</sub> + P<sub>q</sub>) + ΔDE<sub>a</sub> + ΔDE<sub>q</sub> + ΣF<sub>i</sub>] / ΣH", fmt(U, 3));
+      m.eq(L`U = \frac{1{,}6\,(P_s + P_q) + 1{,}0\,(\Delta DE_a + \Delta DE_q + \sum F_i)}{P_s + P_q + \Delta DE_a + \Delta DE_q + \sum F_i} = \frac{${tn(T(nU), 3)}}{${tn(T(den), 3)}} = ${tn(U, 3)}`);
+      const p2 = pieCaso(e2.c, U, "Sísmico", tn(U, 3));
+      if (p2.Mu > pie.Mu) govPie = "sísmico";
+      pie = { Vu: Math.max(pie.Vu, p2.Vu), Mu: Math.max(pie.Mu, p2.Mu) };
+    }
+  }
+  if (!Number.isFinite(pie.Mu)) {
+    sinVerificar.push("el pie no se puede diseñar porque el muro vuelca");
+    m.note("El muro vuelca: el pie no se puede diseñar.", L`El muro vuelca: el pie no se puede diseñar.`);
+  }
+  const Hf = d.Hf;
+  const fPie = flexion(Math.max(0, Number.isFinite(pie.Mu) ? pie.Mu : 0), Hf, d.dbZp, d);
+  if (Number.isFinite(pie.Mu) && d.Bp > 0) {
+    m.sub(`Armadura inferior del pie (controla el caso ${govPie})`);
+    memoFlexion(m, fPie, d, "cara inferior");
+    ck("Pie: flexión", L`$M_u = ${tn(TM(pie.Mu), 2)}$ tf m`, L`$\phi M_n = ${tn(TM(fPie.phiMn), 2)}$ tf m`, fPie.dc, "Pie: flexión", "hor");
+    m.sub("Corte en el pie");
+    const cPie = memoCorte(m, Math.max(0, pie.Vu), fPie.d, d);
+    ck("Pie: corte", L`$V_u = ${tn(T(Math.max(0, pie.Vu)), 2)}$ tf`, L`$\phi V_c = ${tn(T(PHI_V * cPie.Vc), 2)}$ tf`, cPie.dc, "Pie: corte", "hor");
+  }
+
+  // ---------- 7. Talón ----------
+  m.h("Diseño de la zapata: talón");
+  m.p(L`Cálculo simplificado del curso: se desprecia la reacción del suelo bajo el talón (del lado seguro) y se consideran el peso propio del talón y del relleno mayorados por 1,2 y la sobrecarga por 1,6. En el caso sísmico (1,2 D + 1,0 E + 1,0 L) el peso se amplifica por $1{,}2 + C_{sv}$. La sección crítica de flexión está en la cara del trasdós y la de corte a una distancia $d$ de ella (ACI 318-08 15.5.2).`);
+  const Wt = d.Hf * d.Bt * d.gH * BW, Wr = d.Bt * d.Hm * d.gR * BW, Wq = d.q * d.Bt * BW;
+  const Vt1 = 1.2 * (Wt + Wr) + 1.6 * Wq, Vt2 = conSismo ? (1.2 + Csv) * (Wt + Wr) + 1.0 * Wq : 0;
+  const tal = { Vu: Math.max(Vt1, Vt2), Mu: Math.max(Vt1, Vt2) * d.Bt / 2 };
+  m.row("W<sub>talón</sub> ; W<sub>relleno</sub> ; W<sub>q</sub> = q B<sub>t</sub>", `${fmt(T(Wt), 3)} ; ${fmt(T(Wr), 3)} ; ${fmt(T(Wq), 3)} tf`);
+  m.row("Estático: V<sub>u</sub> = 1,2 (W<sub>t</sub> + W<sub>r</sub>) + 1,6 W<sub>q</sub>", `${fmt(T(Vt1), 3)} tf`);
+  m.eq(L`V_u = 1{,}2\,(${tn(T(Wt), 3)} + ${tn(T(Wr), 3)}) + 1{,}6\cdot ${tn(T(Wq), 3)} = ${tn(T(Vt1), 3)}\ \mathrm{tf}`);
+  if (conSismo) {
+    m.row("Sísmico: V<sub>u</sub> = (1,2 + C<sub>sv</sub>)(W<sub>t</sub> + W<sub>r</sub>) + 1,0 W<sub>q</sub>", `${fmt(T(Vt2), 3)} tf`);
+    m.eq(L`V_u = (1{,}2 + ${tn(Csv, 3)})(${tn(T(Wt), 3)} + ${tn(T(Wr), 3)}) + 1{,}0\cdot ${tn(T(Wq), 3)} = ${tn(T(Vt2), 3)}\ \mathrm{tf}`);
+  }
+  m.row("Cargas uniformes: M<sub>u</sub> = V<sub>u</sub> · B<sub>t</sub>/2", `${fmt(TM(tal.Mu), 3)} tf·m`);
+  m.eq(L`M_u = V_u\,\frac{B_t}{2} = ${tn(T(tal.Vu), 3)}\cdot\frac{${tn(M(d.Bt), 2)}}{2} = ${tn(TM(tal.Mu), 3)}\ \mathrm{tf\,m}`);
+  const fTal = flexion(tal.Mu, Hf, d.dbZt, d);
+  if (d.Bt > 0) {
+    m.sub(`Armadura superior del talón (controla el caso ${Vt2 > Vt1 ? "sísmico" : "estático"})`);
+    memoFlexion(m, fTal, d, "cara superior");
+    ck("Talón: flexión", L`$M_u = ${tn(TM(tal.Mu), 2)}$ tf m`, L`$\phi M_n = ${tn(TM(fTal.phiMn), 2)}$ tf m`, fTal.dc, "Talón: flexión", "hor");
+    m.sub("Corte en el talón");
+    const VuT = tal.Vu * Math.max(0, d.Bt - fTal.d) / d.Bt;
+    m.row(`Corte a d = ${fmt(fTal.d, 1)} cm de la cara: V<sub>u</sub> · (B<sub>t</sub> − d)/B<sub>t</sub>`, `${fmt(T(VuT), 3)} tf`, "ACI 318-08 15.5.2");
+    m.eq(L`V_u = ${tn(T(tal.Vu), 3)}\cdot\frac{${tn(d.Bt, 1)} - ${tn(fTal.d, 1)}}{${tn(d.Bt, 1)}} = ${tn(T(VuT), 3)}\ \mathrm{tf}`, "ACI 318-08 15.5.2");
+    const cT = memoCorte(m, VuT, fTal.d, d);
+    ck("Talón: corte", L`$V_u = ${tn(T(VuT), 2)}$ tf`, L`$\phi V_c = ${tn(T(PHI_V * cT.Vc), 2)}$ tf`, cT.dc, "Talón: corte", "hor");
+  }
+  m.sub("Armaduras mínimas de la zapata");
+  const dZr = Hf - d.rec - d.dbZr / 2;
+  const aZc = minima(RHO_MIN_C, Hf, dZr, d.dbZr), aZl = minima(RHO_H, Hf, Hf, d.dbZr);
+  m.row(`Transversal en la cara opuesta: 0,0015 · b · d = 0,0015 · 100 · ${fmt(dZr, 1)}`, `${fmt(aZc.As, 2)} cm²/m → <b>${barra(d.dbZr, aZc.s)}</b>`, "criterio del curso");
+  m.row(`Longitudinal (repartición), por cara: 0,001 · b · H<sub>f</sub>`, `${fmt(aZl.As, 2)} cm²/m → <b>${barra(d.dbZr, aZl.s)}</b> en cada cara`, "criterio del curso");
+  m.eq(L`A'_s = 0{,}0015\,b\,d = ${tn(aZc.As, 2)}\ \mathrm{cm^2/m} \;\Rightarrow\; s = ${tn(aZc.s, 1)}\ \mathrm{cm} \qquad A_{s,l} = 0{,}001\,b\,H_f = ${tn(aZl.As, 2)}\ \mathrm{cm^2/m} \;\Rightarrow\; s = ${tn(aZl.s, 1)}\ \mathrm{cm}`);
+
+  const dcMax = Math.max(...checks.map(c => c.dc));
+  const ok = dcMax <= 1 + 1e-9 && sinVerificar.length === 0;
+  const arm = {
+    pant: barra(d.dbP, fP.s), pantC: barra(d.dbPc, aPc.s), pantH: barra(d.dbH, aH.s),
+    pie: d.Bp > 0 ? barra(d.dbZp, fPie.s) : "—", tal: d.Bt > 0 ? barra(d.dbZt, fTal.s) : "—",
+    zC: barra(d.dbZr, aZc.s), zL: barra(d.dbZr, aZl.s),
+    tex: [
+      ["Pantalla, vertical cara del relleno", barraTex(d.dbP, fP.s)], ["Pantalla, vertical cara exterior", barraTex(d.dbPc, aPc.s)],
+      ["Pantalla, horizontal (cada cara)", barraTex(d.dbH, aH.s)],
+      ...(d.Bp > 0 ? [["Zapata, inferior (pie)", barraTex(d.dbZp, fPie.s)]] : []), ...(d.Bt > 0 ? [["Zapata, superior (talón)", barraTex(d.dbZt, fTal.s)]] : []),
+      ["Zapata, transversal cara opuesta", barraTex(d.dbZr, aZc.s)], ["Zapata, longitudinal (cada cara)", barraTex(d.dbZr, aZl.s)],
+    ],
+  };
+  return { E, B, H, N, Mr, Ka, Kp, Kas, th, Csh, Csv, Ps, Pq, Ep, dEa, dEq, e1, e2, conSismo, checks, dcMax, ok, sinVerificar, arm };
+}
+
+// ---------------------------------------------------------------------------
+// Dibujo de la sección (SVG en pantalla y TikZ en la memoria)
+// ---------------------------------------------------------------------------
+function contorno(d) {
+  const B = d.Bp + d.eb + d.Bt, H = d.Hf + d.Hm, xs = d.Bp + d.eb;
+  const p = [[0, 0]];
+  if (d.bd > 0 && d.hd > 0) p.push([d.xd, 0], [d.xd, -d.hd], [d.xd + d.bd, -d.hd], [d.xd + d.bd, 0]);
+  p.push([B, 0], [B, d.Hf], [xs, d.Hf], [xs, H], [xs - d.ec, H], [d.Bp, d.Hf], [0, d.Hf]);
+  return p;
+}
+function svgMuro(d, r) {
+  const B = r.B, H = r.H, xs = d.Bp + d.eb;
+  const ext = Math.max(B, H + d.hd);
+  const k = 330 / ext;
+  const X = (x) => 70 + x * k, Y = (y) => 50 + (H - y) * k;
+  const W = 70 + B * k + 150, Ht = 50 + (H + d.hd) * k + 125;
+  const pts = contorno(d).map(([x, y]) => `${X(x).toFixed(1)},${Y(y).toFixed(1)}`).join(" ");
+  const c = "#3d4450", acc = "#5b7c99", t = (x, y, s, a = "start", fs = 10.5) => `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" font-size="${fs}" fill="${c}" text-anchor="${a}">${s}</text>`;
+  const cotaH = (x1, x2, y, s) => `<line x1="${X(x1)}" y1="${y}" x2="${X(x2)}" y2="${y}" stroke="#8a93a0"/><line x1="${X(x1)}" y1="${y - 4}" x2="${X(x1)}" y2="${y + 4}" stroke="#8a93a0"/><line x1="${X(x2)}" y1="${y - 4}" x2="${X(x2)}" y2="${y + 4}" stroke="#8a93a0"/>${t((X(x1) + X(x2)) / 2, y - 4, s, "middle", 10)}`;
+  const cotaV = (y1, y2, x, s) => `<line x1="${x}" y1="${Y(y1)}" x2="${x}" y2="${Y(y2)}" stroke="#8a93a0"/><line x1="${x - 4}" y1="${Y(y1)}" x2="${x + 4}" y2="${Y(y1)}" stroke="#8a93a0"/><line x1="${x - 4}" y1="${Y(y2)}" x2="${x + 4}" y2="${Y(y2)}" stroke="#8a93a0"/>${t(x + 5, (Y(y1) + Y(y2)) / 2 + 4, s, "start", 10)}`;
+  // Empuje activo (triángulo en el plano del talón) y sobrecarga
+  const pa = 60, pq = d.q > 0 ? 60 * r.Pq / (r.Ps + r.Pq) * 1.2 : 0;
+  const xa = X(B) + 8;
+  const empuje = `<path d="M${xa},${Y(H)} L${xa + pq},${Y(H)} L${xa + pq + pa},${Y(0)} L${xa},${Y(0)} Z" fill="#dbe5ee" stroke="${acc}"/>${t(xa + 4, Y(H / 3) + 4, `P<tspan font-size="8" dy="2">s</tspan><tspan dy="-2"> = ${fmt(T(r.Ps), 2)} tf</tspan>`, "start", 9.5)}${d.q > 0 ? t(xa + 4, Y(H * 0.75) + 4, `P<tspan font-size="8" dy="2">q</tspan><tspan dy="-2"> = ${fmt(T(r.Pq), 2)} tf</tspan>`, "start", 9.5) : ""}`;
+  const sc = d.q > 0 ? `<line x1="${X(xs - d.ec)}" y1="${Y(H) - 10}" x2="${X(B)}" y2="${Y(H) - 10}" stroke="${acc}" stroke-width="1.4"/>${[0, 0.25, 0.5, 0.75, 1].map(f => { const x = X(xs - d.ec + f * (d.Bt + d.ec)); return `<line x1="${x}" y1="${Y(H) - 10}" x2="${x}" y2="${Y(H) - 2}" stroke="${acc}"/>`; }).join("")}${t(X(xs + d.Bt / 2), Y(H) - 14, `q = ${fmt(S(d.q), 2)} tf/m²`, "middle", 9.5)}` : "";
+  // Presiones de contacto (caso estático)
+  let pres = "";
+  const c1 = r.e1.c;
+  if (!c1.vuelca) {
+    const sc2 = 40 / c1.smax, y0 = Y(-d.hd) + 18;
+    const n = 24, puntos = [];
+    for (let i = 0; i <= n; i++) { const x = B * i / n; puntos.push(`${X(x).toFixed(1)},${(y0 + c1.p(x) * sc2).toFixed(1)}`); }
+    pres = `<polygon points="${X(0)},${y0} ${puntos.join(" ")} ${X(B)},${y0}" fill="#f4e2d6" stroke="#c0703c"/>
+      ${t(X(0) - 4, y0 + c1.p(0) * sc2 + 4, `${fmt(S(c1.p(0)), 2)}`, "end", 9.5)}${t(X(B) + 4, y0 + c1.p(B) * sc2 + 4, `${fmt(S(c1.p(B)), 2)} tf/m² (caso 1)`, "start", 9.5)}`;
+  }
+  const relleno = d.Bt > 0 ? `<rect x="${X(xs)}" y="${Y(H)}" width="${d.Bt * k}" height="${d.Hm * k}" fill="#f1e7d3"/>` : "";
+  const terreno = d.Df > 0 ? `<line x1="${X(0) - 40}" y1="${Y(d.Df)}" x2="${X(d.Bp)}" y2="${Y(d.Df)}" stroke="#9a7b45" stroke-dasharray="5 3"/>` : "";
+  // Armaduras (esquemáticas)
+  const rr = Math.max(3, d.rec * k);
+  const arm = `<g stroke="#c62828" stroke-width="1.6" fill="none">
+    <path d="M${X(xs) - rr},${Y(H) + rr} L${X(xs) - rr},${Y(0) + rr}"/>
+    <path d="M${X(0) + rr},${Y(0) + rr} L${X(B) - rr},${Y(0) + rr}"/>
+    <path d="M${X(0) + rr},${Y(d.Hf) - rr} L${X(B) - rr},${Y(d.Hf) - rr}"/>
+  </g>`;
+  const ya = Y(-d.hd) + 82;
+  return `<svg viewBox="0 0 ${W.toFixed(0)} ${Ht.toFixed(0)}" role="img" aria-label="Sección transversal del muro">
+    ${relleno}${terreno}${sc}
+    <polygon points="${pts}" fill="#e3e8ee" stroke="${c}" stroke-width="1.6"/>
+    ${arm}${empuje}${pres}
+    ${cotaH(0, d.Bp, ya, `${fmt(M(d.Bp), 2)}`)}${cotaH(d.Bp, xs, ya, `${fmt(M(d.eb), 2)}`)}${cotaH(xs, B, ya, `${fmt(M(d.Bt), 2)}`)}
+    ${cotaH(0, B, ya + 20, `B = ${fmt(M(B), 2)} m`)}
+    ${cotaH(xs - d.ec, xs, Y(H) - 26, `${fmt(M(d.ec), 2)}`)}
+    ${cotaV(d.Hf, H, X(0) - 30, "")}${t(X(0) - 26, Y(d.Hf + d.Hm / 2) + 4, `H<tspan font-size="8" dy="2">m</tspan><tspan dy="-2"> = ${fmt(M(d.Hm), 2)}</tspan>`, "start", 10)}
+    ${cotaV(0, d.Hf, X(0) - 30, "")}${t(X(0) - 36, Y(d.Hf / 2) + 4, `${fmt(M(d.Hf), 2)}`, "end", 10)}
+    ${t(X(xs) - rr - 4, Y(d.Hf + d.Hm * 0.55), r.arm.pant, "end", 9.5)}
+    ${t(X(d.Bp / 2), Y(0) + rr + 12, r.arm.pie, "middle", 9.5)}
+    ${t(X(xs + d.Bt / 2), Y(d.Hf) - rr - 4, r.arm.tal, "middle", 9.5)}
+    <text x="4" y="${(Ht - 6).toFixed(0)}" font-size="10" fill="#8a93a0">Cotas en m · armaduras esquemáticas · presiones del caso estático</text>
+  </svg>`;
+}
+function tikzMuro(d, r) {
+  const B = r.B, H = r.H, xs = d.Bp + d.eb;
+  const k = 8 / Math.max(B, H + d.hd);
+  const f = (v) => (v * k).toFixed(3);
+  const pts = contorno(d).map(([x, y]) => `(${f(x)},${f(y)})`).join(" -- ");
+  return L`\begin{figure}[H]
+\centering
+\begin{tikzpicture}[>=stealth, cota/.style={<->,thin}]
+${d.Bt > 0 ? L`\fill[brown!15] (${f(xs)},${f(d.Hf)}) rectangle (${f(B)},${f(H)});` : ""}
+\filldraw[fill=gray!15,draw=black,thick] ${pts} -- cycle;
+\draw[red!70!black,line width=0.8pt] (${f(xs - d.rec)},${f(H - d.rec)}) -- (${f(xs - d.rec)},${f(d.rec)});
+\draw[red!70!black,line width=0.8pt] (${f(d.rec)},${f(d.rec)}) -- (${f(B - d.rec)},${f(d.rec)});
+\draw[red!70!black,line width=0.8pt] (${f(d.rec)},${f(d.Hf - d.rec)}) -- (${f(B - d.rec)},${f(d.Hf - d.rec)});
+\draw[cota] (0,${f(-d.hd - 60)}) -- (${f(B)},${f(-d.hd - 60)}) node[midway,below]{\small $B = ${tn(M(B), 2)}$ m};
+\draw[cota] (0,${f(-d.hd - 25)}) -- (${f(d.Bp)},${f(-d.hd - 25)}) node[midway,below]{\small ${tn(M(d.Bp), 2)}};
+\draw[cota] (${f(xs)},${f(-d.hd - 25)}) -- (${f(B)},${f(-d.hd - 25)}) node[midway,below]{\small ${tn(M(d.Bt), 2)}};
+\draw[cota] (${f(-40)},${f(d.Hf)}) -- (${f(-40)},${f(H)}) node[midway,above,sloped]{\small $H_m = ${tn(M(d.Hm), 2)}$ m};
+\draw[cota] (${f(B + 30)},0) -- (${f(B + 30)},${f(d.Hf)}) node[midway,right]{\small ${tn(M(d.Hf), 2)}};
+\node[left] at (${f(xs - d.rec)},${f(d.Hf + d.Hm * 0.55)}) {\small ${r.arm.tex[0][1]}};
+\end{tikzpicture}
+\caption{Sección transversal del muro (cotas en m, armaduras esquemáticas).}
+\end{figure}
+`;
+}
+
+// ---------------------------------------------------------------------------
+// Memoria .tex
+// ---------------------------------------------------------------------------
+function documentoTex(d, r, cuerpo) {
+  const fecha = new Date().toLocaleDateString("es-CL", { day: "numeric", month: "long", year: "numeric" });
+  const fila = (a, b) => `${a} & ${b}\\\\`;
+  const datos = [
+    fila("Tipo", "Muro de contención en voladizo de hormigón armado, por metro de muro"),
+    fila(L`Pantalla: altura $H_m$ ; espesores $e_c$ / $e_b$`, L`${tn(M(d.Hm), 2)} m ; ${tn(M(d.ec), 2)} / ${tn(M(d.eb), 2)} m`),
+    fila(L`Zapata: pie $B_p$ ; talón $B_t$ ; espesor $H_f$`, L`${tn(M(d.Bp), 2)} ; ${tn(M(d.Bt), 2)} ; ${tn(M(d.Hf), 2)} m (B = ${tn(M(r.B), 2)} m)`),
+    fila("Dentellón", d.bd > 0 && d.hd > 0 ? L`${tn(M(d.bd), 2)} $\times$ ${tn(M(d.hd), 2)} m, a ${tn(M(d.xd), 2)} m del pie` : "sin dentellón"),
+    fila(L`Profundidad de fundación $D_f$`, `${tn(M(d.Df), 2)} m`),
+    fila("Relleno", L`$\phi_r = ${tn(d.phiR, 1)}^\circ$, $\gamma_r = ${tn(d.gR * 1000, 2)}$ tf/m$^3$, sin cohesión, con drenaje`),
+    fila("Suelo de fundación", L`$\phi_s = ${tn(d.phiS, 1)}^\circ$, $\gamma_s = ${tn(d.gS * 1000, 2)}$ tf/m$^3$, $c_s = ${tn(d.cS, 2)}$ kgf/cm$^2$, $\sigma_u = ${tn(d.su, 2)}$ kgf/cm$^2$`),
+    fila(L`Sobrecarga $q$`, L`${tn(S(d.q), 2)} tf/m$^2$`),
+    fila("Sismo", d.Ao > 0 ? L`zona ${d.zona}, $A_0 = ${tn(d.Ao, 2)}$ g` : "no se considera"),
+    fila("Materiales", L`$f'_c = ${tn(d.fc, 0)}$ kgf/cm$^2$, $f_y = ${tn(d.fy, 0)}$ kgf/cm$^2$, $\gamma_h = ${tn(d.gH * 1000, 2)}$ tf/m$^3$, recubrimiento ${tn(d.rec, 1)} cm`),
+  ].join("\n");
+  const resumen = r.checks.map(c => `${c.k} & ${c.dem} & ${c.cap} & ${tn(c.dc, 3)} & ${estado(c.dc)}\\\\`).join("\n");
+  const armT = r.arm.tex.map(([a, b]) => `${a} & ${b}\\\\`).join("\n");
+  const alcance = [
+    L`Se sigue el procedimiento del curso Diseño de Proyectos de Ingeniería para muros de contención en voladizo: análisis por metro de muro, empujes de Rankine en la condición estática y de Mononobe-Okabe en la sísmica.`,
+    L`El relleno es horizontal ($\beta = 0$), el trasdós vertical ($\psi = 90^\circ$) y el relleno granular sin cohesión. Se supone que existe drenaje, por lo que no se considera presión de agua.`,
+    d.Ao > 0 ? L`Los coeficientes sísmicos son $C_{sh} = 0{,}5\,A_0$ y $C_{sv} = 0{,}7\,C_{sh}$; el incremento dinámico del relleno se aplica a $2H/3$ y el de la sobrecarga a $H/2$. La componente vertical no se descuenta del peso estabilizante.` : L`No se considera la condición sísmica.`,
+    d.pasivo === "dentellon" ? L`El empuje pasivo se considera solo en el dentellón; el de la puntera se desprecia.` : d.pasivo === "total" ? L`El empuje pasivo se considera desde la superficie del terreno frente al muro hasta la base del dentellón (o de la zapata).` : L`No se considera empuje pasivo.`,
+    L`El empuje pasivo no se incluye en el momento resistente al volcamiento.`,
+    d.qEstab ? L`La sobrecarga sobre el talón se suma al peso estabilizante, como en el ejemplo del curso; el criterio más conservador es no considerarla.` : L`La sobrecarga sobre el talón no se suma al peso estabilizante (criterio conservador).`,
+    L`El diseño en hormigón armado sigue el ACI 318-08 con las cuantías mínimas del curso: 0,0018 $b\,d$ en la armadura principal, 0,0015 $b\,d$ en la cara opuesta y 0,001 $b\,h$ por cara en la armadura de repartición; la cuantía máxima se limita a $0{,}75\,\rho_b$.`,
+    L`El pie y el talón se calculan con el método simplificado del curso (presión de servicio mayorada bajo el pie; talón sin reacción del suelo).`,
+    d.Ao > 0 ? (d.critPant === "curso" ? L`Las solicitaciones sísmicas de la pantalla siguen el ejemplo del curso (altura total y todas las fuerzas inerciales), lo que es conservador.` : L`Las solicitaciones sísmicas de la pantalla consideran solo la altura de la pantalla y su propia inercia.`) : "",
+    L`No se verifican la estabilidad global del talud, los asentamientos, la fisuración, las longitudes de anclaje y empalme de las barras ni el corte por fricción en la junta pantalla-zapata; deben ser definidos por el ingeniero del proyecto.`,
+  ].filter(Boolean).map(t => `\\item ${t}`).join("\n");
+  return L`\documentclass[11pt,letterpaper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-tabla,es-noshorthands,es-nolists]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+${TEX_ESTILO}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{tikz}
+\usepackage{fancyhdr}
+\setlength{\headheight}{14pt}
+\pagestyle{fancy}
+\fancyhf{}
+\chead{Diseño de muro de contención}
+\lfoot{Memoria de cálculo --- Muro de contención en voladizo, ACI 318-08}
+\rfoot{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+\allowdisplaybreaks
+
+\begin{document}
+
+\begin{center}
+{\Large\bfseries Memoria de Cálculo}\\[4pt]
+{\large Muro de contención en voladizo de hormigón armado}\\[2pt]
+$H = ${tn(M(r.H), 2)}$ m --- $B = ${tn(M(r.B), 2)}$ m\\[2pt]
+{\small ${fecha}}
+\end{center}
+
+\section{Datos de diseño}
+\begin{table}[H]
+\centering
+\caption{Datos del muro de contención.}
+\begin{tabular}{lp{8.5cm}}
+\toprule
+Parámetro & Valor\\
+\midrule
+${datos}
+\bottomrule
+\end{tabular}
+\end{table}
+
+${tikzMuro(d, r)}
+
+\section{Metodología}
+Se verifica la estabilidad del muro al volcamiento, al deslizamiento y la tensión de contacto en el sello de fundación, para el caso estático (empujes de tierra más sobrecarga)${d.Ao > 0 ? " y para el caso sísmico (empujes de tierra más sobrecarga más sismo)" : ""}. Luego se diseñan a flexión y corte la pantalla, el pie y el talón según el ACI 318-08, con cargas mayoradas.
+
+${cuerpo}
+
+\section{Alcance, hipótesis y limitaciones}
+\begin{itemize}
+${alcance}
+\end{itemize}
+
+\section{Resumen de resultados}
+\begin{table}[H]
+\centering
+\small
+\caption{Comparación demanda versus capacidad.}
+\begin{tabular}{lllcc}
+\toprule
+Verificación & Demanda & Capacidad & D/C & Estado\\
+\midrule
+${resumen}
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\small
+\caption{Armaduras propuestas.}
+\begin{tabular}{ll}
+\toprule
+Ubicación & Armadura\\
+\midrule
+${armT}
+\bottomrule
+\end{tabular}
+\end{table}
+
+${r.sinVerificar.length
+    ? L`El muro \textbf{queda sin verificar}: ${texTxt(r.sinVerificar.join("; ")).replace(/φ_r/g, "$\\phi_r$").replace(/θ/g, "$\\theta$").replace(/≤/g, "$\\le$")}.`
+    : L`Por lo tanto, como la relación demanda-capacidad máxima es $D/C = ${tn(r.dcMax, 3)}$ ${r.dcMax <= 1 ? L`$\le 1{,}0$` : L`$> 1{,}0$`}, el muro \textbf{${r.ok ? "cumple" : "no cumple"}} con las verificaciones indicadas.`}
+
+\end{document}
+`;
+}
+
+// ---------------------------------------------------------------------------
+// Cálculo e interfaz
+// ---------------------------------------------------------------------------
+let ultimoTex = "", ultimoNombre = "memoria.tex", ultimoR = null;
+
+function calcular() {
+  const sismo = $("zona").value !== "0";
+  $("sismoBox").classList.toggle("hidden", !sismo);
+  document.querySelectorAll(".sismoF").forEach(el => el.classList.toggle("hidden", !sismo));
+  limpiarInvalidos($("inputs"));
+  let malos = datosInvalidos(reglasDatos());
+  if (!malos.length) malos = datosSobreMaximo(reglasMaximos());
+  if (malos.length) {
+    $("resTitle").textContent = "Resultados";
+    $("summary").innerHTML = ""; $("memo").innerHTML = ""; $("dibujo").innerHTML = "";
+    $("verdict").innerHTML = avisoInvalidos(malos);
+    ultimoTex = ""; ultimoR = null;
+    return;
+  }
+  const d = leerDatos();
+  const m = new Memo();
+  const r = verificar(d, m);
+
+  const g = (pref) => r.checks.filter(c => c.html.startsWith(pref));
+  const peor = (arr) => arr.reduce((a, c) => (c.dc > (a?.dc ?? -1) ? c : a), null);
+  const vol = peor(g("Volcamiento")), des = peor(g("Deslizamiento")), ten = peor(g("Tensión")), hor = peor(r.checks.filter(c => c.grupo === "hor"));
+  const cards = [
+    { t: "Volcamiento", v: fmt(r.e1.FSv, 2) + (r.e2 ? ` / ${fmt(r.e2.FSv, 2)}` : ""), s: r.e2 ? "FS estático / sísmico" : "FS estático", r: vol ? vol.dc : 0 },
+    { t: "Deslizamiento", v: fmt(r.e1.FSd, 2) + (r.e2 ? ` / ${fmt(r.e2.FSd, 2)}` : ""), s: r.e2 ? "FS estático / sísmico" : "FS estático", r: des ? des.dc : 0 },
+    { t: "Tensión de contacto", v: fmt(ten ? ten.dc : NaN, 3), s: `σ<sub>máx</sub> = ${fmt(S(r.e1.c.smax), 1)}${r.e2 ? ` / ${fmt(S(r.e2.c.smax), 1)}` : ""} tf/m²`, r: ten ? ten.dc : 0 },
+    { t: "Hormigón armado", v: fmt(hor ? hor.dc : NaN, 3), s: hor ? `más exigida: ${hor.html.toLowerCase()}` : "", r: hor ? hor.dc : 0 },
+  ];
+  $("summary").innerHTML = cards.map(c => {
+    const w = Math.min(100, Math.max(0, c.r * 100));
+    return `<div class="card"><div class="t">${c.t}</div><div class="v">${c.v}</div>
+      <div class="bar ${c.r > 1 + 1e-9 ? "bad" : ""}"><i style="width:${w}%"></i></div><div class="s">${c.s}</div></div>`;
+  }).join("");
+
+  $("resTitle").textContent = `Resultados — Muro de contención · H = ${fmt(M(r.H), 2)} m · B = ${fmt(M(r.B), 2)} m`;
+  const rm = Number.isFinite(r.dcMax) ? fmt(r.dcMax, 3) : "∞";
+  const fallas = r.checks.filter(c => c.dc > 1 + 1e-9).map(c => c.html.toLowerCase());
+  $("verdict").innerHTML = r.sinVerificar.length
+    ? `<div class="verdict bad">✘ El muro queda SIN VERIFICAR — ${r.sinVerificar.join("; ")} · razón máxima = ${rm}</div>`
+    : `<div class="verdict ${r.ok ? "ok" : "bad"}">${r.ok ? "✔ El muro CUMPLE" : `✘ El muro NO CUMPLE (${fallas.join(", ")})`} — razón máxima = ${rm}</div>`;
+  $("dibujo").innerHTML = svgMuro(d, r);
+  $("memo").innerHTML = m.html();
+
+  ultimoR = r;
+  ultimoTex = documentoTex(d, r, m.texto());
+  ultimoNombre = `memoria_muro_contencion_H${fmt(M(r.H), 2).replace(",", "_")}.tex`;
+}
+
+function init() {
+  $("inputs").addEventListener("input", (e) => { if (e.target.tagName === "INPUT" && e.target.type !== "checkbox") calcular(); });
+  $("inputs").addEventListener("change", () => calcular());
+  calcular();
+}
+init();
+// Integración con proyectos (proyectos.js): datos para guardar y restaurar este cálculo
+window.AURA_MEMO = {
+  tipo: "Muro de contención",
+  elemento: () => "", tex: () => ultimoTex, nombre: () => ultimoNombre,
+  recalcular: () => calcular(),
+};
+</script>
+<script src="proyectos.js?v=33"></script>
+<script>
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
+</script>
+</body>
+</html>

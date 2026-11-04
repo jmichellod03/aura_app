@@ -141,7 +141,13 @@
             <a href="placa.html"><span class="dot"></span><span><b>Placa colaborante</b><small>Losa con placa Instadeck 0,8 mm · tablas Cintac (SDI) · conectores AISC 360-16 Cap. I</small></span><span class="arr">→</span></a>
           </div>
         </div>
-        <a href="hormigon.html"><span class="dot"></span><span><b>Hormigón armado</b><small>Vigas, losas y muros · ACI 318-08</small></span><span class="arr">→</span></a>
+        <div class="grupo">
+          <button type="button" class="sub" aria-expanded="false" aria-controls="optHormigon"><span class="dot"></span><span><b>Hormigón armado</b><small>Vigas, losas, muros y muros de contención · ACI 318-08</small></span><span class="arr">▾</span></button>
+          <div class="subopts" id="optHormigon">
+            <a href="hormigon.html"><span class="dot"></span><span><b>Vigas, losas y muros</b><small>Flexión, corte y detallamiento · ACI 318-08</small></span><span class="arr">→</span></a>
+            <a href="muro.html"><span class="dot"></span><span><b>Muros de contención</b><small>Muro en voladizo · volcamiento, deslizamiento y tensión de contacto (Rankine y Mononobe-Okabe) · pantalla, pie y talón ACI 318-08</small></span><span class="arr">→</span></a>
+          </div>
+        </div>
         <div class="grupo">
           <button type="button" class="sub" aria-expanded="false" aria-controls="optMadera"><span class="dot"></span><span><b>Madera</b><small>Madera aserrada y madera laminada encolada (MLE)</small></span><span class="arr">▾</span></button>
           <div class="subopts" id="optMadera">
@@ -206,7 +212,7 @@
   </form>
 </dialog>
 <script src="memo.js?v=31"></script>
-<script src="proyectos.js?v=32"></script>
+<script src="proyectos.js?v=33"></script>
 
 <script>
 "use strict";

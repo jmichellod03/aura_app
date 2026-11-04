@@ -16,6 +16,7 @@ Las rutas de esta guía son relativas a la raíz del repositorio. Las normas y d
 | Vigas reticuladas | `reticulada.html` | AISC 360-16 LRFD; combinaciones NCh 3171 en el `.s2k` | ver la sección Vigas reticuladas |
 | Placa colaborante | `placa.html` | Tablas Instadeck (Cintac, SDI 1991); conectores AISC 360-16 Cap. I | ficha y manual técnico Instadeck (carpeta "Placa Colaborante" del usuario) |
 | Hormigón armado | `hormigon.html` | ACI 318-08 (y 318S-14 para detallamiento), NCh 430 | `../hormigon/ACI_318_08_Espanol (1).pdf`, `../hormigon/Requisitos_del_reglamento_ACI_318S_14_en.pdf`, `../hormigon/NORMA_CHILENA_OFICIAL_NCh430_Of2008 (1).pdf`, `../hormigon/Manual detallamiento.pdf`, `../hormigon/Tabla Marcus Czerny.pdf` |
+| Muro de contención | `muro.html` | Rankine, Mononobe-Okabe; ACI 318-08 (pantalla, pie y talón) | pautas y ejemplo del curso en `../PRUEBA2/` ("Diseño en Muros de Contencion.pdf" y "... - ejemplo (1).pdf"); planillas Blockpad del usuario (no son norma) |
 | Madera aserrada | `madera.html` | NCh 1198:2024 | `../madera/nch1198-2024-madera-construcciones-en-madera-calculo.pdf` |
 | Madera laminada (MLE) | `mle.html` | NCh 2165:2023 + NCh 1198:2024 (y NCh 432 para viento, si aplica) | ver la sección MLE |
 | Espectros sísmicos | `espectros.html` | NCh 433 Of.96 / DS 61, NCh 433:2026, NCh 2369:2025, DS 117 | `../Espectros/nCH433 OF.1996.pdf`, `../Espectros/NCh-433-2026.pdf`, `../Espectros/NCh2369-2025.pdf`, `../Espectros/Decreto-117_14-FEB-2011.pdf` |
