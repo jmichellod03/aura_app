@@ -20,7 +20,7 @@ Todo el texto de la interfaz, las memorias y los commits va en **español (Chile
 - `tablero.js`: presentación de resultados en las páginas de cálculo (solo pantalla; no toca cálculos, el texto del veredicto ni la memoria .tex). Reorganiza el DOM que ya dibuja cada página, observándolo:
   - botón "Plegar" en "Datos de entrada" (estado en `localStorage`);
   - tablero: medidor con el D/C máximo leído de "razón máxima = X" o "D/C máximo = X" del veredicto, veredicto destacado y semáforo de las tarjetas del resumen tomado de su `.bar` (verde ≤ 0,9, ámbar ≤ 1, naranja > 1; tarjetas sin barra son informativas);
-  - procedimiento (`.memo`) en tarjetas por `h3`, plegables, con estado según sus marcas `.tag` de "cumple"/"no cumple"/"D/C" (las demás marcas son informativas) e índice de chips fijo. El `h3` original queda dentro de la tarjeta y se muestra al imprimir.
+  - procedimiento (`.memo`) en tarjetas por `h3`, plegables, con estado según sus marcas `.tag` (toda `.tag.bad` es falla salvo las de `INFORMATIVAS`) e índice de chips fijo (se quita con la memoria vacía). El `h3` original encabeza la tarjeta y contiene su botón; al imprimir se ve como título. `prepararFiguras` (memo.js) despliega un instante las tarjetas plegadas para no perder figuras.
 - `icons/logo-mmp.webp`: logo MMP (fondo transparente; `aura.css` lo recorta al dibujo).
 - `dxf.js`: planos DXF compartidos (`PlanoDXF`, R12, mm, capas normalizadas `CAPAS_PLANO`). Lámina serie A (A3 a A0) con marco, margen de archivo y viñeta según NCh 13; escalas normalizadas elegidas por vista; la vista principal queda a tamaño real en el espacio modelo. La viñeta toma proyecto, mandante, calculista y oficina del proyecto activo. Lo usan acero, hormigón (viga y losa), madera (envigado, tabique, pilar y muro de corte), MLE, muro de contención (botón "Plano con lámina NCh 13") y espectros. Su clase se llama `DxfR12` para convivir con la clase `Dxf` propia de reticulada, placa y muro. **Pendiente:** muro.html tiene dos planos (`descargarDXF`, corte típico del equipo, y `descargarDXFLamina`, con lámina y viñeta); hay que elegir uno.
   - Designaciones chilenas en las notas: acero NCh 203 (A42-27ES), barras NCh 204 (A630-420H), hormigón por grado G (NCh 170), madera NCh 1207 / NCh 1198:2024, MLE NCh 2165, preservación NCh 819, ejecución de acero NCh 428. ø se escribe como `%%c` en el DXF.
@@ -81,14 +81,14 @@ Todo el texto de la interfaz, las memorias y los commits va en **español (Chile
 
 ## Al agregar o cambiar una página de cálculo
 
-1. **Página:** copiar la cabecera (con el logo MMP) y los estilos de `acero.html`, y cargar `aura.css` al final del `<head>`, para mantener el aspecto.
+1. **Página:** copiar la cabecera (con el logo MMP) y los estilos de `acero.html`, cargar `aura.css` al final del `<head>` y `tablero.js` después de `memo.js`, para mantener el aspecto y la presentación de resultados. Las marcas `.tag.bad` que no sean una falla (clasificaciones, recortes constructivos) deben agregarse a `INFORMATIVAS` en `tablero.js`.
 2. **Plano y memoria:** botones "Descargar plano (.dxf)" (con `dxf.js`) y "Descargar memoria (.zip)" (`descargarZipMemoria` de `memo.js`).
 3. **Integración con proyectos:** definir `window.AURA_MEMO = { tipo, elemento(), tex(), nombre(), recalcular(valores) }`. Todos los campos del formulario deben estar dentro de `<main>` y tener `id`, porque así se guardan y se restauran.
 4. **Registro en la app:**
    - agregar la página a `PAGINAS_CALCULO` en `proyectos.js`;
    - agregar el enlace en `index.html`;
    - agregarla a `ARCHIVOS` en `sw.js`.
-5. **Versiones y caché:** al publicar cambios, subir `VERSION` en `sw.js` para que los dispositivos actualicen la copia sin conexión. Si se modifica `memo.js`, `proyectos.js`, `aura.css`, `modelo3d.js` o `dxf.js`, subir también el `?v=N` con que lo cargan las páginas.
+5. **Versiones y caché:** al publicar cambios, subir `VERSION` en `sw.js` para que los dispositivos actualicen la copia sin conexión. Si se modifica `memo.js`, `proyectos.js`, `aura.css`, `modelo3d.js`, `dxf.js` o `tablero.js`, subir también el `?v=N` con que lo cargan las páginas.
 6. **Recursos externos:** solo KaTeX (cdnjs) y supabase-js (jsdelivr). No agregar otras dependencias externas.
 
 ## Catálogos de perfiles

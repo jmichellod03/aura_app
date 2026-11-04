@@ -597,8 +597,12 @@ function crearZip(archivos) {
 
 // Figuras TikZ del .tex → dibujos de pantalla en PNG, en orden. Devuelve { tex, archivos: [{ nombre, datos }] }.
 async function prepararFiguras(tex, contenedor, prefijo = "figura") {
-  // Dibujos de resultados visibles; se excluyen los esquemas de ayuda de los datos de entrada (dentro de <details>)
+  // Dibujos de resultados visibles; se excluyen los esquemas de ayuda de los datos de entrada (dentro de <details>).
+  // Las tarjetas del procedimiento que el usuario plegó (tablero.js) se despliegan un instante para no perder sus figuras.
+  const plegadas = contenedor ? [...contenedor.querySelectorAll(".mcard.plegada")] : [];
+  plegadas.forEach(c => c.classList.remove("plegada"));
   const svgs = contenedor ? [...contenedor.querySelectorAll('svg[role="img"]')].filter(s => s.getBoundingClientRect().width > 0 && !s.closest("details, [data-sin-figura]")) : [];
+  plegadas.forEach(c => c.classList.add("plegada"));
   const archivos = [];
   let i = 0;
   for (const b of [...tex.matchAll(/\\begin\{tikzpicture\}[\s\S]*?\\end\{tikzpicture\}/g)]) {

@@ -138,7 +138,8 @@
   .mcard.plegada .mcard-chev { transform: rotate(-90deg); }
   .mcard.plegada .mcard-cuerpo { display: none; }
   .mcard-cuerpo { padding: 6px 14px 12px; }
-  .memo .mcard-h3 { display: none; }
+  .memo h3.mcard-h3 { margin: 0; padding: 0; border: 0; font-size: inherit; }
+  .mcard-n.sin { background: #7b8494; }
 
   /* Lectura del procedimiento: filas más aireadas, valores alineados y ecuaciones destacadas */
   .memo { font-size: 14px; line-height: 1.55; }
@@ -177,7 +178,8 @@
   @media (max-width: 900px) { .z23-cuerpo { grid-template-columns: 1fr; } .z23-2d { border-right: 0; border-bottom: 1px solid #e3e6ea; } }
 }
 @media print {
-  .zona23, .plegar, .mindice, .mcard-cab, .medidor { display: none !important; }
-  .memo .mcard-h3 { display: block !important; }
+  .zona23, .plegar, .mindice, .medidor, .mcard-estado, .mcard-chev, .mcard-n.sin { display: none !important; }
+  .mcard-cab { all: unset; display: block; font-weight: 700; }
+  .mcard-n:not(.sin)::after { content: ". "; }
   .mcard.plegada .mcard-cuerpo { display: block !important; }
 }
