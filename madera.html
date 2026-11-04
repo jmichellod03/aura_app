@@ -102,8 +102,8 @@
     .panel { border: 0; }
   }
 </style>
-<link rel="stylesheet" href="aura.css?v=8">
-<script src="lateral.js?v=1"></script>
+<link rel="stylesheet" href="aura.css?v=9">
+<script src="lateral.js?v=2"></script>
 </head>
 <body>
 <header>
@@ -140,9 +140,9 @@
         <label for="tipoViga">Tipo de viga</label>
         <select id="tipoViga">
           <option value="simple">Viga del envigado (E<sub>f</sub>)</option>
-          <option value="maestra">Viga maestra (0,60·E<sub>f</sub>, percentil 5 %)</option>
+          <option value="maestra">Viga maestra (0.60·E<sub>f</sub>, percentil 5 %)</option>
         </select>
-        <label class="chk"><input type="checkbox" id="kc" checked> Trabajo conjunto: ≥ 3 vigas a ≤ 610 mm (K<sub>c</sub> = 1,15)</label>
+        <label class="chk"><input type="checkbox" id="kc" checked> Trabajo conjunto: ≥ 3 vigas a ≤ 610 mm (K<sub>c</sub> = 1.15)</label>
       </fieldset>
 
       <fieldset>
@@ -187,12 +187,12 @@
         <input id="P" type="number" step="any" min="0" value="0">
         <label for="kd">Duración de la carga que controla (K<sub>D</sub>, 7.1.2)</label>
         <select id="kd">
-          <option value="0.9">Permanente — K_D = 0,90</option>
-          <option value="1" selected>Normal — sobrecarga de uso (10 años) — K_D = 1,00</option>
-          <option value="1.15">Dos meses (nieve) — K_D = 1,15</option>
-          <option value="1.25">Siete días (SC de techo) — K_D = 1,25</option>
-          <option value="1.6">Viento o sismo — K_D = 1,60</option>
-          <option value="2">Impacto — K_D = 2,00</option>
+          <option value="0.9">Permanente — K_D = 0.90</option>
+          <option value="1" selected>Normal — sobrecarga de uso (10 años) — K_D = 1.00</option>
+          <option value="1.15">Dos meses (nieve) — K_D = 1.15</option>
+          <option value="1.25">Siete días (SC de techo) — K_D = 1.25</option>
+          <option value="1.6">Viento o sismo — K_D = 1.60</option>
+          <option value="2">Impacto — K_D = 2.00</option>
         </select>
       </fieldset>
 
@@ -245,7 +245,7 @@
           <div><label for="tb">b (en el plano del tabique) <span class="unit">[mm]</span></label><input id="tb" type="number" step="1" min="20" value="45"></div>
           <div><label for="th">h (espesor del tabique) <span class="unit">[mm]</span></label><input id="th" type="number" step="1" min="20" value="70"></div>
         </div>
-        <label class="chk"><input type="checkbox" id="tKc" checked> Trabajo conjunto: ≥ 3 pies derechos a ≤ 610 mm (K<sub>c</sub> = 1,15)</label>
+        <label class="chk"><input type="checkbox" id="tKc" checked> Trabajo conjunto: ≥ 3 pies derechos a ≤ 610 mm (K<sub>c</sub> = 1.15)</label>
       </fieldset>
 
       <fieldset>
@@ -292,7 +292,7 @@
           <div><label for="tKDpp">PP sola (permanente)</label><input id="tKDpp" type="number" step="0.01" min="0.5" value="0.9"></div>
           <div><label for="tKcn">K<sub>cn</sub> solera inferior (8.5)</label><input id="tKcn" type="number" step="0.05" min="0.5" max="1.8" value="0.8"></div>
         </div>
-        <div class="unit" style="margin-top:6px">Cada combinación usa el K<sub>D</sub> de su carga de menor duración; la combinación con viento usa K<sub>D</sub> de viento también en compresión paralela. PP sola (carga permanente): K<sub>D</sub> = 0,90.</div>
+        <div class="unit" style="margin-top:6px">Cada combinación usa el K<sub>D</sub> de su carga de menor duración; la combinación con viento usa K<sub>D</sub> de viento también en compresión paralela. PP sola (carga permanente): K<sub>D</sub> = 0.90.</div>
       </fieldset>
 
       <fieldset>
@@ -441,13 +441,13 @@
           <div><label for="mqtb">Techo barlovento, perpendicular <span class="unit">[kgf/m²]</span></label><input id="mqtb" type="number" step="any" value="26.67"></div>
           <div><label for="mqts">Techo sotavento, perpendicular <span class="unit">[kgf/m²]</span></label><input id="mqts" type="number" step="any" value="28"></div>
         </div>
-        <div class="unit" style="margin-top:6px">Presiones perpendiculares a cada faldón: barlovento (1,2·sen α − 0,4)·q, positiva hacia el techo; sotavento 0,4·q de succión (se usa su magnitud). Se usa su componente horizontal, q·cos α (criterio de la planilla FULL MADERA). En fachada se ingresa la presión total horizontal (0,8 + 0,4)·q.</div>
+        <div class="unit" style="margin-top:6px">Presiones perpendiculares a cada faldón: barlovento (1.2·sen α − 0.4)·q, positiva hacia el techo; sotavento 0.4·q de succión (se usa su magnitud). Se usa su componente horizontal, q·cos α (criterio de la planilla FULL MADERA). En fachada se ingresa la presión total horizontal (0.8 + 0.4)·q.</div>
       </fieldset>
 
       <fieldset>
         <legend>Corte en el plano y desplazamiento (cláusula 12)</legend>
         <label for="mTabla">Tablero y clavado</label>
-        <select id="mTabla"><option value="42">Tabla 42 — 1 a 2 pisos: OSB 9,5 mm, clavo 2,9 ≤ D &lt; 3,1 mm</option><option value="43">Tabla 43 — 1 a 6 pisos: OSB 11,1 mm, clavo 3,1 ≤ D &lt; 3,8 mm</option></select>
+        <select id="mTabla"><option value="42">Tabla 42 — 1 a 2 pisos: OSB 9.5 mm, clavo 2.9 ≤ D &lt; 3.1 mm</option><option value="43">Tabla 43 — 1 a 6 pisos: OSB 11.1 mm, clavo 3.1 ≤ D &lt; 3.8 mm</option></select>
         <div class="row2">
           <div><label for="mSct">Espaciamiento perimetral S<sub>ct</sub></label>
             <select id="mSct"><option value="150">150 mm</option><option value="100" selected>100 mm</option><option value="75">75 mm</option><option value="50">50 mm</option></select></div>
@@ -455,7 +455,7 @@
             <select id="mCaras"><option value="1">1 cara (K<sub>n</sub> = 1)</option><option value="2">2 caras (K<sub>n</sub> = 2)</option></select></div>
           <div><label for="mDa">Alargamiento del anclaje Δ<sub>a</sub> <span class="unit">[mm]</span></label><input id="mDa" type="number" step="0.5" min="0" value="5"></div>
           <div><label for="mDesp">Desplazamiento admisible</label>
-            <select id="mDesp"><option value="0">Solo calcular</option><option value="500">h/500 (0,002·h)</option><option value="300">h/300</option></select></div>
+            <select id="mDesp"><option value="0">Solo calcular</option><option value="500">h/500 (0.002·h)</option><option value="300">h/300</option></select></div>
         </div>
       </fieldset>
 
@@ -487,10 +487,10 @@
 </main>
 <footer>Herramienta de apoyo académico basada en NCh 1198:2024 y en la planilla «FULL MADERA». Verifique siempre los resultados.</footer>
 
-<script src="memo.js?v=35"></script>
-<script src="tablero.js?v=2"></script>
-<script src="dxf.js?v=1"></script>
-<script src="modelo3d.js?v=5"></script>
+<script src="memo.js?v=37"></script>
+<script src="tablero.js?v=3"></script>
+<script src="dxf.js?v=2"></script>
+<script src="modelo3d.js?v=6"></script>
 <script>
 "use strict";
 // ---------------------------------------------------------------------------
@@ -518,8 +518,8 @@ const KCT = {
 };
 // Tablas 42 y 43 — corte unitario admisible V_c y rigidez aparente G_a [N/mm] según S_ct [mm]
 const TABLA_MURO = {
-  42: { txt: "Tabla 42 (edificaciones de 1 a 2 pisos; OSB 9,5 mm; clavo 2,9 ≤ D < 3,1 mm, largo ≥ 51 mm)", vc: { 150: 2.9, 100: 4.4, 75: 5.7, 50: 7.4 }, ga: { 150: 1927, 100: 2628, 75: 3504, 50: 5606 } },
-  43: { txt: "Tabla 43 (edificaciones de 1 a 6 pisos; OSB 11,1 mm; clavo 3,1 ≤ D < 3,8 mm, largo ≥ 64 mm)", vc: { 150: 3.5, 100: 5.1, 75: 6.6, 50: 8.5 }, ga: { 150: 2628, 100: 3854, 75: 4905, 50: 7358 } },
+  42: { txt: "Tabla 42 (edificaciones de 1 a 2 pisos; OSB 9.5 mm; clavo 2.9 ≤ D < 3.1 mm, largo ≥ 51 mm)", vc: { 150: 2.9, 100: 4.4, 75: 5.7, 50: 7.4 }, ga: { 150: 1927, 100: 2628, 75: 3504, 50: 5606 } },
+  43: { txt: "Tabla 43 (edificaciones de 1 a 6 pisos; OSB 11.1 mm; clavo 3.1 ≤ D < 3.8 mm, largo ≥ 64 mm)", vc: { 150: 3.5, 100: 5.1, 75: 6.6, 50: 8.5 }, ga: { 150: 2628, 100: 3854, 75: 4905, 50: 7358 } },
 };
 const factorKH = (H, k) => (H <= 18 ? 1 - (H - 12) * DR[k] : VERDE[k]);
 // Factor de longitud efectiva de pandeo K_p: [condición, teórico, recomendado]
@@ -549,9 +549,9 @@ const TABLA6 = {
 // ---------------------------------------------------------------------------
 const $ = (id) => document.getElementById(id);
 const num = (id) => { const v = parseFloat($(id).value); return Number.isFinite(v) ? v : 0; };
-const fmt = (x, d = 2) => Number.isFinite(x) ? x.toLocaleString("es-CL", { minimumFractionDigits: d, maximumFractionDigits: d }) : "—";
+const fmt = (x, d = 2) => Number.isFinite(x) ? x.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d }).replace(/,/g, "\u00a0") : "—";
 const L = String.raw;
-const tn = (x, d = 2) => Number.isFinite(x) ? fmt(x, d).replace(/,/g, "{,}").replace(/(\d)\.(?=\d{3}(?!\d))/g, "$1\\,") : "\\infty";
+const tn = (x, d = 2) => Number.isFinite(x) ? fmt(x, d).replace(/\u00a0/g, "\\,") : "\\infty";
 // Fuera de una ecuación (celdas y texto del .tex): el infinito va en modo matemático
 const tnT = (x, d = 2) => Number.isFinite(x) ? tn(x, d) : "$\\infty$";
 const LE = L`\le`;
@@ -559,14 +559,14 @@ const cmp = (a, b) => (a <= b ? LE : ">");
 const tag = (ok, t) => `<span class="tag ${ok ? "ok" : "bad"}">${t}</span>`;
 const okTxt = (ok) => tag(ok, ok ? "CUMPLE" : "NO CUMPLE");
 const UKG = L`\ \mathrm{kgf/cm^2}`;
-// Verificación final de la memoria: "f_f = 6,05 ≤ F_f,dis = 7,92 ¡CUMPLE!"
+// Verificación final de la memoria: "f_f = 6.05 ≤ F_f,dis = 7.92 ¡CUMPLE!"
 const chequeo = (a, va, b, vb, u = UKG, dec = 2) => {
   const ok = va <= vb;
   return L`${a} = ${tn(va, dec)}${u} \;${ok ? L`\le` : ">"}\; ${b} = ${tn(vb, dec)}${u} \hspace{2em}\textbf{${ok ? "¡CUMPLE!" : "¡NO CUMPLE!"}}`;
 };
 // K_D de la carga permanente sola (peso propio), como en la práctica de diseño habitual
 const KD_PERM = 0.90;
-// Coeficiente de volcamiento C_fE (8.2.2.4): 0,439 madera clasificada visualmente; 0,561 clasificada mecánicamente
+// Coeficiente de volcamiento C_fE (8.2.2.4): 0.439 madera clasificada visualmente; 0.561 clasificada mecánicamente
 const MECANICOS = ["C24", "C16", "MGP10", "MGP12"];
 const CfE = (grado) => (MECANICOS.includes(grado) ? 0.561 : 0.439);
 
@@ -602,10 +602,10 @@ function tablaProps(m, grado, maestra) {
     ["Tensión admisible en cizalle", "F<sub>cz</sub>", L`$F_{cz}$`, FczM],
     ["Módulo de elasticidad en flexión", "E<sub>f</sub>", L`$E_f$`, EfM],
   ];
-  if (maestra) props.push(["Módulo de elasticidad percentil 5 % (viga maestra)", "0,60·E<sub>f</sub>", L`$0{,}60\,E_f$`, 0.6 * EfM]);
+  if (maestra) props.push(["Módulo de elasticidad percentil 5 % (viga maestra)", "0.60·E<sub>f</sub>", L`$0.60\,E_f$`, 0.6 * EfM]);
   m.out.push(`<table class="prop"><tr><th>Propiedad (pino radiata ${grado}, H = 12 %)</th><th>Símbolo</th><th>kgf/cm²</th></tr>` +
     props.map(([n, s, , v]) => `<tr><td>${n}</td><td>${s}</td><td class="num">${fmt(v * MPA, 0)}</td></tr>`).join("") +
-    `<tr><td>Índice de aplastamiento en compresión normal</td><td>E<sub>cn,h</sub></td><td class="num">56,5 kgf/cm²/mm</td></tr></table>
+    `<tr><td>Índice de aplastamiento en compresión normal</td><td>E<sub>cn,h</sub></td><td class="num">56.5 kgf/cm²/mm</td></tr></table>
     <div class="unit" style="margin-top:4px">Valores base para madera seca (H = 12 %), convertidos de la Tabla U.1 con 1 MPa = 10 kgf/cm².</div>`);
   m.tex.push(L`\begin{table}[H]
 \centering
@@ -615,7 +615,7 @@ function tablaProps(m, grado, maestra) {
 Propiedad & Símbolo & kgf/cm$^2$\\
 \midrule
 ${props.map(([n, , st, v]) => `${n} & ${st} & ${tn(v * MPA, 0)}\\\\`).join("\n")}
-Índice de aplastamiento en compresión normal & $E_{cn,h}$ & 56{,}5 kgf/cm$^2$/mm\\
+Índice de aplastamiento en compresión normal & $E_{cn,h}$ & 56.5 kgf/cm$^2$/mm\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -759,7 +759,7 @@ function calcularTabique(d, m) {
   m.eq(L`K_c = ${tn(Kc, 2)}`, "7.1.3");
   m.p(L`\textbf{Factor de modificación por altura en flexión} (8.2.2.3). ${Khf < 1 ? `Como h = ${tn(d.h, 0)} mm supera los ${mgp ? 160 : 90} mm, se aplica:` : `Como h = ${tn(d.h, 0)} mm no supera los ${mgp ? 160 : 90} mm, el factor resultaría mayor que la unidad y normativamente no se aplica, asumiéndose:`}`, true);
   m.eq(Khf < 1 ? L`K_{hf} = ${mgp ? L`\left(\frac{160}{${tn(d.h, 0)}}\right)^{${d.grado === "MGP10" ? "1/3" : "1/2"}}` : L`\left(\frac{90}{${tn(d.h, 0)}}\right)^{1/5}`} = ${tn(Khf, 3)}` : L`K_{hf} = 1`, "8.2.2.3");
-  m.p(L`\textbf{Ajuste del módulo de elasticidad.} ${KhEx < 1 || KhEy < 1 ? "Como las dimensiones de la sección son menores a 180 mm, se aplica el factor de modificación por altura (con mínimo 0{,}67) en cada dirección de pandeo:" : "La sección no requiere reducir el módulo de elasticidad por altura:"}`, true);
+  m.p(L`\textbf{Ajuste del módulo de elasticidad.} ${KhEx < 1 || KhEy < 1 ? "Como las dimensiones de la sección son menores a 180 mm, se aplica el factor de modificación por altura (con mínimo 0.67) en cada dirección de pandeo:" : "La sección no requiere reducir el módulo de elasticidad por altura:"}`, true);
   m.eq(L`K_{hE,x} = ${KhEx < 1 ? L`\left(\frac{h}{180}\right)^{1/4} = \left(\frac{${tn(d.h, 0)}}{180}\right)^{1/4} = ` : ""}${tn(KhEx, 3)}`);
   m.eq(L`K_{hE,y} = ${KhEy < 1 ? L`\left(\frac{b}{180}\right)^{1/4} = \left(\frac{${tn(d.b, 0)}}{180}\right)^{1/4} = ` : ""}${tn(KhEy, 3)}`);
   m.p(L`Los módulos de elasticidad de diseño en cada eje resultan:`, true);
@@ -834,9 +834,9 @@ function calcularTabique(d, m) {
 
   // Bloques de la memoria (combinación analizada en pantalla; todas las combinaciones en el .tex)
   const secEsbeltez = () => {
-    m.p(L`\textbf{Esbelteces.} ${d.pilar ? L`Las longitudes de pandeo son $L_{p,x} = ${tn(d.Lpx, 1)}$ cm en torno al eje x y $L_{p,y} = ${tn(d.Lpy, 1)}$ cm en torno al eje y.` : L`La longitud de pandeo fuera del plano del tabique es $L_{p,x} = ${tn(d.Lpx, 1)}$ cm y en el plano $L_{p,y} = ${tn(d.Lpy, 1)}$ cm (distancia entre cadenetas).`} Con la condición de apoyo ${d.kpTxt.replace(/–/g, "--")}, el coeficiente de longitud efectiva según la Tabla J.1 es $K_p = ${tn(d.Kp, 2)}$. El radio de giro de una sección rectangular es $i = 0{,}289$ veces la dimensión en la dirección del pandeo:`, true);
-    m.eq(L`\lambda_x = \frac{K_p L_{p,x}}{0{,}289\,h} = \frac{${tn(d.Kp, 2)}\cdot ${tn(d.Lpx, 1)}}{0{,}289\cdot ${tn(hc, 1)}} = ${tn(lx, 2)} \qquad \lambda_y = \frac{K_p L_{p,y}}{0{,}289\,b} = \frac{${tn(d.Kp, 2)}\cdot ${tn(d.Lpy, 1)}}{0{,}289\cdot ${tn(bc, 1)}} = ${tn(ly, 2)}`);
-    m.eq(L`\lambda = \max(\lambda_x,\ \lambda_y) = ${tn(lam, 2)} \;${lam <= 170 ? L`\le` : ">"}\; 170 \qquad F_{cE} = \frac{3{,}6\,E_{${ejeY ? "y" : "x"},dis}}{\lambda^2} = \frac{3{,}6\cdot ${tn(Ec, 0)}}{${tn(lam, 2)}^2} = ${tn(FcE, 3)}\ \mathrm{kgf/cm^2}`, "8.3");
+    m.p(L`\textbf{Esbelteces.} ${d.pilar ? L`Las longitudes de pandeo son $L_{p,x} = ${tn(d.Lpx, 1)}$ cm en torno al eje x y $L_{p,y} = ${tn(d.Lpy, 1)}$ cm en torno al eje y.` : L`La longitud de pandeo fuera del plano del tabique es $L_{p,x} = ${tn(d.Lpx, 1)}$ cm y en el plano $L_{p,y} = ${tn(d.Lpy, 1)}$ cm (distancia entre cadenetas).`} Con la condición de apoyo ${d.kpTxt.replace(/–/g, "--")}, el coeficiente de longitud efectiva según la Tabla J.1 es $K_p = ${tn(d.Kp, 2)}$. El radio de giro de una sección rectangular es $i = 0.289$ veces la dimensión en la dirección del pandeo:`, true);
+    m.eq(L`\lambda_x = \frac{K_p L_{p,x}}{0.289\,h} = \frac{${tn(d.Kp, 2)}\cdot ${tn(d.Lpx, 1)}}{0.289\cdot ${tn(hc, 1)}} = ${tn(lx, 2)} \qquad \lambda_y = \frac{K_p L_{p,y}}{0.289\,b} = \frac{${tn(d.Kp, 2)}\cdot ${tn(d.Lpy, 1)}}{0.289\cdot ${tn(bc, 1)}} = ${tn(ly, 2)}`);
+    m.eq(L`\lambda = \max(\lambda_x,\ \lambda_y) = ${tn(lam, 2)} \;${lam <= 170 ? L`\le` : ">"}\; 170 \qquad F_{cE} = \frac{3.6\,E_{${ejeY ? "y" : "x"},dis}}{\lambda^2} = \frac{3.6\cdot ${tn(Ec, 0)}}{${tn(lam, 2)}^2} = ${tn(FcE, 3)}\ \mathrm{kgf/cm^2}`, "8.3");
     m.p(L`De acuerdo con la Tabla 9 de la NCh 1198, el coeficiente de proporcionalidad para el grado ${d.grado} es $c = ${tn(cc, 2)}$.`, true);
   };
   const eqComp = (c) => {
@@ -860,11 +860,11 @@ function calcularTabique(d, m) {
     if (necesitaKlv) {
       const rr = FfE / Fstar;
       m.p(L`\textbf{Canto flexocomprimido (estabilidad al volcamiento).} Con la distancia entre apoyos laterales $l_a = ${tn(d.la, 0)}$ cm y la Tabla 5:`, true);
-      m.eq(d.la / hc < 7 ? L`l_v = 2{,}06\,l_a = 2{,}06\cdot ${tn(d.la, 0)} = ${tn(lv, 1)}\ \mathrm{cm}` : L`l_v = 1{,}63\,l_a + 3h = 1{,}63\cdot ${tn(d.la, 0)} + 3\cdot ${tn(hc, 1)} = ${tn(lv, 1)}\ \mathrm{cm}`, "Tabla 5");
+      m.eq(d.la / hc < 7 ? L`l_v = 2.06\,l_a = 2.06\cdot ${tn(d.la, 0)} = ${tn(lv, 1)}\ \mathrm{cm}` : L`l_v = 1.63\,l_a + 3h = 1.63\cdot ${tn(d.la, 0)} + 3\cdot ${tn(hc, 1)} = ${tn(lv, 1)}\ \mathrm{cm}`, "Tabla 5");
       m.eq(L`\lambda_v = \sqrt{\frac{l_v\,h}{b^2}} = \sqrt{\frac{${tn(lv, 1)}\cdot ${tn(hc, 1)}}{${tn(bc, 1)}^2}} = ${tn(lamv, 3)} \;${lamv <= 50 ? L`\le` : ">"}\; 50`, "8.2.2.4");
       m.eq(L`F^*_{f,dis} = F_f\,K_H\,K_D\,K_c = ${tn(Fstar, 2)}\ \mathrm{kgf/cm^2}`);
       m.eq(L`F_{fE} = \frac{C_{fE}\,E_{x,dis}}{\lambda_v^2} = \frac{${tn(CfE(d.grado), 3)}\cdot ${tn(Ex, 0)}}{${tn(lamv, 3)}^2} = ${tn(FfE, 2)}\ \mathrm{kgf/cm^2}`, "8.2.2.4");
-      m.eq(L`K_{\lambda v} = \frac{1 + F_{fE}/F^*_{f,dis}}{1{,}9} - \sqrt{\left(\frac{1 + F_{fE}/F^*_{f,dis}}{1{,}9}\right)^2 - \frac{F_{fE}/F^*_{f,dis}}{0{,}95}} = \frac{1 + ${tn(rr, 3)}}{1{,}9} - \sqrt{\left(\frac{1 + ${tn(rr, 3)}}{1{,}9}\right)^2 - \frac{${tn(rr, 3)}}{0{,}95}} = ${tn(Klv, 3)}`, "8.2.2.4");
+      m.eq(L`K_{\lambda v} = \frac{1 + F_{fE}/F^*_{f,dis}}{1.9} - \sqrt{\left(\frac{1 + F_{fE}/F^*_{f,dis}}{1.9}\right)^2 - \frac{F_{fE}/F^*_{f,dis}}{0.95}} = \frac{1 + ${tn(rr, 3)}}{1.9} - \sqrt{\left(\frac{1 + ${tn(rr, 3)}}{1.9}\right)^2 - \frac{${tn(rr, 3)}}{0.95}} = ${tn(Klv, 3)}`, "8.2.2.4");
       m.eq(L`F_{fv,dis} = F^*_{f,dis}\,K_{\lambda v} = ${tn(Fstar, 2)}\cdot ${tn(Klv, 3)} = ${tn(Ffv, 2)}\ \mathrm{kgf/cm^2}`);
     } else {
       m.p(L`\textbf{Canto flexocomprimido (estabilidad al volcamiento).} ${d.apoyoLat === "ac" || !(d.la > 0) ? "El canto comprimido tiene apoyo lateral continuo" : L`Al comprobar la relación geométrica de la escuadría, $h/b = ${tn(d.h, 0)}/${tn(d.b, 0)} = ${tn(d.h / d.b, 3)} \le 2$`}, por lo que no existe riesgo de volcamiento lateral y $K_{\lambda v} = 1$. La tensión en el borde comprimido es:`, true);
@@ -876,18 +876,18 @@ function calcularTabique(d, m) {
   };
   const devCizalle = () => {
     m.p(L`Con el corte máximo producido por el viento en los apoyos ${E.del} se calcula la tensión de cizalle, y se compara con la tensión de diseño con $K_D = ${tn(d.KDv, 2)}$ (sin rebajes, $K_r = 1$):`, true);
-    m.eq(L`f_{cz} = \frac{1{,}5\,V_V}{b\,h} = \frac{1{,}5\cdot ${tn(VV, 2)}}{${tn(bc, 1)}\cdot ${tn(hc, 1)}} = ${tn(fcz, 3)}\ \mathrm{kgf/cm^2}`, "8.2.3");
+    m.eq(L`f_{cz} = \frac{1.5\,V_V}{b\,h} = \frac{1.5\cdot ${tn(VV, 2)}}{${tn(bc, 1)}\cdot ${tn(hc, 1)}} = ${tn(fcz, 3)}\ \mathrm{kgf/cm^2}`, "8.2.3");
     m.eq(L`F_{cz,dis} = F_{cz}\,K_H\,K_D = ${tn(Fcz, 1)}\cdot ${tn(KH("Fcz"), 3)}\cdot ${tn(d.KDv, 2)} = ${tn(Fczd, 2)}\ \mathrm{kgf/cm^2}`);
     m.eq(chequeo("f_{cz}", fcz, "F_{cz,dis}", Fczd, UKG, 3));
   };
   const devDef = () => {
-    m.p(L`El empuje del viento produce una deformación lateral ${E.del}, suma de la componente por flexión y la componente por corte (8.2.4.12, con $G = 0{,}065\,E_{x,dis}$), que se compara con el límite de la Tabla 6 ${d.pilar ? L`($L/${d.def}$)` : d.def === 240 ? "para muros con enlucidos frágiles" : "para muros sin enlucidos frágiles"}:`, true);
-    m.eq(L`I_x = \frac{b\,h^3}{12} = \frac{${tn(bc, 1)}\cdot ${tn(hc, 1)}^3}{12} = ${tn(Ix, 1)}\ \mathrm{cm^4} \qquad G = 0{,}065\,E_{x,dis} = 0{,}065\cdot ${tn(Ex, 0)} = ${tn(G, 0)}\ \mathrm{kgf/cm^2}`);
+    m.p(L`El empuje del viento produce una deformación lateral ${E.del}, suma de la componente por flexión y la componente por corte (8.2.4.12, con $G = 0.065\,E_{x,dis}$), que se compara con el límite de la Tabla 6 ${d.pilar ? L`($L/${d.def}$)` : d.def === 240 ? "para muros con enlucidos frágiles" : "para muros sin enlucidos frágiles"}:`, true);
+    m.eq(L`I_x = \frac{b\,h^3}{12} = \frac{${tn(bc, 1)}\cdot ${tn(hc, 1)}^3}{12} = ${tn(Ix, 1)}\ \mathrm{cm^4} \qquad G = 0.065\,E_{x,dis} = 0.065\cdot ${tn(Ex, 0)} = ${tn(G, 0)}\ \mathrm{kgf/cm^2}`);
     m.eq(L`\delta_{V,f} = \frac{5\,w\,L^4}{384\,E_{x,dis}\,I_x} = \frac{5\cdot ${tn(w / 100, 4)}\cdot ${tn(d.L, 1)}^4}{384\cdot ${tn(Ex, 0)}\cdot ${tn(Ix, 1)}} = ${tn(r.dVf, 3)}\ \mathrm{mm}`, "8.2.4");
-    m.eq(L`\delta_{V,Q} = \frac{1{,}2\,M_V}{G\,b\,h} = \frac{1{,}2\cdot ${tn(MV, 1)}}{${tn(G, 0)}\cdot ${tn(bc, 1)}\cdot ${tn(hc, 1)}} = ${tn(r.dVq, 3)}\ \mathrm{mm}`, "8.2.4.12");
+    m.eq(L`\delta_{V,Q} = \frac{1.2\,M_V}{G\,b\,h} = \frac{1.2\cdot ${tn(MV, 1)}}{${tn(G, 0)}\cdot ${tn(bc, 1)}\cdot ${tn(hc, 1)}} = ${tn(r.dVq, 3)}\ \mathrm{mm}`, "8.2.4.12");
     m.eq(L`\delta_V = \delta_{V,f} + \delta_{V,Q} = ${tn(r.dVf, 3)} + ${tn(r.dVq, 3)} = ${tn(r.dV, 2)}\ \mathrm{mm} \;${cmp(r.dV, r.limV)}\; \frac{L}{${d.def}} = ${tn(r.limV, 2)}\ \mathrm{mm} \hspace{2em}\textbf{${r.dV <= r.limV ? "¡CUMPLE!" : "¡NO CUMPLE!"}}`, "Tabla 6");
   };
-  const eqFcEx = () => m.eq(L`F_{cE,x} = \frac{3{,}6\,E_{x,dis}}{\lambda_x^2} = \frac{3{,}6\cdot ${tn(Ex, 0)}}{${tn(lx, 2)}^2} = ${tn(FcEx, 3)}\ \mathrm{kgf/cm^2}`);
+  const eqFcEx = () => m.eq(L`F_{cE,x} = \frac{3.6\,E_{x,dis}}{\lambda_x^2} = \frac{3.6\cdot ${tn(Ex, 0)}}{${tn(lx, 2)}^2} = ${tn(FcEx, 3)}\ \mathrm{kgf/cm^2}`);
   const eqInter = (c) => {
     if (!(c.amp > 0)) m.note(`${c.n}: f<sub>cp</sub> ≥ F<sub>cE,x</sub>, ${E.el} es inestable ${E.ejeX} (interacción = ∞).`,
       L`${c.n}: $f_{cp} \ge F_{cE,x}$, ${E.el} es inestable ${E.ejeX} (interacción $= \infty$).`);
@@ -1064,7 +1064,7 @@ function calcular(d, m) {
   m.eq(L`K_c = ${tn(Kc, 2)}`, "7.1.3");
   m.p(L`\textbf{Factor de modificación por altura} (8.2.2.3). ${Khf < 1 ? `Como la altura de la sección (${tn(d.h, 0)} mm) supera los ${mgp ? 160 : 90} mm, se aplica:` : `Como la altura de la sección (${tn(d.h, 0)} mm) no supera los ${mgp ? 160 : 90} mm, el factor no reduce la tensión:`}`, true);
   m.eq(Khf < 1 ? L`K_{hf} = ${mgp ? L`\left(\frac{160}{h}\right)^{${d.grado === "MGP10" ? "1/3" : "1/2"}}` : L`\left(\frac{90}{h}\right)^{1/5}`} = ${mgp ? L`\left(\frac{160}{${tn(d.h, 0)}}\right)^{${d.grado === "MGP10" ? "1/3" : "1/2"}}` : L`\left(\frac{90}{${tn(d.h, 0)}}\right)^{1/5}`} = ${tn(Khf, 3)}` : L`K_{hf} = 1`, "8.2.2.3");
-  m.p(L`\textbf{Módulo de elasticidad de diseño.} ${KhE < 1 ? `Según la Tabla U.1, como la altura de la sección es menor a 180 mm (h = ${tn(d.h, 0)} mm) se aplica el factor de altura ${L`$K_{hE}$`} (con mínimo 0{,}67):` : "La altura de la sección no requiere reducir el módulo por altura:"}`, true);
+  m.p(L`\textbf{Módulo de elasticidad de diseño.} ${KhE < 1 ? `Según la Tabla U.1, como la altura de la sección es menor a 180 mm (h = ${tn(d.h, 0)} mm) se aplica el factor de altura ${L`$K_{hE}$`} (con mínimo 0.67):` : "La altura de la sección no requiere reducir el módulo por altura:"}`, true);
   m.eq(KhE < 1 ? L`K_{hE} = \left(\frac{h}{180}\right)^{1/4} = \left(\frac{${tn(d.h, 0)}}{180}\right)^{1/4} = ${tn(KhE, 3)}` : L`K_{hE} = 1`);
   m.eq(L`E_{f,dis} = E_f\,K_H\,K_{hE} = ${tn(Ef0, 0)}\cdot ${tn(KH("Ef"), 3)}\cdot ${tn(KhE, 3)} = ${tn(Edis, 0)}\ \mathrm{kgf/cm^2}`);
 
@@ -1114,13 +1114,13 @@ function calcular(d, m) {
     m.p(L`\textbf{Canto flexocomprimido.} La distancia entre apoyos laterales es $l_a = ${tn(d.la, 0)}$ cm. Con la proporción $l_a/h$ se determina la longitud efectiva de volcamiento según la Tabla 5 (viga simplemente apoyada con carga uniforme):`, true);
     m.eq(L`\frac{l_a}{h} = \frac{${tn(d.la, 0)}}{${tn(hc, 1)}} = ${tn(rel, 3)}`);
     m.p(L`Dado que $l_a/h ${rel < 7 ? "< 7" : L`\ge 7`}$, la Tabla 5 establece:`, true);
-    m.eq(rel < 7 ? L`l_v = 2{,}06\,l_a = 2{,}06\cdot ${tn(d.la, 0)} = ${tn(lv, 1)}\ \mathrm{cm}` : L`l_v = 1{,}63\,l_a + 3h = 1{,}63\cdot ${tn(d.la, 0)} + 3\cdot ${tn(hc, 1)} = ${tn(lv, 1)}\ \mathrm{cm}`, "Tabla 5");
+    m.eq(rel < 7 ? L`l_v = 2.06\,l_a = 2.06\cdot ${tn(d.la, 0)} = ${tn(lv, 1)}\ \mathrm{cm}` : L`l_v = 1.63\,l_a + 3h = 1.63\cdot ${tn(d.la, 0)} + 3\cdot ${tn(hc, 1)} = ${tn(lv, 1)}\ \mathrm{cm}`, "Tabla 5");
     m.p(L`Con la longitud efectiva se calculan la esbeltez de volcamiento (que no debe superar 50), la tensión admisible ponderada $F^*_{f,dis}$ (sin factores de altura ni volcamiento) y la tensión crítica de volcamiento:`, true);
     m.eq(L`\lambda_v = \sqrt{\frac{l_v\,h}{b^2}} = \sqrt{\frac{${tn(lv, 1)}\cdot ${tn(hc, 1)}}{${tn(bc, 1)}^2}} = ${tn(lamv, 3)} \;${lamv <= 50 ? L`\le` : ">"}\; 50`, "8.2.2.4");
     m.eq(L`F^*_{f,dis} = F_f\,K_H\,K_D\,K_c = ${tn(Ff, 1)}\cdot ${tn(KH("Ff"), 3)}\cdot ${tn(KD, 3)}\cdot ${tn(Kc, 2)} = ${tn(Fstar, 2)}\ \mathrm{kgf/cm^2}`);
     m.eq(L`F_{fE} = \frac{C_{fE}\,E_{f,dis}}{\lambda_v^2} = \frac{${tn(CfE(d.grado), 3)}\cdot ${tn(Edis, 0)}}{${tn(lamv, 3)}^2} = ${tn(FfE, 2)}\ \mathrm{kgf/cm^2}`, "8.2.2.4");
     m.p(L`Con estos valores se obtiene el factor de modificación por volcamiento:`, true);
-    m.eq(L`K_{\lambda v} = \frac{1 + F_{fE}/F^*_{f,dis}}{1{,}9} - \sqrt{\left(\frac{1 + F_{fE}/F^*_{f,dis}}{1{,}9}\right)^2 - \frac{F_{fE}/F^*_{f,dis}}{0{,}95}} = \frac{1 + ${tn(rr, 3)}}{1{,}9} - \sqrt{\left(\frac{1 + ${tn(rr, 3)}}{1{,}9}\right)^2 - \frac{${tn(rr, 3)}}{0{,}95}} = ${tn(Klv, 3)}`, "8.2.2.4");
+    m.eq(L`K_{\lambda v} = \frac{1 + F_{fE}/F^*_{f,dis}}{1.9} - \sqrt{\left(\frac{1 + F_{fE}/F^*_{f,dis}}{1.9}\right)^2 - \frac{F_{fE}/F^*_{f,dis}}{0.95}} = \frac{1 + ${tn(rr, 3)}}{1.9} - \sqrt{\left(\frac{1 + ${tn(rr, 3)}}{1.9}\right)^2 - \frac{${tn(rr, 3)}}{0.95}} = ${tn(Klv, 3)}`, "8.2.2.4");
     m.eq(L`F_{fv,dis} = F^*_{f,dis}\,K_{\lambda v} = ${tn(Fstar, 2)}\cdot ${tn(Klv, 3)} = ${tn(Ffv, 2)}\ \mathrm{kgf/cm^2}`);
   } else {
     m.p(L`\textbf{Canto flexocomprimido.} ${d.apoyoLat === "ac" || !(d.la > 0) ? "El canto comprimido tiene apoyo lateral continuo" : L`Como $h/b = ${tn(d.h / d.b, 2)} \le 2$`}, no existe riesgo de volcamiento lateral y $K_{\lambda v} = 1$:`, true);
@@ -1148,7 +1148,7 @@ function calcular(d, m) {
   m.row("Factor por rebaje ; tensión de diseño en cizalle: K<sub>r</sub> ; F<sub>cz,dis</sub>", `${fmt(Kr, 3)} ; ${fmt(Fczd, 2)} kgf/cm²`, "8.2.3 / 8.7");
   m.row("<b>Razón de cizalle: f<sub>cz</sub> / F<sub>cz,dis</sub></b>", `<b>${fmt(r.ciz, 3)}</b> ${okTxt(r.ciz <= 1)}`);
   m.p(L`\textbf{Tensión de trabajo.} Con el esfuerzo de corte máximo en los apoyos $V = ${tn(V, 2)}$ kgf se calcula la tensión de cizalle longitudinal en la sección ${d.rebaje ? "rebajada" : "transversal"} de la viga:`, true);
-  m.eq(L`f_{cz} = \frac{1{,}5\,V}{b\,${d.rebaje ? "h_r" : "h"}} = \frac{1{,}5\cdot ${tn(V, 2)}}{${tn(bc, 1)}\cdot ${tn(hEf, 1)}} = ${tn(fcz, 3)}\ \mathrm{kgf/cm^2}`, "8.2.3");
+  m.eq(L`f_{cz} = \frac{1.5\,V}{b\,${d.rebaje ? "h_r" : "h"}} = \frac{1.5\cdot ${tn(V, 2)}}{${tn(bc, 1)}\cdot ${tn(hEf, 1)}} = ${tn(fcz, 3)}\ \mathrm{kgf/cm^2}`, "8.2.3");
   m.p(L`\textbf{Tensión de diseño.} ${d.rebaje ? L`La viga presenta un rebaje en el apoyo (altura remanente $h_r = ${tn(d.hr, 0)}$ mm), por lo que se aplica el factor de modificación por rebaje $K_r = ${tn(Kr, 3)}$.` : L`Considerando que la viga no presenta rebajes en sus apoyos, el factor de modificación por rebaje asume un valor unitario ($K_r = 1$).`} Se aplican a la tensión admisible base los factores de humedad y duración de la carga:`, true);
   m.eq(L`F_{cz,dis} = F_{cz}\,K_H\,K_D\,K_r = ${tn(Fcz, 2)}\cdot ${tn(KH("Fcz"), 3)}\cdot ${tn(KD, 3)}\cdot ${tn(Kr, 3)} = ${tn(Fczd, 2)}\ \mathrm{kgf/cm^2}`);
   m.eq(chequeo("f_{cz}", fcz, "F_{cz,dis}", Fczd));
@@ -1175,7 +1175,7 @@ function calcular(d, m) {
     m.eq(L`F_{f,dis} = \min(F_{fv,dis},\ F_{ft,dis}) = \min(${tn(fp.Ffv, 2)},\ ${tn(fp.Fft, 2)}) = ${tn(fp.Fdis, 2)}\ \mathrm{kgf/cm^2}`);
     m.eq(chequeo("f_f", ffp, "F_{f,dis}", fp.Fdis));
     m.p(L`\textbf{Cizalle} con $K_D = ${tn(KDp, 2)}$:`, true);
-    m.eq(L`f_{cz} = \frac{1{,}5\,V_{PP}}{b\,${d.rebaje ? "h_r" : "h"}} = \frac{1{,}5\cdot ${tn(Vpp, 3)}}{${tn(bc, 1)}\cdot ${tn(hEf, 1)}} = ${tn(fczp, 3)}\ \mathrm{kgf/cm^2}`);
+    m.eq(L`f_{cz} = \frac{1.5\,V_{PP}}{b\,${d.rebaje ? "h_r" : "h"}} = \frac{1.5\cdot ${tn(Vpp, 3)}}{${tn(bc, 1)}\cdot ${tn(hEf, 1)}} = ${tn(fczp, 3)}\ \mathrm{kgf/cm^2}`);
     m.eq(L`F_{cz,dis} = F_{cz}\,K_H\,K_D\,K_r = ${tn(Fcz, 2)}\cdot ${tn(KH("Fcz"), 3)}\cdot ${tn(KDp, 2)}\cdot ${tn(Kr, 3)} = ${tn(Fczp, 2)}\ \mathrm{kgf/cm^2}`);
     m.eq(chequeo("f_{cz}", fczp, "F_{cz,dis}", Fczp, UKG, 3));
   }
@@ -1228,14 +1228,14 @@ function calcular(d, m) {
   m.eq(L`\Delta_{SC} = \frac{5\,q_{SC}\,L^4}{384\,E_{f,dis}\,I}${d.P ? L` + \frac{P\,L^3}{48\,E_{f,dis}\,I}` : ""} = ${flTex(qSC)} = ${tn(dflSC, 3)}\ \mathrm{mm}`);
   m.p(L`\textbf{Deformación diferida (creep).} De acuerdo con 8.2.4.11, se incorpora solo cuando las solicitaciones permanentes exceden el 50\,\% de la solicitación total. Se comprueba evaluando la razón entre la carga muerta y la carga total:`, true);
   m.eq(d.P ? L`\frac{g}{q} = \frac{q_{PP}}{q_{PP} + q_{SC} + 2P/L} = \frac{${tn(qPP, 3)}}{${tn(qPP, 3)} + ${tn(qSC, 2)} + 2\cdot ${tn(d.P, 1)}/${tn(d.Lm, 2)}} = ${tn(g_q, 3)}` : L`\frac{g}{q} = \frac{q_{PP}}{q_{PP} + q_{SC}} = \frac{${tn(qPP, 3)}}{${tn(qPP, 3)} + ${tn(qSC, 2)}} = ${tn(g_q, 3)}`);
-  m.p(creep ? L`Dado que $g/q = ${tn(g_q, 3)} > 0{,}50$, se aplica el factor de amplificación por creep $\rho = ${tn(rho, 3)}$.` : L`Dado que la relación calculada (${tn(g_q, 3)}) es menor a 0{,}50, no corresponde aplicar el factor de amplificación por creep ($\rho = 0$).`, true);
+  m.p(creep ? L`Dado que $g/q = ${tn(g_q, 3)} > 0.50$, se aplica el factor de amplificación por creep $\rho = ${tn(rho, 3)}$.` : L`Dado que la relación calculada (${tn(g_q, 3)}) es menor a 0.50, no corresponde aplicar el factor de amplificación por creep ($\rho = 0$).`, true);
   m.p(L`\textbf{Deformación por corte.} Se verifica la esbeltez de la viga para determinar si es necesario incluir la componente de corte (8.2.4.12):`, true);
   m.eq(L`\frac{L}{h} = \frac{${tn(Lc, 0)}}{${tn(hc, 1)}} = ${tn(Lc / hc, 2)}`);
   if (corte) {
     m.p(L`Dado que $L/h < 20$, se debe considerar la deformación por corte. Para especies coníferas el módulo de corte se estima a partir del módulo de elasticidad de diseño:`, true);
-    m.eq(L`G = 0{,}065\,E_{f,dis} = 0{,}065\cdot ${tn(Edis, 0)} = ${tn(G, 0)}\ \mathrm{kgf/cm^2}`);
-    m.eq(L`\Delta_q = \frac{1{,}2\,M}{G\,b\,h} = \frac{1{,}2\cdot ${tn(M * 100, 1)}}{${tn(G, 0)}\cdot ${tn(bc, 1)}\cdot ${tn(hc, 1)}} = ${tn(dq, 3)}\ \mathrm{mm}`);
-    m.eq(L`\Delta_{q,SC} = \frac{1{,}2\,M_{SC}}{G\,b\,h} = \frac{1{,}2\cdot ${tn(MSC * 100, 1)}}{${tn(G, 0)}\cdot ${tn(bc, 1)}\cdot ${tn(hc, 1)}} = ${tn(dqSC, 3)}\ \mathrm{mm}`);
+    m.eq(L`G = 0.065\,E_{f,dis} = 0.065\cdot ${tn(Edis, 0)} = ${tn(G, 0)}\ \mathrm{kgf/cm^2}`);
+    m.eq(L`\Delta_q = \frac{1.2\,M}{G\,b\,h} = \frac{1.2\cdot ${tn(M * 100, 1)}}{${tn(G, 0)}\cdot ${tn(bc, 1)}\cdot ${tn(hc, 1)}} = ${tn(dq, 3)}\ \mathrm{mm}`);
+    m.eq(L`\Delta_{q,SC} = \frac{1.2\,M_{SC}}{G\,b\,h} = \frac{1.2\cdot ${tn(MSC * 100, 1)}}{${tn(G, 0)}\cdot ${tn(bc, 1)}\cdot ${tn(hc, 1)}} = ${tn(dqSC, 3)}\ \mathrm{mm}`);
   } else {
     m.p(L`Dado que $L/h \ge 20$, la deformación por corte es despreciable.`, true);
   }
@@ -1266,7 +1266,7 @@ function calcular(d, m) {
     m.row("Deformación por hombre de 100 kg ; por peso de la viga: δ<sub>P</sub> ; δ<sub>pp</sub>", `${fmt(dP, 3)} + ${fmt(dpv, 3)} mm`);
     m.row("<b>Deformación por hombre de 100 kg: δ<sub>HH+PP</sub> ≤ 1 mm</b>", `<b>${fmt(d1, 3)} mm</b> ${okTxt(d1 <= 1)}`);
     m.p(L`La norma exige verificar que la frecuencia fundamental de vibración vertical del envigado de piso sea al menos 9 Hz. Para ello se calcula la masa por unidad de área (peso propio más ${d.aglom ? "el 50" : "el 25"}\,\% de la sobrecarga), la rigidez flexional de la viga y su rigidez longitudinal por metro de ancho, considerando la separación entre vigas $s = ${tn(d.s)}$ m:`, true);
-    m.eq(L`m = \frac{q_{PP} + ${d.aglom ? "0{,}50" : "0{,}25"}\,q_{SC}}{s} = \frac{${tn(qPP, 3)} + ${d.aglom ? "0{,}50" : "0{,}25"}\cdot ${tn(qSC, 2)}}{${tn(d.s)}} = ${tn(masa, 2)}\ \mathrm{kg/m^2}`);
+    m.eq(L`m = \frac{q_{PP} + ${d.aglom ? "0.50" : "0.25"}\,q_{SC}}{s} = \frac{${tn(qPP, 3)} + ${d.aglom ? "0.50" : "0.25"}\cdot ${tn(qSC, 2)}}{${tn(d.s)}} = ${tn(masa, 2)}\ \mathrm{kg/m^2}`);
     m.eq(L`E\,I = E_{f,dis}\,I = ${tn(Edis / MPA, 1)}\ \mathrm{MPa}\cdot ${tn(I * 1e4, 0)}\ \mathrm{mm^4} = ${tn(EIn, 1)}\ \mathrm{N\cdot m^2}`);
     m.eq(L`(EI)_{long} = \frac{E\,I}{s} = \frac{${tn(EIn, 1)}}{${tn(d.s)}} = ${tn(EIlong, 1)}\ \mathrm{N\cdot m^2/m}`);
     m.p(L`Finalmente, se determina la frecuencia fundamental del sistema unidireccional:`, true);
@@ -1351,10 +1351,10 @@ function calcularMuro(d, m) {
   m.p(L`\textbf{Viento en el techo.} Las presiones actúan perpendiculares a cada faldón (inclinación $\alpha = ${tn(d.alfa, 1)}^\circ$): en barlovento $q_{t,b} = ${tn(d.qtb, 2)}$ kgf/m$^2$ (positiva hacia el techo) y en sotavento una succión de magnitud $q_{t,s} = ${tn(qts, 2)}$ kgf/m$^2$. Según el criterio de la planilla FULL MADERA, la componente horizontal que empuja lateralmente al muro se obtiene con $\cos\alpha$; las componentes de ambos faldones actúan en el sentido del viento:`);
   m.eq(L`q_t = q_{t,b} + q_{t,s} = ${tn(d.qtb, 2)} + ${tn(qts, 2)} = ${tn(qtn, 2)}\ \mathrm{kgf/m^2} \qquad q_{t,h} = q_t\,\cos\alpha = ${tn(qtn, 2)}\cdot \cos ${tn(d.alfa, 1)}^\circ = ${tn(qth, 2)}\ \mathrm{kgf/m^2}`);
   m.eq(L`V_t = q_{t,h}\,a\,L_f = ${tn(qth, 2)}\cdot ${tn(d.anch, 3)}\cdot ${tn(d.Lf, 2)} = ${tn(Vt, 2)}\ \mathrm{kgf}`);
-  m.p(L`\textbf{Corte y momento volcante en la base.} Las alturas de aplicación son ${d.pisos === 2 ? L`$h/2$ y $1{,}5\,h$ para los dos pisos y` : L`$h/2$ para la fachada y`} $z_t = ${d.pisos}\,h + \tfrac{1}{2}L_f\sin\alpha$ para el techo:`);
+  m.p(L`\textbf{Corte y momento volcante en la base.} Las alturas de aplicación son ${d.pisos === 2 ? L`$h/2$ y $1.5\,h$ para los dos pisos y` : L`$h/2$ para la fachada y`} $z_t = ${d.pisos}\,h + \tfrac{1}{2}L_f\sin\alpha$ para el techo:`);
   m.eq(L`V = ${d.pisos === 2 ? "V_1 + V_2 + V_t" : "V_1 + V_t"} = ${d.pisos === 2 ? L`${tn(V1, 2)} + ${tn(V2, 2)} + ${tn(Vt, 2)}` : L`${tn(V1, 2)} + ${tn(Vt, 2)}`} = ${tn(V, 2)}\ \mathrm{kgf}`);
   m.eq(L`z_t = ${d.pisos}\cdot ${tn(d.hm, 2)} + \frac{${tn(d.Lf, 2)}\cdot \sin ${tn(d.alfa, 1)}^\circ}{2} = ${tn(zt, 3)}\ \mathrm{m}`);
-  m.eq(L`M = V_1\,\frac{h}{2}${d.pisos === 2 ? L` + V_2\cdot 1{,}5\,h` : ""} + V_t\,z_t = ${tn(V1, 2)}\cdot ${tn(d.hm / 2, 2)}${d.pisos === 2 ? L` + ${tn(V2, 2)}\cdot ${tn(1.5 * d.hm, 2)}` : ""} + ${tn(Vt, 2)}\cdot ${tn(zt, 3)} = ${tn(M, 1)}\ \mathrm{kgf\cdot m}`);
+  m.eq(L`M = V_1\,\frac{h}{2}${d.pisos === 2 ? L` + V_2\cdot 1.5\,h` : ""} + V_t\,z_t = ${tn(V1, 2)}\cdot ${tn(d.hm / 2, 2)}${d.pisos === 2 ? L` + ${tn(V2, 2)}\cdot ${tn(1.5 * d.hm, 2)}` : ""} + ${tn(Vt, 2)}\cdot ${tn(zt, 3)} = ${tn(M, 1)}\ \mathrm{kgf\cdot m}`);
   m.p(L`\textbf{Fuerzas en los pies derechos de borde.} El momento volcante se equilibra con un par de compresión y tracción en los pies de borde, separados por el largo del muro $b = ${tn(d.bm, 2)}$ m. Al pie comprimido se suma la carga gravitacional de su ancho tributario $B = ${tn(d.B, 2)}$ m, y al traccionado se le descuenta solo el peso propio:`);
   m.eq(L`C = T = \frac{|M|}{b} = \frac{${tn(Math.abs(M), 1)}}{${tn(d.bm, 2)}} = ${tn(C, 2)}\ \mathrm{kgf}`);
   m.eq(L`P_c = C + (q_{PP} + q_{SC,piso} + q_{SC,techo})\,B = ${tn(C, 2)} + ${tn(q, 3)}\cdot ${tn(d.B, 2)} = ${tn(Pc, 2)}\ \mathrm{kgf}`);
@@ -1380,7 +1380,7 @@ function calcularMuro(d, m) {
   m.eq(Khf < 1 ? L`K_{hf} = ${mgp ? L`\left(\frac{160}{${tn(d.h, 0)}}\right)^{${d.grado === "MGP10" ? "1/3" : "1/2"}}` : L`\left(\frac{90}{${tn(d.h, 0)}}\right)^{1/5}`} = ${tn(Khf, 3)}` : L`K_{hf} = 1`, "8.2.2.3");
   m.p(L`\textbf{Factor por concentración de tensiones} (8.4.3, Tabla 11), para ${kctTxt.toLowerCase().replace(/≤/g, L`$\le$`)}:`);
   m.eq(L`K_{ct} = ${tn(Kct, 2)}`, "Tabla 11");
-  m.p(L`\textbf{Ajuste del módulo de elasticidad.} ${KhEx < 1 || KhEy < 1 ? "Como las dimensiones de la pieza son menores a 180 mm, se aplica el factor de modificación por altura (con mínimo 0{,}67) en cada dirección:" : "La sección no requiere reducir el módulo de elasticidad por altura:"}`);
+  m.p(L`\textbf{Ajuste del módulo de elasticidad.} ${KhEx < 1 || KhEy < 1 ? "Como las dimensiones de la pieza son menores a 180 mm, se aplica el factor de modificación por altura (con mínimo 0.67) en cada dirección:" : "La sección no requiere reducir el módulo de elasticidad por altura:"}`);
   m.eq(L`E_{x,dis} = E_f\,K_H\,K_{hE,x} = ${tn(Ef, 0)}\cdot ${tn(KH("Ef"), 3)}\cdot ${tn(KhEx, 3)} = ${tn(Ex, 0)} \qquad E_{y,dis} = E_f\,K_H\,K_{hE,y} = ${tn(Ef, 0)}\cdot ${tn(KH("Ef"), 3)}\cdot ${tn(KhEy, 3)} = ${tn(Ey, 0)}\ \mathrm{kgf/cm^2}`);
 
   // ---- Compresión paralela en el pie de borde (12.4.1 → 8.3) ----
@@ -1401,8 +1401,8 @@ function calcularMuro(d, m) {
   m.row("<b>Compresión paralela: f<sub>cp</sub> / F<sub>cp,λ,dis</sub></b>", `<b>${fmt(fcp, 2)} / ${fmt(Fcl, 2)} = ${fmt(r.comp, 3)}</b> ${okTxt(r.comp <= 1)}`);
   m.p(L`Según 12.4.1, el pie derecho de borde comprimido por el momento volcante y las cargas gravitacionales se diseña como elemento en compresión paralela (8.3). Está formado por $n = ${d.n}$ piezas de $b_{pd} \times h_{pd} = ${tn(d.b, 0)} \times ${tn(d.h, 0)}$ mm; el pandeo se evalúa en cada pieza:`);
   m.eq(L`f_{cp} = \frac{P_c}{n\,b_{pd}\,h_{pd}} = \frac{${tn(Pc, 2)}}{${d.n}\cdot ${tn(bc, 1)}\cdot ${tn(hc, 1)}} = ${tn(fcp, 3)}\ \mathrm{kgf/cm^2}`);
-  m.eq(L`\lambda_x = \frac{K_p\,L_{p,x}}{0{,}289\,h_{pd}} = \frac{${tn(d.Kp, 2)}\cdot ${tn(d.Lpx, 1)}}{0{,}289\cdot ${tn(hc, 1)}} = ${tn(lx, 2)} \qquad \lambda_y = \frac{K_p\,L_{p,y}}{0{,}289\,b_{pd}} = \frac{${tn(d.Kp, 2)}\cdot ${tn(d.Lpy, 1)}}{0{,}289\cdot ${tn(bc, 1)}} = ${tn(ly, 2)}`);
-  m.eq(L`\lambda = \max(\lambda_x,\ \lambda_y) = ${tn(lam, 2)} \;${lam <= 170 ? L`\le` : ">"}\; 170 \qquad F_{cE} = \frac{3{,}6\,E_{${ejeY ? "y" : "x"},dis}}{\lambda^2} = \frac{3{,}6\cdot ${tn(Ec, 0)}}{${tn(lam, 2)}^2} = ${tn(FcE, 3)}\ \mathrm{kgf/cm^2}`, "8.3");
+  m.eq(L`\lambda_x = \frac{K_p\,L_{p,x}}{0.289\,h_{pd}} = \frac{${tn(d.Kp, 2)}\cdot ${tn(d.Lpx, 1)}}{0.289\cdot ${tn(hc, 1)}} = ${tn(lx, 2)} \qquad \lambda_y = \frac{K_p\,L_{p,y}}{0.289\,b_{pd}} = \frac{${tn(d.Kp, 2)}\cdot ${tn(d.Lpy, 1)}}{0.289\cdot ${tn(bc, 1)}} = ${tn(ly, 2)}`);
+  m.eq(L`\lambda = \max(\lambda_x,\ \lambda_y) = ${tn(lam, 2)} \;${lam <= 170 ? L`\le` : ">"}\; 170 \qquad F_{cE} = \frac{3.6\,E_{${ejeY ? "y" : "x"},dis}}{\lambda^2} = \frac{3.6\cdot ${tn(Ec, 0)}}{${tn(lam, 2)}^2} = ${tn(FcE, 3)}\ \mathrm{kgf/cm^2}`, "8.3");
   m.eq(L`F_{cp,dis} = F_{cp}\,K_H\,K_D = ${tn(Fcp, 1)}\cdot ${tn(KH("Fcp"), 3)}\cdot ${tn(d.KDv, 2)} = ${tn(Fcpd, 2)}\ \mathrm{kgf/cm^2} \qquad c = ${tn(cc, 2)}`);
   if (lam >= 10) {
     m.eq(L`A = \frac{\frac{F_{cE}}{F_{cp,dis}}\left(1 + \frac{\lambda}{200}\right) + 1}{2c} = \frac{\frac{${tn(FcE, 3)}}{${tn(Fcpd, 2)}}\left(1 + \frac{${tn(lam, 2)}}{200}\right) + 1}{2\cdot ${tn(cc, 2)}} = ${tn(Ac, 4)} \qquad B = \frac{F_{cE}}{c\,F_{cp,dis}} = ${tn(Bc, 4)}`, "8.3");
@@ -1430,9 +1430,9 @@ function calcularMuro(d, m) {
   const hb = d.hm / d.bm;
   let KFRA = 1;
   if (hb > 2) KFRA = (hb <= 3.5 && d.pisos <= 2) ? 1.25 - 0.125 * hb : 0;
-  if (!KFRA) r.avisos.push(`La relación de aspecto h/b = ${fmt(hb, 2)} supera el máximo de 12.3.5 (2,0, o 3,5 en edificaciones de 1 y 2 pisos): el muro no califica como muro de corte.`);
+  if (!KFRA) r.avisos.push(`La relación de aspecto h/b = ${fmt(hb, 2)} supera el máximo de 12.3.5 (2.0, o 3.5 en edificaciones de 1 y 2 pisos): el muro no califica como muro de corte.`);
   const Kn = d.caras === 2 ? 2 : 1;
-  const Vc = VcN * 100;                                     // kgf/m (1 N = 0,1 kgf; 1 N/mm = 1000 N/m = 100 kgf/m)
+  const Vc = VcN * 100;                                     // kgf/m (1 N = 0.1 kgf; 1 N/mm = 1000 N/m = 100 kgf/m)
   const Vcd = Vc * KFRA * Kn;                               // kgf/m
   const VcdN = Vcd / 100;                                   // N/mm (resumen)
   const vc = Math.abs(V) / d.bm;                            // kgf/m
@@ -1444,9 +1444,9 @@ function calcularMuro(d, m) {
   m.row("<b>Corte en el plano: v<sub>c</sub> / V<sub>c,dis</sub></b>", `<b>${fmt(vc, 1)} / ${fmt(Vcd, 1)} kgf/m = ${Number.isFinite(r.corte) ? fmt(r.corte, 3) : "∞"}</b> ${okTxt(r.corte <= 1)}`, "12.4.8");
   m.p(L`El corte total en la base se reparte uniformemente en el largo del muro:`);
   m.eq(L`v_c = \frac{|V|}{b} = \frac{${tn(Math.abs(V), 2)}}{${tn(d.bm, 2)}} = ${tn(vc, 2)}\ \mathrm{kgf/m}`);
-  m.p(L`\textbf{Capacidad admisible.} De la ${tab.txt.replace(/(\d),(\d)/g, "$1{,}$2").replace(/≤/g, L`$\le$`).replace(/</g, L`$<$`)} con espaciamiento perimetral $S_{ct} = ${d.Sct}$ mm se obtiene $V_c = ${tn(VcN, 1)}$ N/mm (12.4.7), que se expresa en kgf/m con la conversión 1 N $= 0{,}1$ kgf, coherente con 1 MPa $= 10$ kgf/cm$^2$. El factor por razón de aspecto (12.4.9) y el factor por caras arriostradas (12.4.10, ${Kn === 2 ? "tablero en ambas caras" : "tablero en una cara"}) son:`);
-  m.eq(L`V_c = ${tn(VcN, 1)}\ \mathrm{N/mm} = ${tn(VcN, 1)}\cdot 1000\cdot 0{,}1 = ${tn(Vc, 1)}\ \mathrm{kgf/m}`, "12.4.7");
-  m.eq(L`\frac{h}{b} = \frac{${tn(d.hm * 1000, 0)}}{${tn(d.bm * 1000, 0)}} = ${tn(hb, 3)} \qquad K_{FRA} = ${hb <= 2 ? L`1{,}0\;\;(h/b \le 2{,}0)` : KFRA ? L`1{,}25 - 0{,}125\,\frac{h}{b} = ${tn(KFRA, 3)}` : L`\text{no aplica}`} \qquad K_n = ${tn(Kn, 2)}`, "12.4.9");
+  m.p(L`\textbf{Capacidad admisible.} De la ${tab.txt.replace(/≤/g, L`$\le$`).replace(/</g, L`$<$`)} con espaciamiento perimetral $S_{ct} = ${d.Sct}$ mm se obtiene $V_c = ${tn(VcN, 1)}$ N/mm (12.4.7), que se expresa en kgf/m con la conversión 1 N $= 0.1$ kgf, coherente con 1 MPa $= 10$ kgf/cm$^2$. El factor por razón de aspecto (12.4.9) y el factor por caras arriostradas (12.4.10, ${Kn === 2 ? "tablero en ambas caras" : "tablero en una cara"}) son:`);
+  m.eq(L`V_c = ${tn(VcN, 1)}\ \mathrm{N/mm} = ${tn(VcN, 1)}\cdot 1000\cdot 0.1 = ${tn(Vc, 1)}\ \mathrm{kgf/m}`, "12.4.7");
+  m.eq(L`\frac{h}{b} = \frac{${tn(d.hm * 1000, 0)}}{${tn(d.bm * 1000, 0)}} = ${tn(hb, 3)} \qquad K_{FRA} = ${hb <= 2 ? L`1.0\;\;(h/b \le 2.0)` : KFRA ? L`1.25 - 0.125\,\frac{h}{b} = ${tn(KFRA, 3)}` : L`\text{no aplica}`} \qquad K_n = ${tn(Kn, 2)}`, "12.4.9");
   m.eq(L`V_{c,dis} = V_c\,K_{FRA}\,K_n = ${tn(Vc, 1)}\cdot ${tn(KFRA, 3)}\cdot ${tn(Kn, 2)} = ${tn(Vcd, 1)}\ \mathrm{kgf/m}`, "12.4.8");
   if (KFRA) m.eq(chequeo("v_c", vc, L`V_{c,dis}`, Vcd, L`\ \mathrm{kgf/m}`, 1));
   else m.p(L`Como $h/b = ${tn(hb, 3)}$ supera el máximo de 12.3.5, el muro \textbf{no califica como muro de corte} y no tiene capacidad de diseño en su plano (\textbf{¡NO CUMPLE!}).`);
@@ -1465,7 +1465,7 @@ function calcularMuro(d, m) {
   m.row("Flexión ; corte ; anclaje", `${fmt(d1, 2)} ; ${fmt(d2, 2)} ; ${fmt(d3, 2)} mm`);
   m.row(limD ? `<b>Desplazamiento lateral: δ<sub>mc</sub> ≤ h/${d.desp}</b>` : "<b>Desplazamiento lateral: δ<sub>mc</sub></b>", limD ? `<b>${fmt(dmc, 2)} ≤ ${fmt(limD, 2)} mm</b> ${okTxt(dmc <= limD)}` : `<b>${fmt(dmc, 2)} mm</b>`, "12.5");
   m.p(L`El desplazamiento lateral considera la flexión del muro, la deformación por corte del tablero y los clavos, y el alargamiento del anclaje antilevantamiento (12.5). $E_{dis}$ es el módulo de diseño de los pies de borde en MPa, $A$ el área de los pies derechos de borde de un extremo del muro ($n$ piezas) y $\Delta_a = ${tn(d.Da, 1)}$ mm el alargamiento vertical total del anclaje:`);
-  m.eq(L`G_{a,dis} = G_a\,K_n\,K_{HG} = ${tn(GaN, 0)}\cdot ${tn(Kn, 0)}\cdot ${tn(KHG, 2)} = ${tn(Gad, 0)}\ \mathrm{N/mm} \qquad K_{HG} = ${KHG < 1 ? L`0{,}50\;\;(H > 19\,\%)` : L`1\;\;(H \le 19\,\%)`}`, "12.5.1");
+  m.eq(L`G_{a,dis} = G_a\,K_n\,K_{HG} = ${tn(GaN, 0)}\cdot ${tn(Kn, 0)}\cdot ${tn(KHG, 2)} = ${tn(Gad, 0)}\ \mathrm{N/mm} \qquad K_{HG} = ${KHG < 1 ? L`0.50\;\;(H > 19\,\%)` : L`1\;\;(H \le 19\,\%)`}`, "12.5.1");
   m.eq(L`\delta_{mc} = \frac{2\,v_c\,h^3}{3\,E_{dis}\,A\,b} + \frac{v_c\,h}{G_{a,dis}} + \frac{h\,\Delta_a}{b}`, "12.5");
   m.eq(L`\delta_{mc} = \frac{2\cdot ${tn(vcN, 3)}\cdot ${tn(hmm, 0)}^3}{3\cdot ${tn(EdisMPa, 1)}\cdot ${tn(Amm, 0)}\cdot ${tn(bmm, 0)}} + \frac{${tn(vcN, 3)}\cdot ${tn(hmm, 0)}}{${tn(Gad, 0)}} + \frac{${tn(hmm, 0)}\cdot ${tn(d.Da, 1)}}{${tn(bmm, 0)}} = ${tn(d1, 3)} + ${tn(d2, 3)} + ${tn(d3, 3)} = ${tn(dmc, 2)}\ \mathrm{mm}`);
   if (limD) m.eq(L`\delta_{mc} = ${tn(dmc, 2)}\ \mathrm{mm} \;${cmp(dmc, limD)}\; \frac{h}{${d.desp}} = ${tn(limD, 2)}\ \mathrm{mm} \hspace{2em}\textbf{${dmc <= limD ? "¡CUMPLE!" : "¡NO CUMPLE!"}}`);
@@ -1553,7 +1553,7 @@ function actualizarMuro() {
   $("mgCustom").classList.toggle("hidden", $("mEsc").value !== "custom");
   limpiarInvalidos($("inputs"));
   const malos = datosInvalidos(reglasMuro());
-  if (!malos.length) malos.push(...datosSobreMaximo([["mKcn", 1.8, "K<sub>cn</sub> no puede superar 1,8 (8.5.3)"], ["mL", num("mhm"), "La altura del pie derecho no puede superar la altura del muro"]]));
+  if (!malos.length) malos.push(...datosSobreMaximo([["mKcn", 1.8, "K<sub>cn</sub> no puede superar 1.8 (8.5.3)"], ["mL", num("mhm"), "La altura del pie derecho no puede superar la altura del muro"]]));
   if (malos.length) return sinCalculo(malos);
   const d = leerMuro();
   const m = new Memo();
@@ -1588,7 +1588,7 @@ function actualizarMuro() {
     L`Longitud de pandeo fuera del plano $L_{p,x}$ & ${tn(d.Lpx, 1)} cm`,
     L`Longitud de pandeo en el plano $L_{p,y}$ & ${tn(d.Lpy, 1)} cm`,
     L`Factor de longitud efectiva $K_p$ & ${tn(d.Kp, 2)}`,
-    L`Tablero y clavado & ${d.tabla === "42" ? "Tabla 42 (OSB 9{,}5 mm)" : "Tabla 43 (OSB 11{,}1 mm)"}`,
+    L`Tablero y clavado & ${d.tabla === "42" ? "Tabla 42 (OSB 9.5 mm)" : "Tabla 43 (OSB 11.1 mm)"}`,
     L`Espaciamiento perimetral de clavos $S_{ct}$ & ${d.Sct} mm`,
     L`Caras arriostradas & ${d.caras}`,
     L`Alargamiento del anclaje $\Delta_a$ & ${tn(d.Da, 1)} mm`,
@@ -1664,7 +1664,7 @@ function sinCalculo(malos) {
 // extra: { cargas: filas de la tabla de cargas, combos: tabla de combinaciones (inicio), resumen: tabla por combinación (final) }
 function documentoTex(titulo, subtitulo, datos, cuerpo, items, dc, ok, sujeto, extra = {}) {
   const fecha = new Date().toLocaleDateString("es-CL", { day: "numeric", month: "long", year: "numeric" });
-  const filas = items.map(([t, v, s]) => `${texCelda(t).replace(/(\d),(\d)/g, "$1{,}$2")} & ${texCelda(s).replace(/,/g, "{,}").replace(/(\d)\.(?=\d{3}(?!\d))/g, "$1\\,").replace(/²/g, "$^2$")} & ${tnT(v, 3)} & ${v <= 1 ? "Cumple" : "No cumple"}\\\\`).join("\n");
+  const filas = items.map(([t, v, s]) => `${texCelda(t)} & ${texCelda(s).replace(/\u00a0/g, "\\,").replace(/²/g, "$^2$")} & ${tnT(v, 3)} & ${v <= 1 ? "Cumple" : "No cumple"}\\\\`).join("\n");
   return L`\documentclass[11pt,letterpaper]{article}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
@@ -1937,7 +1937,7 @@ function actualizarTab() {
   $("tgCustom").classList.toggle("hidden", $("tEsc").value !== "custom");
   limpiarInvalidos($("inputs"));
   const malos = datosInvalidos(reglasTabique());
-  if (!malos.length) malos.push(...datosSobreMaximo([["tKcn", 1.8, "K<sub>cn</sub> no puede superar 1,8 (8.5.3)"], ["tla", num("tL"), "l<sub>a</sub> no puede superar la altura L"]]));
+  if (!malos.length) malos.push(...datosSobreMaximo([["tKcn", 1.8, "K<sub>cn</sub> no puede superar 1.8 (8.5.3)"], ["tla", num("tL"), "l<sub>a</sub> no puede superar la altura L"]]));
   if (malos.length) return sinCalculo(malos);
   opcionesCombinacion($("tComb"), num("tqv") * num("tS") > 0);
   mostrarPie(leerTabique());
@@ -1949,7 +1949,7 @@ function actualizarPilar() {
   $("pigViento").classList.toggle("hidden", !conV);
   limpiarInvalidos($("inputs"));
   const malos = datosInvalidos(reglasPilar());
-  if (!malos.length) malos.push(...datosSobreMaximo([["piKcn", 1.8, "K<sub>cn</sub> no puede superar 1,8 (8.5.3)"], ["pila", num("piL"), "l<sub>a</sub> no puede superar la altura L"]]));
+  if (!malos.length) malos.push(...datosSobreMaximo([["piKcn", 1.8, "K<sub>cn</sub> no puede superar 1.8 (8.5.3)"], ["pila", num("piL"), "l<sub>a</sub> no puede superar la altura L"]]));
   if (malos.length) return sinCalculo(malos);
   opcionesCombinacion($("piComb"), conV && num("piqv") * num("piS") > 0);
   mostrarPie(leerPilar());
@@ -1966,7 +1966,7 @@ function actualizarEnv() {
   $("kc").disabled = $("tipoViga").value === "maestra";
   limpiarInvalidos($("inputs"));
   const malos = datosInvalidos(reglasEnv());
-  if (!malos.length) malos.push(...datosSobreMaximo([["Kcn", 1.8, "K<sub>cn</sub> no puede superar 1,8 (8.5.3)"], ["la", num("L") * 100, "l<sub>a</sub> no puede superar la luz L"]]));
+  if (!malos.length) malos.push(...datosSobreMaximo([["Kcn", 1.8, "K<sub>cn</sub> no puede superar 1.8 (8.5.3)"], ["la", num("L") * 100, "l<sub>a</sub> no puede superar la luz L"]]));
   const hSec = $("esc").value === "custom" ? num("h") : ESCUADRIAS[$("esc").value][1];
   if (!malos.length && $("rebaje").checked && num("hr") >= hSec) { $("hr").classList.add("invalido"); malos.push(`h_r debe ser menor que h = ${hSec} mm`); }
   if (malos.length) return sinCalculo(malos);
@@ -1999,7 +1999,7 @@ function actualizarEnv() {
   $("memo").innerHTML = m.html();
 
   const fecha = new Date().toLocaleDateString("es-CL", { day: "numeric", month: "long", year: "numeric" });
-  const filas = items.map(([t, v, s]) => `${texCelda(t).replace(/(\d),(\d)/g, "$1{,}$2")} & ${texCelda(s).replace(/,/g, "{,}").replace(/(\d)\.(?=\d{3}(?!\d))/g, "$1\\,").replace(/²/g, "$^2$")} & ${tnT(v, 3)} & ${v <= 1 ? "Cumple" : "No cumple"}\\\\`).join("\n");
+  const filas = items.map(([t, v, s]) => `${texCelda(t)} & ${texCelda(s).replace(/\u00a0/g, "\\,").replace(/²/g, "$^2$")} & ${tnT(v, 3)} & ${v <= 1 ? "Cumple" : "No cumple"}\\\\`).join("\n");
   ultimoTex = L`\documentclass[11pt,letterpaper]{article}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
@@ -2194,7 +2194,7 @@ function descargarDXF() {
           v.poly("OCULTO", [[v.pp(1), y0 + v.pp(1)], [W - v.pp(1), y0 + v.pp(1)], [W - v.pp(1), y0 + Hm - v.pp(1)], [v.pp(1), y0 + Hm - v.pp(1)]]);
         }
         v.line("NIVELES", -v.pp(10), 0, W + v.pp(10), 0);
-        v.text("TEXTOS", W / 2, Hm / 2, 2.2, `Tablero OSB ${d.tabla === "42" ? "9,5" : "11,1"} mm en ${d.caras} cara${d.caras > 1 ? "s" : ""}`, 1, 2);
+        v.text("TEXTOS", W / 2, Hm / 2, 2.2, `Tablero OSB ${d.tabla === "42" ? "9.5" : "11.1"} mm en ${d.caras} cara${d.caras > 1 ? "s" : ""}`, 1, 2);
         v.text("TEXTOS", W / 2, Hm / 2 - v.pp(4), 2.2, `Clavos perimetrales @ ${d.Sct} mm`, 1, 2);
         v.referencia(bb / 2, Hm * 0.25, -v.pp(6), Hm * 0.25 + v.pp(6), `Anclaje Tt = ${fmt(r.Tt, 0)} kgf`);
         v.text("TEXTOS", W + v.pp(3), Hm * 0.25, 2, `Pc = ${fmt(r.Pc, 0)} kgf`);
@@ -2204,7 +2204,7 @@ function descargarDXF() {
     vistaSeccionMadera(pl, `Pie derecho de borde ${d.n} x ${esc}`, b, h, d.n);
     extra = [
       `Pie derecho de borde: ${d.n} pieza${d.n > 1 ? "s" : ""} ${esc} mm unidas entre sí; anclaje a la fundación en cada extremo para la tracción neta Tt = ${fmt(r.Tt, 0)} kgf (alargamiento máximo ${fmt(d.Da, 1)} mm).`,
-      `Tablero ${d.tabla === "42" ? "OSB 9,5 mm (NCh 1198:2024 Tabla 42)" : "OSB 11,1 mm (NCh 1198:2024 Tabla 43)"} en ${d.caras} cara${d.caras > 1 ? "s" : ""}, clavado perimetral @ ${d.Sct} mm. Juntas de tableros sobre pies derechos o cadenetas.`,
+      `Tablero ${d.tabla === "42" ? "OSB 9.5 mm (NCh 1198:2024 Tabla 42)" : "OSB 11.1 mm (NCh 1198:2024 Tabla 43)"} en ${d.caras} cara${d.caras > 1 ? "s" : ""}, clavado perimetral @ ${d.Sct} mm. Juntas de tableros sobre pies derechos o cadenetas.`,
       res,
     ];
     archivo = `plano_muro_corte_${d.grado}_${d.n}x${b}x${h}.dxf`;
@@ -2299,7 +2299,7 @@ window.AURA_MEMO = {
   recalcular: () => actualizar(),
 };
 </script>
-<script src="proyectos.js?v=34"></script>
+<script src="proyectos.js?v=36"></script>
 <script>
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
 </script>

@@ -89,8 +89,8 @@
   .tablaWrap td { text-align: right; padding: 3px 10px; border-bottom: 1px solid #f0f2f5; }
   footer { text-align: center; color: var(--muted); font-size: 12px; padding: 10px 0 24px; }
 </style>
-<link rel="stylesheet" href="aura.css?v=8">
-<script src="lateral.js?v=1"></script>
+<link rel="stylesheet" href="aura.css?v=9">
+<script src="lateral.js?v=2"></script>
 </head>
 <body>
 <header>
@@ -188,9 +188,9 @@
 </main>
 <footer>Herramienta de apoyo académico basada en la planilla «Espectros Chile». Verifique siempre los parámetros con la norma vigente.</footer>
 
-<script src="memo.js?v=35"></script>
-<script src="tablero.js?v=2"></script>
-<script src="dxf.js?v=1"></script>
+<script src="memo.js?v=37"></script>
+<script src="tablero.js?v=3"></script>
+<script src="dxf.js?v=2"></script>
 <script>
 "use strict";
 // ---------------------------------------------------------------------------
@@ -244,16 +244,16 @@ const NORMAS = {
       D: { S: 1.00, r: 3.5, T0: 0.60, p: 1.00, q: 2.5, T1: 0.41 },
       E: { S: 1.00, r: 3.0, T0: 1.20, p: 1.00, q: 2.7, T1: 0.79 },
     }, sueloDef: "D", refSuelo: "Tabla 6",
-    nota: "NCh 2369:2025: A<sub>r</sub> = 1,4·A<sub>0</sub>; el suelo F requiere espectro de sitio.",
+    nota: "NCh 2369:2025: A<sub>r</sub> = 1.4·A<sub>0</sub>; el suelo F requiere espectro de sitio.",
   },
 };
 
 const $ = (id) => document.getElementById(id);
-const fmt = (x, d = 3) => Number.isFinite(x) ? x.toLocaleString("es-CL", { minimumFractionDigits: d, maximumFractionDigits: d }) : "—";
+const fmt = (x, d = 3) => Number.isFinite(x) ? x.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d }).replace(/,/g, "\u00a0") : "—";
 const num = (id) => { const v = parseFloat($(id).value); return Number.isFinite(v) ? v : 0; };
 const L = String.raw;
-// Número para KaTeX: coma decimal {,} y espacio fino en miles
-const tn = (x, d = 3) => Number.isFinite(x) ? fmt(x, d).replace(/,/g, "{,}").replace(/(\d)\.(?=\d{3}(?!\d))/g, "$1\\,") : "\\infty";
+// Número para KaTeX: coma decimal . y espacio fino en miles
+const tn = (x, d = 3) => Number.isFinite(x) ? fmt(x, d).replace(/\u00a0/g, "\\,") : "\\infty";
 const ALFA = (r, q) => L`\frac{1 + ${r}\left(\frac{T}{T_0}\right)^{p}}{1 + \left(\frac{T}{T_0}\right)^{${q}}}`;
 const ALFAV = (r, T0, p, q) => L`\frac{1 + ${r}\left(\frac{T}{${T0}}\right)^{${p}}}{1 + \left(\frac{T}{${T0}}\right)^{${q}}}`;
 
@@ -266,26 +266,26 @@ function modelo(norma, cat, zona, suelo, xi) {
   if (norma === "433-1996") {
     return {
       par: [["I", I, N.refCat], ["A<sub>0</sub> [g]", A0, N.refA0], ["T<sub>0</sub> [s]", s.T0, N.refSuelo], ["p", s.p, N.refSuelo]],
-      eqs: [L`S_a = I\,A_0\,\alpha \qquad \alpha = ${ALFA("4{,}5", 3)}`,
-        L`S_a(T) = ${tn(I, 1)}\cdot ${tn(A0, 2)}\cdot ${ALFAV("4{,}5", tn(s.T0, 2), tn(s.p, 2), 3)}`],
+      eqs: [L`S_a = I\,A_0\,\alpha \qquad \alpha = ${ALFA("4.5", 3)}`,
+        L`S_a(T) = ${tn(I, 1)}\cdot ${tn(A0, 2)}\cdot ${ALFAV("4.5", tn(s.T0, 2), tn(s.p, 2), 3)}`],
       Sa: (T) => I * A0 * (1 + 4.5 * (T / s.T0) ** s.p) / (1 + (T / s.T0) ** 3),
     };
   }
   if (norma === "433-2026") {
     return {
       par: [["I", I, N.refCat], ["A<sub>0</sub> [g]", A0, N.refA0], ["S", s.S, N.refSuelo], ["T<sub>0</sub> [s]", s.T0, N.refSuelo], ["p", s.p, N.refSuelo]],
-      eqs: [L`S_a = S\,A_0\,I\,\alpha \qquad \alpha = ${ALFA("4{,}5", 3)}`,
-        L`S_a(T) = ${tn(s.S, 2)}\cdot ${tn(A0, 2)}\cdot ${tn(I, 1)}\cdot ${ALFAV("4{,}5", tn(s.T0, 2), tn(s.p, 2), 3)}`],
+      eqs: [L`S_a = S\,A_0\,I\,\alpha \qquad \alpha = ${ALFA("4.5", 3)}`,
+        L`S_a(T) = ${tn(s.S, 2)}\cdot ${tn(A0, 2)}\cdot ${tn(I, 1)}\cdot ${ALFAV("4.5", tn(s.T0, 2), tn(s.p, 2), 3)}`],
       Sa: (T) => s.S * A0 * I * (1 + 4.5 * (T / s.T0) ** s.p) / (1 + (T / s.T0) ** 3),
     };
   }
   if (norma === "2369-2025") {
     const Ar = 1.4 * A0, fxi = (0.05 / xi) ** 0.4;
     return {
-      par: [["I", I, N.refCat], ["A<sub>0</sub> ; A<sub>r</sub> = 1,4A<sub>0</sub> [g]", `${fmt(A0, 2)} ; ${fmt(Ar, 2)}`, N.refA0], ["S", s.S, N.refSuelo], ["r", s.r, N.refSuelo],
-        ["T<sub>0</sub> [s]", s.T0, N.refSuelo], ["p ; q", `${fmt(s.p, 2)} ; ${fmt(s.q, 2)}`, N.refSuelo], ["Factor de amortiguamiento: (0,05/ξ)<sup>0,4</sup>", fxi, `ξ = ${fmt(xi, 3)}`]],
-      eqs: [L`S_a = I\,A_r\,S\,${ALFA("r", "q")}\left(\frac{0{,}05}{\xi}\right)^{0{,}4}`,
-        L`A_r = 1{,}4\,A_0 = 1{,}4\cdot ${tn(A0, 2)} = ${tn(Ar, 2)}\ \mathrm{g} \qquad \left(\frac{0{,}05}{\xi}\right)^{0{,}4} = \left(\frac{0{,}05}{${tn(xi, 3)}}\right)^{0{,}4} = ${tn(fxi, 3)}`,
+      par: [["I", I, N.refCat], ["A<sub>0</sub> ; A<sub>r</sub> = 1.4A<sub>0</sub> [g]", `${fmt(A0, 2)} ; ${fmt(Ar, 2)}`, N.refA0], ["S", s.S, N.refSuelo], ["r", s.r, N.refSuelo],
+        ["T<sub>0</sub> [s]", s.T0, N.refSuelo], ["p ; q", `${fmt(s.p, 2)} ; ${fmt(s.q, 2)}`, N.refSuelo], ["Factor de amortiguamiento: (0.05/ξ)<sup>0.4</sup>", fxi, `ξ = ${fmt(xi, 3)}`]],
+      eqs: [L`S_a = I\,A_r\,S\,${ALFA("r", "q")}\left(\frac{0.05}{\xi}\right)^{0.4}`,
+        L`A_r = 1.4\,A_0 = 1.4\cdot ${tn(A0, 2)} = ${tn(Ar, 2)}\ \mathrm{g} \qquad \left(\frac{0.05}{\xi}\right)^{0.4} = \left(\frac{0.05}{${tn(xi, 3)}}\right)^{0.4} = ${tn(fxi, 3)}`,
         L`S_a(T) = ${tn(I, 1)}\cdot ${tn(Ar, 2)}\cdot ${tn(s.S, 2)}\cdot ${ALFAV(tn(s.r, 1), tn(s.T0, 2), tn(s.p, 2), tn(s.q, 1))}\cdot ${tn(fxi, 3)}`],
       Sa: (T) => I * Ar * s.S * (1 + s.r * (T / s.T0) ** s.p) / (1 + (T / s.T0) ** s.q) * fxi,
     };
@@ -319,19 +319,19 @@ function factorR(d, Ts, dir = "") {
   if (d.norma === "2369-2025") {
     const R = d.R, Cr = 0.16 * R, lim = Cr * s.T1;
     let Rs;
-    const tex = [L`C_r = 0{,}16\,R = 0{,}16\cdot ${tn(R, 2)} = ${tn(Cr, 3)} \qquad C_r\,T_1 = ${tn(Cr, 3)}\cdot ${tn(s.T1, 2)} = ${tn(lim, 3)}\ \mathrm{s}\ \ (T_1 = ${tn(s.T1, 2)}\ \mathrm{s,\ suelo\ ${d.suelo}})`];
-    // R* nunca puede superar a R: con R ≤ 1,5 la interpolación desde 1,5 daría R* > R (no conservador)
-    if (R <= 1.5) { Rs = R; tex.push(L`R = ${tn(R, 2)} \le 1{,}5 \;\Rightarrow\; ${Rd} = R = ${tn(R, 2)}`); }
+    const tex = [L`C_r = 0.16\,R = 0.16\cdot ${tn(R, 2)} = ${tn(Cr, 3)} \qquad C_r\,T_1 = ${tn(Cr, 3)}\cdot ${tn(s.T1, 2)} = ${tn(lim, 3)}\ \mathrm{s}\ \ (T_1 = ${tn(s.T1, 2)}\ \mathrm{s,\ suelo\ ${d.suelo}})`];
+    // R* nunca puede superar a R: con R ≤ 1.5 la interpolación desde 1.5 daría R* > R (no conservador)
+    if (R <= 1.5) { Rs = R; tex.push(L`R = ${tn(R, 2)} \le 1.5 \;\Rightarrow\; ${Rd} = R = ${tn(R, 2)}`); }
     else if (Ts >= lim) { Rs = R; tex.push(L`${Td} = ${tn(Ts, 3)} \ge C_r\,T_1 = ${tn(lim, 3)} \;\Rightarrow\; ${Rd} = R = ${tn(R, 2)}`); }
     else {
       Rs = Math.min(R, 1.5 + (R - 1.5) * Ts / lim);
-      tex.push(L`${Td} = ${tn(Ts, 3)} < C_r\,T_1 = ${tn(lim, 3)} \;\Rightarrow\; ${Rd} = 1{,}5 + (R - 1{,}5)\frac{T^*}{C_r\,T_1} = 1{,}5 + (${tn(R, 2)} - 1{,}5)\frac{${tn(Ts, 3)}}{${tn(lim, 3)}} = ${tn(Rs, 3)}`);
+      tex.push(L`${Td} = ${tn(Ts, 3)} < C_r\,T_1 = ${tn(lim, 3)} \;\Rightarrow\; ${Rd} = 1.5 + (R - 1.5)\frac{T^*}{C_r\,T_1} = 1.5 + (${tn(R, 2)} - 1.5)\frac{${tn(Ts, 3)}}{${tn(lim, 3)}} = ${tn(Rs, 3)}`);
     }
     return { Rs, tex };
   }
   const T0 = s.T0, R0 = d.R0;
   const Rs = 1 + Ts / (0.1 * T0 + Ts / R0);
-  return { Rs, tex: [L`${Rd} = 1 + \frac{${Td}}{0{,}1\,T_0 + ${Td}/R_0} = 1 + \frac{${tn(Ts, 3)}}{0{,}1\cdot ${tn(T0, 2)} + ${tn(Ts, 3)}/${tn(R0, 1)}} = ${tn(Rs, 3)}`] };
+  return { Rs, tex: [L`${Rd} = 1 + \frac{${Td}}{0.1\,T_0 + ${Td}/R_0} = 1 + \frac{${tn(Ts, 3)}}{0.1\cdot ${tn(T0, 2)} + ${tn(Ts, 3)}/${tn(R0, 1)}} = ${tn(Rs, 3)}`] };
 }
 
 // ---------------------------------------------------------------------------
@@ -476,10 +476,10 @@ function calcular() {
   if (norma === "2369-2025") reglas.push(["R", 1], ["xi", 0.01]); else reglas.push(["R0", 1]);
   if (norma === "ds117") reglas.push(["kAg", 1], ["kDu", 1]);
   const malos = datosInvalidos(reglas);
-  if (norma === "2369-2025" && num("xi") > 0.2) { $("xi").classList.add("invalido"); malos.push("Razón de amortiguamiento ξ (máx. 0,2)"); }
+  if (norma === "2369-2025" && num("xi") > 0.2) { $("xi").classList.add("invalido"); malos.push("Razón de amortiguamiento ξ (máx. 0.2)"); }
   if (!malos.length && num("Tmax") / num("dT") > MAX_PUNTOS) {
     $("dT").classList.add("invalido");
-    malos.push(`ΔT demasiado pequeño para T máx (más de ${MAX_PUNTOS.toLocaleString("es-CL")} puntos)`);
+    malos.push(`ΔT demasiado pequeño para T máx (más de ${fmt(MAX_PUNTOS, 0)} puntos)`);
   }
   if (malos.length) {
     actual = null;
@@ -513,8 +513,8 @@ function calcular() {
   const es2369 = d.norma === "2369-2025";
   const s = N.suelos[d.suelo];
   const eqR = es2369
-    ? L`R^* = \begin{cases} R & R \le 1{,}5 \ \text{o}\ T^* \ge C_r\,T_1 \\[4pt] 1{,}5 + (R - 1{,}5)\dfrac{T^*}{C_r\,T_1} & T^* < C_r\,T_1 \end{cases}`
-    : L`R^* = 1 + \frac{T^*}{0{,}1\,T_0 + T^*/R_0} \qquad T_0 = ${tn(s.T0, 2)}\ \mathrm{s} \qquad R_0 = ${tn(d.R0, 1)}`;
+    ? L`R^* = \begin{cases} R & R \le 1.5 \ \text{o}\ T^* \ge C_r\,T_1 \\[4pt] 1.5 + (R - 1.5)\dfrac{T^*}{C_r\,T_1} & T^* < C_r\,T_1 \end{cases}`
+    : L`R^* = 1 + \frac{T^*}{0.1\,T_0 + T^*/R_0} \qquad T_0 = ${tn(s.T0, 2)}\ \mathrm{s} \qquad R_0 = ${tn(d.R0, 1)}`;
   const pasoR = (dir, Ts) => {
     const { Rs, tex } = factorR(d, Ts, dir);
     const SaT = M.Sa(Ts);
@@ -524,7 +524,7 @@ function calcular() {
       { tex: es2369 ? L`Factor de reducción según NCh 2369:2025 con $T^*_{${dir}} = ${tn(Ts, 3)}$ s:` : L`Factor de reducción con el periodo $T^*_{${dir}} = ${tn(Ts, 3)}$ s (suelo ${d.suelo}):` },
       { tex: eqR, eq: true },
       ...tex.map(t => ({ tex: t, eq: true })),
-      { tex: L`\frac{g}{R^*_{${dir}}} = \frac{9{,}81}{${tn(Rs, 3)}} = ${tn(9.81 / Rs, 4)}\ \mathrm{m/s^2} \qquad \frac{S_a(T^*_{${dir}})}{R^*_{${dir}}} = \frac{${tn(SaT, 3)}}{${tn(Rs, 3)}} = ${tn(SaT / Rs, 4)}\ \mathrm{g}`, eq: true },
+      { tex: L`\frac{g}{R^*_{${dir}}} = \frac{9.81}{${tn(Rs, 3)}} = ${tn(9.81 / Rs, 4)}\ \mathrm{m/s^2} \qquad \frac{S_a(T^*_{${dir}})}{R^*_{${dir}}} = \frac{${tn(SaT, 3)}}{${tn(Rs, 3)}} = ${tn(SaT / Rs, 4)}\ \mathrm{g}`, eq: true },
     ];
   };
   $("pasosR").innerHTML = memoHTML([...pasoR("x", d.Tx), "<h4 class=\"sep\"></h4>", ...pasoR("y", d.Ty)]);
@@ -579,10 +579,10 @@ function resultadosDir(d, M) {
 }
 // Texto de la tabla de parámetros (HTML con subíndices) → LaTeX y texto plano
 // (cada símbolo queda en su propio $…$; los "$$" entre dos de ellos se eliminan para unirlos en un solo modo matemático)
-const parTex = (s) => String(s).replace(/(\d),(\d)/g, "$1{,}$2").replace(/<sub>(.*?)<\/sub>/g, "$$_{$1}$$").replace(/<sup>(.*?)<\/sup>/g, "$$^{$1}$$").replace(/ξ/g, "$$\\xi$$").replace(/α/g, "$$\\alpha$$").replace(/·/g, "$$\\cdot$$").replace(/\$\$/g, "");
+const parTex = (s) => String(s).replace(/<sub>(.*?)<\/sub>/g, "$$_{$1}$$").replace(/<sup>(.*?)<\/sup>/g, "$$^{$1}$$").replace(/ξ/g, "$$\\xi$$").replace(/α/g, "$$\\alpha$$").replace(/·/g, "$$\\cdot$$").replace(/\$\$/g, "");
 const parTxt = (s) => String(s).replace(/<[^>]+>/g, "");
 const valPar = (v) => (typeof v === "number" ? fmt(v, v % 1 ? 3 : 0) : String(v));
-// En la memoria los decimales siguen la convención de memo.js ("{,}" → punto decimal)
+// En la memoria los decimales siguen la convención de memo.js ("." → punto decimal)
 const valParTex = (v) => (typeof v === "number" ? tn(v, v % 1 ? 3 : 0) : String(v));
 
 // ---------------------------------------------------------------------------
@@ -593,7 +593,7 @@ async function descargarMemoria() {
   const { d, pts } = actual, N = NORMAS[d.norma], M = modelo(d.norma, d.cat, d.zona, d.suelo, d.xi);
   const es2369 = d.norma === "2369-2025", esDS = d.norma === "ds117", res = resultadosDir(d, M);
   const s = N.suelos[d.suelo], fecha = new Date().toLocaleDateString("es-CL", { day: "numeric", month: "long", year: "numeric" });
-  // Figura: hasta 400 puntos de la curva, en un gráfico de 12 × 6,5 cm
+  // Figura: hasta 400 puntos de la curva, en un gráfico de 12 × 6.5 cm
   const ymax = niceMax(Math.max(...pts.map(p => p[1])) * 1.05), paso = Math.max(1, Math.ceil(pts.length / 400));
   const kx = 12 / d.Tmax, ky = 6.5 / ymax, f = (v) => v.toFixed(3);
   const curva = pts.filter((_, i) => i % paso === 0 || i === pts.length - 1).map(([T, S]) => `(${f(T * kx)},${f(S * ky)})`).join(" -- ");
@@ -613,7 +613,7 @@ ${ticksY.join("\n")}
 \end{tikzpicture}
 \caption{Espectro elástico de pseudoaceleración de ${N.nombre}, categoría ${d.cat}, zona ${d.zona}, suelo ${d.suelo} (sin reducir por $R^*$).}
 \end{figure}`;
-  // Tabla de valores resumida en dos columnas de pares, con paso de 0,1 s o mayor para no superar ~80 valores
+  // Tabla de valores resumida en dos columnas de pares, con paso de 0.1 s o mayor para no superar ~80 valores
   // (unas 40 filas: la tabla flotante debe caber en una página)
   const pasoT = Math.max(0.1, Math.ceil(d.Tmax / 80 / 0.1 - 1e-9) * 0.1), filasV = [];
   for (let T = 0; T <= d.Tmax + 1e-9; T += pasoT) filasV.push([T, M.Sa(Math.round(T * 1e6) / 1e6)]);
@@ -630,8 +630,8 @@ ${ticksY.join("\n")}
     ["Discretización $\\Delta T$ ; $T_{m\\acute{a}x}$ [s]", `${tn(d.dT, 3)} ; ${tn(d.Tmax, 2)}`],
   ];
   const eqR = es2369
-    ? L`R^* = \begin{cases} R & R \le 1{,}5 \ \text{o}\ T^* \ge C_r\,T_1 \\[4pt] 1{,}5 + (R - 1{,}5)\dfrac{T^*}{C_r\,T_1} & T^* < C_r\,T_1 \end{cases}`
-    : L`R^* = 1 + \frac{T^*}{0{,}1\,T_0 + T^*/R_0} \qquad T_0 = ${tn(s.T0, 2)}\ \mathrm{s} \qquad R_0 = ${tn(d.R0, 1)}`;
+    ? L`R^* = \begin{cases} R & R \le 1.5 \ \text{o}\ T^* \ge C_r\,T_1 \\[4pt] 1.5 + (R - 1.5)\dfrac{T^*}{C_r\,T_1} & T^* < C_r\,T_1 \end{cases}`
+    : L`R^* = 1 + \frac{T^*}{0.1\,T_0 + T^*/R_0} \qquad T_0 = ${tn(s.T0, 2)}\ \mathrm{s} \qquad R_0 = ${tn(d.R0, 1)}`;
   const simU = esDS ? L`\delta_{u,m\acute{a}x}` : L`u_{m\acute{a}x}`;
   const tex = L`\documentclass[11pt,letterpaper]{article}
 \usepackage[utf8]{inputenc}
@@ -692,7 +692,7 @@ ${figura}
 \[ ${eqR} \]
 ${res.map(r => L`\textbf{Dirección ${r.dir}} ($T^*_{${r.dir}} = ${tn(r.Ts, 3)}$ s):
 ${r.texR.map(t => L`\[ ${t} \]`).join("\n")}
-\[ \frac{g}{R^*_{${r.dir}}} = \frac{9{,}81}{${tn(r.Rs, 3)}} = ${tn(9.81 / r.Rs, 4)}\ \mathrm{m/s^2} \qquad \frac{S_a(T^*_{${r.dir}})}{R^*_{${r.dir}}} = \frac{${tn(r.SaT, 3)}}{${tn(r.Rs, 3)}} = ${tn(r.SaT / r.Rs, 4)}\ \mathrm{g} \]`).join("\n\n")}
+\[ \frac{g}{R^*_{${r.dir}}} = \frac{9.81}{${tn(r.Rs, 3)}} = ${tn(9.81 / r.Rs, 4)}\ \mathrm{m/s^2} \qquad \frac{S_a(T^*_{${r.dir}})}{R^*_{${r.dir}}} = \frac{${tn(r.SaT, 3)}}{${tn(r.Rs, 3)}} = ${tn(r.SaT / r.Rs, 4)}\ \mathrm{g} \]`).join("\n\n")}
 
 \section{Desplazamiento máximo}
 ${esDS ? "Según el DS 117, Art. 9, $S_{de}$ se calcula con $S_{ae}$ sin el factor $I$." : es2369 ? "En NCh 2369:2025 el desplazamiento se calcula sin dividir por $R^*$." : "Desplazamiento máximo con el espectro reducido por $R^*$."}

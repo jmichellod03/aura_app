@@ -150,7 +150,11 @@
       if (tab) {
         proy.hidden = false;
         const abiertoP = document.body.classList.contains("ap-abierto");
-        if (proy.getAttribute("aria-expanded") !== String(abiertoP)) proy.setAttribute("aria-expanded", abiertoP);
+        if (proy.getAttribute("aria-expanded") !== String(abiertoP)) {
+          proy.setAttribute("aria-expanded", abiertoP);
+          // Con el panel del proyecto abierto la barra se contrae, para no angostar los resultados
+          html.classList.toggle("lat-corta", (abiertoP && !movil.matches) || cortaEfectiva()); rotular();
+        }
         const t = tab.textContent.trim();
         const nombre = t.startsWith("Proyecto:") ? t.slice(9).trim() : "Sin proyecto activo";
         if (proy.querySelector("b").textContent !== nombre) proy.querySelector("b").textContent = nombre;

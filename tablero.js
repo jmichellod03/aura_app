@@ -6,7 +6,6 @@
 // Se carga después de memo.js y antes del script de la página.
 "use strict";
 const Tablero = (() => {
-  const num = (t) => { const m = /(-?[\d.]*\d(?:,\d+)?)/.exec(String(t).replace(/\s/g, "")); return m ? parseFloat(m[1].replace(/\./g, "").replace(",", ".")) : NaN; };
   const nivel = (dc) => (!Number.isFinite(dc) ? "mal" : dc > 1 + 1e-9 ? "mal" : dc > 0.9 ? "alerta" : "ok");
 
   // Ejecuta fn ahora y cada vez que cambie el contenido de el, ignorando los cambios que hace la propia fn
@@ -54,31 +53,36 @@ const Tablero = (() => {
       const cab = document.createElement("div"); cab.className = "tablero-cab";
       cab.append(t.querySelector(".medidor"));
       t.append(cab);
+      // Alto de la cabecera fija, para ubicar el índice bajo ella (la del elemento oculto mide 0 y no cuenta)
+      new ResizeObserver(() => { if (cab.offsetHeight) document.documentElement.style.setProperty("--alto-tablero", `${cab.offsetHeight}px`); }).observe(cab);
     }
     const cab = t.querySelector(".tablero-cab");
     if (ver.parentElement !== cab) cab.append(ver);
     if (resumen && resumen.parentElement !== t) t.append(resumen);
-    // Medidor: lee "razón máxima = X" o "D/C máximo = X" del texto del veredicto (sin modificarlo)
+    // Medidor: lee "razón máxima = X" del texto del veredicto (sin modificarlo)
     const v = ver.querySelector(".verdict"), txt = v ? v.textContent : "";
-    const m = /(?:raz[oó]n m[aá]xima|D\/C m[aá]ximo)\s*=\s*(∞|[\d.,]+)/i.exec(txt);
+    const m = /raz[oó]n m[aá]xima\s*=\s*(∞|[\d. ]+)/i.exec(txt);
     const med = t.querySelector(".medidor");
-    // Color del tablero según el veredicto de la página, haya o no número (pavimentos no informan razón máxima)
-    t.classList.toggle("ok", !!v && v.classList.contains("ok")); t.classList.toggle("bad", !!v && v.classList.contains("bad"));
+    // Color del tablero según el veredicto de la página, haya o no número (pavimento flexible no informa razón máxima).
+    // "Sin verificar" tiene color propio, aunque lo verificado esté bajo 1, para que no se lea como aprobado
+    const sinVerificar = !!v && (v.classList.contains("warn") || /SIN VERIFICAR/.test(txt));
+    t.classList.toggle("warn", sinVerificar);
+    t.classList.toggle("ok", !!v && !sinVerificar && v.classList.contains("ok")); t.classList.toggle("bad", !!v && !sinVerificar && v.classList.contains("bad"));
     // Con datos inválidos se despliega el panel de datos para que se vean los campos marcados
     if (/inv[aá]lid/i.test(ver.textContent)) desplegarDatos();
     if (!v || !m) { med.hidden = true; return; }
     med.hidden = false;
-    const dc = m[1] === "∞" ? Infinity : num(m[1]), pct = Number.isFinite(dc) ? Math.min(dc, 1.5) / 1.5 : 1;
+    const dc = m[1] === "∞" ? Infinity : parseFloat(m[1].replace(/ /g, "")), pct = Number.isFinite(dc) ? Math.min(dc, 1.5) / 1.5 : 1;
     const r = 34, L = 2 * Math.PI * r, lim = L / 1.5;      // la marca del 100 % queda a 2/3 de la vuelta
     med.innerHTML = `<svg viewBox="0 0 84 84" width="84" height="84"><circle cx="42" cy="42" r="${r}" class="med-fondo"/>
         <circle cx="42" cy="42" r="${r}" class="med-arco" stroke-dasharray="${(pct * L).toFixed(1)} ${L.toFixed(1)}" transform="rotate(-90 42 42)"/>
         <line x1="42" y1="${42 - r - 5}" x2="42" y2="${42 - r + 5}" class="med-lim" transform="rotate(${(lim / L * 360).toFixed(1)} 42 42)"/></svg>
-      <div class="med-tx"><b>${Number.isFinite(dc) ? dc.toLocaleString("es-CL", { minimumFractionDigits: 3, maximumFractionDigits: 3 }) : "∞"}</b><small>D/C máx.</small></div>`;
+      <div class="med-tx"><b>${Number.isFinite(dc) ? dc.toLocaleString("en-US", { minimumFractionDigits: 3, maximumFractionDigits: 3 }).replace(/,/g, " ") : "∞"}</b><small>D/C máx.</small></div>`;
   }
 
   // Semáforo de las tarjetas de resumen. Se usa la barra que dibuja la propia página (siempre el D/C de la tarjeta:
   // clase "bad" sobre 1 y ancho = D/C·100 %), porque el número grande puede ser otra cosa (por ejemplo un factor de
-  // seguridad "3,30 / 1,50" en el muro de contención). Las tarjetas sin barra son informativas (espesores, "No") y
+  // seguridad "3.30 / 1.50" en el muro de contención). Las tarjetas sin barra son informativas (espesores, "No") y
   // quedan sin semáforo.
   function semaforo(s) {
     s.querySelectorAll(".card").forEach(c => {
@@ -167,7 +171,11 @@ const Tablero = (() => {
     document.body.classList.add("con-tablero");
     // Altura real de la cabecera fija (una o dos líneas) para el índice y el panel de datos plegado
     const cab = document.querySelector("header");
-    const medirCab = () => document.documentElement.style.setProperty("--alto-cab", `${cab && getComputedStyle(cab).position === "sticky" ? cab.offsetHeight : 0}px`);
+    const medirCab = () => {
+      const fija = !!cab && getComputedStyle(cab).position === "sticky", raiz = document.documentElement.style;
+      raiz.setProperty("--alto-cab", `${fija ? cab.offsetHeight : 0}px`);
+      if (fija) raiz.setProperty("--cab", `${cab.offsetHeight}px`);
+    };
     medirCab(); addEventListener("resize", medirCab);
     if (cab) new ResizeObserver(medirCab).observe(cab);       // también si cambia al cargar el logo o las fuentes
     plegable(main);

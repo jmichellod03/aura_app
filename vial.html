@@ -112,8 +112,8 @@
     .panel { border: 0; }
   }
 </style>
-<link rel="stylesheet" href="aura.css?v=8">
-<script src="lateral.js?v=1"></script>
+<link rel="stylesheet" href="aura.css?v=9">
+<script src="lateral.js?v=2"></script>
 </head>
 <body>
 <header>
@@ -147,7 +147,7 @@
           <div class="row2">
             <div><label for="calzada">Calzada</label>
               <select id="calzada">
-                <option value="bi">Bidireccional (FP = 1,0)</option>
+                <option value="bi">Bidireccional (FP = 1.0)</option>
                 <option value="u2">Unidireccional, 2 pistas por sentido</option>
                 <option value="u3">Unidireccional, 3 o más pistas</option>
               </select></div>
@@ -210,7 +210,7 @@
         <div id="gTdir"><label for="tmapa">TMAPA <span class="unit">[°C]</span></label><input id="tmapa" type="number" step="0.1" value="14"></div>
         <div id="gTmma" class="hidden">
           <div class="row4" id="tmmaBox"></div>
-          <div class="hint">Valores por defecto: ejemplo de la Tabla 3.604.108.B (TMAPA ≈ 19,5 °C).</div>
+          <div class="hint">Valores por defecto: ejemplo de la Tabla 3.604.108.B (TMAPA ≈ 19.5 °C).</div>
         </div>
       </fieldset>
 
@@ -245,24 +245,24 @@
         <div class="capa asf">
           <label for="rod">Capa de rodadura</label>
           <select id="rod">
-            <option value="0.43">Concreto asfáltico de superficie (9.000 N) — a = 0,43</option>
-            <option value="0.43s">Mezcla SMA — a = 0,43</option>
-            <option value="0.40">Microaglomerado discontinuo en caliente — a = 0,40</option>
-            <option value="0.32">Mezcla drenante — a = 0,32</option>
+            <option value="0.43">Concreto asfáltico de superficie (9 000 N) — a = 0.43</option>
+            <option value="0.43s">Mezcla SMA — a = 0.43</option>
+            <option value="0.40">Microaglomerado discontinuo en caliente — a = 0.40</option>
+            <option value="0.32">Mezcla drenante — a = 0.32</option>
           </select>
           <label for="hRod">Espesor <span class="unit">[mm]</span></label><input id="hRod" type="number" step="5" min="20" value="50">
         </div>
         <div class="capa asf">
-          <label class="chk"><input type="checkbox" id="usaInt" checked> Capa intermedia de concreto asfáltico (8.000 N) — a = 0,41</label>
+          <label class="chk"><input type="checkbox" id="usaInt" checked> Capa intermedia de concreto asfáltico (8 000 N) — a = 0.41</label>
           <label for="hInt">Espesor <span class="unit">[mm]</span></label><input id="hInt" type="number" step="5" min="40" value="50">
         </div>
         <div class="capa asf">
           <label class="chk"><input type="checkbox" id="usaBA"> Base asfáltica</label>
           <div id="gBA">
             <select id="tipoBA">
-              <option value="0.33">Graduación gruesa (6.000 N) — a = 0,33</option>
-              <option value="0.28">Graduación abierta — a = 0,28</option>
-              <option value="0.30">Grava-emulsión — a = 0,30</option>
+              <option value="0.33">Graduación gruesa (6 000 N) — a = 0.33</option>
+              <option value="0.28">Graduación abierta — a = 0.28</option>
+              <option value="0.30">Grava-emulsión — a = 0.30</option>
             </select>
             <label for="hBA">Espesor <span class="unit">[mm]</span></label><input id="hBA" type="number" step="5" min="40" value="60">
           </div>
@@ -298,9 +298,9 @@
 </main>
 <footer>Herramienta de apoyo académico basada en el Manual de Carreteras, Volumen N° 3 (Edición 2025), Capítulo 3.600. Verifique siempre los resultados.</footer>
 
-<script src="memo.js?v=35"></script>
-<script src="tablero.js?v=2"></script>
-<script src="modelo3d.js?v=5"></script>
+<script src="memo.js?v=37"></script>
+<script src="tablero.js?v=3"></script>
+<script src="modelo3d.js?v=6"></script>
 <script>
 "use strict";
 // ---------------------------------------------------------------------------
@@ -322,7 +322,7 @@ const CV_TXT = ["15 %", "20 %", "30 %", "40 %", "50 %"];
 const T202D = [[2000, 0.94, 0.82], [4000, 0.88, 0.76], [6000, 0.85, 0.72], [8000, 0.82, 0.70], [10000, 0.81, 0.68],
   [15000, 0.77, 0.65], [20000, 0.75, 0.63], [25000, 0.73, 0.61], [30000, 0.72, 0.59], [35000, 0.70, 0.58],
   [40000, 0.69, 0.57], [50000, 0.67, 0.55], [60000, 0.66, 0.53], [70000, 0.66, 0.52], [80000, 0.66, 0.51], [100000, 0.66, 0.49]];
-// Lámina 3.603.202.C — FEE pavimentos flexibles (2024): plaza, movimiento, [C2E, C+2E, BTB] para pf = 2,0 y pf = 2,5
+// Lámina 3.603.202.C — FEE pavimentos flexibles (2024): plaza, movimiento, [C2E, C+2E, BTB] para pf = 2.0 y pf = 2.5
 const PLAZAS = [
   ["Chungará (Ruta 11 CH)", "12", [2.42, 2.82, 0.97], [2.23, 2.71, 1.02]], ["Chungará (Ruta 11 CH)", "34", [0.89, 2.73, 1.59], [0.85, 2.66, 1.56]],
   ["Chacalluta (Ruta 5 Norte)", "12", [0.14, 1.71, 2.45], [0.14, 1.65, 2.28]], ["Chacalluta (Ruta 5 Norte)", "34", [0.09, 1.75, 1.47], [0.09, 1.73, 1.41]],
@@ -386,9 +386,9 @@ const MESES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "O
 const $ = (id) => document.getElementById(id);
 const num = (id) => { const v = parseFloat($(id).value); return Number.isFinite(v) ? v : 0; };
 const vacio = (id) => $(id).value.trim() === "";
-const fmt = (x, d = 2) => Number.isFinite(x) ? x.toLocaleString("es-CL", { minimumFractionDigits: d, maximumFractionDigits: d }) : "—";
+const fmt = (x, d = 2) => Number.isFinite(x) ? x.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d }).replace(/,/g, "\u00a0") : "—";
 const L = String.raw;
-const tn = (x, d = 2) => Number.isFinite(x) ? fmt(x, d).replace(/,/g, "{,}").replace(/\./g, "\\,") : "\\infty";
+const tn = (x, d = 2) => Number.isFinite(x) ? fmt(x, d).replace(/\u00a0/g, "\\,") : "\\infty";
 const GE = L`\ge`;
 const tag = (ok, t) => `<span class="tag ${ok ? "ok" : "bad"}">${t}</span>`;
 const okTxt = (ok) => tag(ok, ok ? "CUMPLE" : "NO CUMPLE");
@@ -418,7 +418,7 @@ function interp(xs, ys, x) {
 
 // ---------------------------------------------------------------------------
 // Ecuación de diseño (ec. 3.604.101.1 y .2)
-// log EE = 9,36 log(NE + 25,4) − 16,40 + Z_R·S0 + 2,32 log M_R + (1/β) log[(pi − pf)/(pi − 1,5)]
+// log EE = 9.36 log(NE + 25.4) − 16.40 + Z_R·S0 + 2.32 log M_R + (1/β) log[(pi − pf)/(pi − 1.5)]
 // ---------------------------------------------------------------------------
 const beta = (NE) => 0.40 + (97.81 / (NE + 25.4)) ** 5.19;
 function logEEadm(NE, d) {
@@ -535,12 +535,12 @@ function calcular(d, m) {
   m.eq(L`F_R = 10^{-Z_R\,S_0} = 10^{-(${tn(ZRv, 3)})(${tn(S0, 2)})} = ${tn(FR, 3)}`, "3.603.204(1).1");
   if (R < fila[1] || R > fila[2]) r.avisos.push(`La confiabilidad adoptada (${R} %) está fuera del rango recomendado por la Tabla 3.604.104.A para ${fmt(EEm, 1)} millones de EE (${fila[1]}–${fila[2]} %).`);
   if (EEm > 90) r.avisos.push(`EE = ${fmt(EEm, 1)} millones supera el máximo de la Tabla 3.604.104.A (90 millones); se usan R y S<sub>0</sub> de la última fila.`);
-  if (dPSI <= 0 || d.pi <= 1.5) r.avisos.push("Revise los índices de serviciabilidad: se requiere p<sub>i</sub> > p<sub>f</sub> y p<sub>i</sub> > 1,5.");
+  if (dPSI <= 0 || d.pi <= 1.5) r.avisos.push("Revise los índices de serviciabilidad: se requiere p<sub>i</sub> > p<sub>f</sub> y p<sub>i</sub> > 1.5.");
 
   // 3. Subrasante
   m.h("Módulo resiliente de la subrasante (3.604.105)");
   const mrCBR = (c) => c < 12 ? 17.6 * c ** 0.64 : 22.1 * c ** 0.55;
-  const eqCBR = (c, nom) => c < 12 ? L`${nom} = 17{,}6\,(CBR)^{0{,}64} = 17{,}6\cdot ${tn(c, 1)}^{0{,}64} = ${tn(mrCBR(c), 1)}\ \mathrm{MPa}` : L`${nom} = 22{,}1\,(CBR)^{0{,}55} = 22{,}1\cdot ${tn(c, 1)}^{0{,}55} = ${tn(mrCBR(c), 1)}\ \mathrm{MPa}`;
+  const eqCBR = (c, nom) => c < 12 ? L`${nom} = 17.6\,(CBR)^{0.64} = 17.6\cdot ${tn(c, 1)}^{0.64} = ${tn(mrCBR(c), 1)}\ \mathrm{MPa}` : L`${nom} = 22.1\,(CBR)^{0.55} = 22.1\cdot ${tn(c, 1)}^{0.55} = ${tn(mrCBR(c), 1)}\ \mathrm{MPa}`;
   const MR0 = d.modoMR === "cbr" ? mrCBR(d.cbr) : d.MRin;
   m.row("Módulo resiliente de la subrasante: M<sub>R0</sub>", `${fmt(MR0, 1)} MPa${d.modoMR === "cbr" ? ` (CBR = ${fmt(d.cbr, 1)} %)` : ""}`, "3.604.105(1)");
   if (d.modoMR === "cbr") m.eq(eqCBR(d.cbr, "M_{R0}"), d.cbr < 12 ? "3.604.105(1).1" : "3.604.105(1).2");
@@ -556,15 +556,15 @@ function calcular(d, m) {
     m.row("Módulo de la capa de mejoramiento: M<sub>R1</sub>", `${fmt(MR1, 1)} MPa (CBR = ${fmt(d.cbrMej, 0)} %, h = ${fmt(d.hMej, 0)} mm)`, "3.604.105(2)");
     m.row("Factor del sistema bicapa: F", fmt(F, 3), "3.604.105(2).3");
     m.eq(eqCBR(d.cbrMej, "M_{R1}"));
-    m.eq(L`\frac{1}{F} = \frac{0{,}125}{\left[0{,}0156 + h^2\left(\frac{M_{R1}}{M_{R0}}\right)^{2/3}\right]^{1/2}}\left(1 - \frac{M_{R0}}{M_{R1}}\right) + \frac{M_{R0}}{M_{R1}}`, "3.604.105(2).3");
-    m.eq(L`\frac{1}{F} = \frac{0{,}125}{\left[0{,}0156 + ${tn(h, 3)}^2\left(\frac{${tn(MR1, 1)}}{${tn(MR0, 1)}}\right)^{2/3}\right]^{1/2}}\left(1 - ${tn(k, 3)}\right) + ${tn(k, 3)} = ${tn(invF, 4)}`);
+    m.eq(L`\frac{1}{F} = \frac{0.125}{\left[0.0156 + h^2\left(\frac{M_{R1}}{M_{R0}}\right)^{2/3}\right]^{1/2}}\left(1 - \frac{M_{R0}}{M_{R1}}\right) + \frac{M_{R0}}{M_{R1}}`, "3.604.105(2).3");
+    m.eq(L`\frac{1}{F} = \frac{0.125}{\left[0.0156 + ${tn(h, 3)}^2\left(\frac{${tn(MR1, 1)}}{${tn(MR0, 1)}}\right)^{2/3}\right]^{1/2}}\left(1 - ${tn(k, 3)}\right) + ${tn(k, 3)} = ${tn(invF, 4)}`);
     m.eq(L`M_{R} = F\cdot M_{R0} = ${tn(F, 3)}\cdot ${tn(MR0, 1)} = ${tn(MR, 1)}\ \mathrm{MPa}`, "3.604.105(2).2");
     if (d.hMej < 300) r.avisos.push("El Manual recomienda una capa de mejoramiento de espesor no inferior a 300 mm (3.604.105(2)).");
     if (d.cbrMej < 15) r.avisos.push("El Manual recomienda que la capa de mejoramiento tenga CBR ≥ 15 % (3.604.105(2)).");
   } else if (d.modoMR === "cbr" ? d.cbr <= 10 : MR0 <= 77) {
     r.avisos.push("Subrasante con CBR ≤ 10 % (M<sub>R</sub> ≤ 77 MPa): el Manual recomienda una capa de mejoramiento de al menos 300 mm con CBR ≥ 15 % o un geotextil (3.604.105(2)).");
   }
-  if (d.modoMR === "cbr" && d.cbr < 3) r.avisos.push("CBR < 3 %: se recomienda no dejar suelos de tan baja capacidad de soporte hasta 1,5 m bajo la rasante sin un estudio o tratamiento especial (3.604.105(4)).");
+  if (d.modoMR === "cbr" && d.cbr < 3) r.avisos.push("CBR < 3 %: se recomienda no dejar suelos de tan baja capacidad de soporte hasta 1.5 m bajo la rasante sin un estudio o tratamiento especial (3.604.105(4)).");
   m.row("<b>Módulo resiliente de diseño: M<sub>R</sub></b>", `<b>${fmt(MR, 1)} MPa</b>`);
   r.MR = MR;
 
@@ -577,9 +577,9 @@ function calcular(d, m) {
   m.row("Factor de la pérdida de serviciabilidad: β", fmt(bT, 4), "3.604.101.2");
   m.row("<b>Número estructural total requerido: NE<sub>T</sub></b>", `<b>${fmt(NET, 1)} mm</b>`, "3.604.101.1");
   m.p(L`Se resuelve por iteraciones la ecuación de diseño para $EE = ${tn(EE, 0)}$, $M_R = ${tn(MR, 1)}$ MPa, $Z_R = ${tn(ZRv, 3)}$, $S_0 = ${tn(S0, 2)}$, $p_i = ${tn(d.pi, 1)}$ y $p_f = ${tn(d.pf, 1)}$:`);
-  m.eq(L`EE = (NE + 25{,}4)^{9{,}36}\cdot 10^{(-16{,}40 + Z_R\,S_0)}\cdot M_R^{2{,}32}\cdot\left[\frac{p_i - p_f}{p_i - 1{,}5}\right]^{1/\beta}`, "3.604.101.1");
-  m.eq(L`\beta = 0{,}40 + \left[\frac{97{,}81}{NE + 25{,}4}\right]^{5{,}19} = 0{,}40 + \left[\frac{97{,}81}{${tn(NET, 1)} + 25{,}4}\right]^{5{,}19} = ${tn(bT, 4)}`, "3.604.101.2");
-  m.eq(L`(${tn(NET, 1)} + 25{,}4)^{9{,}36}\cdot 10^{(-16{,}40 + (${tn(ZRv, 3)})(${tn(S0, 2)}))}\cdot ${tn(MR, 1)}^{2{,}32}\cdot\left[\frac{${tn(dPSI, 1)}}{${tn(d.pi - 1.5, 1)}}\right]^{1/${tn(bT, 4)}} = ${tn(10 ** logEEadm(NET, prm), 0)} \approx EE`);
+  m.eq(L`EE = (NE + 25.4)^{9.36}\cdot 10^{(-16.40 + Z_R\,S_0)}\cdot M_R^{2.32}\cdot\left[\frac{p_i - p_f}{p_i - 1.5}\right]^{1/\beta}`, "3.604.101.1");
+  m.eq(L`\beta = 0.40 + \left[\frac{97.81}{NE + 25.4}\right]^{5.19} = 0.40 + \left[\frac{97.81}{${tn(NET, 1)} + 25.4}\right]^{5.19} = ${tn(bT, 4)}`, "3.604.101.2");
+  m.eq(L`(${tn(NET, 1)} + 25.4)^{9.36}\cdot 10^{(-16.40 + (${tn(ZRv, 3)})(${tn(S0, 2)}))}\cdot ${tn(MR, 1)}^{2.32}\cdot\left[\frac{${tn(dPSI, 1)}}{${tn(d.pi - 1.5, 1)}}\right]^{1/${tn(bT, 4)}} = ${tn(10 ** logEEadm(NET, prm), 0)} \approx EE`);
 
   // 5. TMAPA y NEA
   m.h("NE mínimo de las capas asfálticas — NE<sub>A</sub> (3.604.108(2))");
@@ -592,9 +592,9 @@ function calcular(d, m) {
       <tr><td>TMMA [°C]</td>${d.tmma.map(t => `<td class="num">${fmt(t, 1)}</td>`).join("")}</tr>
       <tr><td>W<sub>i</sub></td>${W.map(w => `<td class="num">${fmt(w, 2)}</td>`).join("")}</tr></table>`);
     m.row("Factor de ponderación promedio: W<sub>ip</sub>", fmt(Wp, 3), "3.604.108(2).1");
-    m.eq(L`TMMA = 20{,}348 + 17{,}5683\,\log W_i \;\Rightarrow\; W_i = 10^{(TMMA - 20{,}348)/17{,}5683}`, "3.604.108(2).1");
+    m.eq(L`TMMA = 20.348 + 17.5683\,\log W_i \;\Rightarrow\; W_i = 10^{(TMMA - 20.348)/17.5683}`, "3.604.108(2).1");
     m.eq(L`W_{ip} = \frac{\sum W_i}{12} = \frac{${tn(W.reduce((a, b) => a + b, 0), 2)}}{12} = ${tn(Wp, 3)}`);
-    m.eq(L`TMAPA = 20{,}348 + 17{,}5683\,\log W_{ip} = 20{,}348 + 17{,}5683\,\log ${tn(Wp, 3)} = ${tn(T, 1)}\ ^\circ\mathrm{C}`);
+    m.eq(L`TMAPA = 20.348 + 17.5683\,\log W_{ip} = 20.348 + 17.5683\,\log ${tn(Wp, 3)} = ${tn(T, 1)}\ ^\circ\mathrm{C}`);
   }
   r.T = T;
   const EEgraf = EEm * FR;
@@ -621,7 +621,7 @@ function calcular(d, m) {
   m.row("Coeficiente estructural de la base granular: a<sub>2</sub>", `${fmt(a2, 3)} (CBR = ${fmt(d.cbrBase, 0)} %)`, "3.604.107.3");
   if (d.usaSB) m.row("Coeficiente estructural de la subbase granular: a<sub>3</sub>", `${fmt(a3, 3)} (CBR = ${fmt(d.cbrSB, 0)} %)`, "3.604.107.4");
   m.row("Coeficientes de drenaje: m<sub>2</sub> ; m<sub>3</sub>", `${fmt(m2, 2)} ; ${fmt(m3, 2)}`, "Tabla 3.604.106.B");
-  m.eq(L`a_2 = 0{,}032\,(CBR)^{0{,}32} = 0{,}032\cdot ${tn(d.cbrBase, 0)}^{0{,}32} = ${tn(a2, 3)}${d.usaSB ? L` \qquad a_3 = 0{,}058\,(CBR)^{0{,}19} = 0{,}058\cdot ${tn(d.cbrSB, 0)}^{0{,}19} = ${tn(a3, 3)}` : ""}`, "3.604.107.3/4");
+  m.eq(L`a_2 = 0.032\,(CBR)^{0.32} = 0.032\cdot ${tn(d.cbrBase, 0)}^{0.32} = ${tn(a2, 3)}${d.usaSB ? L` \qquad a_3 = 0.058\,(CBR)^{0.19} = 0.058\cdot ${tn(d.cbrSB, 0)}^{0.19} = ${tn(a3, 3)}` : ""}`, "3.604.107.3/4");
   m.p(L`Coeficiente de drenaje según la Tabla 3.604.106.B, región ${d.region.replace("-", " a ")}, precipitación ${d.precip === "le" ? L`$\le$` : ">"} ${fmt(DREN[d.region].lim, 0)} mm, ${DREN_TXT[d.condDren].replace(/≤/g, L`$\le$`).replace(/>/g, "$>$").replace(/%/g, L`\%`)}: rango ${tn(dr[0], 2)} -- ${tn(dr[1], 2)}; se adopta $m_2 = ${tn(m2, 2)}$ y $m_3 = ${tn(m3, 2)}$${d.critM === "man" ? " (valores ingresados)" : ""}.`);
   [["2", m2], ["3", m3]].forEach(([i, mi]) => {
     if (mi > dr[0] + 1e-9 || mi < dr[1] - 1e-9) r.avisos.push(`m<sub>${i}</sub> = ${fmt(mi, 2)} está fuera del rango de la Tabla 3.604.106.B (${fmt(dr[1], 2)}–${fmt(dr[0], 2)}).`);
@@ -705,7 +705,7 @@ Total & & & ${tn(capas.reduce((s, c) => s + c.h, 0), 0)} & ${tn(NEprov, 1)}\\
   m.row("Ejes equivalentes admisibles de la estructura provista", `${fmt(r.EEadm / 1e6, 2)} millones ${okTxt(r.EEadm >= EE * (1 - 1e-6))}`);
   m.row("Espesores mínimos: capas asfálticas 50 mm ; granulares 150 mm", okTxt(minOk), "Tabla 3.604.108.A");
   m.eq(L`NE = \sum a_i h_i + \sum a_i m_i h_i = ${tn(NEasf, 1)} + ${tn(NEgran, 1)} = ${tn(NEprov, 1)}\ \mathrm{mm} \;${NEprov >= NET - 1e-6 ? GE : "<"}\; NE_T = ${tn(NET, 1)}\ \mathrm{mm}`, "3.604.108(1).1");
-  m.eq(L`EE_{adm} = (${tn(NEprov, 1)} + 25{,}4)^{9{,}36}\cdot 10^{(-16{,}40 + (${tn(ZRv, 3)})(${tn(S0, 2)}))}\cdot ${tn(MR, 1)}^{2{,}32}\cdot\left[\frac{${tn(dPSI, 1)}}{${tn(d.pi - 1.5, 1)}}\right]^{1/${tn(beta(NEprov), 4)}} = ${tn(r.EEadm / 1e6, 2)}\times 10^6 \;${r.EEadm >= EE ? GE : "<"}\; ${tn(EEm, 2)}\times 10^6`);
+  m.eq(L`EE_{adm} = (${tn(NEprov, 1)} + 25.4)^{9.36}\cdot 10^{(-16.40 + (${tn(ZRv, 3)})(${tn(S0, 2)}))}\cdot ${tn(MR, 1)}^{2.32}\cdot\left[\frac{${tn(dPSI, 1)}}{${tn(d.pi - 1.5, 1)}}\right]^{1/${tn(beta(NEprov), 4)}} = ${tn(r.EEadm / 1e6, 2)}\times 10^6 \;${r.EEadm >= EE ? GE : "<"}\; ${tn(EEm, 2)}\times 10^6`);
   if (d.especial) m.p(L`La capa de rodadura de mezcla especial no tiene restricción de espesor mínimo (Tabla 3.604.108.A).`);
 
   Object.assign(r, { R, ZRv, S0, FR, EEm, EEgraf, ne, a2, a3, dr, asf, gran });
@@ -872,7 +872,7 @@ function actualizar() {
   // Validación: un dato vacío o fuera de rango no se calcula (evita un "CUMPLE" falso)
   limpiarInvalidos($("inputs"));
   const malos = datosInvalidos(reglasVial());
-  if (!malos.length && num("pi") <= Math.max(num("pf"), 1.5)) { $("pi").classList.add("invalido"); malos.push("p_i debe ser mayor que p_f y que 1,5"); }
+  if (!malos.length && num("pi") <= Math.max(num("pf"), 1.5)) { $("pi").classList.add("invalido"); malos.push("p_i debe ser mayor que p_f y que 1.5"); }
   if (malos.length) return sinCalculo(malos);
 
   const d = leer();
@@ -905,10 +905,10 @@ function actualizar() {
   // Memoria .tex
   const fecha = new Date().toLocaleDateString("es-CL", { day: "numeric", month: "long", year: "numeric" });
   const texTxt = (s) => s.replace(/<sub>/g, "$_{").replace(/<\/sub>/g, "}$").replace(/\$\$/g, "").replace(/<[^>]+>/g, "");
-  const filas = items.map(([t, v, s]) => `${texTxt(t)} & ${texTxt(s).replace(/,/g, "{,}").replace(/\./g, "\\,")} & ${tn(v, 3)} & ${v <= 1 + 1e-9 ? "Cumple" : "No cumple"}\\\\`).join("\n");
+  const filas = items.map(([t, v, s]) => `${texTxt(t)} & ${texTxt(s).replace(/\u00a0/g, "\\,")} & ${tn(v, 3)} & ${v <= 1 + 1e-9 ? "Cumple" : "No cumple"}\\\\`).join("\n");
   const avisosTex = r.avisos.length ? L`\paragraph{Observaciones.}
 \begin{itemize}
-${r.avisos.map(a => `\\item ${texTxt(a).replace(/≤/g, "$\\le$").replace(/≥/g, "$\\ge$").replace(/%/g, "\\%").replace(/·/g, "$\\cdot$").replace(/–/g, "--").replace(/(\d),(\d)/g, "$1{,}$2")}`).join("\n")}
+${r.avisos.map(a => `\\item ${texTxt(a).replace(/≤/g, "$\\le$").replace(/≥/g, "$\\ge$").replace(/%/g, "\\%").replace(/·/g, "$\\cdot$").replace(/–/g, "--")}`).join("\n")}
 \end{itemize}` : "";
   ultimoTex = L`\documentclass[11pt,letterpaper]{article}
 \usepackage[utf8]{inputenc}
@@ -999,14 +999,14 @@ function init() {
 init();
 
 // ---------------------------------------------------------------------------
-// Vista 2D / 3D (modelo3d.js): bloque de 1,5 × 1,5 m del paquete estructural, cada capa con su espesor real (mm)
+// Vista 2D / 3D (modelo3d.js): bloque de 1.5 × 1.5 m del paquete estructural, cada capa con su espesor real (mm)
 // ---------------------------------------------------------------------------
 window.Zona2D3D?.montar({
   antes: document.querySelector(".toolbar"),
   fuente2D: () => $("svgPaq").querySelector("svg"),
   observar: [$("verdict"), $("svgPaq")],
   capas: [["subrasante", "Subrasante"]],
-  nota: "bloque de 1,5 x 1,5 m; la capa de rodadura en naranja si el paquete no cumple",
+  nota: "bloque de 1.5 x 1.5 m; la capa de rodadura en naranja si el paquete no cumple",
   construir: () => {
     if (!ultimoTex || !ultimoPav) return null;
     const { d, r } = ultimoPav, capas = listaDibujo(d, r), A = 1500, e = new Geo3D.Escena();
@@ -1030,7 +1030,7 @@ window.AURA_MEMO = {
   },
 };
 </script>
-<script src="proyectos.js?v=34"></script>
+<script src="proyectos.js?v=36"></script>
 <script>
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
 </script>

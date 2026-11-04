@@ -117,8 +117,8 @@
     table.calc tr { break-inside: avoid; }
   }
 </style>
-<link rel="stylesheet" href="aura.css?v=8">
-<script src="lateral.js?v=1"></script>
+<link rel="stylesheet" href="aura.css?v=9">
+<script src="lateral.js?v=2"></script>
 </head>
 <body>
 <header>
@@ -206,7 +206,7 @@
         <div class="row2">
           <div><label for="q">Sobrecarga q <span class="unit">[tf/m²]</span></label><input id="q" type="number" step="0.05" value="1.14"></div>
           <div><label for="zona">Zona sísmica (NCh 433)</label>
-            <select id="zona"><option value="0">Sin sismo</option><option value="1">Zona 1 (A<sub>0</sub> = 0,20 g)</option><option value="2">Zona 2 (A<sub>0</sub> = 0,30 g)</option><option value="3" selected>Zona 3 (A<sub>0</sub> = 0,40 g)</option></select></div>
+            <select id="zona"><option value="0">Sin sismo</option><option value="1">Zona 1 (A<sub>0</sub> = 0.20 g)</option><option value="2">Zona 2 (A<sub>0</sub> = 0.30 g)</option><option value="3" selected>Zona 3 (A<sub>0</sub> = 0.40 g)</option></select></div>
         </div>
         <label class="chk"><input id="qEstab" type="checkbox" checked> La sobrecarga sobre el talón aporta peso estabilizante (como el ejemplo del curso)</label>
         <div id="sismoBox">
@@ -216,7 +216,7 @@
               <select id="critPant"><option value="total" selected>Simplificado: todas las fuerzas con H</option><option value="curso">Mixto: estático con Hm, sismo con H</option><option value="pantalla">Exacto: solo la pantalla con Hm</option></select></div>
           </div>
           <label for="talSis">Talón en sismo</label>
-          <select id="talSis"><option value="csv" selected>Con sismo vertical: (1,2 + Csv) D + 1,0 L</option><option value="12">Sin sismo vertical: 1,2 D + 1,6 L</option></select>
+          <select id="talSis"><option value="csv" selected>Con sismo vertical: (1.2 + Csv) D + 1.0 L</option><option value="12">Sin sismo vertical: 1.2 D + 1.6 L</option></select>
         </div>
       </fieldset>
 
@@ -236,7 +236,7 @@
           <div><label for="pcMin">Zona comprimida mín. en sismo <span class="unit">[% de B]</span></label><input id="pcMin" type="number" step="5" value="80"></div>
           <div></div>
         </div>
-        <div class="unit" style="margin-top:4px">Valores del ejemplo del curso: volcamiento sísmico 1,15 × 1,1.</div>
+        <div class="unit" style="margin-top:4px">Valores del ejemplo del curso: volcamiento sísmico 1.15 × 1.1.</div>
       </fieldset>
 
       <fieldset>
@@ -256,7 +256,7 @@
           <div><label for="dbZt">Talón (superior)</label><input id="dbZt" type="number" step="1" value="22"></div>
           <div><label for="dbZr">Zapata, repartición</label><input id="dbZr" type="number" step="1" value="12"></div>
         </div>
-        <div class="unit" style="margin-top:4px">Espaciamiento propuesto: el mayor múltiplo de 2,5 cm que da el área requerida, con s ≤ mín(3h ; 45 cm).</div>
+        <div class="unit" style="margin-top:4px">Espaciamiento propuesto: el mayor múltiplo de 2.5 cm que da el área requerida, con s ≤ mín(3h ; 45 cm).</div>
       </fieldset>
     </div>
   </section>
@@ -280,10 +280,10 @@
 </main>
 <footer>Herramienta de apoyo académico basada en el procedimiento del curso Diseño de Proyectos de Ingeniería (muros de contención). No reemplaza la memoria de cálculo del ingeniero del proyecto. Verifique siempre los resultados.</footer>
 
-<script src="memo.js?v=35"></script>
-<script src="tablero.js?v=2"></script>
-<script src="dxf.js?v=1"></script>
-<script src="modelo3d.js?v=5"></script>
+<script src="memo.js?v=37"></script>
+<script src="tablero.js?v=3"></script>
+<script src="dxf.js?v=2"></script>
+<script src="modelo3d.js?v=6"></script>
 <script>
 "use strict";
 // ---------------------------------------------------------------------------
@@ -300,13 +300,13 @@ const BW = 100;                                // ancho de diseño [cm]
 // Utilidades de formato
 // ---------------------------------------------------------------------------
 const fmt = (x, d = 2) => Number.isFinite(x)
-  ? x.toLocaleString("es-CL", { minimumFractionDigits: d, maximumFractionDigits: d })
+  ? x.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d }).replace(/,/g, "\u00a0")
   : "—";
 const $ = (id) => document.getElementById(id);
 const num = (id) => { const v = parseFloat($(id).value); return Number.isFinite(v) ? v : 0; };
 const L = String.raw;
 const tn = (x, d = 2) => Number.isFinite(x)
-  ? fmt(x, d).replace(/,/g, "{,}").replace(/\./g, "\\,")
+  ? fmt(x, d).replace(/\u00a0/g, "\\,")
   : "\\infty";
 const LE = L`\le`, GE = L`\ge`;
 const texTxt = (t) => t.replace(/—/g, "---").replace(/%/g, "\\%");
@@ -471,7 +471,7 @@ const barraTex = (db, s) => L`$\phi$${tn(db * 10, 0)} @ ${tn(s, s % 1 ? 1 : 0)} 
 function memoFlexion(m, f, d0, cara) {
   m.row("Altura útil d = h − rec − d<sub>b</sub>/2", `${fmt(f.h, 1)} − ${fmt(d0.rec, 1)} − ${fmt(f.db / 2, 2)} = ${fmt(f.d, 2)} cm`);
   m.eq(L`d = h - r_{ec} - \frac{d_b}{2} = ${tn(f.h, 1)} - ${tn(d0.rec, 1)} - \frac{${tn(f.db, 1)}}{2} = ${tn(f.d, 2)}\ \mathrm{cm}`);
-  m.eq(L`\mu = \frac{M_u}{\phi\,0{,}85\,f'_c\,b\,d^2} = \frac{${tn(f.Mu, 0)}}{0{,}9\cdot 0{,}85\cdot ${tn(d0.fc, 0)}\cdot 100\cdot ${tn(f.d, 2)}^2} = ${tn(f.mu, 4)}`);
+  m.eq(L`\mu = \frac{M_u}{\phi\,0.85\,f'_c\,b\,d^2} = \frac{${tn(f.Mu, 0)}}{0.9\cdot 0.85\cdot ${tn(d0.fc, 0)}\cdot 100\cdot ${tn(f.d, 2)}^2} = ${tn(f.mu, 4)}`);
   if (f.insuf) {
     m.row("μ", `${fmt(f.mu, 4)} ${tag(false, "sección insuficiente")}`);
     m.note("2μ ≥ 1: la sección no alcanza a resistir el momento con armadura simple. Aumente el espesor.",
@@ -479,27 +479,27 @@ function memoFlexion(m, f, d0, cara) {
     return;
   }
   m.row("μ ; α = 1 − √(1 − 2μ)", `${fmt(f.mu, 4)} ; ${fmt(f.alfa, 4)}`);
-  m.eq(L`\alpha = 1 - \sqrt{1 - 2\mu} = ${tn(f.alfa, 4)} \qquad \rho = \frac{0{,}85\,f'_c\,\alpha}{f_y} = ${tn(f.rho, 5)}`);
+  m.eq(L`\alpha = 1 - \sqrt{1 - 2\mu} = ${tn(f.alfa, 4)} \qquad \rho = \frac{0.85\,f'_c\,\alpha}{f_y} = ${tn(f.rho, 5)}`);
   m.row("ρ calculada ; ρ<sub>mín</sub>", `${fmt(f.rho, 5)} ; ${fmt(RHO_MIN, 4)}`, "criterio del curso");
   m.row(`A<sub>s</sub> requerida = máx(ρ ; ρ<sub>mín</sub>) · b · d (${cara})`, `${fmt(f.As, 2)} cm²/m`);
   m.eq(L`A_s = \max(\rho;\ \rho_{m\acute{i}n})\,b\,d = ${tn(f.rhoReq, 5)}\cdot 100\cdot ${tn(f.d, 2)} = ${tn(f.As, 2)}\ \mathrm{cm^2/m}`);
   m.row(`Separación: 100·A<sub>b</sub>/A<sub>s</sub> = ${fmt(f.sCalc, 1)} cm ; s<sub>máx</sub> = mín(3h ; 45) = ${fmt(f.sMaxN, 1)} cm`, `<b>${barra(f.db, f.s)}</b>`, "ACI 318-08 7.6.5");
   m.eq(L`s \le \frac{100\,A_b}{A_s} = \frac{100\cdot ${tn(f.Ab, 3)}}{${tn(f.As, 2)}} = ${tn(f.sCalc, 1)}\ \mathrm{cm} \;\Rightarrow\; s = ${tn(f.s, 1)}\ \mathrm{cm}`, "ACI 318-08 7.6.5");
   if (f.s < 10) m.note(`Separación de ${fmt(f.s, 1)} cm: considere un diámetro mayor.`, L`Separación reducida (${tn(f.s, 1)} cm); se recomienda un diámetro mayor.`);
-  m.row("a ; c = a/β<sub>1</sub> ; ε<sub>t</sub> = 0,003 (d − c)/c", `${fmt(f.a, 2)} ; ${fmt(f.c, 2)} cm ; ${fmt(f.et, 4)}`, "ACI 318-08 10.2.7");
-  m.eq(L`a = \frac{A_s f_y}{0{,}85\,f'_c\,b} = ${tn(f.a, 2)}\ \mathrm{cm} \qquad c = \frac{a}{\beta_1} = \frac{${tn(f.a, 2)}}{${tn(f.b1, 3)}} = ${tn(f.c, 2)}\ \mathrm{cm} \qquad \varepsilon_t = 0{,}003\,\frac{d - c}{c} = ${tn(f.et, 4)}`, "ACI 318-08 10.2.7");
-  m.row(`ε<sub>t</sub> ≥ 0,004 ; φ = ${fmt(f.phi, 3)} (${f.et >= 0.005 ? "controlada por tracción" : "zona de transición"})`, tagDC(f.dcEt), "ACI 318-08 10.3.5 y 9.3.2");
-  m.eq(L`\frac{0{,}004}{\varepsilon_t} = \frac{0{,}004}{${tn(f.et, 4)}} = ${tn(f.dcEt, 3)} ${f.dcEt <= 1 ? LE : ">"} 1{,}0`, "ACI 318-08 10.3.5");
+  m.row("a ; c = a/β<sub>1</sub> ; ε<sub>t</sub> = 0.003 (d − c)/c", `${fmt(f.a, 2)} ; ${fmt(f.c, 2)} cm ; ${fmt(f.et, 4)}`, "ACI 318-08 10.2.7");
+  m.eq(L`a = \frac{A_s f_y}{0.85\,f'_c\,b} = ${tn(f.a, 2)}\ \mathrm{cm} \qquad c = \frac{a}{\beta_1} = \frac{${tn(f.a, 2)}}{${tn(f.b1, 3)}} = ${tn(f.c, 2)}\ \mathrm{cm} \qquad \varepsilon_t = 0.003\,\frac{d - c}{c} = ${tn(f.et, 4)}`, "ACI 318-08 10.2.7");
+  m.row(`ε<sub>t</sub> ≥ 0.004 ; φ = ${fmt(f.phi, 3)} (${f.et >= 0.005 ? "controlada por tracción" : "zona de transición"})`, tagDC(f.dcEt), "ACI 318-08 10.3.5 y 9.3.2");
+  m.eq(L`\frac{0.004}{\varepsilon_t} = \frac{0.004}{${tn(f.et, 4)}} = ${tn(f.dcEt, 3)} ${f.dcEt <= 1 ? LE : ">"} 1.0`, "ACI 318-08 10.3.5");
   m.row("φM<sub>n</sub> con la armadura dispuesta", `${fmt(TM(f.phiMn), 2)} tf·m ${tagDC(f.dc)}`, "ACI 318-08 10.2");
-  m.eq(L`\phi M_n = ${tn(f.phi, 3)}\,A_s f_y\left(d - \frac{a}{2}\right) = ${tn(TM(f.phiMn), 2)}\ \mathrm{tf\,m} \qquad \frac{M_u}{\phi M_n} = \frac{${tn(TM(f.Mu), 2)}}{${tn(TM(f.phiMn), 2)}} = ${tn(f.dc, 3)} ${f.dc <= 1 ? LE : ">"} 1{,}0`);
+  m.eq(L`\phi M_n = ${tn(f.phi, 3)}\,A_s f_y\left(d - \frac{a}{2}\right) = ${tn(TM(f.phiMn), 2)}\ \mathrm{tf\,m} \qquad \frac{M_u}{\phi M_n} = \frac{${tn(TM(f.Mu), 2)}}{${tn(TM(f.phiMn), 2)}} = ${tn(f.dc, 3)} ${f.dc <= 1 ? LE : ">"} 1.0`);
 }
 function memoCorte(m, Vu, dEf, d0) {
   const Vc = 0.53 * Math.sqrt(d0.fc) * BW * dEf;
   const dc = Vu / (PHI_V * Vc);
-  m.row("V<sub>c</sub> = 0,53 √f'<sub>c</sub> b d ; φ = 0,75", `${fmt(T(Vc), 2)} tf ; φV<sub>c</sub> = ${fmt(T(PHI_V * Vc), 2)} tf`, "ACI 318-08 11-3");
+  m.row("V<sub>c</sub> = 0.53 √f'<sub>c</sub> b d ; φ = 0.75", `${fmt(T(Vc), 2)} tf ; φV<sub>c</sub> = ${fmt(T(PHI_V * Vc), 2)} tf`, "ACI 318-08 11-3");
   m.row("V<sub>u</sub> / φV<sub>c</sub>", tagDC(dc));
-  m.eq(L`V_c = 0{,}53\sqrt{f'_c}\,b\,d = 0{,}53\sqrt{${tn(d0.fc, 0)}}\cdot 100\cdot ${tn(dEf, 2)} = ${tn(T(Vc), 2)}\ \mathrm{tf}`, "ACI 318-08 11-3");
-  m.eq(L`\frac{V_u}{\phi V_c} = \frac{${tn(T(Vu), 2)}}{0{,}75\cdot ${tn(T(Vc), 2)}} = ${tn(dc, 3)} ${dc <= 1 ? LE : ">"} 1{,}0`);
+  m.eq(L`V_c = 0.53\sqrt{f'_c}\,b\,d = 0.53\sqrt{${tn(d0.fc, 0)}}\cdot 100\cdot ${tn(dEf, 2)} = ${tn(T(Vc), 2)}\ \mathrm{tf}`, "ACI 318-08 11-3");
+  m.eq(L`\frac{V_u}{\phi V_c} = \frac{${tn(T(Vu), 2)}}{0.75\cdot ${tn(T(Vc), 2)}} = ${tn(dc, 3)} ${dc <= 1 ? LE : ">"} 1.0`);
   return { Vc, dc };
 }
 
@@ -571,7 +571,7 @@ function verificar(d, m) {
   m.row("Empuje del relleno P<sub>s</sub> = ½ K<sub>a</sub> γ<sub>r</sub> H², a H/3", `${fmt(T(Ps), 3)} tf`);
   m.row("Empuje de la sobrecarga P<sub>q</sub> = K<sub>a</sub> q H, a H/2", `${fmt(T(Pq), 3)} tf`);
   m.eq(L`K_a = \frac{1 - \sin\phi_r}{1 + \sin\phi_r} = \frac{1 - \sin ${tn(d.phiR, 1)}^\circ}{1 + \sin ${tn(d.phiR, 1)}^\circ} = ${tn(Ka, 4)}`);
-  m.eq(L`P_s = \tfrac{1}{2}K_a\,\gamma_r\,H^2 = 0{,}5\cdot ${tn(Ka, 4)}\cdot ${tn(d.gR * 1000, 2)}\cdot ${tn(M(H), 2)}^2 = ${tn(T(Ps), 3)}\ \mathrm{tf} \qquad P_q = K_a\,q\,H = ${tn(Ka, 4)}\cdot ${tn(S(d.q), 2)}\cdot ${tn(M(H), 2)} = ${tn(T(Pq), 3)}\ \mathrm{tf}`);
+  m.eq(L`P_s = \tfrac{1}{2}K_a\,\gamma_r\,H^2 = 0.5\cdot ${tn(Ka, 4)}\cdot ${tn(d.gR * 1000, 2)}\cdot ${tn(M(H), 2)}^2 = ${tn(T(Ps), 3)}\ \mathrm{tf} \qquad P_q = K_a\,q\,H = ${tn(Ka, 4)}\cdot ${tn(S(d.q), 2)}\cdot ${tn(M(H), 2)} = ${tn(T(Pq), 3)}\ \mathrm{tf}`);
 
   const Kp = (1 + sS) / (1 - sS);
   let Ep = 0;
@@ -596,7 +596,7 @@ function verificar(d, m) {
     const hp = d.Df + d.hd;
     Ep = 0.5 * Kp * d.gS * hp * hp * BW;
     m.row("E<sub>p</sub> = ½ K<sub>p</sub> γ<sub>s</sub> (D<sub>f</sub> + h<sub>d</sub>)²", `${fmt(T(Ep), 3)} tf`);
-    m.eq(L`E_p = \tfrac{1}{2}K_p\,\gamma_s\,(D_f + h_d)^2 = 0{,}5\cdot ${tn(Kp, 4)}\cdot ${tn(d.gS * 1000, 2)}\cdot ${tn(M(hp), 2)}^2 = ${tn(T(Ep), 3)}\ \mathrm{tf}`);
+    m.eq(L`E_p = \tfrac{1}{2}K_p\,\gamma_s\,(D_f + h_d)^2 = 0.5\cdot ${tn(Kp, 4)}\cdot ${tn(d.gS * 1000, 2)}\cdot ${tn(M(hp), 2)}^2 = ${tn(T(Ep), 3)}\ \mathrm{tf}`);
   }
 
   // ---------- 3. Estabilidad estática ----------
@@ -614,7 +614,7 @@ function verificar(d, m) {
 
     m.sub(`${tit}: deslizamiento`);
     const FSd = FR / FD;
-    m.row("μ = tan(2φ<sub>s</sub>/3) ; c' = 0,5 c<sub>s</sub>", `${fmt(mu, 4)} ; ${fmt(S(cp), 3)} tf/m²`);
+    m.row("μ = tan(2φ<sub>s</sub>/3) ; c' = 0.5 c<sub>s</sub>", `${fmt(mu, 4)} ; ${fmt(S(cp), 3)} tf/m²`);
     m.row("Fuerza resistente F<sub>R</sub> = μ N + c' B + E<sub>p</sub>", `${fmt(T(FR), 3)} tf`);
     m.eq(L`F_R = \mu\,N + c'\,B + E_p = ${tn(mu, 4)}\cdot ${tn(T(N), 3)} + ${tn(S(cp), 3)}\cdot ${tn(M(B), 2)} + ${tn(T(Ep), 3)} = ${tn(T(FR), 3)}\ \mathrm{tf}`);
     m.row("Fuerza deslizante F<sub>D</sub>", `${fmt(T(FD), 3)} tf`);
@@ -645,7 +645,7 @@ function verificar(d, m) {
     }
     const dcT = c.smax / sadm;
     m.row(`σ<sub>adm</sub> = σ<sub>u</sub>/FS = ${fmt(d.su, 2)}/${fmt(fsT, 2)}`, `${fmt(S(sadm), 2)} tf/m² ${tagDC(dcT)}`);
-    m.eq(L`\sigma_{adm} = \frac{\sigma_u}{FS} = \frac{${tn(S(d.su), 1)}}{${tn(fsT, 2)}} = ${tn(S(sadm), 2)}\ \mathrm{tf/m^2} \qquad \frac{\sigma_{m\acute{a}x}}{\sigma_{adm}} = \frac{${tn(S(c.smax), 2)}}{${tn(S(sadm), 2)}} = ${tn(dcT, 3)} ${dcT <= 1 ? LE : ">"} 1{,}0`);
+    m.eq(L`\sigma_{adm} = \frac{\sigma_u}{FS} = \frac{${tn(S(d.su), 1)}}{${tn(fsT, 2)}} = ${tn(S(sadm), 2)}\ \mathrm{tf/m^2} \qquad \frac{\sigma_{m\acute{a}x}}{\sigma_{adm}} = \frac{${tn(S(c.smax), 2)}}{${tn(S(sadm), 2)}} = ${tn(dcT, 3)} ${dcT <= 1 ? LE : ">"} 1.0`);
     ck(`Tensión de contacto${sufijo}`, L`$\sigma_{m\acute{a}x} = ${tn(S(c.smax), 2)}$ tf/m$^2$`, L`$\sigma_{adm} = ${tn(S(sadm), 2)}$ tf/m$^2$`, dcT, `Tensión de contacto${sufijo}`, "estab");
     let pc = 100;
     if (sufijo) {
@@ -671,9 +671,9 @@ function verificar(d, m) {
     m.h("Caso 2: empujes de tierra más sobrecarga más sismo");
     th = Math.atan(Csh / (1 - Csv)) / R;
     Kas = kasMO(d.phiR, delta, th);
-    m.row("Coeficientes sísmicos C<sub>sh</sub> = 0,5 A<sub>0</sub> ; C<sub>sv</sub> = 0,7 C<sub>sh</sub>", `${fmt(Csh, 3)} ; ${fmt(Csv, 3)}`);
+    m.row("Coeficientes sísmicos C<sub>sh</sub> = 0.5 A<sub>0</sub> ; C<sub>sv</sub> = 0.7 C<sub>sh</sub>", `${fmt(Csh, 3)} ; ${fmt(Csv, 3)}`);
     m.row("θ = arctan(C<sub>sh</sub>/(1 − C<sub>sv</sub>)) ; δ = 2φ<sub>r</sub>/3 ; ψ = 90° ; β = 0°", `${fmt(th, 3)}° ; ${fmt(delta, 3)}°`);
-    m.eq(L`C_{sh} = 0{,}5\,A_0 = 0{,}5\cdot ${tn(d.Ao, 2)} = ${tn(Csh, 3)} \qquad C_{sv} = 0{,}7\,C_{sh} = ${tn(Csv, 3)}`);
+    m.eq(L`C_{sh} = 0.5\,A_0 = 0.5\cdot ${tn(d.Ao, 2)} = ${tn(Csh, 3)} \qquad C_{sv} = 0.7\,C_{sh} = ${tn(Csv, 3)}`);
     m.eq(L`\theta = \arctan\frac{C_{sh}}{1 - C_{sv}} = \arctan\frac{${tn(Csh, 3)}}{1 - ${tn(Csv, 3)}} = ${tn(th, 3)}^\circ \qquad \delta = \tfrac{2}{3}\phi_r = ${tn(delta, 3)}^\circ`);
     if (!Number.isFinite(Kas)) {
       sinSismoMO = true;
@@ -687,7 +687,7 @@ function verificar(d, m) {
       dEq = d.q * H * (Kas - Ka) * (1 - Csv) * BW;
       m.row("ΔDE<sub>a</sub> = ½ γ<sub>r</sub> H² (K<sub>as</sub> − K<sub>a</sub>)(1 − C<sub>sv</sub>), a 2H/3", `${fmt(T(dEa), 3)} tf`);
       m.row("ΔDE<sub>q</sub> = q H (K<sub>as</sub> − K<sub>a</sub>)(1 − C<sub>sv</sub>), a H/2", `${fmt(T(dEq), 3)} tf`);
-      m.eq(L`\Delta DE_a = \tfrac{1}{2}\gamma_r H^2 (K_{as} - K_a)(1 - C_{sv}) = 0{,}5\cdot ${tn(d.gR * 1000, 2)}\cdot ${tn(M(H), 2)}^2\cdot(${tn(Kas, 4)} - ${tn(Ka, 4)})(1 - ${tn(Csv, 3)}) = ${tn(T(dEa), 3)}\ \mathrm{tf}`);
+      m.eq(L`\Delta DE_a = \tfrac{1}{2}\gamma_r H^2 (K_{as} - K_a)(1 - C_{sv}) = 0.5\cdot ${tn(d.gR * 1000, 2)}\cdot ${tn(M(H), 2)}^2\cdot(${tn(Kas, 4)} - ${tn(Ka, 4)})(1 - ${tn(Csv, 3)}) = ${tn(T(dEa), 3)}\ \mathrm{tf}`);
       m.eq(L`\Delta DE_q = q\,H\,(K_{as} - K_a)(1 - C_{sv}) = ${tn(S(d.q), 2)}\cdot ${tn(M(H), 2)}\cdot(${tn(Kas, 4)} - ${tn(Ka, 4)})(1 - ${tn(Csv, 3)}) = ${tn(T(dEq), 3)}\ \mathrm{tf}`);
       m.sub("Fuerzas inerciales");
       m.p(L`Las fuerzas inerciales son $F_i = C_{sh}\,W_i$ para el muro y la sobrecarga, y $F_i = C_{sh}\,W_i\,R_i$ para el relleno sobre el talón, con $R_i = ${tn(d.Ri, 2)}$ (Manual de Carreteras Vol. 3, lámina 3.1003.403(2)F).`);
@@ -706,25 +706,25 @@ function verificar(d, m) {
 
   // ---------- 5. Pantalla ----------
   m.h("Diseño de la pantalla");
-  m.p(L`La pantalla se diseña como un voladizo empotrado en la zapata; la sección crítica está en su base, con espesor $e_b$. Las cargas laterales del suelo se mayoran por 1,6 (ACI 318-08 9.2) y el sismo por 1,0.`);
+  m.p(L`La pantalla se diseña como un voladizo empotrado en la zapata; la sección crítica está en su base, con espesor $e_b$. Las cargas laterales del suelo se mayoran por 1.6 (ACI 318-08 9.2) y el sismo por 1.0.`);
   const Psm = 0.5 * Ka * d.gR * d.Hm * d.Hm * BW, Pqm = Ka * d.q * d.Hm * BW;
   const Vu1 = 1.6 * (Psm + Pqm), Mu1 = 1.6 * (Psm * d.Hm / 3 + Pqm * d.Hm / 2);
-  m.sub("Solicitaciones estáticas (1,6 H)");
+  m.sub("Solicitaciones estáticas (1.6 H)");
   m.row("P<sub>s</sub> = ½ K<sub>a</sub> γ<sub>r</sub> H<sub>m</sub>² ; P<sub>q</sub> = K<sub>a</sub> q H<sub>m</sub>", `${fmt(T(Psm), 3)} ; ${fmt(T(Pqm), 3)} tf`);
-  m.row("V<sub>u</sub> = 1,6 (P<sub>s</sub> + P<sub>q</sub>) ; M<sub>u</sub> = 1,6 (P<sub>s</sub> H<sub>m</sub>/3 + P<sub>q</sub> H<sub>m</sub>/2)", `${fmt(T(Vu1), 3)} tf ; ${fmt(TM(Mu1), 3)} tf·m`);
+  m.row("V<sub>u</sub> = 1.6 (P<sub>s</sub> + P<sub>q</sub>) ; M<sub>u</sub> = 1.6 (P<sub>s</sub> H<sub>m</sub>/3 + P<sub>q</sub> H<sub>m</sub>/2)", `${fmt(T(Vu1), 3)} tf ; ${fmt(TM(Mu1), 3)} tf·m`);
   m.eq(L`P_s = \tfrac{1}{2}K_a\gamma_r H_m^2 = ${tn(T(Psm), 3)}\ \mathrm{tf} \qquad P_q = K_a\,q\,H_m = ${tn(T(Pqm), 3)}\ \mathrm{tf}`);
-  m.eq(L`V_u = 1{,}6\,(P_s + P_q) = ${tn(T(Vu1), 3)}\ \mathrm{tf} \qquad M_u = 1{,}6\left(P_s\frac{H_m}{3} + P_q\frac{H_m}{2}\right) = ${tn(TM(Mu1), 3)}\ \mathrm{tf\,m}`);
+  m.eq(L`V_u = 1.6\,(P_s + P_q) = ${tn(T(Vu1), 3)}\ \mathrm{tf} \qquad M_u = 1.6\left(P_s\frac{H_m}{3} + P_q\frac{H_m}{2}\right) = ${tn(TM(Mu1), 3)}\ \mathrm{tf\,m}`);
   let VuP = Vu1, MuP = Mu1, govP = "estático";
   if (conSismo) {
-    m.sub("Solicitaciones sísmicas (1,6 H + 1,0 E)");
+    m.sub("Solicitaciones sísmicas (1.6 H + 1.0 E)");
     let Vu2, Mu2;
     if (d.critPant === "total") {
       const Pst = 1.6 * (Ps + Pq), Mst = 1.6 * (Ps * H / 3 + Pq * H / 2);
       Vu2 = Pst + dEa + dEq + F;
       Mu2 = Mst + dEa * 2 * H / 3 + dEq * H / 2 + MyS;
       m.p(L`Por simplicidad se toman las fuerzas totales sobre el muro: los empujes estáticos y sísmicos con la altura total $H$ y todas las fuerzas inerciales del muro, el relleno y la sobrecarga, con sus brazos desde la base de la zapata (criterio conservador).`);
-      m.eq(L`V_u = 1{,}6\,(P_s + P_q) + \Delta DE_a + \Delta DE_q + \sum F_i = 1{,}6\,(${tn(T(Ps), 3)} + ${tn(T(Pq), 3)}) + ${tn(T(dEa), 3)} + ${tn(T(dEq), 3)} + ${tn(T(F), 3)} = ${tn(T(Vu2), 3)}\ \mathrm{tf}`);
-      m.eq(L`M_u = 1{,}6\left(P_s\frac{H}{3} + P_q\frac{H}{2}\right) + \Delta DE_a\frac{2H}{3} + \Delta DE_q\frac{H}{2} + \sum F_i d_{y,i} = ${tn(TM(Mst), 3)} + ${tn(TM(dEa * 2 * H / 3), 3)} + ${tn(TM(dEq * H / 2), 3)} + ${tn(TM(MyS), 3)} = ${tn(TM(Mu2), 3)}\ \mathrm{tf\,m}`);
+      m.eq(L`V_u = 1.6\,(P_s + P_q) + \Delta DE_a + \Delta DE_q + \sum F_i = 1.6\,(${tn(T(Ps), 3)} + ${tn(T(Pq), 3)}) + ${tn(T(dEa), 3)} + ${tn(T(dEq), 3)} + ${tn(T(F), 3)} = ${tn(T(Vu2), 3)}\ \mathrm{tf}`);
+      m.eq(L`M_u = 1.6\left(P_s\frac{H}{3} + P_q\frac{H}{2}\right) + \Delta DE_a\frac{2H}{3} + \Delta DE_q\frac{H}{2} + \sum F_i d_{y,i} = ${tn(TM(Mst), 3)} + ${tn(TM(dEa * 2 * H / 3), 3)} + ${tn(TM(dEq * H / 2), 3)} + ${tn(TM(MyS), 3)} = ${tn(TM(Mu2), 3)}\ \mathrm{tf\,m}`);
     } else if (d.critPant === "curso") {
       Vu2 = Vu1 + dEa + dEq + F;
       Mu2 = Mu1 + dEa * 2 * H / 3 + dEq * H / 2 + MyS;
@@ -751,25 +751,25 @@ function verificar(d, m) {
   const fP = flexion(MuP, d.eb, d.dbP, d);
   memoFlexion(m, fP, d, "cara del relleno");
   ck("Pantalla: flexión", L`$M_u = ${tn(TM(MuP), 2)}$ tf m`, L`$\phi M_n = ${tn(TM(fP.phiMn), 2)}$ tf m`, fP.dc, "Pantalla: flexión", "hor");
-  if (!fP.insuf) ck("Pantalla: deformación $\\varepsilon_t$", L`$\varepsilon_t = ${tn(fP.et, 4)}$`, L`$\varepsilon_{t,m\acute{i}n} = 0{,}004$`, fP.dcEt, "Pantalla: ε<sub>t</sub> mínima", "hor");
+  if (!fP.insuf) ck("Pantalla: deformación $\\varepsilon_t$", L`$\varepsilon_t = ${tn(fP.et, 4)}$`, L`$\varepsilon_{t,m\acute{i}n} = 0.004$`, fP.dcEt, "Pantalla: ε<sub>t</sub> mínima", "hor");
   m.sub("Corte en la base de la pantalla");
   const cP = memoCorte(m, VuP, fP.d, d);
   ck("Pantalla: corte", L`$V_u = ${tn(T(VuP), 2)}$ tf`, L`$\phi V_c = ${tn(T(PHI_V * cP.Vc), 2)}$ tf`, cP.dc, "Pantalla: corte", "hor");
   m.sub("Armaduras mínimas de la pantalla");
   const dPc = d.eb - d.rec - d.dbPc / 2;
   const aPc = minima(RHO_MIN_C, d.eb, dPc, d.dbPc);
-  const rhoH = d.dbH > 1.6 + 1e-9 ? 0.00125 : RHO_H;   // ACI 318-08 14.3.3: 0,0025 con barras mayores que φ16
+  const rhoH = d.dbH > 1.6 + 1e-9 ? 0.00125 : RHO_H;   // ACI 318-08 14.3.3: 0.0025 con barras mayores que φ16
   const aH = minima(rhoH, d.eb, d.eb, d.dbH);
-  m.row(`Vertical cara exterior: 0,0015 · b · d' = 0,0015 · 100 · ${fmt(dPc, 1)}`, `${fmt(aPc.As, 2)} cm²/m → <b>${barra(d.dbPc, aPc.s)}</b>`, "criterio del curso");
+  m.row(`Vertical cara exterior: 0.0015 · b · d' = 0.0015 · 100 · ${fmt(dPc, 1)}`, `${fmt(aPc.As, 2)} cm²/m → <b>${barra(d.dbPc, aPc.s)}</b>`, "criterio del curso");
   m.row(`Horizontal, por cara: ${fmt(rhoH, rhoH === RHO_H ? 3 : 5)} · b · e<sub>b</sub> = ${fmt(rhoH, rhoH === RHO_H ? 3 : 5)} · 100 · ${fmt(d.eb, 1)}`, `${fmt(aH.As, 2)} cm²/m → <b>${barra(d.dbH, aH.s)}</b> en cada cara`, rhoH === RHO_H ? "criterio del curso" : "ACI 318-08 14.3.3");
-  if (rhoH !== RHO_H) m.note("Con barras horizontales mayores que φ16, el ACI 318-08 14.3.3 exige una cuantía total de 0,0025 (0,00125 por cara).", L`Con barras horizontales mayores que $\phi$16, el ACI 318-08 14.3.3 exige una cuantía total de 0,0025 (0,00125 por cara).`);
-  m.eq(L`A'_s = 0{,}0015\,b\,d' = 0{,}0015\cdot 100\cdot ${tn(dPc, 1)} = ${tn(aPc.As, 2)}\ \mathrm{cm^2/m} \;\Rightarrow\; s = ${tn(aPc.s, 1)}\ \mathrm{cm}`);
+  if (rhoH !== RHO_H) m.note("Con barras horizontales mayores que φ16, el ACI 318-08 14.3.3 exige una cuantía total de 0.0025 (0.00125 por cara).", L`Con barras horizontales mayores que $\phi$16, el ACI 318-08 14.3.3 exige una cuantía total de 0.0025 (0.00125 por cara).`);
+  m.eq(L`A'_s = 0.0015\,b\,d' = 0.0015\cdot 100\cdot ${tn(dPc, 1)} = ${tn(aPc.As, 2)}\ \mathrm{cm^2/m} \;\Rightarrow\; s = ${tn(aPc.s, 1)}\ \mathrm{cm}`);
   m.eq(L`A_{s,h} = ${tn(rhoH, rhoH === RHO_H ? 3 : 5)}\,b\,e_b = ${tn(rhoH, rhoH === RHO_H ? 3 : 5)}\cdot 100\cdot ${tn(d.eb, 1)} = ${tn(aH.As, 2)}\ \mathrm{cm^2/m\ por\ cara} \;\Rightarrow\; s = ${tn(aH.s, 1)}\ \mathrm{cm}`);
   m.p(L`Como el espesor de la pantalla es variable, la armadura horizontal se calcula con el espesor de la base (del lado seguro); puede reducirse por tramos con el espesor de cada tramo.`, true);
 
   // ---------- 6. Pie ----------
   m.h("Diseño de la zapata: pie (puntera)");
-  m.p(L`Cálculo simplificado del curso: la presión de servicio del suelo bajo el pie se mayora por 1,6 en el caso estático y por un factor ponderado en el caso sísmico. El peso propio del pie, que se opone, se mayora por 0,9 (ACI 318-08 9.2) y el suelo sobre el pie se desprecia (del lado seguro). La sección crítica de flexión está en la cara de la pantalla y la de corte a una distancia $d$ de ella (ACI 318-08 15.5.2 y 11.11.1.1).`);
+  m.p(L`Cálculo simplificado del curso: la presión de servicio del suelo bajo el pie se mayora por 1.6 en el caso estático y por un factor ponderado en el caso sísmico. El peso propio del pie, que se opone, se mayora por 0.9 (ACI 318-08 9.2) y el suelo sobre el pie se desprecia (del lado seguro). La sección crítica de flexión está en la cara de la pantalla y la de corte a una distancia $d$ de ella (ACI 318-08 15.5.2 y 11.11.1.1).`);
   const Wpie = d.Hf * d.Bp * d.gH * BW;
   const dPie = d.Hf - d.rec - d.dbZp / 2, xv = Math.max(0, d.Bp - dPie);
   const pieCaso = (c, U, nom, Ufmt) => {
@@ -778,21 +778,21 @@ function verificar(d, m) {
     const Wv = d.Hf * xv * d.gH * BW;
     const Mu = U * pr.M - 0.9 * Wpie * d.Bp / 2, Vu = Math.max(0, U * pv.F - 0.9 * Wv);
     m.row(`${nom}: presión en la punta y en la cara (servicio)`, `${fmt(S(c.p(0)), 2)} ; ${fmt(S(c.p(d.Bp)), 2)} tf/m²`);
-    m.row(`${nom}: momento de la presión en la cara M<sub>R</sub> ; M<sub>u</sub> = U·M<sub>R</sub> − 0,9 W<sub>pie</sub> B<sub>p</sub>/2 (U = ${fmt(U, 3)})`, `${fmt(TM(pr.M), 3)} ; ${fmt(TM(Mu), 3)} tf·m`);
-    m.row(`${nom}: corte a d = ${fmt(dPie, 1)} cm de la cara: V<sub>u</sub> = U·R<sub>d</sub> − 0,9 W<sub>d</sub>`, `${fmt(T(Vu), 3)} tf`);
-    m.eq(L`M_u = ${Ufmt}\cdot ${tn(TM(pr.M), 3)} - 0{,}9\cdot ${tn(T(Wpie), 3)}\cdot\frac{${tn(M(d.Bp), 2)}}{2} = ${tn(TM(Mu), 3)}\ \mathrm{tf\,m}`);
-    m.eq(L`V_u = ${Ufmt}\cdot ${tn(T(pv.F), 3)} - 0{,}9\cdot ${tn(T(Wv), 3)} = ${tn(T(Vu), 3)}\ \mathrm{tf} \quad (\text{tramo de } ${tn(M(xv), 3)}\ \mathrm{m\ desde\ la\ punta})`, "ACI 318-08 15.5.2");
+    m.row(`${nom}: momento de la presión en la cara M<sub>R</sub> ; M<sub>u</sub> = U·M<sub>R</sub> − 0.9 W<sub>pie</sub> B<sub>p</sub>/2 (U = ${fmt(U, 3)})`, `${fmt(TM(pr.M), 3)} ; ${fmt(TM(Mu), 3)} tf·m`);
+    m.row(`${nom}: corte a d = ${fmt(dPie, 1)} cm de la cara: V<sub>u</sub> = U·R<sub>d</sub> − 0.9 W<sub>d</sub>`, `${fmt(T(Vu), 3)} tf`);
+    m.eq(L`M_u = ${Ufmt}\cdot ${tn(TM(pr.M), 3)} - 0.9\cdot ${tn(T(Wpie), 3)}\cdot\frac{${tn(M(d.Bp), 2)}}{2} = ${tn(TM(Mu), 3)}\ \mathrm{tf\,m}`);
+    m.eq(L`V_u = ${Ufmt}\cdot ${tn(T(pv.F), 3)} - 0.9\cdot ${tn(T(Wv), 3)} = ${tn(T(Vu), 3)}\ \mathrm{tf} \quad (\text{tramo de } ${tn(M(xv), 3)}\ \mathrm{m\ desde\ la\ punta})`, "ACI 318-08 15.5.2");
     return { Vu, Mu };
   };
   m.row("Peso propio del pie W<sub>pie</sub> = H<sub>f</sub> B<sub>p</sub> γ<sub>h</sub>", `${fmt(T(Wpie), 3)} tf`);
   let pie = { Vu: 0, Mu: 0 }, govPie = "estático";
   if (d.Bp > 0) {
-    pie = pieCaso(e1.c, 1.6, "Estático", "1{,}6");
+    pie = pieCaso(e1.c, 1.6, "Estático", "1.6");
     if (conSismo && e2) {
       const nU = 1.6 * (Ps + Pq) + dEa + dEq + F, den = Ps + Pq + dEa + dEq + F;
       const U = nU / den;
-      m.row("Factor ponderado sísmico U = [1,6 (P<sub>s</sub> + P<sub>q</sub>) + ΔDE<sub>a</sub> + ΔDE<sub>q</sub> + ΣF<sub>i</sub>] / ΣH", fmt(U, 3));
-      m.eq(L`U = \frac{1{,}6\,(P_s + P_q) + 1{,}0\,(\Delta DE_a + \Delta DE_q + \sum F_i)}{P_s + P_q + \Delta DE_a + \Delta DE_q + \sum F_i} = \frac{${tn(T(nU), 3)}}{${tn(T(den), 3)}} = ${tn(U, 3)}`);
+      m.row("Factor ponderado sísmico U = [1.6 (P<sub>s</sub> + P<sub>q</sub>) + ΔDE<sub>a</sub> + ΔDE<sub>q</sub> + ΣF<sub>i</sub>] / ΣH", fmt(U, 3));
+      m.eq(L`U = \frac{1.6\,(P_s + P_q) + 1.0\,(\Delta DE_a + \Delta DE_q + \sum F_i)}{P_s + P_q + \Delta DE_a + \Delta DE_q + \sum F_i} = \frac{${tn(T(nU), 3)}}{${tn(T(den), 3)}} = ${tn(U, 3)}`);
       const p2 = pieCaso(e2.c, U, "Sísmico", tn(U, 3));
       if (p2.Mu > pie.Mu) govPie = "sísmico";
       pie = { Vu: Math.max(pie.Vu, p2.Vu), Mu: Math.max(pie.Mu, p2.Mu) };
@@ -807,7 +807,7 @@ function verificar(d, m) {
     m.sub(`Armadura inferior del pie (controla el caso ${govPie})`);
     memoFlexion(m, fPie, d, "cara inferior");
     ck("Pie: flexión", L`$M_u = ${tn(TM(pie.Mu), 2)}$ tf m`, L`$\phi M_n = ${tn(TM(fPie.phiMn), 2)}$ tf m`, fPie.dc, "Pie: flexión", "hor");
-    if (!fPie.insuf) ck("Pie: deformación $\\varepsilon_t$", L`$\varepsilon_t = ${tn(fPie.et, 4)}$`, L`$\varepsilon_{t,m\acute{i}n} = 0{,}004$`, fPie.dcEt, "Pie: ε<sub>t</sub> mínima", "hor");
+    if (!fPie.insuf) ck("Pie: deformación $\\varepsilon_t$", L`$\varepsilon_t = ${tn(fPie.et, 4)}$`, L`$\varepsilon_{t,m\acute{i}n} = 0.004$`, fPie.dcEt, "Pie: ε<sub>t</sub> mínima", "hor");
     m.sub("Corte en el pie");
     const cPie = memoCorte(m, Math.max(0, pie.Vu), fPie.d, d);
     ck("Pie: corte", L`$V_u = ${tn(T(Math.max(0, pie.Vu)), 2)}$ tf`, L`$\phi V_c = ${tn(T(PHI_V * cPie.Vc), 2)}$ tf`, cPie.dc, "Pie: corte", "hor");
@@ -815,16 +815,16 @@ function verificar(d, m) {
 
   // ---------- 7. Talón ----------
   m.h("Diseño de la zapata: talón");
-  m.p(L`Cálculo simplificado del curso: se desprecia la reacción del suelo bajo el talón (del lado seguro) y se consideran el peso propio del talón y del relleno mayorados por 1,2 y la sobrecarga por 1,6. ${d.talSis === "csv" ? L`En el caso sísmico (1,2 D + 1,0 E + 1,0 L) el peso se amplifica por $1{,}2 + C_{sv}$ para considerar el sismo vertical.` : L`En el caso sísmico se usa la misma combinación (1,2 D + 1,6 L), sin sismo vertical.`} Las secciones críticas de flexión y de corte están en la cara del trasdós.`);
+  m.p(L`Cálculo simplificado del curso: se desprecia la reacción del suelo bajo el talón (del lado seguro) y se consideran el peso propio del talón y del relleno mayorados por 1.2 y la sobrecarga por 1.6. ${d.talSis === "csv" ? L`En el caso sísmico (1.2 D + 1.0 E + 1.0 L) el peso se amplifica por $1.2 + C_{sv}$ para considerar el sismo vertical.` : L`En el caso sísmico se usa la misma combinación (1.2 D + 1.6 L), sin sismo vertical.`} Las secciones críticas de flexión y de corte están en la cara del trasdós.`);
   const Wt = d.Hf * d.Bt * d.gH * BW, Wr = d.Bt * d.Hm * d.gR * BW, Wq = d.q * d.Bt * BW;
   const Vt1 = 1.2 * (Wt + Wr) + 1.6 * Wq, Vt2 = conSismo && d.talSis === "csv" ? (1.2 + Csv) * (Wt + Wr) + 1.0 * Wq : 0;
   const tal = { Vu: Math.max(Vt1, Vt2), Mu: Math.max(Vt1, Vt2) * d.Bt / 2 };
   m.row("W<sub>talón</sub> ; W<sub>relleno</sub> ; W<sub>q</sub> = q B<sub>t</sub>", `${fmt(T(Wt), 3)} ; ${fmt(T(Wr), 3)} ; ${fmt(T(Wq), 3)} tf`);
-  m.row("Estático: V<sub>u</sub> = 1,2 (W<sub>t</sub> + W<sub>r</sub>) + 1,6 W<sub>q</sub>", `${fmt(T(Vt1), 3)} tf`);
-  m.eq(L`V_u = 1{,}2\,(${tn(T(Wt), 3)} + ${tn(T(Wr), 3)}) + 1{,}6\cdot ${tn(T(Wq), 3)} = ${tn(T(Vt1), 3)}\ \mathrm{tf}`);
+  m.row("Estático: V<sub>u</sub> = 1.2 (W<sub>t</sub> + W<sub>r</sub>) + 1.6 W<sub>q</sub>", `${fmt(T(Vt1), 3)} tf`);
+  m.eq(L`V_u = 1.2\,(${tn(T(Wt), 3)} + ${tn(T(Wr), 3)}) + 1.6\cdot ${tn(T(Wq), 3)} = ${tn(T(Vt1), 3)}\ \mathrm{tf}`);
   if (conSismo && d.talSis === "csv") {
-    m.row("Sísmico: V<sub>u</sub> = (1,2 + C<sub>sv</sub>)(W<sub>t</sub> + W<sub>r</sub>) + 1,0 W<sub>q</sub>", `${fmt(T(Vt2), 3)} tf`);
-    m.eq(L`V_u = (1{,}2 + ${tn(Csv, 3)})(${tn(T(Wt), 3)} + ${tn(T(Wr), 3)}) + 1{,}0\cdot ${tn(T(Wq), 3)} = ${tn(T(Vt2), 3)}\ \mathrm{tf}`);
+    m.row("Sísmico: V<sub>u</sub> = (1.2 + C<sub>sv</sub>)(W<sub>t</sub> + W<sub>r</sub>) + 1.0 W<sub>q</sub>", `${fmt(T(Vt2), 3)} tf`);
+    m.eq(L`V_u = (1.2 + ${tn(Csv, 3)})(${tn(T(Wt), 3)} + ${tn(T(Wr), 3)}) + 1.0\cdot ${tn(T(Wq), 3)} = ${tn(T(Vt2), 3)}\ \mathrm{tf}`);
   }
   m.row("Cargas uniformes: M<sub>u</sub> = V<sub>u</sub> · B<sub>t</sub>/2", `${fmt(TM(tal.Mu), 3)} tf·m`);
   m.eq(L`M_u = V_u\,\frac{B_t}{2} = ${tn(T(tal.Vu), 3)}\cdot\frac{${tn(M(d.Bt), 2)}}{2} = ${tn(TM(tal.Mu), 3)}\ \mathrm{tf\,m}`);
@@ -833,7 +833,7 @@ function verificar(d, m) {
     m.sub(`Armadura superior del talón (controla el caso ${Vt2 > Vt1 ? "sísmico" : "estático"})`);
     memoFlexion(m, fTal, d, "cara superior");
     ck("Talón: flexión", L`$M_u = ${tn(TM(tal.Mu), 2)}$ tf m`, L`$\phi M_n = ${tn(TM(fTal.phiMn), 2)}$ tf m`, fTal.dc, "Talón: flexión", "hor");
-    if (!fTal.insuf) ck("Talón: deformación $\\varepsilon_t$", L`$\varepsilon_t = ${tn(fTal.et, 4)}$`, L`$\varepsilon_{t,m\acute{i}n} = 0{,}004$`, fTal.dcEt, "Talón: ε<sub>t</sub> mínima", "hor");
+    if (!fTal.insuf) ck("Talón: deformación $\\varepsilon_t$", L`$\varepsilon_t = ${tn(fTal.et, 4)}$`, L`$\varepsilon_{t,m\acute{i}n} = 0.004$`, fTal.dcEt, "Talón: ε<sub>t</sub> mínima", "hor");
     m.sub("Corte en el talón");
     const VuT = tal.Vu;
     m.p(L`El corte del talón se verifica en la cara del trasdós y no a una distancia $d$: la carga del talón cuelga de la pantalla y la reacción no introduce compresión en esa zona (ACI 318-08 11.1.3.1 y su comentario).`);
@@ -844,9 +844,9 @@ function verificar(d, m) {
   m.sub("Armaduras mínimas de la zapata");
   const dZr = Hf - d.rec - d.dbZr / 2;
   const aZc = minima(RHO_MIN_C, Hf, dZr, d.dbZr), aZl = minima(RHO_H, Hf, Hf, d.dbZr);
-  m.row(`Transversal en la cara opuesta: 0,0015 · b · d = 0,0015 · 100 · ${fmt(dZr, 1)}`, `${fmt(aZc.As, 2)} cm²/m → <b>${barra(d.dbZr, aZc.s)}</b>`, "criterio del curso");
-  m.row(`Longitudinal (repartición), por cara: 0,001 · b · H<sub>f</sub>`, `${fmt(aZl.As, 2)} cm²/m → <b>${barra(d.dbZr, aZl.s)}</b> en cada cara`, "criterio del curso");
-  m.eq(L`A'_s = 0{,}0015\,b\,d = ${tn(aZc.As, 2)}\ \mathrm{cm^2/m} \;\Rightarrow\; s = ${tn(aZc.s, 1)}\ \mathrm{cm} \qquad A_{s,l} = 0{,}001\,b\,H_f = ${tn(aZl.As, 2)}\ \mathrm{cm^2/m} \;\Rightarrow\; s = ${tn(aZl.s, 1)}\ \mathrm{cm}`);
+  m.row(`Transversal en la cara opuesta: 0.0015 · b · d = 0.0015 · 100 · ${fmt(dZr, 1)}`, `${fmt(aZc.As, 2)} cm²/m → <b>${barra(d.dbZr, aZc.s)}</b>`, "criterio del curso");
+  m.row(`Longitudinal (repartición), por cara: 0.001 · b · H<sub>f</sub>`, `${fmt(aZl.As, 2)} cm²/m → <b>${barra(d.dbZr, aZl.s)}</b> en cada cara`, "criterio del curso");
+  m.eq(L`A'_s = 0.0015\,b\,d = ${tn(aZc.As, 2)}\ \mathrm{cm^2/m} \;\Rightarrow\; s = ${tn(aZc.s, 1)}\ \mathrm{cm} \qquad A_{s,l} = 0.001\,b\,H_f = ${tn(aZl.As, 2)}\ \mathrm{cm^2/m} \;\Rightarrow\; s = ${tn(aZl.s, 1)}\ \mathrm{cm}`);
 
   const dcMax = Math.max(...checks.map(c => c.dc));
   const ok = dcMax <= 1 + 1e-9 && sinVerificar.length === 0;
@@ -995,7 +995,7 @@ class Dxf {
     const txt = c.join("\r\n") + "\r\n";
     // La fuente txt.shx no trae algunos símbolos: se reemplazan (φ se escribe %%c, el símbolo de diámetro)
     const map = { "—": "-", "–": "-", "≤": "<=", "≥": ">=", "φ": "%%c", "Δ": "Delta", "→": "->", "·": "-", "²": "2", "³": "3", "×": "x", "γ": "gamma" };
-    const limpio = txt.replace(/[—–≤≥φΔ→·²³×γ]/g, (ch) => map[ch]).replace(/[^\x00-\xff]/g, "?");
+    const limpio = txt.replace(/\u00a0/g, " ").replace(/[—–≤≥φΔ→·²³×γ]/g, (ch) => map[ch]).replace(/[^\x00-\xff]/g, "?");
     return Uint8Array.from(limpio, (ch) => ch.charCodeAt(0));
   }
 }
@@ -1007,7 +1007,7 @@ function generarDXF() {
   const B = r.B * K, H = r.H * K, Hf = d.Hf * K, Hm = d.Hm * K, Bp = d.Bp * K, eb = d.eb * K, ec = d.ec * K, Bt = d.Bt * K;
   const xs = Bp + eb, rec = d.rec * K, Df = d.Df * K, bd = d.bd * K, hd = d.bd > 0 && d.hd > 0 ? d.hd * K : 0, xd = d.xd * K;
   const th = Math.min(120, Math.max(25, Math.round(Math.max(B, H) / 75 / 5) * 5));   // altura de texto [mm]
-  const n0 = (v) => fmt(v, 0).replace(/\./g, "");
+  const n0 = (v) => fmt(v, 0).replace(/\u00a0/g, "");
   const bTxt = ([db, s]) => `%%c${fmt(db * 10, 0)}@${fmt(s, s % 1 ? 1 : 0)}`;
   const cota = (x1, y1, x2, y2, txt, vertical = false) => {
     dx.line("COTAS", x1, y1, x2, y2);
@@ -1115,7 +1115,7 @@ function generarDXF() {
   y -= th * 1.8;
   for (const [ubic, a] of r.arm.tex) {
     dx.text("TEXTOS", x0, y, th * 0.8, ubic.replace(/ó/g, "o").replace(/á/g, "a"));
-    dx.text("TEXTOS", x0 + th * 30, y, th * 0.8, a.replace(/\$\\phi\$/g, "%%c").replace(/\{,\}/g, ",").replace(/\\,/g, "").replace(/ @ /, "@").replace(/ cm$/, ""));
+    dx.text("TEXTOS", x0 + th * 30, y, th * 0.8, a.replace(/\$\\phi\$/g, "%%c").replace(/\{,\}/g, ".").replace(/\\,/g, "").replace(/ @ /, "@").replace(/ cm$/, ""));
     y -= th * 1.4;
   }
   y -= th * 1.4;
@@ -1135,7 +1135,7 @@ function generarDXF() {
 }
 function descargarDXF() {
   if (!ultimoR) { alert("Corrija los datos inválidos antes de descargar el plano."); return; }
-  descargarBlob(new Blob([generarDXF()], { type: "application/dxf" }), `plano_muro_contencion_H${fmt(ultimoR.H / 100, 2).replace(",", "-")}m.dxf`);
+  descargarBlob(new Blob([generarDXF()], { type: "application/dxf" }), `plano_muro_contencion_H${fmt(ultimoR.H / 100, 2).replace(".", "-")}m.dxf`);
 }
 
 // ---------------------------------------------------------------------------
@@ -1161,12 +1161,12 @@ function documentoTex(d, r, cuerpo) {
   const alcance = [
     L`Se sigue el procedimiento del curso Diseño de Proyectos de Ingeniería para muros de contención en voladizo: análisis por metro de muro, empujes de Rankine en la condición estática y de Mononobe-Okabe en la sísmica.`,
     L`El relleno es horizontal ($\beta = 0$), el trasdós vertical ($\psi = 90^\circ$) y el relleno granular sin cohesión. Se supone que existe drenaje, por lo que no se considera presión de agua.`,
-    d.Ao > 0 ? L`Los coeficientes sísmicos son $C_{sh} = 0{,}5\,A_0$ y $C_{sv} = 0{,}7\,C_{sh}$; el incremento dinámico del relleno se aplica a $2H/3$ y el de la sobrecarga a $H/2$. La componente vertical no se descuenta del peso estabilizante.` : L`No se considera la condición sísmica.`,
+    d.Ao > 0 ? L`Los coeficientes sísmicos son $C_{sh} = 0.5\,A_0$ y $C_{sv} = 0.7\,C_{sh}$; el incremento dinámico del relleno se aplica a $2H/3$ y el de la sobrecarga a $H/2$. La componente vertical no se descuenta del peso estabilizante.` : L`No se considera la condición sísmica.`,
     d.pasivo === "dentellon" ? L`El empuje pasivo se considera solo en el dentellón; el de la puntera se desprecia.` : d.pasivo === "total" ? L`El empuje pasivo se considera desde la superficie del terreno frente al muro hasta la base del dentellón (o de la zapata).` : L`No se considera empuje pasivo.`,
     L`El empuje pasivo no se incluye en el momento resistente al volcamiento.`,
     d.qEstab ? L`La sobrecarga sobre el talón se suma al peso estabilizante, como en el ejemplo del curso; el criterio más conservador es no considerarla.` : L`La sobrecarga sobre el talón no se suma al peso estabilizante (criterio conservador).`,
-    L`El diseño en hormigón armado sigue el ACI 318-08 con las cuantías mínimas del curso: 0,0018 $b\,d$ en la armadura principal, 0,0015 $b\,d$ en la cara opuesta y 0,001 $b\,h$ por cara en la armadura de repartición (0,00125 con barras mayores que $\phi$16, ACI 318-08 14.3.3). El curso aplica la cuantía mínima sobre $b\,d$, mientras que el ACI 318-08 (7.12.2.1) la expresa sobre $b\,h$.`,
-    L`La armadura de tracción debe alcanzar $\varepsilon_t \ge 0{,}004$ (ACI 318-08 10.3.5) y el factor $\phi$ de flexión se obtiene de $\varepsilon_t$ (9.3.2); el límite de $0{,}75\,\rho_b$ de versiones anteriores del ACI no es suficiente.`,
+    L`El diseño en hormigón armado sigue el ACI 318-08 con las cuantías mínimas del curso: 0.0018 $b\,d$ en la armadura principal, 0.0015 $b\,d$ en la cara opuesta y 0.001 $b\,h$ por cara en la armadura de repartición (0.00125 con barras mayores que $\phi$16, ACI 318-08 14.3.3). El curso aplica la cuantía mínima sobre $b\,d$, mientras que el ACI 318-08 (7.12.2.1) la expresa sobre $b\,h$.`,
+    L`La armadura de tracción debe alcanzar $\varepsilon_t \ge 0.004$ (ACI 318-08 10.3.5) y el factor $\phi$ de flexión se obtiene de $\varepsilon_t$ (9.3.2); el límite de $0.75\,\rho_b$ de versiones anteriores del ACI no es suficiente.`,
     L`El empuje pasivo, cuando se considera, se toma completo, sin factor de reducción.`,
     L`En la condición estática, que la resultante caiga en el tercio central se informa como recomendación y no como verificación.`,
     L`El dentellón no se diseña (armadura ni resistencia al empuje pasivo); solo se considera su peso y su aporte de empuje pasivo.`,
@@ -1259,7 +1259,7 @@ ${armT}
 
 ${r.sinVerificar.length
     ? L`El muro \textbf{queda sin verificar}: ${texTxt(r.sinVerificar.join("; ")).replace(/φ_r/g, "$\\phi_r$").replace(/θ/g, "$\\theta$").replace(/≤/g, "$\\le$")}.`
-    : L`Por lo tanto, como la relación demanda-capacidad máxima es $D/C = ${tn(r.dcMax, 3)}$ ${r.dcMax <= 1 ? L`$\le 1{,}0$` : L`$> 1{,}0$`}, el muro \textbf{${r.ok ? "cumple" : "no cumple"}} con las verificaciones indicadas.`}
+    : L`Por lo tanto, como la relación demanda-capacidad máxima es $D/C = ${tn(r.dcMax, 3)}$ ${r.dcMax <= 1 ? L`$\le 1.0$` : L`$> 1.0$`}, el muro \textbf{${r.ok ? "cumple" : "no cumple"}} con las verificaciones indicadas.`}
 
 \end{document}
 `;
@@ -1314,7 +1314,7 @@ function calcular() {
 
   ultimoR = r; ultimoD = d;
   ultimoTex = documentoTex(d, r, m.texto());
-  ultimoNombre = `memoria_muro_contencion_H${fmt(M(r.H), 2).replace(",", "_")}.tex`;
+  ultimoNombre = `memoria_muro_contencion_H${fmt(M(r.H), 2).replace(".", "_")}.tex`;
 }
 
 // ---------------------------------------------------------------------------
@@ -1342,7 +1342,7 @@ function descargarDXFLamina() {
       v.line("NIVELES", xs, H, B + 600, H);
       v.text("TEXTOS", B + v.pp(2), H + v.pp(2), 2, "Relleno compactado", 0, 0);
       if (Df > 0) v.text("TEXTOS", -600, Df + v.pp(1.5), 2, "Terreno natural");
-      v.nivel(xs + v.pp(8), H, `+${fmt(M(r.H), 2)}`); v.nivel(B + v.pp(12), 0, "+0,00 (sello fundación)");
+      v.nivel(xs + v.pp(8), H, `+${fmt(M(r.H), 2)}`); v.nivel(B + v.pp(12), 0, "+0.00 (sello fundación)");
       // Pantalla: vertical cara del relleno con pata en la zapata, vertical cara exterior y horizontales (puntos)
       const xP = xs - rec - dbP / 2;
       v.poly("ARMADURA", [[xP, H - rec], [xP, rec + dbZp + dbP / 2], [Math.min(B - rec, xP + 12 * dbP + 150), rec + dbZp + dbP / 2]], false);
@@ -1414,7 +1414,7 @@ function descargarDXFLamina() {
     "Drenaje: material drenante de 30 cm tras la pantalla y barbacanas ø75 mm cada 2 m en horizontal (recomendación; ajustar según el estudio de suelos). Juntas de dilatación según el proyecto de arquitectura.",
     "Hormigonado, vibrado y curado según NCh 170. Sello de fundación limpio y compactado, aprobado por el mecánico de suelos antes de hormigonar.",
   ]);
-  descargarPlano(pl, `plano_muro_contencion_H${fmt(M(r.H), 2).replace(",", "_")}_lamina.dxf`);
+  descargarPlano(pl, `plano_muro_contencion_H${fmt(M(r.H), 2).replace(".", "_")}_lamina.dxf`);
 }
 
 function init() {
@@ -1481,7 +1481,7 @@ window.AURA_MEMO = {
   recalcular: () => calcular(),
 };
 </script>
-<script src="proyectos.js?v=34"></script>
+<script src="proyectos.js?v=36"></script>
 <script>
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
 </script>

@@ -61,7 +61,7 @@ function texUnicode(doc) {
   // babel-spanish redefine \% y falla con el espacio fino previo ("\,\%" → Incompatible glue units);
   // el propio babel ya agrega el espacio antes del signo
   doc = doc.replace(/\\,\\%/g, "\\%");
-  // Memorias con punto como separador decimal: "12{,}5" → "12.5" (los miles quedan con espacio fino "\,")
+  // Elementos guardados con la coma anterior: "12{,}5" → "12.5" (los miles quedan con espacio fino "\,")
   doc = doc.replace(/\{,\}/g, ".");
   const usados = Object.keys(TEX_UNICODE).filter((c) => doc.includes(String.fromCodePoint(parseInt(c, 16))));
   if (!usados.length) return doc;
@@ -143,7 +143,7 @@ function texParrafo(s) {
     if (p.startsWith("$") && p.length > 1) return `<span class="km" data-tex="${encodeURIComponent(p.slice(1, -1))}"></span>`;
     return p.replace(/&/g, "&amp;").replace(/</g, "&lt;")
       .replace(/\\textbf\{([^}]*)\}/g, "<b>$1</b>").replace(/\\textit\{([^}]*)\}/g, "<i>$1</i>")
-      .replace(/\\%/g, "%").replace(/\{,\}/g, ",").replace(/\\,/g, " ").replace(/\\ /g, " ")
+      .replace(/\\%/g, "%").replace(/\{,\}/g, ".").replace(/\\,/g, " ").replace(/\\ /g, " ")
       .replace(/---/g, "—").replace(/--/g, "–").replace(/~/g, " ");
   }).join("");
 }
@@ -462,6 +462,19 @@ const REFERENCIAS = [
   organization = {Instituto Nacional de Normalización (INN)},
   address      = {Santiago, Chile},
   year         = {2025}
+}` },
+  { clave: "cintacmanual", patron: /Manual Técnico(?: Instadeck)?/, bib: String.raw`@manual{cintacmanual,
+  title        = {{Manual Técnico Instadeck}},
+  organization = {Cintac},
+  address      = {Santiago, Chile},
+  month        = {noviembre},
+  year         = {2010}
+}` },
+  { clave: "cintacficha", patron: /Ficha Técnica/, bib: String.raw`@manual{cintacficha,
+  title        = {{Placas Colaborantes Instadeck. Ficha técnica}},
+  organization = {Cintac},
+  address      = {Santiago, Chile},
+  note         = {Sin fecha de edición; archivo PDF de 2019}
 }` },
   { clave: "aisc360", patron: /AISC\s?360(?:-16)?/, bib: String.raw`@manual{aisc360,
   title        = {{ANSI/AISC 360-16. Specification for Structural Steel Buildings}},

@@ -15,13 +15,13 @@ Todo el texto de la interfaz, las memorias y los commits va en **español (Chile
 - `modelo3d.js`: visor WebGL propio, sin dependencias, para modelos `.glb` sin texturas. Lo usan el inicio y el acceso con `modelos/torre.glb`.
   - `Geo3D.Escena`: geometría paramétrica en mm (`caja`, `extruir` de un contorno con `aPunto(u, v, w)`, `tubo`, `barra` por polilínea, `dobleT` con acuerdos) con colores por material (`Geo3D.MAT`: acero, hormigón, armadura, madera, MLE, OSB, placa, capas de pavimento; `critico` = naranja) y grupos que se pueden ocultar.
   - `Zona2D3D.montar({ antes, fuente2D, construir, observar, capas })`: zona "Vista del elemento" con la copia del dibujo 2D de la página y el modelo 3D (2D, 3D o ambos; vistas iso/frente/lado/planta, zoom, capas). Se actualiza sola con un `MutationObserver` sobre los resultados: no hay que tocar las funciones de cálculo. La copia 2D lleva `data-sin-figura` para no alterar las figuras de la memoria. La usan todas las páginas de cálculo menos espectros; cada una arma su modelo desde los resultados ya guardados (`ultimoViga`, `ultimoLosa`, `ultimoMadera`, `ultimoMLE`, `ultimoR`, `ultimoRes`, `ultimoD`, `ultimoPav`).
-  - Elementos verificados en naranja si no cumplen. Lo que la página no calcula se dibuja como referencial y se dice en el comentario (apoyos, placas base, cartelas, barras de traspaso a 300 mm, tramo de 1,5 m de la viga de hormigón y de 2 m del muro de contención).
+  - Elementos verificados en naranja si no cumplen. Lo que la página no calcula se dibuja como referencial y se dice en el comentario (apoyos, placas base, cartelas, barras de traspaso a 300 mm, tramo de 1.5 m de la viga de hormigón y de 2 m del muro de contención).
   - `window.AURA_3D()` entrega el PNG de la vista 3D visible; `descargarZipMemoria` (memo.js, `figura3D`) lo agrega al final de la memoria como "Modelo 3D del elemento".
   - El modelo es «Skyscraper Tower» de VertaScan (Sketchfab), licencia CC BY 4.0: el crédito bajo el visor es obligatorio.
   - No está en `ARCHIVOS` de `sw.js` (4,6 MB): se guarda en caché la primera vez que se abre con conexión.
 - `tablero.js`: presentación de resultados en las páginas de cálculo (solo pantalla; no toca cálculos, el texto del veredicto ni la memoria .tex). Reorganiza el DOM que ya dibuja cada página, observándolo:
   - botón "Plegar" en "Datos de entrada" (estado en `localStorage`);
-  - tablero: medidor con el D/C máximo leído de "razón máxima = X" o "D/C máximo = X" del veredicto, veredicto destacado y semáforo de las tarjetas del resumen tomado de su `.bar` (verde ≤ 0,9, ámbar ≤ 1, naranja > 1; tarjetas sin barra son informativas);
+  - tablero: medidor con el D/C máximo leído de "razón máxima = X" del veredicto (ámbar si dice SIN VERIFICAR), veredicto destacado y fijo y semáforo de las tarjetas del resumen tomado de su `.bar` (verde ≤ 0.9, ámbar ≤ 1, naranja > 1; tarjetas sin barra son informativas);
   - procedimiento (`.memo`) en tarjetas por `h3`, plegables, con estado según sus marcas `.tag` (toda `.tag.bad` es falla salvo las de `INFORMATIVAS`) e índice de chips fijo (se quita con la memoria vacía). El `h3` original encabeza la tarjeta y contiene su botón; al imprimir se ve como título. `prepararFiguras` (memo.js) despliega un instante las tarjetas plegadas para no perder figuras.
 - `icons/logo-mmp.webp`: logo MMP (fondo transparente; `aura.css` lo recorta al dibujo).
 - `dxf.js`: planos DXF compartidos (`PlanoDXF`, R12, mm, capas normalizadas `CAPAS_PLANO`). Lámina serie A (A3 a A0) con marco, margen de archivo y viñeta según NCh 13; escalas normalizadas elegidas por vista; la vista principal queda a tamaño real en el espacio modelo. La viñeta toma proyecto, mandante, calculista y oficina del proyecto activo. Lo usan acero, hormigón (viga y losa), madera (envigado, tabique, pilar y muro de corte), MLE, muro de contención (botón "Plano con lámina NCh 13") y espectros. Su clase se llama `DxfR12` para convivir con la clase `Dxf` propia de reticulada, placa y muro. **Pendiente:** muro.html tiene dos planos (`descargarDXF`, corte típico del equipo, y `descargarDXFLamina`, con lámina y viñeta); hay que elegir uno.
@@ -41,6 +41,7 @@ Todo el texto de la interfaz, las memorias y los commits va en **español (Chile
     - Plano DXF (`generarDXF()`, clase `Dxf`): R12 en Windows-1252, milímetros y por capas; elevación con ejes, contornos, numeración, apoyos y cotas; detalles de secciones ampliados a escala indicada; cuadro de barras con pesos; notas. No dibuja uniones.
     - Exporta el modelo a SAP2000 (`.s2k`, kgf-m, plano XZ, combinaciones NCh 3171 y envolvente ENV). Según la hipótesis, las cargas en kgf/m van como fuerzas en los nudos (todas las barras articuladas, dejando en cada nudo un solo extremo sin liberar para que sea estable) o distribuidas en el cordón superior. El encabezado sigue el formato de SAP2000 v26.
   - `placa.html`: losa con placa colaborante Instadeck 0,8 mm (Cintac).
+    - Fuentes citadas en la memoria (`REFERENCIAS` de `memo.js`): Manual Técnico Instadeck (noviembre 2010) y Ficha Técnica. Tablas I a IV del manual: Puntos 5, 3, 2 y 4.
     - Sigue el procedimiento del fabricante con sus tablas (SDI 1991): Tabla I sobrecarga admisible (columna de la primera luz tabulada ≥ L, sin interpolar), Tabla II deformaciones por número de tramos (más la flecha de servicio con 5qL⁴/384EI y límite L/240, L/300 o L/360: sin alzaprimas, el peso propio sobre la placa sola con E_s·I⁺ y q_D + q_L sobre la compuesta con E_c·I_c; con alzaprimas, todo sobre la compuesta), Tabla III alzaprimado temporal y Tabla IV peso propio y cubicación. Los valores no se recalculan.
     - Espesor `eh`: automático (el menor que cumple la losa) o fijo. La demanda es carga permanente adicional + sobrecarga de uso; el peso propio se suma solo si se marca `ppDem` (la Tabla I ya lo considera). Cargas puntuales: +30 % y aviso de punzonamiento.
     - Malla de retracción ≥ 1,8 cm²/m con s ≤ mín(5e_h ; 45 cm) (ACI 318-08 7.12.2.2); el área se calcula con el diámetro y el espaciamiento de la barra (`dMalla`, `sMalla`). Conectores en los apoyos: Q_n con AISC I8-1 (R_g, R_p) o dato del fabricante; resistencia ≥ 11,2 tf por metro de ancho (nota d de la Tabla I); altura ≥ 38 mm sobre la cresta y recubrimiento ≥ 13 mm (I8.2d); un conector más bajo que el nervio da D/C infinito. f'c ≥ 214 kgf/cm² (21 MPa, I1.3). Sin conectores la losa queda "sin verificar".
@@ -68,7 +69,7 @@ Todo el texto de la interfaz, las memorias y los commits va en **español (Chile
 
 - Unidades internas: **kgf y cm** (tensiones en kgf/cm², momentos en kgf·cm). Las entradas pueden venir en m, mm, kgf·m o tf; se convierten al leer los datos.
 - Aceros chilenos: A37-24ES, A42-27ES y A52-34ES; E = 2.100.000 kgf/cm² y G = 810.000 kgf/cm².
-- Números en pantalla con `fmt(x, d)` (formato es-CL: coma decimal, punto de miles).
+- Números con `fmt(x, d)`: **punto decimal y espacio duro de miles** (`5 963.9`), también en los números escritos a mano en textos y LaTeX. No usar coma decimal ni punto de miles. En LaTeX, `tn(x, d)` convierte el espacio en `\,`; en DXF se escribe como espacio normal.
 - En LaTeX, usar `` L`...` `` (`String.raw`) y `tn(x, d)` para los números.
 - Cada verificación muestra la razón demanda/capacidad (D/C) y la referencia a la ecuación o cláusula de la norma (por ejemplo `"E3-2"` o `"Tabla D3.1"`).
 - Clase `Memo` (definida en cada página):
@@ -80,6 +81,7 @@ Todo el texto de la interfaz, las memorias y los commits va en **español (Chile
   - `raw()`: LaTeX directo (tablas).
 - Validar las entradas con `datosInvalidos(reglas)` de `memo.js`. Con datos inválidos no se calcula y `ultimoTex` queda vacío, para no mostrar un "CUMPLE" falso.
 - El veredicto usa la clase `.verdict ok|bad`. Para que `proyectos.js` lea el resumen, el texto debe contener `razón máxima = X`.
+- Si falta una verificación exigida que la página no calcula, el veredicto y la memoria dicen `SIN VERIFICAR`, no `CUMPLE`; `proyectos.js` lo guarda sin estado de cumple o no cumple. Un requisito que no entra en la razón D/C y falla se indica como motivo en el veredicto.
 
 ## Al agregar o cambiar una página de cálculo
 
