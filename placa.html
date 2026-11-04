@@ -125,7 +125,7 @@
     table.calc tr { break-inside: avoid; }
   }
 </style>
-<link rel="stylesheet" href="aura.css?v=2">
+<link rel="stylesheet" href="aura.css?v=3">
 </head>
 <body>
 <header>
@@ -253,6 +253,7 @@
 <footer>Herramienta de apoyo académico basada en las tablas del fabricante (Ficha y Manual Técnico Instadeck, Cintac). No reemplaza la memoria de cálculo del ingeniero del proyecto. Verifique siempre los resultados.</footer>
 
 <script src="memo.js?v=32"></script>
+<script src="modelo3d.js?v=4"></script>
 <script>
 "use strict";
 // ---------------------------------------------------------------------------
@@ -1127,6 +1128,48 @@ function init() {
   calcular();
 }
 init();
+
+// ---------------------------------------------------------------------------
+// Vista 2D / 3D (modelo3d.js): paño de losa entre dos vigas, tres avances de placa de ancho, a escala real (mm).
+// x = luz entre vigas (sentido de los nervios), y = vertical (valle en y = 0), z = a lo largo de las vigas.
+// ---------------------------------------------------------------------------
+Zona2D3D.montar({
+  antes: document.querySelector(".toolbar"),
+  fuente2D: () => document.querySelector("#memo svg[role='img']"),
+  observar: [$("verdict")],
+  capas: [["hormigon", "Hormigón"], ["vigas", "Vigas"]],
+  construir: () => {
+    if (!ultimoTex || !ultimoD || !ultimoR) return null;
+    const d = ultimoD, r = ultimoR, hr = PLACA.hr * 10, et = r.et * 10, L = d.L * 10, W = 3 * DECK.p, e = new Geo3D.Escena();
+    const pv = d.pv ? { h: d.pv.h * 10, b: d.pv.b * 10, tw: d.pv.tw * 10, tf: d.pv.tf * 10 } : { h: 200, b: 100, tw: 6, tf: 9 };
+    // Perfil de la placa en (z, y): valle - alma - cresta - alma, por avance
+    const perfil = [];
+    for (let i = 0; i < 3; i++) { const b = i * DECK.p; perfil.push([b, 0], [b + DECK.vb, 0], [b + DECK.vb + DECK.w, hr], [b + DECK.vb + DECK.w + DECK.ct, hr]); }
+    perfil.push([W, 0]);
+    const XZ = (u, v, w) => [w, v, u];                      // contorno en (z, y) extruido a lo largo de x
+    const x0 = -pv.b / 2, x1 = L + pv.b / 2;
+    e.extruir({ mat: "hormigon", alfa: 0.3, grupo: "hormigon" }, [...perfil, [W, et], [0, et]], x0, x1, XZ);
+    e.extruir({ mat: "placa" }, [...perfil, ...perfil.slice().reverse().map(([z, y]) => [z, y - Math.max(PLACA.e * 10, 0.8)])], x0, x1, XZ);
+    // Malla de retracción a 25 mm de la cara superior
+    const dM = d.dM, sM = d.sM * 10, yM = et - 25;
+    if (sM > 0 && dM > 0) {
+      for (let z = sM / 2; z < W; z += sM) e.tubo({ mat: "armadura" }, [x0, yM, z], [x1, yM, z], dM / 2, 6);
+      for (let x = x0 + sM / 2; x < x1; x += sM) e.tubo({ mat: "armadura" }, [x, yM - dM, 0], [x, yM - dM, W], dM / 2, 6);
+    }
+    // Vigas de apoyo (perfil I con el ala superior en y = 0) y conectores en cada valle
+    const perfilV = Geo3D.dobleT(pv.b, pv.h, pv.tw, pv.tf, pv.tf);
+    const dS = d.cnv ? CONECTOR[d.cd].d * 10 : 0, hs = d.hs * 10;
+    for (const xc of [0, L]) {
+      e.extruir({ mat: "acero", grupo: "vigas" }, perfilV, -150, W + 150, (u, v, w) => [xc + u, v - pv.h / 2, w]);
+      if (dS > 0) for (let i = 0; i < 3; i++) for (let k = 0; k < d.cnv; k++) {
+        const z = i * DECK.p + DECK.vb / 2, x = xc + (d.cnv > 1 ? (k - (d.cnv - 1) / 2) * 4 * dS : 0);
+        e.tubo({ mat: "acero" }, [x, 0, z], [x, hs - 0.5 * dS, z], dS / 2, 10);
+        e.tubo({ mat: "acero" }, [x, hs - 0.5 * dS, z], [x, hs, z], 0.8 * dS, 10);
+      }
+    }
+    return e;
+  },
+});
 // Integración con proyectos (proyectos.js): datos para guardar y restaurar este cálculo
 window.AURA_MEMO = {
   tipo: "Losa colaborante",
