@@ -164,6 +164,9 @@
       <div class="tip hidden" id="tip"></div>
     </div>
     <div class="toolbar">
+      <button class="btn sec" type="button" onclick="window.print()">Imprimir</button>
+      <button class="btn sec" type="button" onclick="descargarDXF()">Descargar plano (.dxf)</button>
+      <button class="btn sec" type="button" onclick="descargarMemoria()">Descargar memoria (.zip)</button>
       <button class="btn" type="button" id="btnTxt">Descargar espectro .txt (ETABS)</button>
     </div>
     <div class="body">
@@ -184,7 +187,8 @@
 </main>
 <footer>Herramienta de apoyo académico basada en la planilla «Espectros Chile». Verifique siempre los parámetros con la norma vigente.</footer>
 
-<script src="memo.js?v=31"></script>
+<script src="memo.js?v=32"></script>
+<script src="dxf.js?v=1"></script>
 <script>
 "use strict";
 // ---------------------------------------------------------------------------
@@ -560,6 +564,214 @@ function descargarTxt() {
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+// ---------------------------------------------------------------------------
+// Resultados por dirección (R*, g/R*, desplazamiento) para la memoria y el plano
+// ---------------------------------------------------------------------------
+function resultadosDir(d, M) {
+  return ["x", "y"].map(dir => {
+    const Ts = dir === "x" ? d.Tx : d.Ty, fR = factorR(d, Ts, dir), u = desplazamiento(d, M, Ts, fR.Rs, dir);
+    return { dir, Ts, Rs: fR.Rs, texR: fR.tex, u: u.u, texU: u.tex, SaT: M.Sa(Ts) };
+  });
+}
+// Texto de la tabla de parámetros (HTML con subíndices) → LaTeX y texto plano
+// (cada símbolo queda en su propio $…$; los "$$" entre dos de ellos se eliminan para unirlos en un solo modo matemático)
+const parTex = (s) => String(s).replace(/(\d),(\d)/g, "$1{,}$2").replace(/<sub>(.*?)<\/sub>/g, "$$_{$1}$$").replace(/<sup>(.*?)<\/sup>/g, "$$^{$1}$$").replace(/ξ/g, "$$\\xi$$").replace(/α/g, "$$\\alpha$$").replace(/·/g, "$$\\cdot$$").replace(/\$\$/g, "");
+const parTxt = (s) => String(s).replace(/<[^>]+>/g, "");
+const valPar = (v) => (typeof v === "number" ? fmt(v, v % 1 ? 3 : 0) : String(v));
+// En la memoria los decimales siguen la convención de memo.js ("{,}" → punto decimal)
+const valParTex = (v) => (typeof v === "number" ? tn(v, v % 1 ? 3 : 0) : String(v));
+
+// ---------------------------------------------------------------------------
+// Memoria .zip (LaTeX con figura TikZ, para Overleaf)
+// ---------------------------------------------------------------------------
+async function descargarMemoria() {
+  if (!actual) { alert("Corrija los datos inválidos antes de descargar la memoria."); return; }
+  const { d, pts } = actual, N = NORMAS[d.norma], M = modelo(d.norma, d.cat, d.zona, d.suelo, d.xi);
+  const es2369 = d.norma === "2369-2025", esDS = d.norma === "ds117", res = resultadosDir(d, M);
+  const s = N.suelos[d.suelo], fecha = new Date().toLocaleDateString("es-CL", { day: "numeric", month: "long", year: "numeric" });
+  // Figura: hasta 400 puntos de la curva, en un gráfico de 12 × 6,5 cm
+  const ymax = niceMax(Math.max(...pts.map(p => p[1])) * 1.05), paso = Math.max(1, Math.ceil(pts.length / 400));
+  const kx = 12 / d.Tmax, ky = 6.5 / ymax, f = (v) => v.toFixed(3);
+  const curva = pts.filter((_, i) => i % paso === 0 || i === pts.length - 1).map(([T, S]) => `(${f(T * kx)},${f(S * ky)})`).join(" -- ");
+  const nx = d.Tmax <= 2 ? 0.25 : d.Tmax <= 5 ? 0.5 : 1, ticksX = [], ticksY = [];
+  for (let T = 0; T <= d.Tmax + 1e-9; T += nx) ticksX.push(L`\draw[gray!40] (${f(T * kx)},0) -- (${f(T * kx)},6.5); \node[below,font=\scriptsize] at (${f(T * kx)},0) {${tn(T, 2)}};`);
+  for (let i = 0; i <= 5; i++) { const v = ymax * i / 5; ticksY.push(L`\draw[gray!40] (0,${f(v * ky)}) -- (12,${f(v * ky)}); \node[left,font=\scriptsize] at (0,${f(v * ky)}) {${tn(v, 2)}};`); }
+  const iMax = pts.reduce((b, p, i) => (p[1] > pts[b][1] ? i : b), 0), pk = pts[iMax];
+  const figura = L`\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+${ticksX.join("\n")}
+${ticksY.join("\n")}
+\draw[thick] (0,0) -- (12,0) node[below=12pt,midway,font=\small] {Periodo $T$ [s]};
+\draw[thick] (0,0) -- (0,6.5) node[above,font=\small] {$S_a$ [g]};
+\draw[blue!70!black, line width=1.1pt] ${curva};
+\fill[blue!70!black] (${f(pk[0] * kx)},${f(pk[1] * ky)}) circle (2pt) node[above right,font=\scriptsize,text=black] {$S_{a,m\acute{a}x} = ${tn(pk[1], 3)}$ g ($T = ${tn(pk[0], 2)}$ s)};
+\end{tikzpicture}
+\caption{Espectro elástico de pseudoaceleración de ${N.nombre}, categoría ${d.cat}, zona ${d.zona}, suelo ${d.suelo} (sin reducir por $R^*$).}
+\end{figure}`;
+  // Tabla de valores resumida en dos columnas de pares, con paso de 0,1 s o mayor para no superar ~80 valores
+  // (unas 40 filas: la tabla flotante debe caber en una página)
+  const pasoT = Math.max(0.1, Math.ceil(d.Tmax / 80 / 0.1 - 1e-9) * 0.1), filasV = [];
+  for (let T = 0; T <= d.Tmax + 1e-9; T += pasoT) filasV.push([T, M.Sa(Math.round(T * 1e6) / 1e6)]);
+  const mitad = Math.ceil(filasV.length / 2), tablaV = [];
+  for (let i = 0; i < mitad; i++) {
+    const a = filasV[i], b = filasV[i + mitad];
+    tablaV.push(`${tn(a[0], 2)} & ${tn(a[1], 4)} & ${b ? `${tn(b[0], 2)} & ${tn(b[1], 4)}` : " & "}\\\\`);
+  }
+  const datos = [
+    ["Norma", N.nombre], ["Categoría de ocupación", d.cat], ["Zona sísmica", d.zona], ["Tipo de suelo", d.suelo],
+    ...(es2369 ? [["Razón de amortiguamiento $\\xi$", tn(d.xi, 3)], ["Factor de modificación de la respuesta $R$", tn(d.R, 2)]] : [["Factor $R_0$", tn(d.R0, 1)]]),
+    ["Periodo $T^*_x$ ; $T^*_y$ [s]", `${tn(d.Tx, 3)} ; ${tn(d.Ty, 3)}`],
+    ...(esDS ? [["$k_{agriet}$ ; $k_{\\delta u}$", `${tn(d.kAg, 2)} ; ${tn(d.kDu, 2)}`]] : []),
+    ["Discretización $\\Delta T$ ; $T_{m\\acute{a}x}$ [s]", `${tn(d.dT, 3)} ; ${tn(d.Tmax, 2)}`],
+  ];
+  const eqR = es2369
+    ? L`R^* = \begin{cases} R & R \le 1{,}5 \ \text{o}\ T^* \ge C_r\,T_1 \\[4pt] 1{,}5 + (R - 1{,}5)\dfrac{T^*}{C_r\,T_1} & T^* < C_r\,T_1 \end{cases}`
+    : L`R^* = 1 + \frac{T^*}{0{,}1\,T_0 + T^*/R_0} \qquad T_0 = ${tn(s.T0, 2)}\ \mathrm{s} \qquad R_0 = ${tn(d.R0, 1)}`;
+  const simU = esDS ? L`\delta_{u,m\acute{a}x}` : L`u_{m\acute{a}x}`;
+  const tex = L`\documentclass[11pt,letterpaper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-tabla,es-noshorthands,es-nolists]{babel}
+\usepackage{amsmath,amssymb}
+${TEX_ESTILO}
+\usepackage{geometry}
+\geometry{margin=2.2cm}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{tikz}
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\chead{Espectro de diseño sísmico}
+\lfoot{Memoria de cálculo --- ${N.nombre}}
+\rfoot{\thepage}
+\allowdisplaybreaks
+
+\begin{document}
+\begin{center}
+{\Large\bfseries Memoria de Cálculo --- Espectro de Diseño Sísmico}\\[3pt]
+${N.nombre}, categoría ${d.cat}, zona ${d.zona}, suelo ${d.suelo}\\[2pt]
+{\small ${fecha}}
+\end{center}
+
+\section{Datos}
+\begin{table}[H]
+\centering
+\caption{Datos del espectro.}
+\begin{tabular}{lr}
+\toprule
+Parámetro & Valor\\
+\midrule
+${datos.map(([k, v]) => `${k} & ${v}\\\\`).join("\n")}
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Espectro elástico}
+Se calcula el espectro elástico de pseudoaceleración según ${N.nombre}, sin reducir por $R^*$ y expresado en unidades de $g$.
+\begin{table}[H]
+\centering
+\caption{Parámetros del espectro.}
+\begin{tabular}{lrl}
+\toprule
+Parámetro & Valor & Referencia\\
+\midrule
+${M.par.map(([k, v, r]) => `${parTex(k)} & ${parTex(valParTex(v))} & ${N.nombre}, ${parTex(r)}\\\\`).join("\n")}
+\bottomrule
+\end{tabular}
+\end{table}
+${M.eqs.map(e => L`\[ ${e} \]`).join("\n")}
+${figura}
+
+\section{Factores de reducción de la respuesta}
+\[ ${eqR} \]
+${res.map(r => L`\textbf{Dirección ${r.dir}} ($T^*_{${r.dir}} = ${tn(r.Ts, 3)}$ s):
+${r.texR.map(t => L`\[ ${t} \]`).join("\n")}
+\[ \frac{g}{R^*_{${r.dir}}} = \frac{9{,}81}{${tn(r.Rs, 3)}} = ${tn(9.81 / r.Rs, 4)}\ \mathrm{m/s^2} \qquad \frac{S_a(T^*_{${r.dir}})}{R^*_{${r.dir}}} = \frac{${tn(r.SaT, 3)}}{${tn(r.Rs, 3)}} = ${tn(r.SaT / r.Rs, 4)}\ \mathrm{g} \]`).join("\n\n")}
+
+\section{Desplazamiento máximo}
+${esDS ? "Según el DS 117, Art. 9, $S_{de}$ se calcula con $S_{ae}$ sin el factor $I$." : es2369 ? "En NCh 2369:2025 el desplazamiento se calcula sin dividir por $R^*$." : "Desplazamiento máximo con el espectro reducido por $R^*$."}
+${res.map(r => r.texU.map(t => L`\[ ${t} \]`).join("\n")).join("\n")}
+
+\section{Resumen}
+\begin{table}[H]
+\centering
+\caption{Resultados por dirección.}
+\begin{tabular}{lcccc}
+\toprule
+Dirección & $T^*$ [s] & $R^*$ & $g/R^*$ [m/s$^2$] & $${simU}$ [cm]\\
+\midrule
+${res.map(r => `${r.dir} & ${tn(r.Ts, 3)} & ${tn(r.Rs, 3)} & ${tn(9.81 / r.Rs, 4)} & ${tn(r.u, 3)}\\\\`).join("\n")}
+\bottomrule
+\end{tabular}
+\end{table}
+Uso en ETABS: el archivo .txt del espectro contiene dos columnas ($T$ en s y $S_a$ en g) sin dividir por $R^*$ ni multiplicar por $g$. Defina la función de respuesta espectral con esos valores y aplique en cada caso de carga el factor de escala $g/R^*$ de su dirección.
+
+\begin{table}[H]
+\centering
+\caption{Valores del espectro elástico (cada ${tn(pasoT, 1)} s).}
+\begin{tabular}{rr|rr}
+\toprule
+$T$ [s] & $S_a$ [g] & $T$ [s] & $S_a$ [g]\\
+\midrule
+${tablaV.join("\n")}
+\bottomrule
+\end{tabular}
+\end{table}
+\end{document}
+`;
+  // El PNG de la figura se toma del gráfico de pantalla: se retira el cursor (oculto solo con CSS) mientras se copia
+  const cruz = $("cross"), hit = $("hit");
+  cruz?.remove();
+  try { await descargarZipMemoria(tex, `memoria_espectro_${N.nombre.replace(/[^\w]+/g, "")}_Cat${d.cat}_Z${d.zona}_S${d.suelo}.tex`, document.body); }
+  finally { if (cruz && hit) hit.parentNode.insertBefore(cruz, hit); }
+}
+
+// ---------------------------------------------------------------------------
+// Plano DXF (dxf.js): gráfico del espectro, parámetros, resultados y notas
+// ---------------------------------------------------------------------------
+function descargarDXF() {
+  if (!actual) { alert("Corrija los datos inválidos antes de descargar el plano."); return; }
+  const { d, pts } = actual, N = NORMAS[d.norma], M = modelo(d.norma, d.cat, d.zona, d.suelo, d.xi), res = resultadosDir(d, M);
+  const es2369 = d.norma === "2369-2025", esDS = d.norma === "ds117";
+  const GW = 230, GH = 120, ymax = niceMax(Math.max(...pts.map(p => p[1])) * 1.05);
+  const X = (T) => T / d.Tmax * GW, Y = (S) => S / ymax * GH;
+  const pl = new PlanoDXF({ titulo: `ESPECTRO DE DISEÑO ${N.nombre}`, contenido: `categoría ${d.cat}, zona ${d.zona}, suelo ${d.suelo}` });
+  pl.vista({
+    titulo: `Espectro elástico Sa [g] - ${N.nombre}`, papel: true, bbox: [0, 0, GW, GH], margen: [22, 16, 8, 10],
+    dibujar: (v) => {
+      const nx = d.Tmax <= 2 ? 0.25 : d.Tmax <= 5 ? 0.5 : 1;
+      for (let T = 0; T <= d.Tmax + 1e-9; T += nx) { v.line("RETICULA", X(T), 0, X(T), GH); v.text("TEXTOS", X(T), -4, 2, fmt(T, 2), 1, 3); }
+      for (let i = 0; i <= 5; i++) { const s = ymax * i / 5; v.line("RETICULA", 0, Y(s), GW, Y(s)); v.text("TEXTOS", -2, Y(s), 2, fmt(s, 2), 2, 2); }
+      v.poly("CONTORNO", [[0, 0], [GW, 0], [GW, GH], [0, GH]]);
+      const paso = Math.max(1, Math.ceil(pts.length / 1500));
+      v.poly("CURVAS", pts.filter((_, i) => i % paso === 0 || i === pts.length - 1).map(([T, S]) => [X(T), Y(S)]), false);
+      const pk = pts.reduce((b, p) => (p[1] > b[1] ? p : b), pts[0]);
+      v.circle("CURVAS", X(pk[0]), Y(pk[1]), 1);
+      v.text("TEXTOS", X(pk[0]) + 3, Y(pk[1]) + 2, 2.2, `Sa,máx = ${fmt(pk[1], 3)} g (T = ${fmt(pk[0], 2)} s)`);
+      for (const r of res) if (r.Ts > 0 && r.Ts <= d.Tmax) {
+        v.line("OCULTO", X(r.Ts), 0, X(r.Ts), Y(r.SaT));
+        v.text("TEXTOS", X(r.Ts) + 1, Y(r.SaT) / 2, 1.8, `T*${r.dir} = ${fmt(r.Ts, 3)} s`, 0, 2, 90);
+      }
+      v.text("TEXTOS", GW / 2, -10, 2.5, "Periodo T [s]", 1, 3);
+      v.text("TEXTOS", -16, GH / 2, 2.5, "Sa [g]", 1, 2, 90);
+    },
+  });
+  pl.tabla({ titulo: "Parámetros del espectro", columnas: [["Parámetro", 66], ["Valor", 30], ["Referencia", 48]],
+    filas: M.par.map(([k, v, r]) => [parTxt(k), parTxt(valPar(v)), `${N.nombre}, ${parTxt(r)}`]) });
+  pl.tabla({ titulo: "Resultados por dirección", columnas: [["Dir.", 12], ["T* [s]", 18], ["R*", 16], ["g/R* [m/s2]", 24], [`${esDS ? "du" : "u"} máx [cm]`, 22]],
+    filas: res.map(r => [r.dir, fmt(r.Ts, 3), fmt(r.Rs, 3), fmt(9.81 / r.Rs, 4), fmt(r.u, 3)]) });
+  pl.notas([
+    `Espectro elástico de pseudoaceleración según ${N.nombre}, categoría de ocupación ${d.cat}, zona sísmica ${d.zona}, suelo tipo ${d.suelo}${es2369 ? `, amortiguamiento ${fmt(d.xi * 100, 1)} %` : ""}.`,
+    "Valores de Sa en unidades de g, sin reducir por R*. En ETABS: función de respuesta espectral con el archivo .txt de AURA y factor de escala g/R* en cada dirección.",
+    es2369 ? `Factor de modificación de la respuesta R = ${fmt(d.R, 2)}.` : `Factor R0 = ${fmt(d.R0, 1)}; R* según el periodo T* de mayor masa traslacional de cada dirección.`,
+    esDS ? `Desplazamiento según DS 117 Art. 9: Tag = ${fmt(d.kAg, 2)} T*, du = ${fmt(d.kDu, 2)} Sde.` : es2369 ? "Desplazamiento máximo sin dividir por R* (NCh 2369:2025)." : "Desplazamiento máximo con el espectro reducido por R*.",
+    "La clasificación sísmica del suelo debe respaldarse con el estudio de mecánica de suelos del proyecto.",
+  ]);
+  descargarPlano(pl, `plano_espectro_${N.nombre.replace(/[^\w]+/g, "")}_Cat${d.cat}_Z${d.zona}_S${d.suelo}.dxf`);
 }
 
 function init() {

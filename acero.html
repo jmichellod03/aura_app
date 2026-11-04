@@ -305,6 +305,7 @@
       <div id="verdict"></div>
       <div class="toolbar">
         <button class="btn sec" type="button" onclick="window.print()">Imprimir</button>
+        <button class="btn sec" type="button" onclick="descargarDXF()">Descargar plano (.dxf)</button>
         <button class="btn" type="button" onclick="descargarZipMemoria(ultimoTex, ultimoNombre, document.body)">Descargar memoria (.zip)</button>
       </div>
       <div class="memo" id="memo"></div>
@@ -317,7 +318,8 @@
 </main>
 <footer>Herramienta de apoyo académico. Las solicitaciones deben provenir de un análisis que considere efectos de segundo orden (AISC 360-16, Cap. C). Verifique siempre los resultados.</footer>
 
-<script src="memo.js?v=31"></script>
+<script src="memo.js?v=32"></script>
+<script src="dxf.js?v=1"></script>
 <script>
 "use strict";
 // ---------------------------------------------------------------------------
@@ -1301,6 +1303,113 @@ function init() {
   // Elemento elegido en la página de inicio (acero.html?elemento=columna)
   setModo(new URLSearchParams(location.search).get("elemento") === "columna" ? "columna" : "viga");
 }
+// ---------------------------------------------------------------------------
+// Plano DXF (dxf.js): elevación del elemento, sección del perfil, cuadro y notas
+// ---------------------------------------------------------------------------
+// Contorno del perfil doble T con acuerdos, centrado en el origen (mm)
+function dibujarDobleT(v, s) {
+  const B = s.b * 5, H = s.h * 5, T = s.tf * 10, W = s.tw * 5, R = s.r * 10;
+  for (const sy of [1, -1]) {
+    v.line("SECCION", -B, sy * H, B, sy * H);
+    for (const sx of [1, -1]) {
+      v.line("SECCION", sx * B, sy * H, sx * B, sy * (H - T));
+      v.line("SECCION", sx * B, sy * (H - T), sx * (W + R), sy * (H - T));
+    }
+  }
+  for (const sx of [1, -1]) v.line("SECCION", sx * W, H - T - R, sx * W, -(H - T - R));
+  v.arc("SECCION", W + R, H - T - R, R, 90, 180);
+  v.arc("SECCION", -W - R, H - T - R, R, 0, 90);
+  v.arc("SECCION", W + R, -H + T + R, R, 180, 270);
+  v.arc("SECCION", -W - R, -H + T + R, R, 270, 360);
+}
+
+function descargarDXF() {
+  if (!ultimoTex) { alert("Corrija los datos inválidos antes de descargar el plano."); return; }
+  const serie = $("serie").value, s = seccion(CATALOGO[serie][$("perfil").selectedIndex], serie);
+  const acero = $("acero").value, { Fy, Fu } = ACEROS[acero], d = leerDatos(), res = verificar(s, Fy, d, NOMEMO);
+  const viga = modo === "viga", L = (viga ? d.Lb : d.L) * 10, h = s.h * 10, b = s.b * 10, tf = s.tf * 10;
+  if (!(L > 0)) { alert(`Ingrese ${viga ? "una longitud no arriostrada Lb" : "una longitud L"} mayor que cero para dibujar el plano.`); return; }
+  const nomEl = viga ? "VIGA" : "COLUMNA";
+  const pl = new PlanoDXF({ titulo: `${nomEl} DE ACERO ${s.nombre}`, contenido: "elevación, sección y especificaciones" });
+  const dcTxt = res.inestable ? "inestable" : fmt(res.dc, 3);
+
+  if (viga) {
+    // Elevación: el perfil de lado (alas y alma), tramo no arriostrado L_b entre arriostramientos laterales
+    pl.vista({
+      titulo: `Elevación ${nomEl.toLowerCase()} ${s.nombre}`, bbox: [0, -h / 2, L, h / 2], objetivo: [190, 90], margen: [18, 22, 18, 22],
+      dibujar: (v) => {
+        v.poly("CONTORNO", [[0, -h / 2], [L, -h / 2], [L, h / 2], [0, h / 2]]);
+        v.line("CONTORNO", 0, h / 2 - tf, L, h / 2 - tf); v.line("CONTORNO", 0, -h / 2 + tf, L, -h / 2 + tf);
+        v.line("EJES", -v.pp(8), 0, L + v.pp(8), 0);
+        for (const x of [0, L]) {                  // arriostramiento lateral en los extremos del tramo
+          const a = v.pp(3);
+          v.line("APOYOS", x - a, h / 2 + v.pp(3), x + a, h / 2 + v.pp(3) + 2 * a);
+          v.line("APOYOS", x - a, h / 2 + v.pp(3) + 2 * a, x + a, h / 2 + v.pp(3));
+        }
+        v.cotaH(0, L, -h / 2, -10, `Lb = ${fmtCota(L)}`);
+        v.cotaV(-h / 2, h / 2, L, 8, `h = ${fmtCota(h)}`);
+        v.referencia(L * 0.3, h / 2, L * 0.3 + v.pp(10), h / 2 + v.pp(10), `${s.nombre} - ${acero}`);
+        v.text("TEXTOS", L / 2, h / 2 + v.pp(16), 2.2, "X = arriostramiento lateral del ala comprimida (extremos del tramo Lb)", 1, 0);
+        v.text("TEXTOS", L * 0.5, 0, 2.5, "A", 1, 2);
+        v.line("TEXTOS", L * 0.5 - v.pp(3), -h / 2 - v.pp(2), L * 0.5 - v.pp(3), h / 2 + v.pp(2));
+      },
+    });
+  } else {
+    // Elevación de la columna (eje vertical) con su largo L y los factores de longitud efectiva
+    pl.vista({
+      titulo: `Elevación ${nomEl.toLowerCase()} ${s.nombre}`, bbox: [-b / 2, 0, b / 2, L], objetivo: [100, 200], margen: [24, 18, 90, 14],
+      dibujar: (v) => {
+        v.poly("CONTORNO", [[-b / 2, 0], [b / 2, 0], [b / 2, L], [-b / 2, L]]);
+        v.line("EJES", 0, -v.pp(8), 0, L + v.pp(8));
+        for (const y of [0, L]) { v.line("APOYOS", -b / 2 - v.pp(6), y, b / 2 + v.pp(6), y); }
+        v.achurado(-b / 2 - v.pp(6), -v.pp(3), b / 2 + v.pp(6), 0, 1.5);
+        v.cotaV(0, L, -b / 2, -12, `L = ${fmtCota(L)}`);
+        v.referencia(0, L * 0.6, b / 2 + v.pp(10), L * 0.6 + v.pp(8), `${s.nombre} - ${acero}`);
+        v.text("TEXTOS", b / 2 + v.pp(6), L * 0.4, 2.2, `Kx = ${fmt(d.Kx, 3)}   Ky = ${fmt(d.Ky, 3)}   Kz = ${fmt(d.Kz, 3)}`);
+        v.text("TEXTOS", b / 2 + v.pp(6), L * 0.4 - v.pp(4), 2.2, `Lb (PLT) = ${fmtCota(d.Lb * 10)} mm`);
+        v.text("TEXTOS", b / 2 + v.pp(6), v.pp(2), 2.2, "Placa base y anclaje: según detalle de conexiones");
+        v.text("TEXTOS", 0, L / 2, 2.5, "A", 1, 2);
+        v.line("TEXTOS", -b / 2 - v.pp(2), L / 2 - v.pp(3), b / 2 + v.pp(2), L / 2 - v.pp(3));
+      },
+    });
+  }
+  // Sección A-A del perfil con acuerdos y cotas
+  pl.vista({
+    titulo: `Sección A-A ${s.nombre}`, bbox: [-b / 2, -h / 2, b / 2, h / 2], objetivo: [70, 70], margen: [22, 14, 40, 16],
+    dibujar: (v) => {
+      dibujarDobleT(v, s);
+      v.line("EJES", -b / 2 - v.pp(5), 0, b / 2 + v.pp(5), 0); v.line("EJES", 0, -h / 2 - v.pp(5), 0, h / 2 + v.pp(5));
+      v.text("EJES", b / 2 + v.pp(6), 0, 2, "x", 0, 2); v.text("EJES", 0, h / 2 + v.pp(6), 2, "y", 1, 0);
+      v.cotaH(-b / 2, b / 2, h / 2, 8, `b = ${mmTxt(s.b, fmt)}`);
+      v.cotaV(-h / 2, h / 2, -b / 2, -9, `h = ${mmTxt(s.h, fmt)}`);
+      v.referencia(s.tw * 5, -h / 4, b / 2 + v.pp(6), -h / 4, `tw = ${mmTxt(s.tw, fmt)}`);
+      v.referencia(b / 2 - v.pp(2), h / 2 - tf / 2, b / 2 + v.pp(6), h / 2 - v.pp(4), `tf = ${mmTxt(s.tf, fmt)}`);
+      v.referencia(s.tw * 5 + s.r * 10 * 0.3, -h / 2 + tf + s.r * 10 * 0.3, b / 2 + v.pp(6), -h / 2 + v.pp(2), `r = ${mmTxt(s.r, fmt)}`);
+    },
+  });
+  const largo = L / 1000;
+  pl.tabla({
+    titulo: "Cuadro de elementos",
+    columnas: [["Elemento", 22], ["Perfil", 24], ["Acero", 24], ["Largo [m]", 18], ["Peso [kgf/m]", 22], ["Peso [kgf]", 18], ["D/C", 14]],
+    filas: [[nomEl.toLowerCase().replace(/^./, c => c.toUpperCase()), s.nombre, acero, fmt(largo, 2), fmt(s.peso, 1), fmt(s.peso * largo, 1), dcTxt]],
+    nota: viga ? "Largo = tramo no arriostrado Lb verificado (no necesariamente la luz total)." : "Peso sin placas, cartelas ni pernos.",
+  });
+  const sol = viga
+    ? `Solicitaciones de diseño (LRFD): Mux = ${fmt(d.Mux / 100, 1)} kgf-m, Muy = ${fmt(d.Muy / 100, 1)} kgf-m, Vu = ${fmt(d.Vu, 0)} kgf; Cb = ${fmt(d.Cb, 3)}.`
+    : `Solicitaciones de diseño (LRFD): Pu = ${fmt(d.Pu, 0)} kgf, Mux = ${fmt(d.Mux / 100, 1)} kgf-m, Muy = ${fmt(d.Muy / 100, 1)} kgf-m, Vu = ${fmt(d.Vu, 0)} kgf.`;
+  pl.notas([
+    "Cotas en mm salvo indicación. No medir sobre el plano.",
+    `Acero estructural ${acero} según NCh 203 (Fy = ${Fy} kgf/cm², Fu = ${Fu} kgf/cm²). Perfil laminado ${s.nombre} del catálogo de vigas laminadas Cintac (${fmt(s.peso, 1)} kgf/m).`,
+    "Diseño según AISC 360-16 (LRFD). Las solicitaciones de diseño ingresadas deben provenir de las combinaciones de carga de la NCh 3171.",
+    sol,
+    `Razón demanda/capacidad máxima D/C = ${dcTxt}${res.dc <= 1 && !res.fuera ? " (cumple)" : " (NO CUMPLE)"}.`,
+    "Fabricación y montaje según NCh 428 y AISC 303. Soldaduras al arco con electrodo E70XX según AWS D1.1, tamaños mínimos de filete según AISC 360-16 Tabla J2.4.",
+    "Conexiones, placas, cartelas y anclajes no forman parte de esta verificación: detallarlos según su propio cálculo.",
+    "Protección: limpieza SSPC-SP6, dos manos de anticorrosivo y terminación de distinto color, espesor total seco mínimo 125 micrones (ajustar según la agresividad del ambiente).",
+  ]);
+  descargarPlano(pl, `plano_${modo}_${s.nombre.replace(/\s+/g, "")}_${acero}.dxf`);
+}
+
 init();
 // Integración con proyectos (proyectos.js): datos para guardar y restaurar este cálculo
 window.AURA_MEMO = {

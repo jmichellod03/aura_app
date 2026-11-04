@@ -478,6 +478,7 @@
     <div id="figMuro" class="figMuro hidden"></div>
     <div class="toolbar">
       <button class="btn sec" type="button" onclick="window.print()">Imprimir</button>
+        <button class="btn sec" type="button" onclick="descargarDXF()">Descargar plano (.dxf)</button>
         <button class="btn" type="button" onclick="descargarZipMemoria(ultimoTex, ultimoNombre, document.body)">Descargar memoria (.zip)</button>
     </div>
     <div class="memo" id="memo"></div>
@@ -485,7 +486,8 @@
 </main>
 <footer>Herramienta de apoyo académico basada en NCh 1198:2024 y en la planilla «FULL MADERA». Verifique siempre los resultados.</footer>
 
-<script src="memo.js?v=31"></script>
+<script src="memo.js?v=32"></script>
+<script src="dxf.js?v=1"></script>
 <script>
 "use strict";
 // ---------------------------------------------------------------------------
@@ -1563,6 +1565,7 @@ function actualizarMuro() {
   tarjetas(items);
   const dc = Math.max(...items.map(i => i[1]));
   const ok = dc <= 1;
+  ultimoMadera = { modo: "muro", d, r, dc, ok };
   const nombre = d.esc === "custom" ? `${d.b}×${d.h} mm` : `${d.esc} (${d.b}×${d.h} mm)`;
   $("resTitle").textContent = `Resultados — muro de corte ${fmt(d.bm, 2)} × ${fmt(d.hm, 2)} m · ${d.pisos} piso${d.pisos > 1 ? "s" : ""} · borde ${d.n}×${nombre}`;
   $("verdict").innerHTML = `<div class="verdict ${ok ? "ok" : "bad"}">${ok ? "✔ El muro de corte CUMPLE" : "✘ El muro de corte NO CUMPLE"} — razón máxima = ${Number.isFinite(dc) ? fmt(dc, 3) : "∞"}${r.limD ? "" : `<div style="font-weight:400;font-size:13px;margin-top:4px">Desplazamiento lateral δ<sub>mc</sub> = ${fmt(r.dmc, 2)} mm (sin límite seleccionado)</div>`}</div>` +
@@ -1622,6 +1625,7 @@ $PP + SC_{piso} + SC_{techo} + V$ & Gravitacionales y viento (fachada${d.pisos =
 // ---------------------------------------------------------------------------
 let ultimoTex = "", ultimoNombre = "memoria_envigado.tex";
 let modo = "env";
+let ultimoMadera = null;   // datos y resultados del último cálculo, para el plano DXF
 
 function actualizar() {
   $("inEnv").classList.toggle("hidden", modo !== "env");
@@ -1875,6 +1879,7 @@ function mostrarPie(d) {
   tarjetas(items);
   const dc = Math.max(...items.map(i => i[1]));
   const ok = dc <= 1;
+  ultimoMadera = { modo: d.pilar ? "pil" : "tab", d, r, dc, ok };
   const nombre = d.esc === "custom" ? `${d.b}×${d.h} mm` : `${d.esc} (${d.b}×${d.h} mm)`;
   const notaComb = `Combinación analizada: ${s.n} (${s.txt})${s === r.crit ? " — es la combinación crítica" : ` · combinación crítica: ${r.crit.n} (${r.crit.txt}), razón máxima ${Number.isFinite(r.crit.max) ? fmt(r.crit.max, 3) : "∞"}`}`;
   $("resTitle").textContent = `Resultados — ${E.nom} ${nombre} · ${d.grado} · L = ${fmt(d.L, 1)} cm`;
@@ -1984,6 +1989,7 @@ function actualizarEnv() {
     <div class="bar ${v > 1 ? "bad" : ""}"><i style="width:${Math.min(100, v * 100)}%"></i></div><div class="s">${s}</div></div>`).join("");
   const dc = Math.max(...items.map(i => i[1]));
   const ok = dc <= 1;
+  ultimoMadera = { modo: "env", d, r, dc, ok };
   const nombre = d.esc === "custom" ? `${d.b}×${d.h} mm` : `${d.esc} (${d.b}×${d.h} mm)`;
   $("resTitle").textContent = `Resultados — ${nombre} · ${d.grado} · L = ${fmt(d.Lm, 2)} m`;
   $("verdict").innerHTML = `<div class="verdict ${ok ? "ok" : "bad"}">${ok ? "✔ La viga CUMPLE" : "✘ La viga NO CUMPLE"} — razón máxima = ${Number.isFinite(dc) ? fmt(dc, 3) : "∞"}</div>`;
@@ -2050,6 +2056,158 @@ Con una razón máxima de ${tnT(dc, 3)}, la viga \textbf{${ok ? "cumple" : "no c
 \end{document}
 `;
   ultimoNombre = `memoria_envigado_${d.grado}_${d.b}x${d.h}.tex`;
+}
+
+// ---------------------------------------------------------------------------
+// Plano DXF (dxf.js): elevación, sección y notas de cada elemento
+// ---------------------------------------------------------------------------
+const VISUALES = ["GS", "G1+", "G1", "G2"];
+function notasMadera(d, extra) {
+  return [
+    "Cotas en mm salvo indicación. No medir sobre el plano. Escuadrías reales (cepilladas) b x h en mm.",
+    `Madera de pino radiata grado ${d.grado} (${VISUALES.includes(d.grado) ? "clasificación visual según NCh 1207" : "grado estructural según NCh 1198:2024"}), contenido de humedad de servicio ${fmt(d.H, 0)} %.`,
+    "Diseño por tensiones admisibles según NCh 1198:2024. Cargas permanentes y de uso según NCh 1537; viento según NCh 432.",
+    ...extra,
+    "Madera preservada (impregnada) según NCh 819, con la retención que corresponda al riesgo de servicio. Los cortes en obra se repintan con preservante.",
+    "Uniones, clavos, conectores y anclajes según NCh 1198:2024: no se detallan en este plano salvo indicación.",
+  ];
+}
+// Sección de madera aserrada: rectángulo con diagonales (convención de madera cortada) y cotas
+function vistaSeccionMadera(pl, titulo, b, h, n = 1) {
+  const W = n * b;
+  pl.vista({
+    titulo, bbox: [0, 0, W, h], objetivo: [45, 70], margen: [14, 12, 10, 14],
+    dibujar: (v) => {
+      for (let i = 0; i < n; i++) {
+        v.poly("SECCION", [[i * b, 0], [(i + 1) * b, 0], [(i + 1) * b, h], [i * b, h]]);
+        v.line("SECCION", i * b, 0, (i + 1) * b, h); v.line("SECCION", i * b, h, (i + 1) * b, 0);
+      }
+      v.cotaH(0, W, h, 6, n > 1 ? `${n} x ${fmtCota(b)}` : fmtCota(b)); v.cotaV(0, h, 0, -7);
+    },
+  });
+}
+// Apoyo simple (triángulo) bajo (x, y)
+const apoyoTri = (v, x, y) => { const a = v.pp(2.5); v.poly("APOYOS", [[x, y], [x - a, y - 1.6 * a], [x + a, y - 1.6 * a]]); v.line("APOYOS", x - 1.4 * a, y - 1.6 * a, x + 1.4 * a, y - 1.6 * a); };
+
+function descargarDXF() {
+  if (!ultimoTex || !ultimoMadera) { alert("Corrija los datos inválidos antes de descargar el plano."); return; }
+  const { modo: el, d, r, dc, ok } = ultimoMadera;
+  const b = d.b, h = d.h, esc = `${fmt(b, 0)}x${fmt(h, 0)}`;
+  const res = `Razón máxima = ${Number.isFinite(dc) ? fmt(dc, 3) : "infinita"} (${ok ? "cumple" : "NO CUMPLE"}).`;
+  let pl, extra, archivo;
+
+  if (el === "env") {
+    const L = d.Lm * 1000;
+    pl = new PlanoDXF({ titulo: `${d.maestra ? "VIGA MAESTRA" : "ENVIGADO"} PINO RADIATA ${d.grado} ${esc}`, contenido: "elevación, planta y sección" });
+    pl.vista({
+      titulo: `Elevación viga ${esc} mm`, bbox: [0, 0, L, h], objetivo: [190, 80], margen: [16, 20, 16, 22],
+      dibujar: (v) => {
+        v.poly("CONTORNO", [[0, 0], [L, 0], [L, h], [0, h]]);
+        apoyoTri(v, 0, 0); apoyoTri(v, L, 0);
+        v.cotaH(0, L, 0, -12, `L = ${fmtCota(L)}`); v.cotaV(0, h, L, 7);
+        v.text("TEXTOS", L / 2, h + v.pp(6), 2.2, `q PP = ${fmt(r.qPP, 1)} kgf/m   q SC = ${fmt(r.qSC, 1)} kgf/m${d.P ? `   P = ${fmt(d.P, 0)} kgf` : ""}`, 1, 0);
+        v.text("TEXTOS", L / 2, h / 2, 2.2, `${d.esc === "custom" ? "" : d.esc + " "}${esc} - ${d.grado}`, 1, 2);
+        if (d.rebaje) v.text("TEXTOS", d.xReb || 0, -v.pp(5), 2, `Rebaje: altura remanente hr = ${fmt(d.hr, 0)} mm a x = ${fmt(d.xReb, 0)} mm (ver detalle del apoyo)`);
+      },
+    });
+    if (!d.maestra && d.s > 0) {
+      const s = d.s * 1000, n = 4;
+      pl.vista({
+        titulo: "Planta envigado (tramo tipo)", bbox: [0, 0, L, (n - 1) * s + b], objetivo: [190, 90], margen: [16, 12, 24, 10],
+        dibujar: (v) => {
+          for (let i = 0; i < n; i++) { v.poly("CONTORNO", [[0, i * s], [L, i * s], [L, i * s + b], [0, i * s + b]]); v.line("EJES", -v.pp(4), i * s + b / 2, L + v.pp(4), i * s + b / 2); }
+          for (const x of [0, L]) v.line("OCULTO", x, -v.pp(2), x, (n - 1) * s + b + v.pp(2));
+          v.cotaV(b / 2, s + b / 2, L, 8, `s = ${fmtCota(s)}`);
+          v.text("TEXTOS", L / 2, s / 2 + b / 2, 2.2, `Vigas ${esc} @ ${fmtCota(s)}`, 1, 2);
+        },
+      });
+    }
+    vistaSeccionMadera(pl, `Sección viga ${esc}`, b, h);
+    extra = [
+      `${d.maestra ? "Viga maestra" : "Vigas del envigado"} ${esc} mm, luz L = ${fmt(d.Lm, 2)} m${!d.maestra && d.s ? `, separación entre ejes ${fmt(d.s * 100, 0)} cm` : ""}. Apoyo lateral ${d.apoyoLat === "ac" ? "continuo" : `cada ${fmt(d.la, 0)} cm`}.`,
+      `Longitud de apoyo mínima ${fmt(d.Lap, 0)} mm en cada extremo. ${res}`,
+    ];
+    archivo = `plano_envigado_${d.grado}_${b}x${h}.dxf`;
+  } else if (el === "tab" || el === "pil") {
+    const L = d.L * 10;
+    if (el === "tab") {
+      const s = d.s * 1000, W = 2 * s + b, frac = fraccionesCadenetas(d);
+      pl = new PlanoDXF({ titulo: `TABIQUE PINO RADIATA ${d.grado} - PIES DERECHOS ${esc}`, contenido: "elevación tipo y sección" });
+      pl.vista({
+        titulo: "Elevación tabique (tramo tipo)", bbox: [-b, -b, W + b, L + b], objetivo: [150, 200], margen: [20, 12, 40, 14],
+        dibujar: (v) => {
+          v.poly("CONTORNO", [[-b, -b], [W + b, -b], [W + b, 0], [-b, 0]]);
+          v.poly("CONTORNO", [[-b, L], [W + b, L], [W + b, L + b], [-b, L + b]]);
+          for (let i = 0; i < 3; i++) { v.poly("CONTORNO", [[i * s, 0], [i * s + b, 0], [i * s + b, L], [i * s, L]]); v.line("EJES", i * s + b / 2, -b - v.pp(3), i * s + b / 2, L + b + v.pp(3)); }
+          for (const f of frac) for (let i = 0; i < 2; i++) { const y = f * L; v.poly("CONTORNO", [[i * s + b, y - b / 2], [(i + 1) * s, y - b / 2], [(i + 1) * s, y + b / 2], [i * s + b, y + b / 2]]); }
+          v.cotaH(b / 2, s + b / 2, L + b, 6, `s = ${fmtCota(s)}`); v.cotaH(s + b / 2, 2 * s + b / 2, L + b, 6, `s = ${fmtCota(s)}`);
+          v.cotaV(0, L, -b, -8, `L = ${fmtCota(L)}`);
+          if (frac.length) v.cotaV(0, frac[0] * L, W + b, 8, `Lp,y = ${fmtCota(d.Lpy * 10)}`);
+          v.text("TEXTOS", W + b + v.pp(3), L + b / 2, 2, "Solera superior", 0, 2);
+          v.text("TEXTOS", W + b + v.pp(3), -b / 2, 2, "Solera inferior", 0, 2);
+          if (frac.length) v.text("TEXTOS", 1.5 * s + b / 2, frac[0] * L + b / 2 + v.pp(1.5), 2, "Cadeneta", 1, 0);
+        },
+      });
+    } else {
+      const Pmax = Math.max(...r.cT.map(c => c.P));
+      pl = new PlanoDXF({ titulo: `PILAR PINO RADIATA ${d.grado} ${esc}`, contenido: "elevación y sección" });
+      pl.vista({
+        titulo: `Elevación pilar ${esc} mm`, bbox: [-b / 2, 0, b / 2, L], objetivo: [100, 200], margen: [22, 14, 60, 18],
+        dibujar: (v) => {
+          v.poly("CONTORNO", [[-b / 2, 0], [b / 2, 0], [b / 2, L], [-b / 2, L]]);
+          v.line("EJES", 0, -v.pp(5), 0, L + v.pp(10));
+          v.line("APOYOS", -b / 2 - v.pp(6), 0, b / 2 + v.pp(6), 0); v.achurado(-b / 2 - v.pp(6), -v.pp(3), b / 2 + v.pp(6), 0, 1.5);
+          v.line("TEXTOS", 0, L + v.pp(12), 0, L + v.pp(1)); v.line("TEXTOS", -v.pp(1), L + v.pp(3), 0, L + v.pp(1)); v.line("TEXTOS", v.pp(1), L + v.pp(3), 0, L + v.pp(1));
+          v.text("TEXTOS", v.pp(2), L + v.pp(9), 2.2, `P = ${fmt(Pmax, 0)} kgf`);
+          if (r.w > 0) v.text("TEXTOS", b / 2 + v.pp(6), L * 0.6, 2.2, `Viento w = ${fmt(r.w, 1)} kgf/m`);
+          v.text("TEXTOS", b / 2 + v.pp(6), L * 0.45, 2.2, d.kpTxt);
+          v.cotaV(0, L, -b / 2, -12, `L = ${fmtCota(L)}`);
+        },
+      });
+    }
+    vistaSeccionMadera(pl, `Sección ${el === "tab" ? "pie derecho" : "pilar"} ${esc}`, b, h);
+    extra = [
+      el === "tab"
+        ? `Pies derechos ${esc} mm de ${fmt(d.L, 1)} cm de alto, separados ${fmt(d.s * 100, 0)} cm entre ejes; cadenetas ${d.Lpy < d.L ? `cada ${fmt(d.Lpy, 1)} cm` : "no requeridas"}. Soleras de la misma escuadría.`
+        : `Pilar ${esc} mm de ${fmt(d.L, 1)} cm de alto; ${d.kpTxt.replace(/–/g, "-")}, Kp = ${fmt(d.Kp, 2)}. Fijar la base con anclaje metálico galvanizado separado del suelo (sin contacto directo con la humedad).`,
+      res,
+    ];
+    archivo = `plano_${el === "tab" ? "tabique" : "pilar"}_${d.grado}_${b}x${h}.dxf`;
+  } else {
+    const W = d.bm * 1000, Hm = d.hm * 1000, H = Hm * d.pisos, bb = d.n * b;
+    pl = new PlanoDXF({ titulo: `MURO DE CORTE PINO RADIATA ${d.grado} ${fmt(d.bm, 2)} x ${fmt(d.hm, 2)} m`, contenido: "elevación y pie derecho de borde" });
+    pl.vista({
+      titulo: `Elevación muro de corte (${d.pisos} piso${d.pisos > 1 ? "s" : ""})`, bbox: [0, 0, W, H], objetivo: [190, 170], margen: [22, 16, 50, 14],
+      dibujar: (v) => {
+        // Cada piso de altura h: solera inferior, pies derechos y solera superior (sin traslapo en el entrepiso)
+        for (let p = 0; p < d.pisos; p++) {
+          const y0 = p * Hm;
+          v.poly("CONTORNO", [[0, y0], [W, y0], [W, y0 + b], [0, y0 + b]]);
+          v.poly("CONTORNO", [[0, y0 + Hm - b], [W, y0 + Hm - b], [W, y0 + Hm], [0, y0 + Hm]]);
+          for (const x of [0, W - bb]) {
+            v.poly("CONTORNO", [[x, y0 + b], [x + bb, y0 + b], [x + bb, y0 + Hm - b], [x, y0 + Hm - b]]);
+            for (let i = 1; i < d.n; i++) v.line("CONTORNO", x + i * b, y0 + b, x + i * b, y0 + Hm - b);
+          }
+          v.poly("OCULTO", [[v.pp(1), y0 + v.pp(1)], [W - v.pp(1), y0 + v.pp(1)], [W - v.pp(1), y0 + Hm - v.pp(1)], [v.pp(1), y0 + Hm - v.pp(1)]]);
+        }
+        v.line("NIVELES", -v.pp(10), 0, W + v.pp(10), 0);
+        v.text("TEXTOS", W / 2, Hm / 2, 2.2, `Tablero OSB ${d.tabla === "42" ? "9,5" : "11,1"} mm en ${d.caras} cara${d.caras > 1 ? "s" : ""}`, 1, 2);
+        v.text("TEXTOS", W / 2, Hm / 2 - v.pp(4), 2.2, `Clavos perimetrales @ ${d.Sct} mm`, 1, 2);
+        v.referencia(bb / 2, Hm * 0.25, -v.pp(6), Hm * 0.25 + v.pp(6), `Anclaje Tt = ${fmt(r.Tt, 0)} kgf`);
+        v.text("TEXTOS", W + v.pp(3), Hm * 0.25, 2, `Pc = ${fmt(r.Pc, 0)} kgf`);
+        v.cotaH(0, W, 0, -9, `b = ${fmtCota(W)}`); v.cotaV(0, Hm, W, 16, `h = ${fmtCota(Hm)}`);
+      },
+    });
+    vistaSeccionMadera(pl, `Pie derecho de borde ${d.n} x ${esc}`, b, h, d.n);
+    extra = [
+      `Pie derecho de borde: ${d.n} pieza${d.n > 1 ? "s" : ""} ${esc} mm unidas entre sí; anclaje a la fundación en cada extremo para la tracción neta Tt = ${fmt(r.Tt, 0)} kgf (alargamiento máximo ${fmt(d.Da, 1)} mm).`,
+      `Tablero ${d.tabla === "42" ? "OSB 9,5 mm (NCh 1198:2024 Tabla 42)" : "OSB 11,1 mm (NCh 1198:2024 Tabla 43)"} en ${d.caras} cara${d.caras > 1 ? "s" : ""}, clavado perimetral @ ${d.Sct} mm. Juntas de tableros sobre pies derechos o cadenetas.`,
+      res,
+    ];
+    archivo = `plano_muro_corte_${d.grado}_${d.n}x${b}x${h}.dxf`;
+  }
+  pl.notas(notasMadera(d, extra));
+  descargarPlano(pl, archivo);
 }
 
 function init() {

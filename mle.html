@@ -274,6 +274,7 @@
     <div class="dibujo"><h3>Sección transversal</h3><div id="svgSec"></div></div>
     <div class="toolbar">
       <button class="btn sec" type="button" onclick="window.print()">Imprimir</button>
+        <button class="btn sec" type="button" onclick="descargarDXF()">Descargar plano (.dxf)</button>
         <button class="btn" type="button" onclick="descargarZipMemoria(ultimoTex, ultimoNombre, document.body)">Descargar memoria (.zip)</button>
     </div>
     <div class="memo" id="memo"></div>
@@ -281,7 +282,8 @@
 </main>
 <footer>Herramienta de apoyo académico basada en NCh 2165:2023, NCh 1198:2024 y la planilla «MLE v4». Verifique siempre los resultados.</footer>
 
-<script src="memo.js?v=31"></script>
+<script src="memo.js?v=32"></script>
+<script src="dxf.js?v=1"></script>
 <script>
 "use strict";
 // ---------------------------------------------------------------------------
@@ -1002,6 +1004,7 @@ ${s}\end{tikzpicture}
 // Interfaz y memoria
 // ---------------------------------------------------------------------------
 let ultimoTex = "", ultimoNombre = "memoria_mle.tex";
+let ultimoMLE = null;   // datos y resultados del último cálculo, para el plano DXF
 let modo = "viga";
 
 function reglas() {
@@ -1115,6 +1118,7 @@ function mostrar(items, titulo, verdictTxt, r, d, esViga, m, texTitulo, texSub, 
     <div class="bar ${v > 1 ? "bad" : ""}"><i style="width:${Math.min(100, v * 100)}%"></i></div><div class="s">${s}</div></div>`).join("");
   const dc = Math.max(...items.map(i => i[1]));
   const ok = dc <= 1;
+  ultimoMLE = { esViga, d, r, dc, ok };
   $("resTitle").textContent = titulo;
   $("verdict").innerHTML = `<div class="verdict ${ok ? "ok" : "bad"}">${ok ? `✔ ${verdictTxt} CUMPLE` : `✘ ${verdictTxt} NO CUMPLE`} — razón máxima = ${Number.isFinite(dc) ? fmt(dc, 3) : "∞"}${r.notaComb ? `<div style="font-weight:400;font-size:13px;margin-top:4px">${r.notaComb}</div>` : ""}</div>`;
   $("avisos").innerHTML = r.avisos.map(a => `<div class="note">${a}</div>`).join("");
@@ -1254,6 +1258,68 @@ function setModo(nuevo) {
   modo = nuevo;
   Object.entries(PESTANA[modo]).forEach(([id, v]) => { if ($(id).type === "checkbox") $(id).checked = v; else $(id).value = v; });
   actualizar();
+}
+
+// ---------------------------------------------------------------------------
+// Plano DXF (dxf.js): elevación del elemento y sección con sus láminas
+// ---------------------------------------------------------------------------
+function descargarDXF() {
+  if (!ultimoTex || !ultimoMLE) { alert("Corrija los datos inválidos antes de descargar el plano."); return; }
+  const { esViga, d, r, dc, ok } = ultimoMLE, P = r.P;
+  const b = d.b, h = d.h, L = d.Lm * 1000, esc = `${fmt(b, 0)}x${fmt(h, 0)}`;
+  const n = Math.round((d.lam === "horizontal" ? h : b) / d.t), tReal = (d.lam === "horizontal" ? h : b) / n;   // espesor real de lámina (como avisa el cálculo)
+  const clase = /mle/i.test(P.nombre) ? P.nombre.toUpperCase() : `MLE ${P.nombre}`;
+  const pl = new PlanoDXF({ titulo: `${esViga ? "VIGA" : "COLUMNA"} ${clase} ${esc}`, contenido: "elevación, sección y especificaciones" });
+  if (esViga) {
+    pl.vista({
+      titulo: `Elevación viga MLE ${esc} mm`, bbox: [0, 0, L, h], objetivo: [200, 90], margen: [16, 20, 16, 20],
+      dibujar: (v) => {
+        v.poly("CONTORNO", [[0, 0], [L, 0], [L, h], [0, h]]);
+        if (d.lam === "horizontal") for (let i = 1; i < n; i++) v.line("OCULTO", 0, i * h / n, L, i * h / n);
+        for (const x of [0, L]) { const a = v.pp(2.5); v.poly("APOYOS", [[x, 0], [x - a, -1.6 * a], [x + a, -1.6 * a]]); }
+        v.cotaH(0, L, 0, -12, `L = ${fmtCota(L)}`); v.cotaV(0, h, L, 7);
+        v.text("TEXTOS", L / 2, h + v.pp(5), 2.2, `q SC = ${fmt(d.qSC, 1)} kgf/m${d.qPPa ? `   q PP adicional = ${fmt(d.qPPa, 1)} kgf/m` : ""}${d.P ? `   P = ${fmt(d.P, 0)} kgf` : ""}`, 1, 0);
+        v.text("TEXTOS", L / 2, -v.pp(5), 2, `Apoyo lateral del canto comprimido: ${d.apoyo === "ac" ? "continuo" : `cada ${fmt(d.la, 0)} cm`}. Longitud de apoyo ${fmt(d.Lap, 0)} mm.`, 1, 3);
+      },
+    });
+  } else {
+    pl.vista({
+      titulo: `Elevación columna MLE ${esc} mm`, bbox: [-b / 2, 0, b / 2, L], objetivo: [100, 200], margen: [22, 14, 60, 14],
+      dibujar: (v) => {
+        v.poly("CONTORNO", [[-b / 2, 0], [b / 2, 0], [b / 2, L], [-b / 2, L]]);
+        v.line("EJES", 0, -v.pp(5), 0, L + v.pp(5));
+        v.line("APOYOS", -b / 2 - v.pp(6), 0, b / 2 + v.pp(6), 0); v.achurado(-b / 2 - v.pp(6), -v.pp(3), b / 2 + v.pp(6), 0, 1.5);
+        v.cotaV(0, L, -b / 2, -12, `L = ${fmtCota(L)}`);
+        v.text("TEXTOS", b / 2 + v.pp(6), L * 0.55, 2.2, d.kpTxt.replace(/–/g, "-"));
+        v.text("TEXTOS", b / 2 + v.pp(6), L * 0.55 - v.pp(4), 2.2, `Kp = ${fmt(d.Kp, 2)}   Lp,x = ${fmt(d.Lpx, 2)} m   Lp,y = ${fmt(d.Lpy, 2)} m`);
+        if (d.w > 0) v.text("TEXTOS", b / 2 + v.pp(6), L * 0.55 - v.pp(8), 2.2, `Viento w = ${fmt(d.w, 1)} kgf/m`);
+      },
+    });
+  }
+  pl.vista({
+    titulo: `Sección MLE ${esc} (${n} láminas)`, bbox: [-b / 2, -h / 2, b / 2, h / 2], objetivo: [60, 90], margen: [16, 12, 30, 14],
+    dibujar: (v) => {
+      v.poly("SECCION", [[-b / 2, -h / 2], [b / 2, -h / 2], [b / 2, h / 2], [-b / 2, h / 2]]);
+      for (let i = 1; i < n; i++) {
+        if (d.lam === "horizontal") v.line("SECCION", -b / 2, -h / 2 + i * h / n, b / 2, -h / 2 + i * h / n);
+        else v.line("SECCION", -b / 2 + i * b / n, -h / 2, -b / 2 + i * b / n, h / 2);
+      }
+      v.line("EJES", -b / 2 - v.pp(4), 0, b / 2 + v.pp(4), 0); v.line("EJES", 0, -h / 2 - v.pp(4), 0, h / 2 + v.pp(4));
+      v.cotaH(-b / 2, b / 2, h / 2, 6); v.cotaV(-h / 2, h / 2, -b / 2, -7);
+      if (d.lam === "horizontal") v.referencia(b / 2 - v.pp(1), -h / 2 + h / n / 2, b / 2 + v.pp(5), -h / 2 + v.pp(3), `t = ${fmt(tReal, tReal % 1 ? 1 : 0)} (lámina)`);
+    },
+  });
+  pl.notas([
+    "Cotas en mm salvo indicación. No medir sobre el plano.",
+    `Madera laminada encolada de pino radiata ${P.nombre} (${P.tipo}${P.lams ? `, láminas ${P.lams}` : ""}), ${n} láminas de ${fmt(tReal, tReal % 1 ? 1 : 0)} mm, laminación ${d.lam}; contenido de humedad ${fmt(d.H, 0)} %.`,
+    "Clase y propiedades según NCh 2165:2023; diseño por tensiones admisibles según NCh 1198:2024 cláusula 11. Cargas según NCh 1537 y NCh 432.",
+    "Fabricación con adhesivo estructural para uso exterior/interior según la clase de servicio; empalmes de láminas por unión dentada (finger joint) certificada por el fabricante.",
+    esViga
+      ? `Viga de luz L = ${fmt(d.Lm, 2)} m. Razón máxima = ${Number.isFinite(dc) ? fmt(dc, 3) : "infinita"} (${ok ? "cumple" : "NO CUMPLE"}).`
+      : `Columna de L = ${fmt(d.Lm, 2)} m, ${d.kpTxt.replace(/–/g, "-")}. Razón máxima = ${Number.isFinite(dc) ? fmt(dc, 3) : "infinita"} (${ok ? "cumple" : "NO CUMPLE"}).`,
+    "Protección: sellar las caras y cortes expuestos; separar del hormigón y del suelo con barrera de humedad. Uniones metálicas galvanizadas, según su propio cálculo (no detalladas en este plano).",
+  ]);
+  descargarPlano(pl, `plano_mle_${esViga ? "viga" : "columna"}_${b}x${h}.dxf`);
 }
 
 function init() {

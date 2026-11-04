@@ -14,6 +14,9 @@ Todo el texto de la interfaz, las memorias y los commits va en **español (Chile
   - El modelo es «Skyscraper Tower» de VertaScan (Sketchfab), licencia CC BY 4.0: el crédito bajo el visor es obligatorio.
   - No está en `ARCHIVOS` de `sw.js` (4,6 MB): se guarda en caché la primera vez que se abre con conexión.
 - `icons/logo-mmp.webp`: logo MMP (fondo transparente; `aura.css` lo recorta al dibujo).
+- `dxf.js`: planos DXF compartidos (`PlanoDXF`, R12, mm, capas normalizadas `CAPAS_PLANO`). Lámina serie A (A3 a A0) con marco, margen de archivo y viñeta según NCh 13; escalas normalizadas elegidas por vista; la vista principal queda a tamaño real en el espacio modelo. La viñeta toma proyecto, mandante, calculista y oficina del proyecto activo. Lo usan acero, hormigón (viga y losa), madera (envigado, tabique, pilar y muro de corte), MLE, muro de contención (botón "Plano con lámina NCh 13") y espectros. Su clase se llama `DxfR12` para convivir con la clase `Dxf` propia de reticulada, placa y muro. **Pendiente:** muro.html tiene dos planos (`descargarDXF`, corte típico del equipo, y `descargarDXFLamina`, con lámina y viñeta); hay que elegir uno.
+  - Designaciones chilenas en las notas: acero NCh 203 (A42-27ES), barras NCh 204 (A630-420H), hormigón por grado G (NCh 170), madera NCh 1207 / NCh 1198:2024, MLE NCh 2165, preservación NCh 819, ejecución de acero NCh 428. ø se escribe como `%%c` en el DXF.
+  - Cada página guarda los resultados de su último cálculo (`ultimoViga`, `ultimoLosa`, `ultimoMadera`, `ultimoMLE`, `ultimoR`) o los recalcula sin memoria (acero, espectros); el plano no repite ni cambia el cálculo.
 - Páginas de cálculo, cada una autónoma (HTML + CSS + JS en el mismo archivo):
   - `acero.html`: vigas y columnas laminadas, AISC 360-16 LRFD.
   - `reticulada.html`: vigas reticuladas (cordones, diagonales y montantes), AISC 360-16 LRFD.
@@ -71,13 +74,14 @@ Todo el texto de la interfaz, las memorias y los commits va en **español (Chile
 ## Al agregar o cambiar una página de cálculo
 
 1. **Página:** copiar la cabecera (con el logo MMP) y los estilos de `acero.html`, y cargar `aura.css` al final del `<head>`, para mantener el aspecto.
-2. **Integración con proyectos:** definir `window.AURA_MEMO = { tipo, elemento(), tex(), nombre(), recalcular(valores) }`. Todos los campos del formulario deben estar dentro de `<main>` y tener `id`, porque así se guardan y se restauran.
-3. **Registro en la app:**
+2. **Plano y memoria:** botones "Descargar plano (.dxf)" (con `dxf.js`) y "Descargar memoria (.zip)" (`descargarZipMemoria` de `memo.js`).
+3. **Integración con proyectos:** definir `window.AURA_MEMO = { tipo, elemento(), tex(), nombre(), recalcular(valores) }`. Todos los campos del formulario deben estar dentro de `<main>` y tener `id`, porque así se guardan y se restauran.
+4. **Registro en la app:**
    - agregar la página a `PAGINAS_CALCULO` en `proyectos.js`;
    - agregar el enlace en `index.html`;
    - agregarla a `ARCHIVOS` en `sw.js`.
-4. **Versiones y caché:** al publicar cambios, subir `VERSION` en `sw.js` para que los dispositivos actualicen la copia sin conexión. Si se modifica `memo.js`, `proyectos.js`, `aura.css` o `modelo3d.js`, subir también el `?v=N` con que lo cargan las páginas.
-5. **Recursos externos:** solo KaTeX (cdnjs) y supabase-js (jsdelivr). No agregar otras dependencias externas.
+5. **Versiones y caché:** al publicar cambios, subir `VERSION` en `sw.js` para que los dispositivos actualicen la copia sin conexión. Si se modifica `memo.js`, `proyectos.js`, `aura.css`, `modelo3d.js` o `dxf.js`, subir también el `?v=N` con que lo cargan las páginas.
+6. **Recursos externos:** solo KaTeX (cdnjs) y supabase-js (jsdelivr). No agregar otras dependencias externas.
 
 ## Catálogos de perfiles
 

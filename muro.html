@@ -270,6 +270,7 @@
       <div class="toolbar">
         <button class="btn sec" type="button" onclick="window.print()">Imprimir</button>
         <button class="btn sec" type="button" onclick="descargarDXF()" title="Plano en formato DXF (AutoCAD), en milímetros y por capas">Descargar plano (.dxf)</button>
+        <button class="btn sec" type="button" onclick="descargarDXFLamina()" title="Plano DXF en lámina con viñeta (dxf.js), en milímetros y por capas">Plano con lámina NCh 13 (.dxf)</button>
         <button class="btn" type="button" onclick="descargarZipMemoria(ultimoTex, ultimoNombre, document.body)">Descargar memoria (.zip)</button>
       </div>
       <div class="memo" id="memo"></div>
@@ -278,7 +279,8 @@
 </main>
 <footer>Herramienta de apoyo académico basada en el procedimiento del curso Diseño de Proyectos de Ingeniería (muros de contención). No reemplaza la memoria de cálculo del ingeniero del proyecto. Verifique siempre los resultados.</footer>
 
-<script src="memo.js?v=31"></script>
+<script src="memo.js?v=32"></script>
+<script src="dxf.js?v=1"></script>
 <script>
 "use strict";
 // ---------------------------------------------------------------------------
@@ -1310,6 +1312,106 @@ function calcular() {
   ultimoR = r; ultimoD = d;
   ultimoTex = documentoTex(d, r, m.texto());
   ultimoNombre = `memoria_muro_contencion_H${fmt(M(r.H), 2).replace(",", "_")}.tex`;
+}
+
+// ---------------------------------------------------------------------------
+// Plano DXF en lámina con viñeta (dxf.js): sección transversal con armaduras, cuadro y notas.
+// Convive con descargarDXF() (plano del corte típico con su propia clase Dxf); queda pendiente elegir uno.
+// ---------------------------------------------------------------------------
+function descargarDXFLamina() {
+  if (!ultimoTex || !ultimoR) { alert("Corrija los datos inválidos antes de descargar el plano."); return; }
+  const d = leerDatos(), r = ultimoR, a = r.arm, k = 10;        // cm → mm
+  const Bp = d.Bp * k, eb = d.eb * k, Bt = d.Bt * k, ec = d.ec * k, Hf = d.Hf * k, Hm = d.Hm * k, Df = d.Df * k;
+  const B = r.B * k, H = r.H * k, xs = Bp + eb, rec = d.rec * k, bd = d.bd * k, hd = d.hd * k, xd = d.xd * k;
+  const sep = (txt) => (/@\s*([\d,.]+)/.exec(txt || "") ? parseFloat(/@\s*([\d,.]+)/.exec(txt)[1].replace(",", ".")) * 10 : 0);
+  const ø = (txt) => String(txt).replace(/φ/g, "ø");
+  const dbP = d.dbP * 10, dbPc = d.dbPc * 10, dbH = d.dbH * 10, dbZp = d.dbZp * 10, dbZt = d.dbZt * 10, dbZr = d.dbZr * 10;
+  const grado = { 170: "G17", 200: "G20", 250: "G25", 300: "G30", 350: "G35", 400: "G40" }[d.fc] || `f'c = ${d.fc} kgf/cm²`;
+  const pl = new PlanoDXF({ titulo: `MURO DE CONTENCIÓN H = ${fmt(M(r.H), 2)} m`, contenido: "sección transversal, armaduras y especificaciones" });
+
+  pl.vista({
+    titulo: "Sección transversal típica", bbox: [-600, -Math.max(hd, 0) - 300, B + 600, H + 300], objetivo: [210, 230], margen: [24, 22, 50, 12],
+    dibujar: (v) => {
+      v.poly("CONTORNO", contorno(d).map(([x, y]) => [x * k, y * k]));
+      // Terreno natural (lado del pie) y relleno compactado (lado del talón)
+      // Terreno natural hasta el hormigón: el canto del pie (Df ≤ Hf) o la cara exterior de la pantalla (Df > Hf)
+      if (Df > 0) v.line("NIVELES", -600, Df, Df <= Hf ? 0 : Bp + (xs - ec - Bp) * (Df - Hf) / Hm, Df);
+      v.line("NIVELES", xs, H, B + 600, H);
+      v.text("TEXTOS", B + v.pp(2), H + v.pp(2), 2, "Relleno compactado", 0, 0);
+      if (Df > 0) v.text("TEXTOS", -600, Df + v.pp(1.5), 2, "Terreno natural");
+      v.nivel(xs + v.pp(8), H, `+${fmt(M(r.H), 2)}`); v.nivel(B + v.pp(12), 0, "+0,00 (sello fundación)");
+      // Pantalla: vertical cara del relleno con pata en la zapata, vertical cara exterior y horizontales (puntos)
+      const xP = xs - rec - dbP / 2;
+      v.poly("ARMADURA", [[xP, H - rec], [xP, rec + dbZp + dbP / 2], [Math.min(B - rec, xP + 12 * dbP + 150), rec + dbZp + dbP / 2]], false);
+      const t0 = [xs - ec + rec + dbPc / 2, H - rec], t1 = [Bp + rec + dbPc / 2, Hf];
+      v.poly("ARMADURA", [t0, t1, [t1[0], rec + dbZp + dbPc / 2], [Math.max(rec, t1[0] - 12 * dbPc - 150), rec + dbZp + dbPc / 2]], false);
+      const sH = sep(a.pantH);
+      if (sH > 0) for (let y = Hf + sH / 2; y < H - rec; y += sH) {
+        const f = (y - Hf) / Hm, xFront = Bp + (xs - ec - Bp) * f + rec + dbPc + dbH / 2;
+        v.punto("ARMADURA", xP - dbP / 2 - dbH / 2, y, dbH); v.punto("ARMADURA", xFront, y, dbH);
+      }
+      // Zapata, como en el diseño: Z1 inferior bajo el pie (hasta la cara posterior de la pantalla), Z2 superior sobre
+      // el talón (desde la cara anterior de la pantalla) y Z3 en las caras opuestas. Patas de 90° hacia la otra cara,
+      // de 12 db sin exceder el espesor disponible; anclajes y traslapos según ACI 318-08 Cap. 12.
+      const pata = (db) => Math.max(0, Math.min(12 * db, Hf - 2 * rec - 2 * db));
+      const yI = rec + Math.max(dbZp, dbZr) / 2, yS = Hf - rec - Math.max(dbZt, dbZr) / 2;
+      if (d.Bp > 0) {
+        v.poly("ARMADURA", [[rec, yI + pata(dbZp)], [rec, yI], [xs, yI]], false);                       // Z1
+        v.poly("ARMADURA", [[rec, yS - pata(dbZr)], [rec, yS], [xs, yS]], false);                       // Z3 sobre el pie
+      }
+      if (d.Bt > 0) {
+        v.poly("ARMADURA", [[Bp, yS], [B - rec, yS], [B - rec, yS - pata(dbZt)]], false);               // Z2
+        v.poly("ARMADURA", [[Bp, yI], [B - rec, yI], [B - rec, yI + pata(dbZr)]], false);               // Z3 bajo el talón
+      }
+      const sR = sep(a.zL);
+      if (sR > 0) for (let x = rec + sR / 2; x < B - rec; x += sR) { v.punto("ARMADURA", x, yI + Math.max(dbZp, dbZr) / 2 + dbZr / 2, dbZr); v.punto("ARMADURA", x, yS - Math.max(dbZt, dbZr) / 2 - dbZr / 2, dbZr); }
+      // Barbacanas: de la cara del relleno a la cara exterior (inclinada)
+      const caraExt = (y) => Bp + (xs - ec - Bp) * (y - Hf) / Hm;
+      const barb = [Hf + 300, Hf + Hm / 2].filter(y => y < H - 300);
+      for (const y of barb) v.line("OCULTO", caraExt(y), y - 40, xs, y + 40);
+      if (barb.length) v.text("TEXTOS", xs + v.pp(3), barb[0], 1.8, "Barbacana ø75", 0, 2);
+      // Referencias de armaduras
+      v.referencia(xP, Hf + Hm * 0.62, xs + v.pp(14), Hf + Hm * 0.7, `${ø(a.pant)} vert. cara relleno`, "ARMADURA");
+      v.referencia(t1[0] + (t0[0] - t1[0]) * 0.45, Hf + Hm * 0.45, -v.pp(6), Hf + Hm * 0.5, `${ø(a.pantC)} vert. cara exterior`, "ARMADURA");
+      v.referencia(xP - dbP, Hf + Hm * 0.3, xs + v.pp(14), Hf + Hm * 0.32, `${ø(a.pantH)} horiz. c/cara`, "ARMADURA");
+      if (d.Bp > 0) {
+        v.referencia(Bp * 0.4, yI, -v.pp(6), -v.pp(8), `Z1 ${ø(a.pie)} inf.`, "ARMADURA");
+        v.referencia(Bp * 0.3, yS, -v.pp(6), Hf + v.pp(4), `Z3 ${ø(a.zC)} sup.`, "ARMADURA");
+      }
+      if (d.Bt > 0) {
+        v.referencia(xs + Bt * 0.6, yS, B + v.pp(6), Hf + v.pp(6), `Z2 ${ø(a.tal)} sup.`, "ARMADURA");
+        v.referencia(xs + Bt * 0.7, yI, B + v.pp(6), -v.pp(10), `Z3 ${ø(a.zC)} inf.`, "ARMADURA");
+      }
+      v.referencia(xs + Bt * 0.3, yI + dbZp, B + v.pp(6), -v.pp(4), `Z4 ${ø(a.zL)} repartición c/cara`, "ARMADURA");
+      // Cotas
+      const yc = -Math.max(hd, 0);
+      if (Bp > 0) v.cotaH(0, Bp, yc, -8); v.cotaH(Bp, xs, yc, -8); if (Bt > 0) v.cotaH(xs, B, yc, -8);
+      v.cotaH(0, B, yc, -15, `B = ${fmtCota(B)}`);
+      v.cotaH(xs - ec, xs, H, 6, fmtCota(ec));
+      v.cotaV(0, Hf, 0, -10); v.cotaV(Hf, H, 0, -10, `Hm = ${fmtCota(Hm)}`);
+      if (Df > 0) v.cotaV(0, Df, 0, -18, `Df = ${fmtCota(Df)}`);
+      if (bd > 0 && hd > 0) { v.cotaH(xd, xd + bd, -hd, -5); v.cotaV(-hd, 0, xd + bd, 5); v.text("TEXTOS", xd + bd / 2, -hd - v.pp(10), 2, "Dentellón", 1, 0); }
+      if (d.q > 0) v.text("TEXTOS", xs + Bt / 2, H + v.pp(7), 2.2, `Sobrecarga q = ${fmt(S(d.q), 2)} tf/m²`, 1, 0);
+    },
+  });
+  const filas = [
+    ["P1", "Pantalla, vertical cara del relleno", ø(a.pant)], ["P2", "Pantalla, vertical cara exterior", ø(a.pantC)],
+    ["P3", "Pantalla, horizontal (cada cara)", ø(a.pantH)],
+    ...(d.Bp > 0 ? [["Z1", "Zapata, inferior (pie)", ø(a.pie)]] : []), ...(d.Bt > 0 ? [["Z2", "Zapata, superior (talón)", ø(a.tal)]] : []),
+    ["Z3", "Zapata, transversal cara opuesta", ø(a.zC)], ["Z4", "Zapata, longitudinal (cada cara)", ø(a.zL)],
+  ];
+  pl.tabla({ titulo: "Cuadro de armaduras (por metro de muro)", columnas: [["Marca", 14], ["Ubicación", 62], ["Armadura", 34]], filas,
+    nota: "ø = diámetro en mm; @ = separación en cm. Largos de anclaje y traslapo según ACI 318-08 Capítulo 12." });
+  pl.notas([
+    "Cotas en mm salvo indicación; niveles en m. No medir sobre el plano.",
+    `Hormigón ${grado} según NCh 170 (f'c = ${d.fc} kgf/cm²); acero de refuerzo ${d.fy >= 4200 ? "A630-420H" : "A440-280H"} según NCh 204 (fy = ${d.fy} kgf/cm²). Recubrimiento libre ${fmt(d.rec, 1)} cm.`,
+    `Diseño del hormigón armado según ACI 318-08 y NCh 430. Empuje de tierras de Rankine${r.conSismo ? " y empuje sísmico de Mononobe-Okabe" : ""}${d.zona !== "0" ? `; zona sísmica ${d.zona} (NCh 433, Ao = ${fmt(d.Ao, 2)}g)` : ""}.`,
+    `Relleno granular compactado (phi = ${fmt(d.phiR, 0)}°, gamma = ${fmt(d.gR * 1000, 2)} tf/m³). Suelo de fundación: phi = ${fmt(d.phiS, 0)}°, capacidad última ${fmt(d.su, 2)} kgf/cm². Validar con el estudio de mecánica de suelos.`,
+    `Factores de seguridad: volcamiento ${fmt(r.e1.FSv, 2)}${r.e2 ? ` (sísmico ${fmt(r.e2.FSv, 2)})` : ""}, deslizamiento ${fmt(r.e1.FSd, 2)}${r.e2 ? ` (sísmico ${fmt(r.e2.FSd, 2)})` : ""}. Razón máxima ${Number.isFinite(r.dcMax) ? fmt(r.dcMax, 3) : "infinita"} (${r.ok ? "cumple" : r.sinVerificar.length ? "SIN VERIFICAR" : "NO CUMPLE"}).`,
+    "Drenaje: material drenante de 30 cm tras la pantalla y barbacanas ø75 mm cada 2 m en horizontal (recomendación; ajustar según el estudio de suelos). Juntas de dilatación según el proyecto de arquitectura.",
+    "Hormigonado, vibrado y curado según NCh 170. Sello de fundación limpio y compactado, aprobado por el mecánico de suelos antes de hormigonar.",
+  ]);
+  descargarPlano(pl, `plano_muro_contencion_H${fmt(M(r.H), 2).replace(",", "_")}_lamina.dxf`);
 }
 
 function init() {
