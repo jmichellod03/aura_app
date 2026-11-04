@@ -229,6 +229,10 @@
           <div><label for="fsDs">Desl. sísmico</label><input id="fsDs" type="number" step="0.05" value="1.1"></div>
           <div><label for="fsTs">Tensión sísmica</label><input id="fsTs" type="number" step="0.5" value="2"></div>
         </div>
+        <div class="row2 sismoF">
+          <div><label for="pcMin">Zona comprimida mín. en sismo <span class="unit">[% de B]</span></label><input id="pcMin" type="number" step="5" value="80"></div>
+          <div></div>
+        </div>
         <div class="unit" style="margin-top:4px">Valores del ejemplo del curso: volcamiento sísmico 1,15 × 1,1.</div>
       </fieldset>
 
@@ -335,7 +339,7 @@ function leerDatos() {
     cS: num("cS"), su: num("su"), pasivo: $("pasivo").value,
     q: num("q") / 10, qEstab: $("qEstab").checked,
     zona, Ao: ZONAS[zona], Ri: num("Ri"), critPant: $("critPant").value,
-    fsV: num("fsV"), fsD: num("fsD"), fsT: num("fsT"), fsVs: num("fsVs"), fsDs: num("fsDs"), fsTs: num("fsTs"),
+    fsV: num("fsV"), fsD: num("fsD"), fsT: num("fsT"), fsVs: num("fsVs"), fsDs: num("fsDs"), fsTs: num("fsTs"), pcMin: num("pcMin"),
     fc: num("fc"), fy: num("fy"), gH: num("gH") / 1000, rec: num("rec"),
     dbP: num("dbP") / 10, dbPc: num("dbPc") / 10, dbH: num("dbH") / 10,
     dbZp: num("dbZp") / 10, dbZt: num("dbZt") / 10, dbZr: num("dbZr") / 10,
@@ -348,7 +352,7 @@ function reglasDatos() {
     ["q", 0], ["fsV", 0, true], ["fsD", 0, true], ["fsT", 0, true],
     ["fc", 0, true], ["fy", 0, true], ["gH", 0, true], ["rec", 0, true],
     ["dbP", 0, true], ["dbPc", 0, true], ["dbH", 0, true], ["dbZp", 0, true], ["dbZt", 0, true], ["dbZr", 0, true]];
-  if ($("zona").value !== "0") r.push(["Ri", 0], ["fsVs", 0, true], ["fsDs", 0, true], ["fsTs", 0, true]);
+  if ($("zona").value !== "0") r.push(["Ri", 0], ["fsVs", 0, true], ["fsDs", 0, true], ["fsTs", 0, true], ["pcMin", 0]);
   return r;
 }
 function reglasMaximos() {
@@ -356,6 +360,7 @@ function reglasMaximos() {
   return [
     ["ec", num("eb"), "El espesor del coronamiento e<sub>c</sub> no puede superar el de la base e<sub>b</sub>"],
     ["xd", Math.max(0, B - num("bd")), "El dentellón debe quedar bajo la zapata (x<sub>d</sub> + b<sub>d</sub> ≤ B)"],
+    ["pcMin", 100, "La zona comprimida mínima no puede superar el 100 % de B"],
     ["phiR", 50, "φ<sub>r</sub> debe ser menor o igual a 50°"],
     ["phiS", 50, "φ<sub>s</sub> debe ser menor o igual a 50°"],
     ["rec", Math.min(num("eb"), num("Hf")) * 100 / 3, "El recubrimiento es demasiado grande para los espesores de la pantalla y la zapata"],
@@ -629,7 +634,18 @@ function verificar(d, m) {
     m.row(`σ<sub>adm</sub> = σ<sub>u</sub>/FS = ${fmt(d.su, 2)}/${fmt(fsT, 2)}`, `${fmt(S(sadm), 2)} tf/m² ${tagDC(dcT)}`);
     m.eq(L`\sigma_{adm} = \frac{\sigma_u}{FS} = \frac{${tn(S(d.su), 1)}}{${tn(fsT, 2)}} = ${tn(S(sadm), 2)}\ \mathrm{tf/m^2} \qquad \frac{\sigma_{m\acute{a}x}}{\sigma_{adm}} = \frac{${tn(S(c.smax), 2)}}{${tn(S(sadm), 2)}} = ${tn(dcT, 3)} ${dcT <= 1 ? LE : ">"} 1{,}0`);
     ck(`Tensión de contacto${sufijo}`, L`$\sigma_{m\acute{a}x} = ${tn(S(c.smax), 2)}$ tf/m$^2$`, L`$\sigma_{adm} = ${tn(S(sadm), 2)}$ tf/m$^2$`, dcT, `Tensión de contacto${sufijo}`, "estab");
-    return { FSv, FSd, c, sadm, Mv, FD };
+    let pc = 100;
+    if (sufijo) {
+      // Largo de la base en compresión (criterio del curso: al menos el 80 % de B en sismo)
+      pc = Math.min(1, c.Lc / B) * 100;
+      const dcC = pc > 0 ? d.pcMin / pc : Infinity;
+      m.row(`${c.tri ? "Largo comprimido 3x / B" : "Largo comprimido / B (base totalmente comprimida)"} ≥ ${fmt(d.pcMin, 0)} %`, `${fmt(M(c.Lc), 3)} m → ${fmt(pc, 1)} % ${tagDC(dcC)}`, "criterio del curso");
+      m.eq(c.tri
+        ? L`\frac{3x}{B} = \frac{3\cdot ${tn(M(c.Lc / 3), 3)}}{${tn(M(B), 2)}} = ${tn(pc, 1)}\,\% ${pc >= d.pcMin - 1e-9 ? GE : "<"} ${tn(d.pcMin, 0)}\,\%`
+        : L`|e| \le \frac{B}{6} \;\Rightarrow\; \text{base totalmente comprimida: } 100\,\% ${GE} ${tn(d.pcMin, 0)}\,\%`);
+      ck("Zona comprimida (sismo)", L`$${tn(pc, 1)}$\,\% de $B$`, L`$${tn(d.pcMin, 0)}$\,\%`, dcC, "Zona comprimida (sismo)", "estab");
+    }
+    return { FSv, FSd, c, sadm, Mv, FD, pc };
   };
   const Mv1 = Ps * H / 3 + Pq * H / 2, FD1 = Ps + Pq;
   const e1 = estab("Caso 1", Mv1, FD1, d.fsV, d.fsD, d.fsT,
