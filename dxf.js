@@ -57,13 +57,13 @@ class DxfR12 {
     // Windows-1252. Diámetro y grado con los códigos de AutoCAD (%%c, %%d); símbolos sin equivalente se simplifican
     const txt = c.join("\r\n") + "\r\n";
     const map = { "—": "-", "–": "-", "≤": "<=", "≥": ">=", "φ": "phi", "Δ": "Delta", "λ": "lambda", "ξ": "xi", "α": "alfa", "→": "->", "π": "pi", "·": " ", "²": "2", "³": "3", "×": "x", "ø": "%%c", "Ø": "%%c", "°": "%%d", "±": "%%p" };
-    const limpio = txt.replace(/[—–≤≥φΔλξα→π·²³×øØ°±]/g, (ch) => map[ch]).replace(/[^\x00-\xff]/g, "?");
+    const limpio = txt.replace(/\u00a0/g, " ").replace(/[—–≤≥φΔλξα→π·²³×øØ°±]/g, (ch) => map[ch]).replace(/[^\x00-\xff]/g, "?");
     return Uint8Array.from(limpio, (ch) => ch.charCodeAt(0));
   }
 }
 
-// Capas normalizadas de AURA. Color = grosor de pluma con un archivo CTB (7 contorno 0,5 mm; 1 armadura 0,35 mm;
-// 3 cotas, 8 ejes y ocultas 0,18 mm; 4 secciones cortadas 0,35 mm).
+// Capas normalizadas de AURA. Color = grosor de pluma con un archivo CTB (7 contorno 0.5 mm; 1 armadura 0.35 mm;
+// 3 cotas, 8 ejes y ocultas 0.18 mm; 4 secciones cortadas 0.35 mm).
 const CAPAS_PLANO = [
   ["MARCO", 7], ["ROTULO", 7], ["EJES", 8, "CENTER"], ["CONTORNO", 7], ["OCULTO", 8, "DASHED"], ["SECCION", 4],
   ["ACHURADO", 8], ["ARMADURA", 1], ["ARM_INFERIOR", 5], ["ARM_SUPERIOR", 1], ["ESTRIBOS", 6], ["COTAS", 3], ["TEXTOS", 7], ["NIVELES", 5], ["CUADRO", 7],
@@ -250,7 +250,7 @@ function contexto(dx, P, k, E, S) {
   return v;
 }
 
-const fmtCota = (mm) => Math.round(mm).toLocaleString("es-CL");
+const fmtCota = (mm) => Math.round(mm).toLocaleString("en-US").replace(/,/g, "\u00a0");
 
 function partirTexto(t, n) {
   const out = []; let l = "";

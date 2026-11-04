@@ -61,7 +61,7 @@ function texUnicode(doc) {
   // babel-spanish redefine \% y falla con el espacio fino previo ("\,\%" → Incompatible glue units);
   // el propio babel ya agrega el espacio antes del signo
   doc = doc.replace(/\\,\\%/g, "\\%");
-  // Memorias con punto como separador decimal: "12{,}5" → "12.5" (los miles quedan con espacio fino "\,")
+  // Elementos guardados con la coma anterior: "12{,}5" → "12.5" (los miles quedan con espacio fino "\,")
   doc = doc.replace(/\{,\}/g, ".");
   const usados = Object.keys(TEX_UNICODE).filter((c) => doc.includes(String.fromCodePoint(parseInt(c, 16))));
   if (!usados.length) return doc;
@@ -143,7 +143,7 @@ function texParrafo(s) {
     if (p.startsWith("$") && p.length > 1) return `<span class="km" data-tex="${encodeURIComponent(p.slice(1, -1))}"></span>`;
     return p.replace(/&/g, "&amp;").replace(/</g, "&lt;")
       .replace(/\\textbf\{([^}]*)\}/g, "<b>$1</b>").replace(/\\textit\{([^}]*)\}/g, "<i>$1</i>")
-      .replace(/\\%/g, "%").replace(/\{,\}/g, ",").replace(/\\,/g, " ").replace(/\\ /g, " ")
+      .replace(/\\%/g, "%").replace(/\{,\}/g, ".").replace(/\\,/g, " ").replace(/\\ /g, " ")
       .replace(/---/g, "—").replace(/--/g, "–").replace(/~/g, " ");
   }).join("");
 }

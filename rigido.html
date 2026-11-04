@@ -140,7 +140,7 @@
           <div class="row2">
             <div><label for="calzada">Calzada</label>
               <select id="calzada">
-                <option value="bi">Bidireccional (FP = 1,0)</option>
+                <option value="bi">Bidireccional (FP = 1.0)</option>
                 <option value="u2">Unidireccional, 2 pistas por sentido</option>
                 <option value="u3">Unidireccional, 3 o más pistas</option>
               </select></div>
@@ -206,16 +206,16 @@
         <legend>Hormigón (3.604.207)</legend>
         <label for="via">Tipo de vía (Tabla 3.604.207.A)</label>
         <select id="via">
-          <option value="4.8-5.4">Vías principales y autopistas (4,8 – 5,4 MPa)</option>
-          <option value="4.6-5.0" selected>Vías colectoras (4,6 – 5,0 MPa)</option>
-          <option value="4.2-4.8">Caminos secundarios (4,2 – 4,8 MPa)</option>
+          <option value="4.8-5.4">Vías principales y autopistas (4.8 – 5.4 MPa)</option>
+          <option value="4.6-5.0" selected>Vías colectoras (4.6 – 5.0 MPa)</option>
+          <option value="4.2-4.8">Caminos secundarios (4.2 – 4.8 MPa)</option>
         </select>
         <div class="row3">
           <div><label for="Sc">S′<sub>c</sub> <span class="unit">[MPa]</span></label><input id="Sc" type="number" step="0.1" value="4.8"></div>
           <div><label for="Ec">E<sub>c</sub> <span class="unit">[MPa]</span></label><input id="Ec" type="number" step="500" value="29000"></div>
           <div><label for="mu">μ</label><input id="mu" type="number" step="0.01" value="0.15"></div>
         </div>
-        <div class="hint">E<sub>c</sub> recomendado: 29.000 MPa, o E<sub>c</sub> = 4.779,4·√f′<sub>c</sub> (ec. 3.604.207.1).</div>
+        <div class="hint">E<sub>c</sub> recomendado: 29 000 MPa, o E<sub>c</sub> = 4 779.4·√f′<sub>c</sub> (ec. 3.604.207.1).</div>
       </fieldset>
 
       <fieldset>
@@ -242,7 +242,7 @@
         <legend>Berma, juntas y clima</legend>
         <div class="row2">
           <div><label for="berma">Berma (Tabla 3.604.209.A)</label>
-            <select id="berma"><option value="1">Borde libre (TB = 1,00)</option><option value="0.94">Berma de hormigón amarrada (0,94)</option><option value="0.92">Pista ensanchada (0,92)</option></select></div>
+            <select id="berma"><option value="1">Borde libre (TB = 1.00)</option><option value="0.94">Berma de hormigón amarrada (0.94)</option><option value="0.92">Pista ensanchada (0.92)</option></select></div>
           <div><label for="Lj">Distancia entre juntas L <span class="unit">[m]</span></label><input id="Lj" type="number" step="0.1" min="2" max="6" value="4"></div>
         </div>
         <label for="estacion">Estación (Tabla 3.604.210.A)</label>
@@ -291,7 +291,7 @@
 </main>
 <footer>Herramienta de apoyo académico basada en el Manual de Carreteras, Volumen N° 3 (Edición 2025), Tópico 3.604.2. Verifique siempre los resultados.</footer>
 
-<script src="memo.js?v=32"></script>
+<script src="memo.js?v=33"></script>
 <script>
 "use strict";
 // ---------------------------------------------------------------------------
@@ -310,7 +310,7 @@ const CV_TXT = ["15 %", "20 %", "30 %", "40 %", "50 %"];
 const T202D = [[2000, 0.94, 0.82], [4000, 0.88, 0.76], [6000, 0.85, 0.72], [8000, 0.82, 0.70], [10000, 0.81, 0.68],
   [15000, 0.77, 0.65], [20000, 0.75, 0.63], [25000, 0.73, 0.61], [30000, 0.72, 0.59], [35000, 0.70, 0.58],
   [40000, 0.69, 0.57], [50000, 0.67, 0.55], [60000, 0.66, 0.53], [70000, 0.66, 0.52], [80000, 0.66, 0.51], [100000, 0.66, 0.49]];
-// Lámina 3.603.202.C (continuación) — FEE pavimentos rígidos (2024): [C2E, C+2E, BTB] para pf = 2,0 y pf = 2,5
+// Lámina 3.603.202.C (continuación) — FEE pavimentos rígidos (2024): [C2E, C+2E, BTB] para pf = 2.0 y pf = 2.5
 const PLAZAS = [
   ["Chungará (Ruta 11 CH)", "12", [2.46, 3.71, 1.48], [2.40, 3.64, 1.48]], ["Chungará (Ruta 11 CH)", "34", [0.91, 4.20, 2.02], [0.89, 4.09, 1.99]],
   ["Chacalluta (Ruta 5 Norte)", "12", [0.14, 2.25, 2.65], [0.14, 2.20, 2.59]], ["Chacalluta (Ruta 5 Norte)", "34", [0.09, 2.84, 1.66], [0.09, 2.75, 1.63]],
@@ -358,9 +358,9 @@ const CD = [
 const $ = (id) => document.getElementById(id);
 const num = (id) => { const v = parseFloat($(id).value); return Number.isFinite(v) ? v : 0; };
 const vacio = (id) => $(id).value.trim() === "";
-const fmt = (x, d = 2) => Number.isFinite(x) ? x.toLocaleString("es-CL", { minimumFractionDigits: d, maximumFractionDigits: d }) : "—";
+const fmt = (x, d = 2) => Number.isFinite(x) ? x.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d }).replace(/,/g, "\u00a0") : "—";
 const L = String.raw;
-const tn = (x, d = 2) => Number.isFinite(x) ? fmt(x, d).replace(/,/g, "{,}").replace(/\./g, "\\,") : "\\infty";
+const tn = (x, d = 2) => Number.isFinite(x) ? fmt(x, d).replace(/\u00a0/g, "\\,") : "\\infty";
 const GE = L`\ge`, LE = L`\le`;
 const tag = (ok, t) => `<span class="tag ${ok ? "ok" : "bad"}">${t}</span>`;
 const okTxt = (ok) => tag(ok, ok ? "CUMPLE" : "NO CUMPLE");
@@ -511,12 +511,12 @@ function calcular(d, m) {
   if (d.modoK === "cbr") {
     k = 69.78 * log10(d.cbr) - 10.16;
     m.row("Módulo de reacción de la subrasante: k", `${fmt(k, 1)} MPa/m (CBR = ${fmt(d.cbr, 1)} %)`, "3.604.206(3).1");
-    m.eq(L`k = 69{,}78\,\log(CBR) - 10{,}16 = 69{,}78\,\log(${tn(d.cbr, 1)}) - 10{,}16 = ${tn(k, 1)}\ \mathrm{MPa/m}`, "3.604.206(3).1");
+    m.eq(L`k = 69.78\,\log(CBR) - 10.16 = 69.78\,\log(${tn(d.cbr, 1)}) - 10.16 = ${tn(k, 1)}\ \mathrm{MPa/m}`, "3.604.206(3).1");
     m.p(L`La correlación con el CBR tiene un rango de variación del orden de $\pm 50$\,\% respecto del promedio.`);
   } else if (d.modoK === "fino") {
     const Sr = d.w / (1000 / d.gd - 1 / d.G);
     let kk, txt;
-    if (d.suelo === "A-6" && Sr >= 80) { kk = 1.76e8 * Sr ** -3.578; txt = L`k = 1{,}76\cdot 10^8\,S_r^{-3{,}578} = 1{,}76\cdot 10^8\cdot ${tn(Sr, 1)}^{-3{,}578}`; }
+    if (d.suelo === "A-6" && Sr >= 80) { kk = 1.76e8 * Sr ** -3.578; txt = L`k = 1.76\cdot 10^8\,S_r^{-3.578} = 1.76\cdot 10^8\cdot ${tn(Sr, 1)}^{-3.578}`; }
     else { const [A, B] = SUELOS_FINOS[d.suelo]; kk = A * Sr + B; txt = L`k = A\,S_r + B = (${tn(A, 2)})\cdot ${tn(Sr, 1)} + ${tn(B, 2)}`; }
     k = kk;
     m.row("Grado de saturación: S<sub>r</sub>", `${fmt(Sr, 1)} %`, "3.604.206(1).1");
@@ -529,7 +529,7 @@ function calcular(d, m) {
     m.row("Módulo de reacción de la subrasante (ingresado): k", `${fmt(k, 1)} MPa/m`, "3.604.206(4)");
     m.p(L`Módulo de reacción ingresado: $k = ${tn(k, 1)}$ MPa/m.`);
   }
-  if (d.modoK === "cbr" && d.cbr <= 3) r.avisos.push("CBR ≤ 3 %: se recomienda no dejar suelos de tan baja capacidad de soporte hasta 1,5 a 2,0 m bajo la rasante sin un estudio o tratamiento especial (3.604.206(7)).");
+  if (d.modoK === "cbr" && d.cbr <= 3) r.avisos.push("CBR ≤ 3 %: se recomienda no dejar suelos de tan baja capacidad de soporte hasta 1.5 a 2.0 m bajo la rasante sin un estudio o tratamiento especial (3.604.206(7)).");
   if (!(k > 0)) { k = 1; r.avisos.push("El módulo de reacción resultante no es positivo; revise los datos de la subrasante."); }
   r.k = k;
 
@@ -547,10 +547,10 @@ function calcular(d, m) {
   m.row("Distancia entre juntas de contracción: L", `${fmt(d.Lj, 2)} m`, "3.604.211");
   m.row("Clima: TEMP ; PRECIP ; WIND ; N5", `${fmt(d.temp, 1)} °C ; ${fmt(d.precip, 1)} mm ; ${fmt(d.wind, 1)} nudos ; ${fmt(d.n5, 1)} días`, "Tabla 3.604.210.A");
   m.p(L`Hormigón con $S'_c = ${tn(d.Sc, 2)}$ MPa (${d.viaTxt.split(" (")[0].toLowerCase()}: ${tn(scMin, 1)} a ${tn(scMax, 1)} MPa), $E_c = ${tn(d.Ec, 0)}$ MPa y $\mu = ${tn(d.mu, 2)}$. Base de ${base[0].toLowerCase()} con $H_b = ${tn(d.Hb, 0)}$ mm, $E_b = ${tn(Eb, 0)}$ MPa y coeficiente de fricción $f = ${tn(f, 2)}$. ${d.estacion ? `Clima de la estación ${d.estacion} (Tabla 3.604.210.A).` : "Datos climáticos ingresados."}`);
-  if (d.tipoBase === "btc") m.eq(L`E_b = (3{,}45 + f'_c)\cdot 1000 = (3{,}45 + ${tn(d.fcb, 1)})\cdot 1000 = ${tn(Eb, 0)}\ \mathrm{MPa}`, "Tabla 3.604.208.A");
+  if (d.tipoBase === "btc") m.eq(L`E_b = (3.45 + f'_c)\cdot 1000 = (3.45 + ${tn(d.fcb, 1)})\cdot 1000 = ${tn(Eb, 0)}\ \mathrm{MPa}`, "Tabla 3.604.208.A");
   if (d.Sc < scMin || d.Sc > scMax) r.avisos.push(`S′<sub>c</sub> = ${fmt(d.Sc, 2)} MPa está fuera del rango recomendado para el tipo de vía (${fmt(scMin, 1)}–${fmt(scMax, 1)} MPa, Tabla 3.604.207.A).`);
   if (base[1] !== null && (Eb < base[1] || Eb > base[2])) r.avisos.push(`E<sub>b</sub> = ${fmt(Eb, 0)} MPa está fuera del rango de la Tabla 3.604.208.A para ${base[0].toLowerCase()} (${fmt(base[1], 1)}–${fmt(base[2], 1)} MPa).`);
-  if (d.tipoBase === "cal" && d.fric === 1) r.avisos.push("La Tabla 3.604.208.A no entrega fricción media para arcilla estabilizada con cal; se usa el promedio de los valores bajo y alto (4,15).");
+  if (d.tipoBase === "cal" && d.fric === 1) r.avisos.push("La Tabla 3.604.208.A no entrega fricción media para arcilla estabilizada con cal; se usa el promedio de los valores bajo y alto (4.15).");
   // 3.604.211: términos generales del Manual, salvo instrucción o aprobación especial de la Dirección de Vialidad
   if (d.Hb < 150) {
     r.avisos.push("El Manual exige una base granular de 150 mm de espesor compactado, salvo instrucción o aprobación especial de la Dirección de Vialidad (3.604.211).");
@@ -572,33 +572,33 @@ function calcular(d, m) {
   m.row("Espesor de losa requerido: D<sub>req</sub>", `${fmt(Dreq, 1)} mm`, "3.604.202.1");
   m.row("<b>Espesor de losa adoptado (múltiplo de 10 mm, mín. 180 mm): D</b>", `<b>${fmt(Dadop, 0)} mm</b>`, "3.604.211");
   m.p(L`Se resuelve por iteraciones la ecuación de diseño hasta que los ejes admisibles igualan a $EE = ${tn(EE, 0)}$; resulta $D_{req} = ${tn(Dreq, 1)}$ mm y se adopta $D = ${tn(Dadop, 0)}$ mm. Para el espesor adoptado:`);
-  m.eq(L`\log W_{18} = \log R + \frac{G}{F} + \left(5{,}065 - 0{,}03295\,p_f^{2{,}4}\right)\left(\log\frac{S'_c}{\sigma'_t} - \log\frac{4{,}754}{\sigma_t}\right) + Z_R\,S_0`, "3.604.202.1");
+  m.eq(L`\log W_{18} = \log R + \frac{G}{F} + \left(5.065 - 0.03295\,p_f^{2.4}\right)\left(\log\frac{S'_c}{\sigma'_t} - \log\frac{4.754}{\sigma_t}\right) + Z_R\,S_0`, "3.604.202.1");
   m.eq(L`\begin{aligned}
-\log R &= 5{,}85 + 7{,}35\,\log\left(\frac{D}{25{,}4} + 1\right) - 4{,}62\,\log\left(\frac{L_1}{4{,}45} + L_2\right) + 3{,}28\,\log L_2\\
-&= 5{,}85 + 7{,}35\,\log\left(\frac{${tn(Dadop, 0)}}{25{,}4} + 1\right) - 4{,}62\,\log\left(\frac{80}{4{,}45} + 1\right) = ${tn(sol.logR, 4)}
+\log R &= 5.85 + 7.35\,\log\left(\frac{D}{25.4} + 1\right) - 4.62\,\log\left(\frac{L_1}{4.45} + L_2\right) + 3.28\,\log L_2\\
+&= 5.85 + 7.35\,\log\left(\frac{${tn(Dadop, 0)}}{25.4} + 1\right) - 4.62\,\log\left(\frac{80}{4.45} + 1\right) = ${tn(sol.logR, 4)}
 \end{aligned}`, "3.604.202.2");
-  m.eq(L`F = 1{,}00 + \frac{3{,}63\left(\frac{L_1}{4{,}45} + L_2\right)^{5{,}2}}{\left(\frac{D}{25{,}4} + 1\right)^{8{,}46} L_2^{3{,}52}} = ${tn(sol.Fe, 4)} \qquad G = \log\frac{p_i - p_f}{p_i - 1{,}5} = \log\frac{${tn(d.pi - d.pf, 1)}}{${tn(d.pi - 1.5, 1)}} = ${tn(sol.G, 4)}`, "3.604.202.3/4");
+  m.eq(L`F = 1.00 + \frac{3.63\left(\frac{L_1}{4.45} + L_2\right)^{5.2}}{\left(\frac{D}{25.4} + 1\right)^{8.46} L_2^{3.52}} = ${tn(sol.Fe, 4)} \qquad G = \log\frac{p_i - p_f}{p_i - 1.5} = \log\frac{${tn(d.pi - d.pf, 1)}}{${tn(d.pi - 1.5, 1)}} = ${tn(sol.G, 4)}`, "3.604.202.3/4");
   m.row("Radio de rigidez relativa: l", `${fmt(t.l, 1)} mm`, "3.604.212(1).3");
   m.row("Tensión de borde ; factor de fricción ; factor de longitud de losa: σ<sub>l</sub> ; F ; b", `${fmt(t.sl, 3)} MPa ; ${fmt(t.F, 4)} ; ${fmt(t.b, 4)}`, "3.604.212(1)");
   m.row("Diferencial efectivo de temperatura positivo: ΔT(+)", `${fmt(t.dT, 2)} °C`, "3.604.212(1).6");
   m.row("Tensión de tracción máxima con efecto de temperatura: σ′<sub>t</sub>", `${fmt(t.st1, 3)} MPa`, "3.604.212(1).1");
   m.row("Tensión en las condiciones de la Prueba AASHO: σ<sub>t</sub>", `${fmt(t.stA, 3)} MPa`, "3.604.212(2).1");
-  m.eq(L`l = 5{,}622\sqrt[4]{\frac{E_c D^3}{12(1 - \mu^2)k}} = 5{,}622\sqrt[4]{\frac{${tn(d.Ec, 0)}\cdot ${tn(Dadop, 0)}^3}{12(1 - ${tn(d.mu, 2)}^2)\cdot ${tn(k, 1)}}} = ${tn(t.l, 1)}\ \mathrm{mm}`, "3.604.212(1).3");
+  m.eq(L`l = 5.622\sqrt[4]{\frac{E_c D^3}{12(1 - \mu^2)k}} = 5.622\sqrt[4]{\frac{${tn(d.Ec, 0)}\cdot ${tn(Dadop, 0)}^3}{12(1 - ${tn(d.mu, 2)}^2)\cdot ${tn(k, 1)}}} = ${tn(t.l, 1)}\ \mathrm{mm}`, "3.604.212(1).3");
   m.eq(L`\begin{aligned}
-\sigma_l &= \frac{80\,012{,}743}{D^2}\Bigg[4{,}227 - 4{,}547\left(\frac{180}{l}\right)^{0{,}2} - 0{,}00158\left(\frac{E_b H_b}{k}\right)^{0{,}5}\\
-&\qquad - 0{,}0308\left(H_b\left(\frac{E_b}{E_c}\right)^{0{,}75}\right)^{0{,}5}\Bigg] = ${tn(t.sl, 3)}\ \mathrm{MPa}
+\sigma_l &= \frac{80\,012.743}{D^2}\Bigg[4.227 - 4.547\left(\frac{180}{l}\right)^{0.2} - 0.00158\left(\frac{E_b H_b}{k}\right)^{0.5}\\
+&\qquad - 0.0308\left(H_b\left(\frac{E_b}{E_c}\right)^{0.75}\right)^{0.5}\Bigg] = ${tn(t.sl, 3)}\ \mathrm{MPa}
 \end{aligned}`, "3.604.212(1).2");
-  m.eq(L`F = 1{,}177 - 2{,}457\cdot 10^{-7} D E_b - 4{,}549\cdot 10^{-4} D + 9{,}100\cdot 10^{-5} E_b - 0{,}000315\,f = ${tn(t.F, 4)}`, "3.604.212(1).4");
+  m.eq(L`F = 1.177 - 2.457\cdot 10^{-7} D E_b - 4.549\cdot 10^{-4} D + 9.100\cdot 10^{-5} E_b - 0.000315\,f = ${tn(t.F, 4)}`, "3.604.212(1).4");
   m.eq(L`\begin{aligned}
-\log b &= -1{,}944 + 2{,}279\frac{D}{l} + 91{,}7\frac{L}{l} - 75\,718\,996{,}95\frac{D^2}{k\,l^4} + \frac{0{,}731}{l}\left(\frac{E_b H_b^{1{,}5}}{k}\right)^{0{,}5}\\
-&\qquad - 118{,}872\frac{D^2}{k\,l^2} - 8{,}711\cdot 10^{10}\frac{D^3 L}{k\,l^6} = ${tn(t.logb, 4)}
+\log b &= -1.944 + 2.279\frac{D}{l} + 91.7\frac{L}{l} - 75\,718\,996.95\frac{D^2}{k\,l^4} + \frac{0.731}{l}\left(\frac{E_b H_b^{1.5}}{k}\right)^{0.5}\\
+&\qquad - 118.872\frac{D^2}{k\,l^2} - 8.711\cdot 10^{10}\frac{D^3 L}{k\,l^6} = ${tn(t.logb, 4)}
 \end{aligned}`, "3.604.212(1).5");
-  m.eq(L`\Delta T(+) = 12{,}33 - \frac{2385{,}715}{D} + 0{,}707\,WIND + 0{,}596\,TEMP - 5{,}924\cdot 10^{-4}\,PRECIP = ${tn(t.dT, 2)}\ ^\circ\mathrm{C}`, "3.604.212(1).6");
-  m.eq(L`\sigma'_t = \sigma_l\cdot TB\cdot F\cdot\left(1{,}0 + \tfrac{5}{9}\,b\,\Delta T(+)\right) = ${tn(t.sl, 3)}\cdot ${tn(d.TB, 2)}\cdot ${tn(t.F, 4)}\cdot\left(1 + \tfrac{5}{9}\cdot ${tn(t.b, 4)}\cdot ${tn(t.dT, 2)}\right) = ${tn(t.st1, 3)}\ \mathrm{MPa}`, "3.604.212(1).1");
-  m.eq(L`\sigma_{l(AASHO)} = \frac{80\,012{,}743}{D^2}\left[4{,}125 - \frac{7{,}286}{D^{0{,}15}}\right] = ${tn(t.slA, 3)} \qquad F_{AASHO} = 1{,}192 - 0{,}000497\,D = ${tn(t.FA, 4)}`, "3.604.212(2).2/3");
-  m.eq(L`\log b_{AASHO} = ${tn(t.logbA, 4)} \qquad \Delta T(+)_{AASHO} = 25{,}308 - \frac{2527{,}859}{D} = ${tn(t.dTA, 2)}\ ^\circ\mathrm{C}`, "3.604.212(2).4/5");
-  m.eq(L`\sigma_t = \sigma_{l(AASHO)}\cdot F_{AASHO}\cdot\left(1{,}0 + \tfrac{5}{9}\,b_{AASHO}\,\Delta T(+)_{AASHO}\right) = ${tn(t.stA, 3)}\ \mathrm{MPa}`, "3.604.212(2).1");
-  m.eq(L`\log W_{18} = ${tn(sol.logR, 4)} + \frac{${tn(sol.G, 4)}}{${tn(sol.Fe, 4)}} + ${tn(sol.k1, 4)}\left(\log\frac{${tn(d.Sc, 2)}}{${tn(t.st1, 3)}} - \log\frac{4{,}754}{${tn(t.stA, 3)}}\right) + (${tn(ZRv, 3)})(${tn(S0, 2)}) = ${tn(sol.logW, 4)}`);
+  m.eq(L`\Delta T(+) = 12.33 - \frac{2385.715}{D} + 0.707\,WIND + 0.596\,TEMP - 5.924\cdot 10^{-4}\,PRECIP = ${tn(t.dT, 2)}\ ^\circ\mathrm{C}`, "3.604.212(1).6");
+  m.eq(L`\sigma'_t = \sigma_l\cdot TB\cdot F\cdot\left(1.0 + \tfrac{5}{9}\,b\,\Delta T(+)\right) = ${tn(t.sl, 3)}\cdot ${tn(d.TB, 2)}\cdot ${tn(t.F, 4)}\cdot\left(1 + \tfrac{5}{9}\cdot ${tn(t.b, 4)}\cdot ${tn(t.dT, 2)}\right) = ${tn(t.st1, 3)}\ \mathrm{MPa}`, "3.604.212(1).1");
+  m.eq(L`\sigma_{l(AASHO)} = \frac{80\,012.743}{D^2}\left[4.125 - \frac{7.286}{D^{0.15}}\right] = ${tn(t.slA, 3)} \qquad F_{AASHO} = 1.192 - 0.000497\,D = ${tn(t.FA, 4)}`, "3.604.212(2).2/3");
+  m.eq(L`\log b_{AASHO} = ${tn(t.logbA, 4)} \qquad \Delta T(+)_{AASHO} = 25.308 - \frac{2527.859}{D} = ${tn(t.dTA, 2)}\ ^\circ\mathrm{C}`, "3.604.212(2).4/5");
+  m.eq(L`\sigma_t = \sigma_{l(AASHO)}\cdot F_{AASHO}\cdot\left(1.0 + \tfrac{5}{9}\,b_{AASHO}\,\Delta T(+)_{AASHO}\right) = ${tn(t.stA, 3)}\ \mathrm{MPa}`, "3.604.212(2).1");
+  m.eq(L`\log W_{18} = ${tn(sol.logR, 4)} + \frac{${tn(sol.G, 4)}}{${tn(sol.Fe, 4)}} + ${tn(sol.k1, 4)}\left(\log\frac{${tn(d.Sc, 2)}}{${tn(t.st1, 3)}} - \log\frac{4.754}{${tn(t.stA, 3)}}\right) + (${tn(ZRv, 3)})(${tn(S0, 2)}) = ${tn(sol.logW, 4)}`);
   m.row("<b>Ejes equivalentes admisibles con D adoptado: W<sub>18</sub> ≥ EE</b>", `<b>${fmt(W18adm / 1e6, 2)} ≥ ${fmt(EEm, 2)} millones</b> ${okTxt(W18adm >= EE * (1 - 1e-9))}`);
   m.eq(L`W_{18} = 10^{${tn(sol.logW, 4)}} = ${tn(W18adm / 1e6, 2)}\times 10^6 \;${W18adm >= EE ? GE : "<"}\; EE = ${tn(EEm, 2)}\times 10^6`);
   if (Dreq > 300) r.avisos.push(`El espesor requerido (${fmt(Dreq, 0)} mm) supera el máximo de 300 mm del Manual (3.604.211); revise la estructuración (berma, base, juntas, S′<sub>c</sub>).`);
@@ -608,7 +608,7 @@ function calcular(d, m) {
   const W = EEm;
   if (!d.barras) {
     m.h("Escalonamiento de juntas sin barras de traspaso (3.604.212(3))");
-    const lcm = 0.562 * (29000 * Dadop ** 3 / (12 * (1 - 0.15 ** 2) * k)) ** 0.25;     // cm, con Ec = 29.000 MPa y μ = 0,15
+    const lcm = 0.562 * (29000 * Dadop ** 3 / (12 * (1 - 0.15 ** 2) * k)) ** 0.25;     // cm, con Ec = 29 000 MPa y μ = 0.15
     const kKg = k * 0.10197;                                                         // MPa/m → kgf/cm³
     const P = 4086, a = 14.37;
     const DEFLEX = P / (kKg * lcm ** 2) * (1.1 - 0.88 * a * Math.SQRT2 / lcm);
@@ -617,25 +617,25 @@ function calcular(d, m) {
     if (d.tipoBase === "btc") {
       ESC = W ** 0.434729 * (0.009539 * d.n5 + DEFLEX ** 0.378606 + 0.058668 * DREN - 0.150972);
       eqEsc = L`\begin{aligned}
-ESCAL_{BTC} &= W_{18}^{0{,}434729}\left(0{,}009539\,N5 + DEFLEX^{0{,}378606} + 0{,}058668\,DREN - 0{,}150972\right)\\
-&= ${tn(W, 3)}^{0{,}434729}\left(0{,}009539\cdot ${tn(d.n5, 1)} + ${tn(DEFLEX, 4)}^{0{,}378606} + 0{,}058668\cdot ${DREN} - 0{,}150972\right)`;
+ESCAL_{BTC} &= W_{18}^{0.434729}\left(0.009539\,N5 + DEFLEX^{0.378606} + 0.058668\,DREN - 0.150972\right)\\
+&= ${tn(W, 3)}^{0.434729}\left(0.009539\cdot ${tn(d.n5, 1)} + ${tn(DEFLEX, 4)}^{0.378606} + 0.058668\cdot ${DREN} - 0.150972\right)`;
     } else {
       const GR = d.tipoBase === "gran" ? 1 : 0, BAL = d.tipoBase === "bta" ? 1 : 0;
       ESC = W ** 0.461188 * (0.006742 * d.n5 - 0.125288 * GR - 0.148135 * BAL + DEFLEX ** 0.369655 + 0.457194 * DREN - 0.373423);
       eqEsc = L`\begin{aligned}
-ESCAL_{GR,BAL} &= W_{18}^{0{,}461188}\Big(0{,}006742\,N5 - 0{,}125288\,GR - 0{,}148135\,BAL\\
-&\qquad + DEFLEX^{0{,}369655} + 0{,}457194\,DREN - 0{,}373423\Big)\\
-&= ${tn(W, 3)}^{0{,}461188}\Big(0{,}006742\cdot ${tn(d.n5, 1)} - 0{,}125288\cdot ${GR} - 0{,}148135\cdot ${BAL}\\
-&\qquad + ${tn(DEFLEX, 4)}^{0{,}369655} + 0{,}457194\cdot ${DREN} - 0{,}373423\Big)`;
+ESCAL_{GR,BAL} &= W_{18}^{0.461188}\Big(0.006742\,N5 - 0.125288\,GR - 0.148135\,BAL\\
+&\qquad + DEFLEX^{0.369655} + 0.457194\,DREN - 0.373423\Big)\\
+&= ${tn(W, 3)}^{0.461188}\Big(0.006742\cdot ${tn(d.n5, 1)} - 0.125288\cdot ${GR} - 0.148135\cdot ${BAL}\\
+&\qquad + ${tn(DEFLEX, 4)}^{0.369655} + 0.457194\cdot ${DREN} - 0.373423\Big)`;
     }
     ESC = Math.max(0, ESC);
     Object.assign(r, { ESC, escLim: 5, DEFLEX });
-    m.row("Radio de rigidez relativa (E<sub>c</sub> = 29.000 MPa, μ = 0,15): l", `${fmt(lcm, 2)} cm`, "3.604.212(3).3");
+    m.row("Radio de rigidez relativa (E<sub>c</sub> = 29 000 MPa, μ = 0.15): l", `${fmt(lcm, 2)} cm`, "3.604.212(3).3");
     m.row("Deflexión de esquina de la losa: DEFLEX", `${fmt(DEFLEX, 4)} cm`, "3.604.212(3).2");
     m.row("<b>Escalonamiento promedio de juntas: ESCAL ≤ 5 mm</b>", `<b>${fmt(ESC, 2)} mm</b> ${okTxt(ESC <= 5)}`, d.tipoBase === "btc" ? "3.604.212(3).1" : "3.604.212(3).4");
-    m.eq(L`l = 0{,}562\sqrt[4]{\frac{E_c D^3}{12(1 - \mu^2)k}} = 0{,}562\sqrt[4]{\frac{29\,000\cdot ${tn(Dadop, 0)}^3}{12(1 - 0{,}15^2)\cdot ${tn(k, 1)}}} = ${tn(lcm, 2)}\ \mathrm{cm}`, "3.604.212(3).3");
-    m.p(L`Para la deflexión se usa $k = ${tn(k, 1)}$ MPa/m $= ${tn(kKg, 3)}$ kgf/cm$^3$, con carga de rueda $P = 4086$ kg y radio del área de carga $a = 14{,}37$ cm.`);
-    m.eq(L`DEFLEX = \frac{P}{k\,l^2}\left(1{,}1 - \frac{0{,}88\,a\sqrt{2}}{l}\right) = \frac{4086}{${tn(kKg, 3)}\cdot ${tn(lcm, 2)}^2}\left(1{,}1 - \frac{0{,}88\cdot 14{,}37\sqrt{2}}{${tn(lcm, 2)}}\right) = ${tn(DEFLEX, 4)}\ \mathrm{cm}`, "3.604.212(3).2");
+    m.eq(L`l = 0.562\sqrt[4]{\frac{E_c D^3}{12(1 - \mu^2)k}} = 0.562\sqrt[4]{\frac{29\,000\cdot ${tn(Dadop, 0)}^3}{12(1 - 0.15^2)\cdot ${tn(k, 1)}}} = ${tn(lcm, 2)}\ \mathrm{cm}`, "3.604.212(3).3");
+    m.p(L`Para la deflexión se usa $k = ${tn(k, 1)}$ MPa/m $= ${tn(kKg, 3)}$ kgf/cm$^3$, con carga de rueda $P = 4086$ kg y radio del área de carga $a = 14.37$ cm.`);
+    m.eq(L`DEFLEX = \frac{P}{k\,l^2}\left(1.1 - \frac{0.88\,a\sqrt{2}}{l}\right) = \frac{4086}{${tn(kKg, 3)}\cdot ${tn(lcm, 2)}^2}\left(1.1 - \frac{0.88\cdot 14.37\sqrt{2}}{${tn(lcm, 2)}}\right) = ${tn(DEFLEX, 4)}\ \mathrm{cm}`, "3.604.212(3).2");
     m.eq(L`${eqEsc}\\
 &= ${tn(ESC, 2)}\ \mathrm{mm} \;${ESC <= 5 ? LE : ">"}\; 5\ \mathrm{mm}
 \end{aligned}`,d.tipoBase === "btc" ? "3.604.212(3).1" : "3.604.212(3).4");
@@ -655,17 +655,17 @@ ESCAL_{GR,BAL} &= W_{18}^{0{,}461188}\Big(0{,}006742\,N5 - 0{,}125288\,GR - 0{,}
     const Jt = d.Lj * 100;                                                  // cm
     const e = 0.00015;
     // Modelo original AASHTO 1998 (base de 3.604.213), expresado con las unidades del Manual.
-    // OPENING [cm] = CON·Jtspace·(α·TRANGE/2 + e), α = 1,08·10⁻⁵ /°C (rango de temperatura, sin "+32")
+    // OPENING [cm] = CON·Jtspace·(α·TRANGE/2 + e), α = 1.08·10⁻⁵ /°C (rango de temperatura, sin "+32")
     const OPEN = CON * Jt * (1.08e-5 * d.trange / 2 + e);
     // Constante de Bstress con P [kg], Kd [MPa/mm], Es [MPa], I [cm⁴] y BETA [1/in] → MPa
-    const KB = 2.20462 * (25.4 ** 3 / 4.44822) * 2.54 ** 4 / 145.038 ** 2;   // ≈ 16,07
+    const KB = 2.20462 * (25.4 ** 3 / 4.44822) * 2.54 ** 4 / 145.038 ** 2;   // ≈ 16.07
     const Bs = KB * fd * P * T * (Kd * (2 + BETA * OPEN / 2.54) / (4 * d.Es * I * BETA ** 3));
     const humedo = d.precip > 635;
     const col = (d.subTipo === "gran" ? 2 : 0) + d.permeable;
     const rango = CD[d.dren ? 1 : 0][humedo ? 0 : 1][col];
     const Cd = (rango[0] + rango[1]) / 2;
     const basetype = estab ? 1 : 0, widen = d.TB === 0.92 ? 0 : 1, age = d.age;
-    // Paréntesis del modelo original en pulgadas → ×25,4 da mm. FI en °C·día → °F·día con 1,8·FI (sin "+32").
+    // Paréntesis del modelo original en pulgadas → ×25.4 da mm. FI en °C·día → °F·día con 1.8·FI (sin "+32").
     const terminos = [0.0628 - 0.0628 * Cd, 7.7245023e-5 * Bs ** 2, 4.424617e-11 * (Jt * 10) ** 2,
       1.4814e-10 * (1.8 * d.FI) ** 2 * d.precip ** 0.5, -0.009503 * basetype, -0.01917 * widen, 0.0009217 * age];
     const suma = terminos.reduce((a, b) => a + b, 0);
@@ -677,26 +677,26 @@ ESCAL_{GR,BAL} &= W_{18}^{0{,}461188}\Big(0{,}006742\,N5 - 0{,}125288\,GR - 0{,}
     m.row("Tensión de aplastamiento en el hormigón: Bstress", `${fmt(Bs, 2)} MPa`, "3.604.213.2");
     m.row("Coeficiente de drenaje AASHTO modificado: C<sub>d</sub>", `${fmt(Cd, 3)} (rango ${fmt(rango[0], 2)}–${fmt(rango[1], 2)})`, "Tabla 3.604.212(4).A");
     m.row("<b>Escalonamiento promedio de juntas: FAULTD ≤ 5 mm</b>", `<b>${fmt(r.ESC, 3)} mm</b> ${okTxt(r.ESC <= 5)}`, "3.604.213.1");
-    m.p(L`Se usan $P = 4082{,}56$ kg, $T = 0{,}45$, $K_d = 405$ MPa/mm, $E_s = ${tn(d.Es, 0)}$ MPa, barra de ${tn(d.dowel, 0)} mm, $CON = ${tn(CON, 2)}$ (base ${estab ? "estabilizada" : "no estabilizada"}), $e = 0{,}00015$ y $TRANGE = ${tn(d.trange, 0)}\ ^\circ$C. Las longitudes $l$, $DOWEL$, $OPENING$ y $Jtspace$ se expresan en cm, que es la unidad consistente con las constantes de las ecuaciones.`);
-    m.eq(L`I = 0{,}25\,\pi\left(\frac{DOWEL}{2}\right)^4 = ${tn(I, 4)}\ \mathrm{cm^4}`, "3.604.213.5");
-    m.eq(L`BETA = 4{,}5188379\sqrt[4]{\frac{K_d\,DOWEL}{4\,E_s\,I}} = ${tn(BETA, 4)} \qquad f_d = \frac{2\cdot 12}{\frac{l}{2{,}54} + 12} = ${tn(fd, 4)}`, "3.604.213.3/4");
-    m.p(L`\textbf{Corrección de las ecuaciones 3.604.213.1, .2 y .6.} Al contrastarlas con el modelo original del Suplemento AASHTO 1998 (en pulgadas, libras y $^\circ$F), del que provienen, se detectan errores de conversión que subestiman el escalonamiento; se aplica el modelo original expresado en las unidades del Manual: (i) $OPENING$ usa $\alpha\,TRANGE/2 + e$ en vez de $(1{,}08\cdot 10^{-5}\,TRANGE + 1{,}92\cdot 10^{-4})/(2 + e)$, ya que el $+32$ de la conversión de $^\circ$C a $^\circ$F no corresponde a un rango de temperatura; (ii) la constante de $Bstress$ es $16{,}07$ y no $32{,}56$; (iii) $FAULTD$ se multiplica por $25{,}4$ (pulgadas a mm) y no por $2{,}54$, que entrega cm; (iv) el índice de congelamiento se convierte como $1{,}8\,FI$, sin el $+32$.`);
+    m.p(L`Se usan $P = 4082.56$ kg, $T = 0.45$, $K_d = 405$ MPa/mm, $E_s = ${tn(d.Es, 0)}$ MPa, barra de ${tn(d.dowel, 0)} mm, $CON = ${tn(CON, 2)}$ (base ${estab ? "estabilizada" : "no estabilizada"}), $e = 0.00015$ y $TRANGE = ${tn(d.trange, 0)}\ ^\circ$C. Las longitudes $l$, $DOWEL$, $OPENING$ y $Jtspace$ se expresan en cm, que es la unidad consistente con las constantes de las ecuaciones.`);
+    m.eq(L`I = 0.25\,\pi\left(\frac{DOWEL}{2}\right)^4 = ${tn(I, 4)}\ \mathrm{cm^4}`, "3.604.213.5");
+    m.eq(L`BETA = 4.5188379\sqrt[4]{\frac{K_d\,DOWEL}{4\,E_s\,I}} = ${tn(BETA, 4)} \qquad f_d = \frac{2\cdot 12}{\frac{l}{2.54} + 12} = ${tn(fd, 4)}`, "3.604.213.3/4");
+    m.p(L`\textbf{Corrección de las ecuaciones 3.604.213.1, .2 y .6.} Al contrastarlas con el modelo original del Suplemento AASHTO 1998 (en pulgadas, libras y $^\circ$F), del que provienen, se detectan errores de conversión que subestiman el escalonamiento; se aplica el modelo original expresado en las unidades del Manual: (i) $OPENING$ usa $\alpha\,TRANGE/2 + e$ en vez de $(1.08\cdot 10^{-5}\,TRANGE + 1.92\cdot 10^{-4})/(2 + e)$, ya que el $+32$ de la conversión de $^\circ$C a $^\circ$F no corresponde a un rango de temperatura; (ii) la constante de $Bstress$ es $16.07$ y no $32.56$; (iii) $FAULTD$ se multiplica por $25.4$ (pulgadas a mm) y no por $2.54$, que entrega cm; (iv) el índice de congelamiento se convierte como $1.8\,FI$, sin el $+32$.`);
     m.eq(L`\begin{aligned}
-OPENING &= CON\cdot Jtspace\left(\frac{1{,}08\cdot 10^{-5}\,TRANGE}{2} + e\right)\\
-&= ${tn(CON, 2)}\cdot ${tn(Jt, 0)}\left(\frac{1{,}08\cdot 10^{-5}\cdot ${tn(d.trange, 0)}}{2} + 0{,}00015\right) = ${tn(OPEN, 4)}\ \mathrm{cm}
+OPENING &= CON\cdot Jtspace\left(\frac{1.08\cdot 10^{-5}\,TRANGE}{2} + e\right)\\
+&= ${tn(CON, 2)}\cdot ${tn(Jt, 0)}\left(\frac{1.08\cdot 10^{-5}\cdot ${tn(d.trange, 0)}}{2} + 0.00015\right) = ${tn(OPEN, 4)}\ \mathrm{cm}
 \end{aligned}`, "3.604.213.6");
-    m.eq(L`Bstress = 16{,}07\,f_d\,P\,T\,\frac{K_d\left(2 + BETA\,\frac{OPENING}{2{,}54}\right)}{4\,E_s\,I\,BETA^3} = ${tn(Bs, 2)}\ \mathrm{MPa}`, "3.604.213.2");
+    m.eq(L`Bstress = 16.07\,f_d\,P\,T\,\frac{K_d\left(2 + BETA\,\frac{OPENING}{2.54}\right)}{4\,E_s\,I\,BETA^3} = ${tn(Bs, 2)}\ \mathrm{MPa}`, "3.604.213.2");
     m.eq(L`\begin{aligned}
-FAULTD = 25{,}4\,CESAL^{0{,}25}\Big(&0{,}0628 - 0{,}0628\,C_d + 7{,}7245\cdot 10^{-5}\,Bstress^2 + 4{,}4246\cdot 10^{-11}\,Jtspace^2\\
-&+ 1{,}4814\cdot 10^{-10}(1{,}8\,FI)^2 PRECIP^{0{,}5}\\
-&- 0{,}009503\,Basetype - 0{,}01917\,Widenlane + 0{,}0009217\,Age\Big)
+FAULTD = 25.4\,CESAL^{0.25}\Big(&0.0628 - 0.0628\,C_d + 7.7245\cdot 10^{-5}\,Bstress^2 + 4.4246\cdot 10^{-11}\,Jtspace^2\\
+&+ 1.4814\cdot 10^{-10}(1.8\,FI)^2 PRECIP^{0.5}\\
+&- 0.009503\,Basetype - 0.01917\,Widenlane + 0.0009217\,Age\Big)
 \end{aligned}`, "3.604.213.1");
     m.eq(L`\begin{aligned}
-FAULTD &= 25{,}4\cdot ${tn(W, 3)}^{0{,}25}\Big(${tn(terminos[0], 4)} + ${tn(terminos[1], 4)} + ${tn(terminos[2], 4)} + ${tn(terminos[3], 6)}\\
+FAULTD &= 25.4\cdot ${tn(W, 3)}^{0.25}\Big(${tn(terminos[0], 4)} + ${tn(terminos[1], 4)} + ${tn(terminos[2], 4)} + ${tn(terminos[3], 6)}\\
 &\qquad ${terminos.slice(4).map(x => (x < 0 ? "- " : "+ ") + tn(Math.abs(x), 4)).join(" ")}\Big) = ${tn(r.ESC, 3)}\ \mathrm{mm} \;${r.ESC <= 5 ? LE : ">"}\; 5\ \mathrm{mm}
 \end{aligned}`);
-    m.p(L`Para $Jtspace^2$ se usa la longitud de losa en mm (${tn(Jt * 10, 0)} mm), consistente con el coeficiente $4{,}4246\cdot 10^{-11}$; $Basetype = ${basetype}$, $Widenlane = ${widen}$, $Age = ${tn(age, 0)}$ años, $FI = ${tn(d.FI, 0)}$ $^\circ$C$\cdot$día.`);
-    r.avisos.push("Escalonamiento con barras: se corrigieron errores de conversión de unidades de las ec. 3.604.213.1, .2 y .6 del Manual (factor 25,4 en vez de 2,54, constante de Bstress 16,07 en vez de 32,56 y abertura de junta). Detalle en la memoria.");
+    m.p(L`Para $Jtspace^2$ se usa la longitud de losa en mm (${tn(Jt * 10, 0)} mm), consistente con el coeficiente $4.4246\cdot 10^{-11}$; $Basetype = ${basetype}$, $Widenlane = ${widen}$, $Age = ${tn(age, 0)}$ años, $FI = ${tn(d.FI, 0)}$ $^\circ$C$\cdot$día.`);
+    r.avisos.push("Escalonamiento con barras: se corrigieron errores de conversión de unidades de las ec. 3.604.213.1, .2 y .6 del Manual (factor 25.4 en vez de 2.54, constante de Bstress 16.07 en vez de 32.56 y abertura de junta). Detalle en la memoria.");
   }
 
   Object.assign(r, { R, ZRv, S0, FR, base, prm, t });
@@ -735,12 +735,12 @@ function dibujarSVG(d, r) {
   if (d.barras) g += `<rect x="${xj - 60}" y="${y0 + hD / 2 - 3}" width="120" height="6" rx="2" fill="#6b4fa0"/>`;
   g += `<text x="${xj}" y="${y0 - 8}" font-size="12" fill="#5f6b7a" text-anchor="middle">junta de contracción${d.barras ? " con barra de traspaso Ø" + fmt(d.dowel, 0) + " mm" : " (sin barras)"}</text>`;
 
-  // Planta: dos pistas de 3,5 m, juntas cada L con esviaje 1,2 m en 7,0 m
+  // Planta: dos pistas de 3.5 m, juntas cada L con esviaje 1.2 m en 7.0 m
   const yP = y0 + hD + hB + hS + 60, px0 = 30, esc = 26;        // px por m
   const largo = Math.min(28, Math.max(3, Math.round(24 / d.Lj)) * d.Lj);
   const ancho = 7.0;
   const X = (m) => px0 + 40 + m * esc, Y = (m) => yP + m * esc;
-  g += `<text x="${px0}" y="${yP - 30}" font-size="14" font-weight="600" fill="#1d2330">Planta de losas (calzada de 7,0 m)</text>`;
+  g += `<text x="${px0}" y="${yP - 30}" font-size="14" font-weight="600" fill="#1d2330">Planta de losas (calzada de 7.0 m)</text>`;
   g += `<rect x="${X(0)}" y="${Y(0)}" width="${largo * esc}" height="${ancho * esc}" fill="#e4e6ea" stroke="#1d2330" stroke-width="1.2"/>`;
   g += `<line x1="${X(0)}" x2="${X(largo)}" y1="${Y(3.5)}" y2="${Y(3.5)}" stroke="#1d2330" stroke-width="1" stroke-dasharray="8 5"/>`;
   for (let s = d.Lj; s < largo - 1e-6; s += d.Lj) {
@@ -755,9 +755,9 @@ function dibujarSVG(d, r) {
   g += `<line x1="${X(0)}" x2="${X(s1)}" y1="${Y(ancho) + 22}" y2="${Y(ancho) + 22}" stroke="#1d2330" marker-start="url(#fl)" marker-end="url(#fl)"/>`;
   g += `<text x="${X(s1 / 2)}" y="${Y(ancho) + 40}" font-size="13" font-weight="600" text-anchor="middle" fill="#1d2330">L = ${fmt(d.Lj, 2)} m</text>`;
   g += `<line x1="${X(s1)}" x2="${X(s1 + 1.2)}" y1="${Y(0) - 10}" y2="${Y(0) - 10}" stroke="#6b4fa0" marker-start="url(#fl2)" marker-end="url(#fl2)"/>`;
-  g += `<text x="${X(s1 + 1.2) + 6}" y="${Y(0) - 6}" font-size="12" fill="#6b4fa0">esviaje 1,2 m</text>`;
-  g += `<line x1="${px0 + 20}" x2="${px0 + 20}" y1="${Y(0)}" y2="${Y(3.5)}" stroke="#1d2330" marker-start="url(#fl)" marker-end="url(#fl)"/><text x="${px0 + 14}" y="${Y(1.75)}" font-size="12" text-anchor="middle" transform="rotate(-90 ${px0 + 14} ${Y(1.75)})">3,5 m</text>`;
-  g += `<line x1="${px0 + 20}" x2="${px0 + 20}" y1="${Y(3.5)}" y2="${Y(7)}" stroke="#1d2330" marker-start="url(#fl)" marker-end="url(#fl)"/><text x="${px0 + 14}" y="${Y(5.25)}" font-size="12" text-anchor="middle" transform="rotate(-90 ${px0 + 14} ${Y(5.25)})">3,5 m</text>`;
+  g += `<text x="${X(s1 + 1.2) + 6}" y="${Y(0) - 6}" font-size="12" fill="#6b4fa0">esviaje 1.2 m</text>`;
+  g += `<line x1="${px0 + 20}" x2="${px0 + 20}" y1="${Y(0)}" y2="${Y(3.5)}" stroke="#1d2330" marker-start="url(#fl)" marker-end="url(#fl)"/><text x="${px0 + 14}" y="${Y(1.75)}" font-size="12" text-anchor="middle" transform="rotate(-90 ${px0 + 14} ${Y(1.75)})">3.5 m</text>`;
+  g += `<line x1="${px0 + 20}" x2="${px0 + 20}" y1="${Y(3.5)}" y2="${Y(7)}" stroke="#1d2330" marker-start="url(#fl)" marker-end="url(#fl)"/><text x="${px0 + 14}" y="${Y(5.25)}" font-size="12" text-anchor="middle" transform="rotate(-90 ${px0 + 14} ${Y(5.25)})">3.5 m</text>`;
   g += `<path d="M ${X(largo) + 12} ${Y(1.75)} l 30 0 m -8 -5 l 8 5 l -8 5" stroke="#1d2330" fill="none" stroke-width="1.5"/><text x="${X(largo) + 12}" y="${Y(1.75) - 8}" font-size="12" fill="#5f6b7a">tránsito</text>`;
   const H = Y(ancho) + 52;
   return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Corte del pavimento de hormigón y planta de losas">
@@ -794,7 +794,7 @@ ${d.barras ? L`\fill[violet] (1.8,${(-hD / 2 - 0.05).toFixed(3)}) rectangle (4.2
 \node[right, font=\small] at (8.3,${((yS + yF) / 2).toFixed(3)}) {Subrasante, $k = ${tn(r.k, 1)}$ MPa/m};
 \node[above, font=\footnotesize] at (3,0) {junta de contracción${d.barras ? `, barra $\\varnothing$${tn(d.dowel, 0)} mm` : " sin barras"}};
 `;
-  // planta (escala 0,5 cm por metro)
+  // planta (escala 0.5 cm por metro)
   const e = 0.5, y0 = yF - 1.6;
   const largo = Math.min(28, Math.max(3, Math.round(24 / d.Lj)) * d.Lj);
   s += L`\begin{scope}[shift={(0,${y0.toFixed(3)})}]
@@ -807,16 +807,16 @@ ${d.barras ? L`\fill[violet] (1.8,${(-hD / 2 - 0.05).toFixed(3)}) rectangle (4.2
     if (d.barras) for (let yy = 0.3; yy < 7; yy += 0.6) { const xs = x + 1.2 * yy / 7; s += `\\draw[violet, thick] (${((xs - 0.25) * e).toFixed(3)},${(-yy * e).toFixed(3)}) -- (${((xs + 0.25) * e).toFixed(3)},${(-yy * e).toFixed(3)});\n`; }
   }
   s += L`\draw[cota] (0,${(-7 * e - 0.4).toFixed(3)}) -- node[below, font=\small] {$L = ${tn(d.Lj, 2)}$ m} (${(d.Lj * e).toFixed(3)},${(-7 * e - 0.4).toFixed(3)});
-\draw[cota] (-0.4,0) -- node[left, font=\small] {3,5 m} (-0.4,${(-3.5 * e).toFixed(3)});
-\draw[cota] (-0.4,${(-3.5 * e).toFixed(3)}) -- node[left, font=\small] {3,5 m} (-0.4,${(-7 * e).toFixed(3)});
-\node[above, font=\footnotesize] at (${((d.Lj + 0.6) * e).toFixed(3)},0) {esviaje 1,2 m};
+\draw[cota] (-0.4,0) -- node[left, font=\small] {3.5 m} (-0.4,${(-3.5 * e).toFixed(3)});
+\draw[cota] (-0.4,${(-3.5 * e).toFixed(3)}) -- node[left, font=\small] {3.5 m} (-0.4,${(-7 * e).toFixed(3)});
+\node[above, font=\footnotesize] at (${((d.Lj + 0.6) * e).toFixed(3)},0) {esviaje 1.2 m};
 \end{scope}
 `;
   return L`\begin{figure}[H]
 \centering
 \begin{tikzpicture}[cota/.style={<->, >=stealth, thin}]
 ${s}\end{tikzpicture}
-\caption{Corte del pavimento ($D = ${tn(r.D, 0)}$ mm sobre base de ${tn(d.Hb, 0)} mm) y planta de losas con juntas de contracción cada ${tn(d.Lj, 2)} m y esviaje de 1,2 m por calzada de 7,0 m. Escala vertical del corte aproximada.}
+\caption{Corte del pavimento ($D = ${tn(r.D, 0)}$ mm sobre base de ${tn(d.Hb, 0)} mm) y planta de losas con juntas de contracción cada ${tn(d.Lj, 2)} m y esviaje de 1.2 m por calzada de 7.0 m. Escala vertical del corte aproximada.}
 \end{figure}`;
 }
 
@@ -863,14 +863,14 @@ function actualizar() {
   $("gFc").classList.toggle("hidden", !btc);
   $("gBarras").classList.toggle("hidden", !$("barras").checked);
   const b = BASES[$("tipoBase").value];
-  $("rangoBase").textContent = b[1] !== null ? `Tabla 3.604.208.A: E = ${fmt(b[1], 1)} – ${fmt(b[2], 1)} MPa; fricción ${b[3].map(x => fmt(x, 2)).join(" / ")} (baja / media / alta).` : `Tabla 3.604.208.A: E = (3,45 + f′c)·1000 MPa; fricción ${b[3].map(x => fmt(x, 2)).join(" / ")}.`;
+  $("rangoBase").textContent = b[1] !== null ? `Tabla 3.604.208.A: E = ${fmt(b[1], 1)} – ${fmt(b[2], 1)} MPa; fricción ${b[3].map(x => fmt(x, 2)).join(" / ")} (baja / media / alta).` : `Tabla 3.604.208.A: E = (3.45 + f′c)·1000 MPa; fricción ${b[3].map(x => fmt(x, 2)).join(" / ")}.`;
 
   // Validación: un dato vacío o fuera de rango no se calcula (evita un "CUMPLE" falso)
   limpiarInvalidos($("inputs"));
   const malos = datosInvalidos(reglasRigido());
-  if (!malos.length && num("pi") <= Math.max(num("pf"), 1.5)) { $("pi").classList.add("invalido"); malos.push("p_i debe ser mayor que p_f y que 1,5"); }
+  if (!malos.length && num("pi") <= Math.max(num("pf"), 1.5)) { $("pi").classList.add("invalido"); malos.push("p_i debe ser mayor que p_f y que 1.5"); }
   if (!malos.length && (num("Lj") < 1 || num("Lj") > 10)) { $("Lj").classList.add("invalido"); malos.push("Distancia entre juntas entre 1 y 10 m"); }
-  if (!malos.length && num("mu") >= 0.5) { $("mu").classList.add("invalido"); malos.push("μ debe ser menor que 0,5"); }
+  if (!malos.length && num("mu") >= 0.5) { $("mu").classList.add("invalido"); malos.push("μ debe ser menor que 0.5"); }
   if (malos.length) return sinCalculo(malos);
 
   const d = leer();
@@ -901,18 +901,18 @@ function actualizar() {
   // Memoria .tex
   const fecha = new Date().toLocaleDateString("es-CL", { day: "numeric", month: "long", year: "numeric" });
   const texTxt = (s) => s.replace(/<sub>/g, "$_{").replace(/<\/sub>/g, "}$").replace(/\$\$/g, "").replace(/<[^>]+>/g, "");
-  const filas = items.map(([t, v, s]) => `${texTxt(t)} & ${texTxt(s).replace(/,/g, "{,}").replace(/\./g, "\\,")} & ${tn(v, 3)} & ${v <= 1 + 1e-9 ? "Cumple" : "No cumple"}\\\\`)
+  const filas = items.map(([t, v, s]) => `${texTxt(t)} & ${texTxt(s).replace(/\u00a0/g, "\\,")} & ${tn(v, 3)} & ${v <= 1 + 1e-9 ? "Cumple" : "No cumple"}\\\\`)
     .concat(r.fueraManual.length ? ["Estructuración (3.604.211) & Base y juntas & --- & No cumple\\\\"] : [], d.barras ? [] : ["Carga de esquina (3.604.212(4)) & No incluida & --- & Sin verificar\\\\"]).join("\n");
   const adoptado = `El pavimento adoptado (losa de ${tn(r.D, 0)} mm sobre base de ${tn(d.Hb, 0)} mm, juntas cada ${tn(d.Lj, 2)} m${d.barras ? `, con barras de traspaso de ${tn(d.dowel, 0)} mm` : ", sin barras de traspaso"})`;
   const faltaEsquina = "la verificación por carga de esquina (3.604.212(4), Láminas 3.604.211.A1 a A7), que esta herramienta no realiza";
   const conclusion = !ok
-    ? `${adoptado} \\textbf{no cumple} con los requisitos del Tópico 3.604.2 del Manual de Carreteras${r.fueraManual.length ? `: ${r.fueraManual.join("; ").replace(/(\d),(\d)/g, "$1{,}$2")}` : ""}.${d.barras ? "" : ` Además, falta ${faltaEsquina}.`}`
+    ? `${adoptado} \\textbf{no cumple} con los requisitos del Tópico 3.604.2 del Manual de Carreteras${r.fueraManual.length ? `: ${r.fueraManual.join("; ")}` : ""}.${d.barras ? "" : ` Además, falta ${faltaEsquina}.`}`
     : sinVerificar
       ? `${adoptado} \\textbf{queda sin verificar}: cumple las verificaciones de espesor y escalonamiento del Tópico 3.604.2 del Manual de Carreteras, pero falta ${faltaEsquina}.`
       : `${adoptado} \\textbf{cumple} con los requisitos del Tópico 3.604.2 del Manual de Carreteras.`;
   const avisosTex = r.avisos.length ? L`\paragraph{Observaciones.}
 \begin{itemize}
-${r.avisos.map(a => `\\item ${texTxt(a).replace(/≤/g, "$\\le$").replace(/≥/g, "$\\ge$").replace(/%/g, "\\%").replace(/·/g, "$\\cdot$").replace(/–/g, "--").replace(/′/g, "'").replace(/(\d),(\d)/g, "$1{,}$2")}`).join("\n")}
+${r.avisos.map(a => `\\item ${texTxt(a).replace(/≤/g, "$\\le$").replace(/≥/g, "$\\ge$").replace(/%/g, "\\%").replace(/·/g, "$\\cdot$").replace(/–/g, "--").replace(/′/g, "'")}`).join("\n")}
 \end{itemize}` : "";
   ultimoTex = L`\documentclass[11pt,letterpaper]{article}
 \usepackage[utf8]{inputenc}
@@ -1019,7 +1019,7 @@ init();
 // Integración con proyectos (proyectos.js): datos para guardar y restaurar este cálculo
 window.AURA_MEMO = { tipo: "Pavimento rígido", elemento: () => "", tex: () => ultimoTex, nombre: () => ultimoNombre, recalcular: () => actualizar() };
 </script>
-<script src="proyectos.js?v=35"></script>
+<script src="proyectos.js?v=36"></script>
 <script>
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
 </script>

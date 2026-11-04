@@ -58,7 +58,7 @@ Todo el texto de la interfaz, las memorias y los commits va en **español (Chile
 
 - Unidades internas: **kgf y cm** (tensiones en kgf/cm², momentos en kgf·cm). Las entradas pueden venir en m, mm, kgf·m o tf; se convierten al leer los datos.
 - Aceros chilenos: A37-24ES, A42-27ES y A52-34ES; E = 2.100.000 kgf/cm² y G = 810.000 kgf/cm².
-- Números en pantalla con `fmt(x, d)` (formato es-CL: coma decimal, punto de miles).
+- Números con `fmt(x, d)`: **punto decimal y espacio duro de miles** (`5 963.9`), también en los números escritos a mano en textos y LaTeX. No usar coma decimal ni punto de miles. En LaTeX, `tn(x, d)` convierte el espacio en `\,`; en DXF se escribe como espacio normal.
 - En LaTeX, usar `` L`...` `` (`String.raw`) y `tn(x, d)` para los números.
 - Cada verificación muestra la razón demanda/capacidad (D/C) y la referencia a la ecuación o cláusula de la norma (por ejemplo `"E3-2"` o `"Tabla D3.1"`).
 - Clase `Memo` (definida en cada página):

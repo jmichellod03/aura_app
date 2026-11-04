@@ -318,8 +318,8 @@
 </main>
 <footer>Herramienta de apoyo académico. Las solicitaciones deben provenir de un análisis que considere efectos de segundo orden (AISC 360-16, Cap. C). Verifique siempre los resultados.</footer>
 
-<script src="memo.js?v=32"></script>
-<script src="dxf.js?v=1"></script>
+<script src="memo.js?v=33"></script>
+<script src="dxf.js?v=2"></script>
 <script>
 "use strict";
 // ---------------------------------------------------------------------------
@@ -420,7 +420,7 @@ const PI2 = Math.PI * Math.PI;
 // Utilidades de formato
 // ---------------------------------------------------------------------------
 const fmt = (x, d = 2) => Number.isFinite(x)
-  ? x.toLocaleString("es-CL", { minimumFractionDigits: d, maximumFractionDigits: d })
+  ? x.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d }).replace(/,/g, "\u00a0")
   : "—";
 const $ = (id) => document.getElementById(id);
 const num = (id) => { const v = parseFloat($(id).value); return Number.isFinite(v) ? v : 0; };
@@ -428,7 +428,7 @@ const num = (id) => { const v = parseFloat($(id).value); return Number.isFinite(
 // LaTeX: String.raw conserva las barras invertidas; tn formatea con coma decimal.
 const L = String.raw;
 const tn = (x, d = 2) => Number.isFinite(x)
-  ? fmt(x, d).replace(/,/g, "{,}").replace(/\./g, "\\,")
+  ? fmt(x, d).replace(/\u00a0/g, "\\,")
   : "\\infty";
 const LE = L`\le`, GE = L`\ge`;
 const cmp = (a, b) => (a <= b ? LE : ">");
@@ -573,11 +573,11 @@ function flexionX(s, Fy, Lb, Cb, m, cbM) {
 
   m.p(L`\textbf{Alas (caso 10).} Relación ancho-espesor y límites de esbeltez:`);
   m.eq(L`\lambda_f = \frac{b_f}{2\,t_f} = \frac{${tn(s.b, 1)}}{2\cdot ${tn(s.tf)}} = ${tn(lf, 3)}`);
-  m.eq(L`\lambda_{pf} = 0{,}38\sqrt{\frac{E}{F_y}} = 0{,}38\sqrt{\frac{${tn(E, 0)}}{${tn(Fy, 0)}}} = ${tn(lpf, 3)} \qquad \lambda_{rf} = 1{,}0\sqrt{\frac{E}{F_y}} = ${tn(lrf, 3)}`);
+  m.eq(L`\lambda_{pf} = 0.38\sqrt{\frac{E}{F_y}} = 0.38\sqrt{\frac{${tn(E, 0)}}{${tn(Fy, 0)}}} = ${tn(lpf, 3)} \qquad \lambda_{rf} = 1.0\sqrt{\frac{E}{F_y}} = ${tn(lrf, 3)}`);
   m.p(L`Como $\lambda_f = ${tn(lf, 3)}$ ${claseAla === "compacta" ? L`$\le \lambda_{pf} = ${tn(lpf, 3)}$` : claseAla === "no compacta" ? L`$> \lambda_{pf}$ y $\le \lambda_{rf}$` : L`$> \lambda_{rf}$`}, las alas son \textbf{${claseAla}s}.`);
   m.p(L`\textbf{Alma (caso 15).} Relación alto-espesor y límites de esbeltez:`);
   m.eq(L`\lambda_w = \frac{h - 2(t_f + r)}{t_w} = \frac{${tn(s.h, 1)} - 2(${tn(s.tf)} + ${tn(s.r)})}{${tn(s.tw)}} = ${tn(lw, 3)}`);
-  m.eq(L`\lambda_{pw} = 3{,}76\sqrt{\frac{E}{F_y}} = ${tn(lpw, 3)} \qquad \lambda_{rw} = 5{,}70\sqrt{\frac{E}{F_y}} = ${tn(lrw, 3)}`);
+  m.eq(L`\lambda_{pw} = 3.76\sqrt{\frac{E}{F_y}} = ${tn(lpw, 3)} \qquad \lambda_{rw} = 5.70\sqrt{\frac{E}{F_y}} = ${tn(lrw, 3)}`);
   m.p(L`Como $\lambda_w = ${tn(lw, 3)}$ ${claseAlma === "compacta" ? L`$\le \lambda_{pw} = ${tn(lpw, 3)}$` : L`$> \lambda_{pw}$`}, el alma es \textbf{${claseAlma}}.`);
 
   const fuera = claseAlma !== "compacta";
@@ -602,15 +602,15 @@ function flexionX(s, Fy, Lb, Cb, m, cbM) {
   m.row("Longitud límite para pandeo lateral-torsional inelástico: L<sub>r</sub>", `${fmt(Lr, 1)} cm`, "F2-6");
   m.row("Longitud no arriostrada ; factor de modificación: L<sub>b</sub> ; C<sub>b</sub>", `${fmt(Lb, 1)} cm ; ${fmt(Cb, 3)}`);
   m.p(L`\textbf{Pandeo lateral-torsional.} Se comparan la longitud no arriostrada $L_b$ con las longitudes límite $L_p$ (bajo la cual no hay pandeo lateral-torsional) y $L_r$ (sobre la cual el pandeo es elástico). Longitudes límite:`);
-  m.eq(L`L_p = 1{,}76\,r_y\sqrt{\frac{E}{F_y}} = 1{,}76\cdot ${tn(s.ry, 3)}\cdot ${tn(rEF, 3)} = ${tn(Lp, 1)}${CM}`, "F2-5");
+  m.eq(L`L_p = 1.76\,r_y\sqrt{\frac{E}{F_y}} = 1.76\cdot ${tn(s.ry, 3)}\cdot ${tn(rEF, 3)} = ${tn(Lp, 1)}${CM}`, "F2-5");
   m.p(L`Considerando $c = 1$ (sección doblemente simétrica) y $h_o = h - t_f = ${tn(s.h, 1)} - ${tn(s.tf)} = ${tn(s.ho)}$ cm:`);
   m.eq(L`r_{ts} = \sqrt{\frac{\sqrt{I_y\,C_w}}{S_x}} = \sqrt{\frac{\sqrt{${tn(s.Iy, 1)}\cdot ${tn(s.Cw, 0)}}}{${tn(s.Sx, 1)}}} = ${tn(rts, 3)}${CM}`, "F2-7");
   m.eq(L`\begin{aligned}
-L_r &= 1{,}95\,r_{ts}\frac{E}{0{,}7F_y}\sqrt{\frac{J c}{S_x h_o} + \sqrt{\left(\frac{J c}{S_x h_o}\right)^2 + 6{,}76\left(\frac{0{,}7F_y}{E}\right)^2}}\\
-&= 1{,}95\cdot ${tn(rts, 3)}\cdot\frac{${tn(E, 0)}}{0{,}7\cdot ${tn(Fy, 0)}}\sqrt{${tn(jc, 5)} + \sqrt{${tn(jc, 5)}^2 + 6{,}76\left(\frac{0{,}7\cdot ${tn(Fy, 0)}}{${tn(E, 0)}}\right)^2}} = ${tn(Lr, 1)}${CM}
+L_r &= 1.95\,r_{ts}\frac{E}{0.7F_y}\sqrt{\frac{J c}{S_x h_o} + \sqrt{\left(\frac{J c}{S_x h_o}\right)^2 + 6.76\left(\frac{0.7F_y}{E}\right)^2}}\\
+&= 1.95\cdot ${tn(rts, 3)}\cdot\frac{${tn(E, 0)}}{0.7\cdot ${tn(Fy, 0)}}\sqrt{${tn(jc, 5)} + \sqrt{${tn(jc, 5)}^2 + 6.76\left(\frac{0.7\cdot ${tn(Fy, 0)}}{${tn(E, 0)}}\right)^2}} = ${tn(Lr, 1)}${CM}
 \end{aligned}`, "F2-6");
   m.p(L`con $J = ${tn(s.J)}$ cm$^4$, $S_x = ${tn(s.Sx, 1)}$ cm$^3$. Longitud no arriostrada $L_b = ${tn(Lb, 1)}$ cm y factor de modificación por momento no uniforme, con los momentos del tramo en kgf$\cdot$m:`);
-  if (cbM) m.eq(L`C_b = \frac{12{,}5\,M_{\max}}{2{,}5M_{\max} + 3M_A + 4M_B + 3M_C} = \frac{12{,}5\cdot ${tn(cbM.Mm, 1)}}{2{,}5\cdot ${tn(cbM.Mm, 1)} + 3\cdot ${tn(cbM.A, 1)} + 4\cdot ${tn(cbM.B, 1)} + 3\cdot ${tn(cbM.C, 1)}} = ${tn(Cb, 3)}`, "F1-1");
+  if (cbM) m.eq(L`C_b = \frac{12.5\,M_{\max}}{2.5M_{\max} + 3M_A + 4M_B + 3M_C} = \frac{12.5\cdot ${tn(cbM.Mm, 1)}}{2.5\cdot ${tn(cbM.Mm, 1)} + 3\cdot ${tn(cbM.A, 1)} + 4\cdot ${tn(cbM.B, 1)} + 3\cdot ${tn(cbM.C, 1)}} = ${tn(Cb, 3)}`, "F1-1");
 
   const Mr = 0.7 * Fy * s.Sx;
   let Mltb;
@@ -624,9 +624,9 @@ L_r &= 1{,}95\,r_{ts}\frac{E}{0{,}7F_y}\sqrt{\frac{J c}{S_x h_o} + \sqrt{\left(\
     m.row("Pandeo lateral-torsional inelástico: M<sub>n</sub>", `${fmt(Mn / 100, 1)} kgf·m`, "F2-2");
     if (Mn > Mp) m.row("Limitado por fluencia (M<sub>n</sub> > M<sub>p</sub>): M<sub>n</sub>", `${fmt(Mp / 100, 1)} kgf·m`);
     m.p(L`Dado que $L_p = ${tn(Lp, 1)} < L_b = ${tn(Lb, 1)} \le L_r = ${tn(Lr, 1)}$ cm, aplica el caso (b) de la sección F2.2: \textbf{pandeo lateral-torsional inelástico}.`);
-    m.eq(L`0{,}7F_yS_x = 0{,}7\cdot ${tn(Fy, 0)}\cdot ${tn(s.Sx, 1)} = ${tn(Mr / 100, 1)}${KGM}`);
+    m.eq(L`0.7F_yS_x = 0.7\cdot ${tn(Fy, 0)}\cdot ${tn(s.Sx, 1)} = ${tn(Mr / 100, 1)}${KGM}`);
     m.eq(L`\begin{aligned}
-M_n &= C_b\left[M_p - (M_p - 0{,}7F_yS_x)\left(\frac{L_b - L_p}{L_r - L_p}\right)\right] \le M_p\\
+M_n &= C_b\left[M_p - (M_p - 0.7F_yS_x)\left(\frac{L_b - L_p}{L_r - L_p}\right)\right] \le M_p\\
 &= ${tn(Cb, 3)}\left[${tn(Mp / 100, 1)} - (${tn(Mp / 100, 1)} - ${tn(Mr / 100, 1)})\left(\frac{${tn(Lb, 1)} - ${tn(Lp, 1)}}{${tn(Lr, 1)} - ${tn(Lp, 1)}}\right)\right] = ${tn(Mn / 100, 1)}${KGM}
 \end{aligned}`, "F2-2");
     if (Mn > Mp) m.p(L`Dado que $M_n = ${tn(Mn / 100, 1)} > M_p = ${tn(Mp / 100, 1)}$ kgf$\cdot$m, la capacidad nominal \textbf{queda limitada por la fluencia de la sección}.`);
@@ -639,8 +639,8 @@ M_n &= C_b\left[M_p - (M_p - 0{,}7F_yS_x)\left(\frac{L_b - L_p}{L_r - L_p}\right
     m.row("Pandeo lateral-torsional elástico: M<sub>n</sub>", `${fmt(Mltb / 100, 1)} kgf·m`, "F2-3");
     m.p(L`Dado que $L_b = ${tn(Lb, 1)} > L_r = ${tn(Lr, 1)}$ cm, aplica el caso (c) de la sección F2.2: \textbf{pandeo lateral-torsional elástico}.`);
     m.eq(L`\begin{aligned}
-F_{cr} &= \frac{C_b\pi^2E}{\left(L_b/r_{ts}\right)^2}\sqrt{1 + 0{,}078\frac{J c}{S_x h_o}\left(\frac{L_b}{r_{ts}}\right)^2}\\
-&= \frac{${tn(Cb, 3)}\cdot\pi^2\cdot ${tn(E, 0)}}{${tn(k, 2)}^2}\sqrt{1 + 0{,}078\cdot ${tn(jc, 5)}\cdot ${tn(k, 2)}^2} = ${tn(Fcr, 1)}${KGCM2}
+F_{cr} &= \frac{C_b\pi^2E}{\left(L_b/r_{ts}\right)^2}\sqrt{1 + 0.078\frac{J c}{S_x h_o}\left(\frac{L_b}{r_{ts}}\right)^2}\\
+&= \frac{${tn(Cb, 3)}\cdot\pi^2\cdot ${tn(E, 0)}}{${tn(k, 2)}^2}\sqrt{1 + 0.078\cdot ${tn(jc, 5)}\cdot ${tn(k, 2)}^2} = ${tn(Fcr, 1)}${KGCM2}
 \end{aligned}`, "F2-4");
     m.eq(L`M_n = F_{cr}S_x = ${tn(Fcr, 1)}\cdot ${tn(s.Sx, 1)} = ${tn(Mn / 100, 1)}${KGM} ${cmp(Mn, Mp)} M_p = ${tn(Mp / 100, 1)}${KGM}`, "F2-3");
   }
@@ -655,7 +655,7 @@ F_{cr} &= \frac{C_b\pi^2E}{\left(L_b/r_{ts}\right)^2}\sqrt{1 + 0{,}078\frac{J c}
     m.row("Pandeo local de ala no compacta: M<sub>n</sub>", `${fmt(Mflb / 100, 1)} kgf·m`, "F3-1");
     m.p(L`\textbf{Pandeo local de ala (ala no compacta):}`);
     m.eq(L`\begin{aligned}
-M_n &= M_p - (M_p - 0{,}7F_yS_x)\left(\frac{\lambda - \lambda_{pf}}{\lambda_{rf} - \lambda_{pf}}\right)\\
+M_n &= M_p - (M_p - 0.7F_yS_x)\left(\frac{\lambda - \lambda_{pf}}{\lambda_{rf} - \lambda_{pf}}\right)\\
 &= ${tn(Mp / 100, 1)} - (${tn(Mp / 100, 1)} - ${tn(Mr / 100, 1)})\left(\frac{${tn(lf, 3)} - ${tn(lpf, 3)}}{${tn(lrf, 3)} - ${tn(lpf, 3)}}\right) = ${tn(Mflb / 100, 1)}${KGM}
 \end{aligned}`, "F3-1");
   } else {
@@ -663,8 +663,8 @@ M_n &= M_p - (M_p - 0{,}7F_yS_x)\left(\frac{\lambda - \lambda_{pf}}{\lambda_{rf}
     Mflb = 0.9 * E * kc * s.Sx / (lf * lf);
     m.row("Pandeo local de ala esbelta: M<sub>n</sub>", `${fmt(Mflb / 100, 1)} kgf·m`, "F3-2");
     m.p(L`\textbf{Pandeo local de ala (ala esbelta):}`);
-    m.eq(L`k_c = \frac{4}{\sqrt{h/t_w}} = \frac{4}{\sqrt{${tn(lw, 3)}}} = ${tn(kc, 3)} \quad (0{,}35 \le k_c \le 0{,}76)`);
-    m.eq(L`M_n = \frac{0{,}9\,E\,k_c\,S_x}{\lambda^2} = \frac{0{,}9\cdot ${tn(E, 0)}\cdot ${tn(kc, 3)}\cdot ${tn(s.Sx, 1)}}{${tn(lf, 3)}^2} = ${tn(Mflb / 100, 1)}${KGM}`, "F3-2");
+    m.eq(L`k_c = \frac{4}{\sqrt{h/t_w}} = \frac{4}{\sqrt{${tn(lw, 3)}}} = ${tn(kc, 3)} \quad (0.35 \le k_c \le 0.76)`);
+    m.eq(L`M_n = \frac{0.9\,E\,k_c\,S_x}{\lambda^2} = \frac{0.9\cdot ${tn(E, 0)}\cdot ${tn(kc, 3)}\cdot ${tn(s.Sx, 1)}}{${tn(lf, 3)}^2} = ${tn(Mflb / 100, 1)}${KGM}`, "F3-2");
   }
 
   const Mn = Math.min(Mp, Mltb, Mflb);
@@ -672,7 +672,7 @@ M_n &= M_p - (M_p - 0{,}7F_yS_x)\left(\frac{\lambda - \lambda_{pf}}{\lambda_{rf}
   m.row("Resistencia nominal a flexión: M<sub>nx</sub>", `${fmt(Mn / 100, 1)} kgf·m`);
   m.row("<b>Resistencia de diseño a flexión: φ<sub>b</sub>M<sub>nx</sub></b>", `<b>${fmt(phiMn / 100, 1)} kgf·m</b>`, "F1");
   m.p(L`\textbf{Capacidad de diseño eje fuerte} (mínimo de los estados límite aplicables):`);
-  m.eq(L`\phi_b M_{nx} = 0{,}9\cdot ${tn(Mn / 100, 1)} = ${tn(phiMn / 100, 1)}${KGM}`, "F1");
+  m.eq(L`\phi_b M_{nx} = 0.9\cdot ${tn(Mn / 100, 1)} = ${tn(phiMn / 100, 1)}${KGM}`, "F1");
   return { Mn, phiMn, fuera, claseAla, claseAlma, Lp, Lr };
 }
 
@@ -686,10 +686,10 @@ function flexionY(s, Fy, m) {
   const MpZ = Fy * s.Zy, MpS = 1.6 * Fy * s.Sy;
   const Mp = Math.min(MpZ, MpS);
   m.row("Momento plástico (fluencia): M<sub>p</sub>", `${fmt(Mp / 100, 1)} kgf·m`, "F6-1");
-  m.p(L`\textbf{Fluencia:} en el eje débil el momento plástico se limita a $1{,}6F_yS_y$ (ec. F6-1):`);
+  m.p(L`\textbf{Fluencia:} en el eje débil el momento plástico se limita a $1.6F_yS_y$ (ec. F6-1):`);
   m.eq(L`M_p = F_yZ_y = ${tn(Fy, 0)}\cdot ${tn(s.Zy, 1)} = ${tn(MpZ / 100, 1)}${KGM}`);
-  m.eq(L`1{,}6F_yS_y = 1{,}6\cdot ${tn(Fy, 0)}\cdot ${tn(s.Sy, 1)} = ${tn(MpS / 100, 1)}${KGM}`);
-  m.p(L`Como $F_yZ_y = ${tn(MpZ / 100, 1)} ${cmp(MpZ, MpS)} 1{,}6F_yS_y = ${tn(MpS / 100, 1)}$ kgf$\cdot$m, se adopta $M_p = ${tn(Mp / 100, 1)}$ kgf$\cdot$m.`, true);
+  m.eq(L`1.6F_yS_y = 1.6\cdot ${tn(Fy, 0)}\cdot ${tn(s.Sy, 1)} = ${tn(MpS / 100, 1)}${KGM}`);
+  m.p(L`Como $F_yZ_y = ${tn(MpZ / 100, 1)} ${cmp(MpZ, MpS)} 1.6F_yS_y = ${tn(MpS / 100, 1)}$ kgf$\cdot$m, se adopta $M_p = ${tn(Mp / 100, 1)}$ kgf$\cdot$m.`, true);
   let Mn = Mp;
   if (lf <= lpf) {
     m.row("Pandeo local de ala", "no aplica (ala compacta)");
@@ -699,18 +699,18 @@ function flexionY(s, Fy, m) {
     Mn = Math.min(Mp, Mp - (Mp - Mr) * (lf - lpf) / (lrf - lpf));
     m.row("Pandeo local de ala no compacta: M<sub>n</sub>", `${fmt(Mn / 100, 1)} kgf·m`, "F6-2");
     m.p(L`\textbf{Pandeo local de ala (ala no compacta):}`);
-    m.eq(L`M_n = M_p - (M_p - 0{,}7F_yS_y)\left(\frac{\lambda - \lambda_{pf}}{\lambda_{rf} - \lambda_{pf}}\right) = ${tn(Mp / 100, 1)} - (${tn(Mp / 100, 1)} - ${tn(Mr / 100, 1)})\left(\frac{${tn(lf, 3)} - ${tn(lpf, 3)}}{${tn(lrf, 3)} - ${tn(lpf, 3)}}\right) = ${tn(Mn / 100, 1)}${KGM}`, "F6-2");
+    m.eq(L`M_n = M_p - (M_p - 0.7F_yS_y)\left(\frac{\lambda - \lambda_{pf}}{\lambda_{rf} - \lambda_{pf}}\right) = ${tn(Mp / 100, 1)} - (${tn(Mp / 100, 1)} - ${tn(Mr / 100, 1)})\left(\frac{${tn(lf, 3)} - ${tn(lpf, 3)}}{${tn(lrf, 3)} - ${tn(lpf, 3)}}\right) = ${tn(Mn / 100, 1)}${KGM}`, "F6-2");
   } else {
     const Fcr = 0.69 * E / (lf * lf);
     Mn = Math.min(Mp, Fcr * s.Sy);
     m.row("Pandeo local de ala esbelta: M<sub>n</sub>", `${fmt(Mn / 100, 1)} kgf·m`, "F6-3");
     m.p(L`\textbf{Pandeo local de ala (ala esbelta):}`);
-    m.eq(L`F_{cr} = \frac{0{,}69E}{\lambda^2} = \frac{0{,}69\cdot ${tn(E, 0)}}{${tn(lf, 3)}^2} = ${tn(Fcr, 1)}${KGCM2} \qquad M_n = F_{cr}S_y = ${tn(Mn / 100, 1)}${KGM}`, "F6-3");
+    m.eq(L`F_{cr} = \frac{0.69E}{\lambda^2} = \frac{0.69\cdot ${tn(E, 0)}}{${tn(lf, 3)}^2} = ${tn(Fcr, 1)}${KGCM2} \qquad M_n = F_{cr}S_y = ${tn(Mn / 100, 1)}${KGM}`, "F6-3");
   }
   const phiMn = 0.9 * Mn;
   m.row("<b>Resistencia de diseño a flexión: φ<sub>b</sub>M<sub>ny</sub></b>", `<b>${fmt(phiMn / 100, 1)} kgf·m</b>`, "F1");
   m.p(L`\textbf{Capacidad de diseño eje débil:}`);
-  m.eq(L`\phi_b M_{ny} = 0{,}9\cdot ${tn(Mn / 100, 1)} = ${tn(phiMn / 100, 1)}${KGM}`, "F1");
+  m.eq(L`\phi_b M_{ny} = 0.9\cdot ${tn(Mn / 100, 1)} = ${tn(phiMn / 100, 1)}${KGM}`, "F1");
   return { Mn, phiMn };
 }
 
@@ -725,19 +725,19 @@ function corte(s, Fy, m) {
   m.p(L`\textbf{Área del alma:} se toma la altura total del perfil por el espesor del alma:`, true);
   m.eq(L`A_w = d\,t_w = ${tn(s.h, 1)}\cdot ${tn(s.tw)} = ${tn(Aw)}${CM2}`);
   m.p(L`\textbf{Esbeltez del alma} y límite de la sección G2.1(a):`, true);
-  m.eq(L`\frac{h}{t_w} = \frac{${tn(s.hw)}}{${tn(s.tw)}} = ${tn(ht, 3)} \qquad 2{,}24\sqrt{\frac{E}{F_y}} = 2{,}24\sqrt{\frac{${tn(E, 0)}}{${tn(Fy, 0)}}} = ${tn(lim, 3)}`);
+  m.eq(L`\frac{h}{t_w} = \frac{${tn(s.hw)}}{${tn(s.tw)}} = ${tn(ht, 3)} \qquad 2.24\sqrt{\frac{E}{F_y}} = 2.24\sqrt{\frac{${tn(E, 0)}}{${tn(Fy, 0)}}} = ${tn(lim, 3)}`);
   let phi, Cv1;
   if (ht <= lim) {
     phi = 1.0; Cv1 = 1.0;
-    m.p(L`Como $h/t_w = ${tn(ht, 3)} \le 2{,}24\sqrt{E/F_y} = ${tn(lim, 3)}$, para almas de perfiles I laminados aplica la sección G2.1(a): $\phi_v = 1{,}00$ y $C_{v1} = 1{,}0$ (ec. G2-2).`);
+    m.p(L`Como $h/t_w = ${tn(ht, 3)} \le 2.24\sqrt{E/F_y} = ${tn(lim, 3)}$, para almas de perfiles I laminados aplica la sección G2.1(a): $\phi_v = 1.00$ y $C_{v1} = 1.0$ (ec. G2-2).`);
   } else {
     phi = 0.9;
     const kv = 5.34, l1 = 1.10 * Math.sqrt(kv * E / Fy);
     Cv1 = ht <= l1 ? 1.0 : l1 / ht;
-    m.p(L`Como $h/t_w > 2{,}24\sqrt{E/F_y}$, aplica la sección G2.1(b) con $\phi_v = 0{,}90$ y $k_v = 5{,}34$ (alma sin atiesadores):`);
-    m.eq(L`1{,}10\sqrt{\frac{k_vE}{F_y}} = 1{,}10\sqrt{\frac{5{,}34\cdot ${tn(E, 0)}}{${tn(Fy, 0)}}} = ${tn(l1, 3)}`);
-    if (ht <= l1) m.eq(L`\frac{h}{t_w} = ${tn(ht, 3)} \le ${tn(l1, 3)} \;\Rightarrow\; C_{v1} = 1{,}0`, "G2-3");
-    else m.eq(L`C_{v1} = \frac{1{,}10\sqrt{k_vE/F_y}}{h/t_w} = \frac{${tn(l1, 3)}}{${tn(ht, 3)}} = ${tn(Cv1, 3)}`, "G2-4");
+    m.p(L`Como $h/t_w > 2.24\sqrt{E/F_y}$, aplica la sección G2.1(b) con $\phi_v = 0.90$ y $k_v = 5.34$ (alma sin atiesadores):`);
+    m.eq(L`1.10\sqrt{\frac{k_vE}{F_y}} = 1.10\sqrt{\frac{5.34\cdot ${tn(E, 0)}}{${tn(Fy, 0)}}} = ${tn(l1, 3)}`);
+    if (ht <= l1) m.eq(L`\frac{h}{t_w} = ${tn(ht, 3)} \le ${tn(l1, 3)} \;\Rightarrow\; C_{v1} = 1.0`, "G2-3");
+    else m.eq(L`C_{v1} = \frac{1.10\sqrt{k_vE/F_y}}{h/t_w} = \frac{${tn(l1, 3)}}{${tn(ht, 3)}} = ${tn(Cv1, 3)}`, "G2-4");
   }
   const Vn = 0.6 * Fy * Aw * Cv1;
   const phiVn = phi * Vn;
@@ -747,7 +747,7 @@ function corte(s, Fy, m) {
   m.row("Resistencia nominal a corte: V<sub>n</sub>", `${fmt(Vn, 0)} kgf`, "G2-1");
   m.row("<b>Resistencia de diseño a corte: φ<sub>v</sub>V<sub>n</sub></b>", `<b>${fmt(phiVn, 0)} kgf</b>`);
   m.p(L`\textbf{Resistencia nominal y de diseño a corte:}`, true);
-  m.eq(L`V_n = 0{,}6\,F_y\,A_w\,C_{v1} = 0{,}6\cdot ${tn(Fy, 0)}\cdot ${tn(Aw)}\cdot ${tn(Cv1, 3)} = ${tn(Vn, 0)}${KG}`, "G2-1");
+  m.eq(L`V_n = 0.6\,F_y\,A_w\,C_{v1} = 0.6\cdot ${tn(Fy, 0)}\cdot ${tn(Aw)}\cdot ${tn(Cv1, 3)} = ${tn(Vn, 0)}${KG}`, "G2-1");
   m.eq(L`\phi_v V_n = ${tn(phi)}\cdot ${tn(Vn, 0)} = ${tn(phiVn, 0)}${KG}`);
   return { Vn, phiVn, phi };
 }
@@ -767,10 +767,10 @@ function compresion(s, Fy, Lc, Kx, Ky, Kz, m) {
   m.row("Esbeltez del alma (caso 5) ; límite: λ<sub>w</sub> ; λ<sub>r</sub>", `${fmt(lw, 3)} ; ${fmt(lrw, 3)}`);
   m.row("Clasificación alma", tag(lw <= lrw, lw <= lrw ? "no esbelta" : "esbelta"));
   m.p(L`\textbf{Alas (caso 1).} Relación ancho-espesor y límite de esbeltez:`);
-  m.eq(L`\lambda_f = \frac{b_f}{2\,t_f} = \frac{${tn(s.b, 1)}}{2\cdot ${tn(s.tf)}} = ${tn(lf, 3)} \qquad \lambda_{rf} = 0{,}56\sqrt{\frac{E}{F_y}} = 0{,}56\sqrt{\frac{${tn(E, 0)}}{${tn(Fy, 0)}}} = ${tn(lrf, 3)}`);
+  m.eq(L`\lambda_f = \frac{b_f}{2\,t_f} = \frac{${tn(s.b, 1)}}{2\cdot ${tn(s.tf)}} = ${tn(lf, 3)} \qquad \lambda_{rf} = 0.56\sqrt{\frac{E}{F_y}} = 0.56\sqrt{\frac{${tn(E, 0)}}{${tn(Fy, 0)}}} = ${tn(lrf, 3)}`);
   m.p(L`Como $${tn(lf, 3)} ${cmp(lf, lrf)} ${tn(lrf, 3)}$, las alas son \textbf{${lf <= lrf ? "no esbeltas" : "esbeltas"}}.`);
   m.p(L`\textbf{Alma (caso 5).} Relación alto-espesor y límite de esbeltez:`);
-  m.eq(L`\lambda_w = \frac{h - 2(t_f + r)}{t_w} = \frac{${tn(s.h, 1)} - 2(${tn(s.tf)} + ${tn(s.r)})}{${tn(s.tw)}} = ${tn(lw, 3)} \qquad \lambda_{rw} = 1{,}49\sqrt{\frac{E}{F_y}} = ${tn(lrw, 3)}`);
+  m.eq(L`\lambda_w = \frac{h - 2(t_f + r)}{t_w} = \frac{${tn(s.h, 1)} - 2(${tn(s.tf)} + ${tn(s.r)})}{${tn(s.tw)}} = ${tn(lw, 3)} \qquad \lambda_{rw} = 1.49\sqrt{\frac{E}{F_y}} = ${tn(lrw, 3)}`);
   m.p(L`Como $${tn(lw, 3)} ${cmp(lw, lrw)} ${tn(lrw, 3)}$, el alma es \textbf{${lw <= lrw ? "no esbelta" : "esbelta"}}. ${lf <= lrf && lw <= lrw ? "Al no contener elementos esbeltos, según la Tabla E1.1 se aplican las secciones E3 (pandeo por flexión) y E4 (pandeo torsional)." : "Al contener elementos esbeltos, según la Tabla E1.1 se aplica además la sección E7."}`);
 
   m.sub("Pandeo por flexión y torsión — Secciones E3 y E4");
@@ -801,18 +801,18 @@ F_{ez} &= \left(\frac{\pi^2 E C_w}{L_{cz}^2} + G J\right)\frac{1}{I_x + I_y}\\
   const lim = 4.71 * rEF;
   let Fcr;
   m.p(L`\textbf{Tensión crítica de pandeo por flexión:}`);
-  m.p(L`Según la sección E3, la tensión crítica depende de la razón $F_y/F_e$: si $F_y/F_e \le 2{,}25$ el pandeo es inelástico (ec. E3-2); en caso contrario es elástico (ec. E3-3).`, true);
+  m.p(L`Según la sección E3, la tensión crítica depende de la razón $F_y/F_e$: si $F_y/F_e \le 2.25$ el pandeo es inelástico (ec. E3-2); en caso contrario es elástico (ec. E3-3).`, true);
   if (Fy / Fe <= 2.25) {
     Fcr = Math.pow(0.658, Fy / Fe) * Fy;
     m.row("Tensión crítica de pandeo inelástico: F<sub>cr</sub>", `${fmt(Fcr, 1)} kgf/cm²`, "E3-2");
     // La equivalencia con L_c/r solo vale cuando controla el pandeo por flexión
-    m.eq(L`\frac{F_y}{F_e} = \frac{${tn(Fy, 0)}}{${tn(Fe, 1)}} = ${tn(Fy / Fe, 3)} \le 2{,}25${Fe === Fez ? "" : L` \quad \left(\text{equivalente a } \frac{L_c}{r} \le 4{,}71\sqrt{\frac{E}{F_y}} = ${tn(lim, 3)}\right)`}`);
-    m.eq(L`F_{cr} = \left(0{,}658^{F_y/F_e}\right)F_y = 0{,}658^{${tn(Fy / Fe, 3)}}\cdot ${tn(Fy, 0)} = ${tn(Fcr, 1)}${KGCM2}`, "E3-2");
+    m.eq(L`\frac{F_y}{F_e} = \frac{${tn(Fy, 0)}}{${tn(Fe, 1)}} = ${tn(Fy / Fe, 3)} \le 2.25${Fe === Fez ? "" : L` \quad \left(\text{equivalente a } \frac{L_c}{r} \le 4.71\sqrt{\frac{E}{F_y}} = ${tn(lim, 3)}\right)`}`);
+    m.eq(L`F_{cr} = \left(0.658^{F_y/F_e}\right)F_y = 0.658^{${tn(Fy / Fe, 3)}}\cdot ${tn(Fy, 0)} = ${tn(Fcr, 1)}${KGCM2}`, "E3-2");
   } else {
     Fcr = 0.877 * Fe;
     m.row("Tensión crítica de pandeo elástico: F<sub>cr</sub>", `${fmt(Fcr, 1)} kgf/cm²`, "E3-3");
-    m.eq(L`\frac{F_y}{F_e} = \frac{${tn(Fy, 0)}}{${tn(Fe, 1)}} = ${tn(Fy / Fe, 3)} > 2{,}25${Fe === Fez ? "" : L` \quad \left(\frac{L_c}{r} > 4{,}71\sqrt{\frac{E}{F_y}} = ${tn(lim, 3)}\right)`}`);
-    m.eq(L`F_{cr} = 0{,}877\,F_e = 0{,}877\cdot ${tn(Fe, 1)} = ${tn(Fcr, 1)}${KGCM2}`, "E3-3");
+    m.eq(L`\frac{F_y}{F_e} = \frac{${tn(Fy, 0)}}{${tn(Fe, 1)}} = ${tn(Fy / Fe, 3)} > 2.25${Fe === Fez ? "" : L` \quad \left(\frac{L_c}{r} > 4.71\sqrt{\frac{E}{F_y}} = ${tn(lim, 3)}\right)`}`);
+    m.eq(L`F_{cr} = 0.877\,F_e = 0.877\cdot ${tn(Fe, 1)} = ${tn(Fcr, 1)}${KGCM2}`, "E3-3");
   }
 
   // Elementos esbeltos — E7 (área efectiva)
@@ -849,7 +849,7 @@ F_{ez} &= \left(\frac{\pi^2 E C_w}{L_{cz}^2} + G J\right)\frac{1}{I_x + I_y}\\
   m.row("<b>Resistencia de diseño a compresión: φ<sub>c</sub>P<sub>n</sub></b>", `<b>${fmt(phiPn, 0)} kgf</b>`);
   m.p(L`\textbf{Resistencia a compresión:}`);
   m.eq(L`P_n = F_{cr}\,A_${Ae < s.A ? "e" : "g"} = ${tn(Fcr, 1)}\cdot ${tn(Ae)} = ${tn(Pn, 0)}${KG}`, Ae < s.A ? "E7-1" : "E3-1");
-  m.eq(L`\phi_c P_n = 0{,}9\cdot ${tn(Pn, 0)} = ${tn(phiPn, 0)}${KG}`);
+  m.eq(L`\phi_c P_n = 0.9\cdot ${tn(Pn, 0)} = ${tn(phiPn, 0)}${KG}`);
   return { Pn, phiPn, Fcr, Ae };
 }
 
@@ -870,15 +870,15 @@ function verificarViga(s, Fy, d, m) {
   m.row("<b>Razón demanda/capacidad en flexión: D/C</b>", `<b>${fmt(dcM, 3)}</b> ${tag(dcM <= 1, dcM <= 1 ? "CUMPLE" : "NO CUMPLE")}`, "H1-1b");
   m.p(L`Considerando los momentos últimos solicitantes $M_{ux} = ${tn(d.Mux / 100, 1)}$ kgf$\cdot$m y $M_{uy} = ${tn(d.Muy / 100, 1)}$ kgf$\cdot$m:`);
   m.eq(L`\frac{M_{ux}}{\phi_bM_{nx}} = \frac{${tn(d.Mux / 100, 1)}}{${tn(fx.phiMn / 100, 1)}} = ${tn(rx, 3)} \qquad \frac{M_{uy}}{\phi_bM_{ny}} = \frac{${tn(d.Muy / 100, 1)}}{${tn(fy.phiMn / 100, 1)}} = ${tn(ry, 3)}`);
-  m.eq(L`\frac{D}{C} = \frac{M_{ux}}{\phi_bM_{nx}} + \frac{M_{uy}}{\phi_bM_{ny}} = ${tn(rx, 3)} + ${tn(ry, 3)} = ${tn(dcM, 3)} ${cmp(dcM, 1)} 1{,}0`, "H1-1b");
-  m.p(L`Por lo tanto, como la relación demanda-capacidad en flexión ${dcM <= 1 ? "es menor o igual a" : "supera"} 1{,}0, la sección \textbf{${dcM <= 1 ? "cumple" : "no cumple"}} a flexión.`, true);
+  m.eq(L`\frac{D}{C} = \frac{M_{ux}}{\phi_bM_{nx}} + \frac{M_{uy}}{\phi_bM_{ny}} = ${tn(rx, 3)} + ${tn(ry, 3)} = ${tn(dcM, 3)} ${cmp(dcM, 1)} 1.0`, "H1-1b");
+  m.p(L`Por lo tanto, como la relación demanda-capacidad en flexión ${dcM <= 1 ? "es menor o igual a" : "supera"} 1.0, la sección \textbf{${dcM <= 1 ? "cumple" : "no cumple"}} a flexión.`, true);
 
   m.h("Verificación a corte — Capítulo G");
   const v = corte(s, Fy, m);
   const dcV = d.Vu / v.phiVn;
   m.row("<b>Razón demanda/capacidad en corte: D/C</b>", `<b>${fmt(dcV, 3)}</b> ${tag(dcV <= 1, dcV <= 1 ? "CUMPLE" : "NO CUMPLE")}`);
   m.p(L`Considerando el corte último solicitante $V_u = ${tn(d.Vu, 0)}$ kgf:`);
-  m.eq(L`\frac{D}{C} = \frac{V_u}{\phi_vV_n} = \frac{${tn(d.Vu, 0)}}{${tn(v.phiVn, 0)}} = ${tn(dcV, 3)} ${cmp(dcV, 1)} 1{,}0`);
+  m.eq(L`\frac{D}{C} = \frac{V_u}{\phi_vV_n} = \frac{${tn(d.Vu, 0)}}{${tn(v.phiVn, 0)}} = ${tn(dcV, 3)} ${cmp(dcV, 1)} 1.0`);
   m.p(L`Por lo tanto, la sección \textbf{${dcV <= 1 ? "cumple" : "no cumple"}} a corte.`, true);
 
   const dc = Math.max(dcM, dcV);
@@ -892,7 +892,7 @@ function verificarViga(s, Fy, d, m) {
     resumen: [
       { k: "Flexión eje fuerte", dem: L`$M_{ux} = ${tn(d.Mux / 100, 1)}$ kgf$\cdot$m`, cap: L`$\phi_bM_{nx} = ${tn(fx.phiMn / 100, 1)}$ kgf$\cdot$m`, dc: rx, ref: "F2/F3" },
       { k: "Flexión eje débil", dem: L`$M_{uy} = ${tn(d.Muy / 100, 1)}$ kgf$\cdot$m`, cap: L`$\phi_bM_{ny} = ${tn(fy.phiMn / 100, 1)}$ kgf$\cdot$m`, dc: ry, ref: "F6" },
-      { k: "Flexión total ($x + y$)", dem: L`$\sum M_u/\phi_bM_n$`, cap: "1{,}0", dc: dcM, ref: "H1-1b" },
+      { k: "Flexión total ($x + y$)", dem: L`$\sum M_u/\phi_bM_n$`, cap: "1.0", dc: dcM, ref: "H1-1b" },
       { k: "Corte", dem: L`$V_u = ${tn(d.Vu, 0)}$ kgf`, cap: L`$\phi_vV_n = ${tn(v.phiVn, 0)}$ kgf`, dc: dcV, ref: "G2.1" },
     ],
   };
@@ -914,7 +914,7 @@ function verificarColumna(s, Fy, d, m) {
   let Mux = d.Mux, Muy = d.Muy, inestable = false;
   if (d.B1) {
     m.h("Amplificación por efectos P-δ — Anexo 8.2.1");
-    m.p(L`Se amplifican los momentos de primer orden mediante $B_1$, con $K_1 = 1{,}0$ y $\alpha = 1{,}0$ (LRFD):`);
+    m.p(L`Se amplifican los momentos de primer orden mediante $B_1$, con $K_1 = 1.0$ y $\alpha = 1.0$ (LRFD):`);
     const amp = (I, Cm, eje) => {
       const Pe1 = PI2 * E * I / (d.L * d.L);   // K1 = 1
       m.eq(L`P_{e1,${eje}} = \frac{\pi^2EI_${eje}}{(K_1L)^2} = \frac{\pi^2\cdot ${tn(E, 0)}\cdot ${tn(I, 0)}}{${tn(d.L, 1)}^2} = ${tn(Pe1, 0)}${KG}`, "A-8-5");
@@ -942,30 +942,30 @@ function verificarColumna(s, Fy, d, m) {
   m.h("Interacción flexocompresión — Sección H1.1");
   const rx = Mux / fx.phiMn, ry = Muy / fy.phiMn;
   let dc;
-  m.p(L`Según la sección H1.1 del AISC 360-16, la interacción entre carga axial y flexión se evalúa con la ecuación H1-1a si $P_u/\phi_cP_n \ge 0{,}2$, o con la ecuación H1-1b en caso contrario.`, true);
+  m.p(L`Según la sección H1.1 del AISC 360-16, la interacción entre carga axial y flexión se evalúa con la ecuación H1-1a si $P_u/\phi_cP_n \ge 0.2$, o con la ecuación H1-1b en caso contrario.`, true);
   m.p(L`Momentos últimos solicitantes: $M_{ux} = ${tn(Mux / 100, 1)}$ kgf$\cdot$m y $M_{uy} = ${tn(Muy / 100, 1)}$ kgf$\cdot$m.`);
   m.eq(L`\frac{M_{ux}}{\phi_bM_{nx}} = \frac{${tn(Mux / 100, 1)}}{${tn(fx.phiMn / 100, 1)}} = ${tn(rx, 3)} \qquad \frac{M_{uy}}{\phi_bM_{ny}} = \frac{${tn(Muy / 100, 1)}}{${tn(fy.phiMn / 100, 1)}} = ${tn(ry, 3)}`);
   if (rP >= 0.2) {
     dc = rP + 8 / 9 * (rx + ry);
-    m.p(L`Como $P_u/\phi_cP_n = ${tn(rP, 3)} \ge 0{,}2$, se utiliza la ecuación H1-1a:`);
-    m.eq(L`\frac{D}{C} = \frac{P_u}{\phi_cP_n} + \frac{8}{9}\left(\frac{M_{ux}}{\phi_bM_{nx}} + \frac{M_{uy}}{\phi_bM_{ny}}\right) = ${tn(rP, 3)} + \frac{8}{9}\left(${tn(rx, 3)} + ${tn(ry, 3)}\right) = ${tn(dc, 3)} ${cmp(dc, 1)} 1{,}0`, "H1-1a");
+    m.p(L`Como $P_u/\phi_cP_n = ${tn(rP, 3)} \ge 0.2$, se utiliza la ecuación H1-1a:`);
+    m.eq(L`\frac{D}{C} = \frac{P_u}{\phi_cP_n} + \frac{8}{9}\left(\frac{M_{ux}}{\phi_bM_{nx}} + \frac{M_{uy}}{\phi_bM_{ny}}\right) = ${tn(rP, 3)} + \frac{8}{9}\left(${tn(rx, 3)} + ${tn(ry, 3)}\right) = ${tn(dc, 3)} ${cmp(dc, 1)} 1.0`, "H1-1a");
   } else {
     dc = rP / 2 + (rx + ry);
-    m.p(L`Como $P_u/\phi_cP_n = ${tn(rP, 3)} < 0{,}2$, se utiliza la ecuación H1-1b:`);
-    m.eq(L`\frac{D}{C} = \frac{P_u}{2\phi_cP_n} + \left(\frac{M_{ux}}{\phi_bM_{nx}} + \frac{M_{uy}}{\phi_bM_{ny}}\right) = \frac{${tn(rP, 3)}}{2} + \left(${tn(rx, 3)} + ${tn(ry, 3)}\right) = ${tn(dc, 3)} ${cmp(dc, 1)} 1{,}0`, "H1-1b");
+    m.p(L`Como $P_u/\phi_cP_n = ${tn(rP, 3)} < 0.2$, se utiliza la ecuación H1-1b:`);
+    m.eq(L`\frac{D}{C} = \frac{P_u}{2\phi_cP_n} + \left(\frac{M_{ux}}{\phi_bM_{nx}} + \frac{M_{uy}}{\phi_bM_{ny}}\right) = \frac{${tn(rP, 3)}}{2} + \left(${tn(rx, 3)} + ${tn(ry, 3)}\right) = ${tn(dc, 3)} ${cmp(dc, 1)} 1.0`, "H1-1b");
   }
-  m.p(L`Por lo tanto, como la relación demanda-capacidad ${dc <= 1 ? L`$D/C = ${tn(dc, 3)}$ es menor o igual a 1{,}0, la sección \textbf{cumple}` : L`$D/C = ${tn(dc, 3)}$ es mayor que 1{,}0, la sección \textbf{no cumple}`} a flexocompresión.`, true);
+  m.p(L`Por lo tanto, como la relación demanda-capacidad ${dc <= 1 ? L`$D/C = ${tn(dc, 3)}$ es menor o igual a 1.0, la sección \textbf{cumple}` : L`$D/C = ${tn(dc, 3)}$ es mayor que 1.0, la sección \textbf{no cumple}`} a flexocompresión.`, true);
   m.row("Razón de carga axial: P<sub>u</sub>/φP<sub>n</sub>", fmt(rP, 3));
   m.row("Razón de flexión, eje x: M<sub>ux</sub>/φM<sub>nx</sub>", fmt(rx, 3));
   m.row("Razón de flexión, eje y: M<sub>uy</sub>/φM<sub>ny</sub>", fmt(ry, 3));
-  m.row(`<b>Interacción flexo-compresión (${rP >= 0.2 ? "P<sub>r</sub>/P<sub>c</sub> ≥ 0,2" : "P<sub>r</sub>/P<sub>c</sub> < 0,2"}): D/C</b>`, `<b>${fmt(dc, 3)}</b> ${tag(dc <= 1, dc <= 1 ? "CUMPLE" : "NO CUMPLE")}`, rP >= 0.2 ? "H1-1a" : "H1-1b");
+  m.row(`<b>Interacción flexo-compresión (${rP >= 0.2 ? "P<sub>r</sub>/P<sub>c</sub> ≥ 0.2" : "P<sub>r</sub>/P<sub>c</sub> < 0.2"}): D/C</b>`, `<b>${fmt(dc, 3)}</b> ${tag(dc <= 1, dc <= 1 ? "CUMPLE" : "NO CUMPLE")}`, rP >= 0.2 ? "H1-1a" : "H1-1b");
 
   m.h("Verificación a corte — Capítulo G");
   const v = corte(s, Fy, m);
   const dcV = d.Vu / v.phiVn;
   m.row("<b>Razón demanda/capacidad en corte: D/C</b>", `<b>${fmt(dcV, 3)}</b> ${tag(dcV <= 1, dcV <= 1 ? "CUMPLE" : "NO CUMPLE")}`);
   m.p(L`Considerando el corte último solicitante $V_u = ${tn(d.Vu, 0)}$ kgf (eje fuerte):`);
-  m.eq(L`\frac{D}{C} = \frac{V_u}{\phi_vV_n} = \frac{${tn(d.Vu, 0)}}{${tn(v.phiVn, 0)}} = ${tn(dcV, 3)} ${cmp(dcV, 1)} 1{,}0`);
+  m.eq(L`\frac{D}{C} = \frac{V_u}{\phi_vV_n} = \frac{${tn(d.Vu, 0)}}{${tn(v.phiVn, 0)}} = ${tn(dcV, 3)} ${cmp(dcV, 1)} 1.0`);
   m.p(L`Por lo tanto, la sección \textbf{${dcV <= 1 ? "cumple" : "no cumple"}} a corte.`, true);
 
   return {
@@ -981,7 +981,7 @@ function verificarColumna(s, Fy, d, m) {
       { k: "Compresión", dem: L`$P_u = ${tn(d.Pu, 0)}$ kgf`, cap: L`$\phi_cP_n = ${tn(c.phiPn, 0)}$ kgf`, dc: rP, ref: "E3" },
       { k: "Flexión eje fuerte", dem: L`$M_{ux} = ${tn(Mux / 100, 1)}$ kgf$\cdot$m`, cap: L`$\phi_bM_{nx} = ${tn(fx.phiMn / 100, 1)}$ kgf$\cdot$m`, dc: rx, ref: "F2/F3" },
       { k: "Flexión eje débil", dem: L`$M_{uy} = ${tn(Muy / 100, 1)}$ kgf$\cdot$m`, cap: L`$\phi_bM_{ny} = ${tn(fy.phiMn / 100, 1)}$ kgf$\cdot$m`, dc: ry, ref: "F6" },
-      { k: "Interacción flexocompresión", dem: rP >= 0.2 ? "Ec. H1-1a" : "Ec. H1-1b", cap: "1{,}0", dc, ref: "H1.1" },
+      { k: "Interacción flexocompresión", dem: rP >= 0.2 ? "Ec. H1-1a" : "Ec. H1-1b", cap: "1.0", dc, ref: "H1.1" },
       { k: "Corte", dem: L`$V_u = ${tn(d.Vu, 0)}$ kgf`, cap: L`$\phi_vV_n = ${tn(v.phiVn, 0)}$ kgf`, dc: dcV, ref: "G2.1" },
     ],
   };
@@ -1071,7 +1071,7 @@ F_u &= ${tn(Fu, 0)}${KGCM2}\\
 G &= ${tn(G, 0)}${KGCM2}
 \end{aligned}
 \]
-El diseño se realiza por el método de factores de carga y resistencia (LRFD), con $\phi_b = 0{,}90$, $\phi_c = 0{,}90$ y $\phi_v$ según la sección G2.1. Las solicitaciones${unidades === "tf" ? " (ingresadas en tf y tf$\\cdot$m)" : ""} se expresan en kgf y kgf$\cdot$m.
+El diseño se realiza por el método de factores de carga y resistencia (LRFD), con $\phi_b = 0.90$, $\phi_c = 0.90$ y $\phi_v$ según la sección G2.1. Las solicitaciones${unidades === "tf" ? " (ingresadas en tf y tf$\\cdot$m)" : ""} se expresan en kgf y kgf$\cdot$m.
 
 \section{Propiedades geométricas --- ${s.nombre} (laminado)}
 ${tikzSeccion(s)}
@@ -1118,7 +1118,7 @@ ${resumen}
 \end{tabular}
 \end{table}
 
-Por lo tanto, como la relación demanda-capacidad máxima es $D/C = ${tn(res.dc, 3)}$ (${tn(res.dc * 100, 1)}\,\%) ${res.dc <= 1 ? L`$\le 1{,}0$` : L`$> 1{,}0$`}, el perfil ${s.nombre} en acero ${acero} \textbf{${ok ? "cumple" : "no cumple"}} con las verificaciones de ${esViga ? "flexión y corte" : "flexocompresión"} según el AISC 360-16.${res.fuera ? L` \textit{Nota: el alma resultó no compacta en flexión (secciones F4/F5), fuera del alcance de esta memoria.}` : ""}
+Por lo tanto, como la relación demanda-capacidad máxima es $D/C = ${tn(res.dc, 3)}$ (${tn(res.dc * 100, 1)}\,\%) ${res.dc <= 1 ? L`$\le 1.0$` : L`$> 1.0$`}, el perfil ${s.nombre} en acero ${acero} \textbf{${ok ? "cumple" : "no cumple"}} con las verificaciones de ${esViga ? "flexión y corte" : "flexocompresión"} según el AISC 360-16.${res.fuera ? L` \textit{Nota: el alma resultó no compacta en flexión (secciones F4/F5), fuera del alcance de esta memoria.}` : ""}
 
 \end{document}
 `;
@@ -1146,7 +1146,7 @@ function calcular() {
   const m = new Memo();
   m.out.push(`<h3>Datos generales</h3>`);
   m.row("Perfil", s.nombre);
-  m.row(`Acero ${acero}: F<sub>y</sub> ; F<sub>u</sub> ; E`, `${Fy} ; ${Fu} ; ${E.toLocaleString("es-CL")} kgf/cm²`);
+  m.row(`Acero ${acero}: F<sub>y</sub> ; F<sub>u</sub> ; E`, `${Fy} ; ${Fu} ; ${fmt(E, 0)} kgf/cm²`);
   const P = (k, v, u) => `<div>${k} = <b>${v}</b> ${u}</div>`;
   m.out.push(`<div class="secwrap">${svgSeccion(s)}<div class="props">
     ${P("h", fmt(s.h, 1), "cm")}${P("b<sub>f</sub>", fmt(s.b, 1), "cm")}${P("t<sub>w</sub>", fmt(s.tw, 2), "cm")}${P("t<sub>f</sub>", fmt(s.tf, 2), "cm")}
@@ -1418,7 +1418,7 @@ window.AURA_MEMO = {
   recalcular: (v) => { llenarPerfiles(); if (v.perfil) $("perfil").value = v.perfil; actualizarUnidades(); $("b1Box").classList.toggle("hidden", !$("cB1").checked); calcular(); },
 };
 </script>
-<script src="proyectos.js?v=35"></script>
+<script src="proyectos.js?v=36"></script>
 <script>
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
 </script>
