@@ -463,6 +463,12 @@ const REFERENCIAS = [
   address      = {Santiago, Chile},
   year         = {2025}
 }` },
+  { clave: "nch3171", patron: /NCh\s?3171(?:\.?\s?Of\.?\s?2017|:2017)?/, bib: String.raw`@manual{nch3171,
+  title        = {{NCh 3171.Of2017. Diseño estructural --- Disposiciones generales y combinaciones de carga}},
+  organization = {Instituto Nacional de Normalización (INN)},
+  address      = {Santiago, Chile},
+  year         = {2017}
+}` },
   { clave: "cintacmanual", patron: /Manual Técnico(?: Instadeck)?/, bib: String.raw`@manual{cintacmanual,
   title        = {{Manual Técnico Instadeck}},
   organization = {Cintac},

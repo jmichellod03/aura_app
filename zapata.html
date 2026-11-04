@@ -1,0 +1,1154 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#00008B">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="AURA">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js" integrity="sha384-K0oxqktRvaThvYgGL4G+OK2Ih6VS6Uyu7j3+7WJgp/uWM0Yv6Xi4YEiw0BB+mPfi" crossorigin="anonymous"></script>
+<script src="nube.js?v=28"></script>
+<style>
+  /* PWA: sin zoom automático de iOS al enfocar campos y texto estable al rotar */
+  html { -webkit-text-size-adjust: 100%; }
+  @media (max-width: 900px) { input, select, textarea { font-size: 16px !important; } }
+  main > *, .row2 > *, .row3 > *, fieldset { min-width: 0; }
+  input, select { min-width: 0; max-width: 100%; }
+  .memo, .tablaWrap { overflow-x: auto; }
+  svg { max-width: 100%; }
+</style>
+<title>Zapata Aislada</title>
+<style>
+  :root {
+    --bg: #e3e6ea;
+    --panel: #fffafa;
+    --ink: #1d2330;
+    --muted: #5f6b7a;
+    --line: #dde1e7;
+    --accent: #5b7c99;
+    --accent-ink: #ffffff;
+    --head: #00008B;
+    --ok: #1f8a4c;
+    --ok-bg: #e6f4ec;
+    --bad: #c62828;
+    --bad-bg: #fbe9e9;
+    --warn: #9a6400;
+    --warn-bg: #fff4dc;
+    --mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 "Segoe UI", system-ui, -apple-system, sans-serif; }
+  header { background: var(--head); color: #fff; padding: 10px 24px; display: flex; align-items: center; gap: 8px 16px; flex-wrap: wrap; }
+  header h1 { margin: 0; font-size: 19px; font-weight: 600; }
+  header a.home { color: #fff; text-decoration: none; font-size: 13px; border: 1px solid rgba(255,255,255,.35); border-radius: 4px; padding: 3px 9px; }
+  header span { color: #c8cbe8; font-size: 13px; }
+  main { display: grid; grid-template-columns: 380px 1fr; gap: 20px; padding: 20px 24px; max-width: 1400px; margin: 0 auto; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; padding: 16px; } }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+  .panel > h2 { margin: 0; padding: 10px 16px; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); border-bottom: 1px solid var(--line); }
+  .body { padding: 14px 16px; }
+  label { display: block; font-size: 12px; color: var(--muted); margin: 10px 0 4px; }
+  select, input[type=number] { width: 100%; padding: 7px 9px; border: 1px solid var(--line); border-radius: 5px; font: inherit; background: #fff; color: var(--ink); }
+  select:focus, input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .unit { color: var(--muted); font-size: 11px; }
+  fieldset { border: 1px solid var(--line); border-radius: 6px; margin: 14px 0 0; padding: 4px 12px 12px; }
+  legend { font-size: 12px; font-weight: 600; color: var(--head); padding: 0 4px; }
+  .cbTit { font-size: 12px; font-weight: 600; color: var(--head); margin: 12px 0 -4px; }
+  .chk { display: flex; gap: 8px; align-items: center; margin-top: 12px; font-size: 13px; color: var(--ink); }
+  .hidden { display: none !important; }
+  .invalido { border-color: var(--bad) !important; background: var(--bad-bg) !important; }
+  table.cargas { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12px; }
+  table.cargas th { color: var(--muted); font-weight: 600; padding: 2px 3px; text-align: center; }
+  table.cargas th:first-child { text-align: left; }
+  table.cargas td { padding: 2px; }
+  table.cargas td:first-child { font-weight: 600; color: var(--head); white-space: nowrap; padding-right: 6px; }
+  table.cargas input { padding: 5px 4px; text-align: right; }
+  .avisoSismo { margin-top: 10px; padding: 8px 10px; border-radius: 5px; background: var(--warn-bg); color: var(--warn); font-size: 12px; }
+
+  .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; padding: 14px 16px; }
+  .card { border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; }
+  .card .t { font-size: 12px; color: var(--muted); }
+  .card .v { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .card .s { font-size: 12px; color: var(--muted); }
+  .bar { height: 6px; background: #eceef1; border-radius: 3px; margin-top: 6px; overflow: hidden; }
+  .bar > i { display: block; height: 100%; background: var(--ok); }
+  .bar.bad > i { background: var(--bad); }
+  .verdict { margin: 0 16px 14px; padding: 12px 14px; border-radius: 6px; font-weight: 600; font-size: 15px; }
+  .verdict.ok { background: var(--ok-bg); color: var(--ok); }
+  .verdict.bad { background: var(--bad-bg); color: var(--bad); }
+  .note { margin: 8px 0; padding: 8px 10px; border-radius: 5px; background: var(--warn-bg); color: var(--warn); font-size: 12.5px; }
+  #verdict .note { margin: -6px 16px 14px; }
+
+  .memo { padding: 4px 16px 16px; }
+  .memo h3 { font-size: 14px; margin: 18px 0 6px; padding-bottom: 4px; border-bottom: 2px solid var(--accent); color: var(--head); }
+  .memo h4 { font-size: 13px; margin: 12px 0 4px; color: var(--head); }
+  table.calc { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.calc td { padding: 4px 8px; border-bottom: 1px solid #eef0f3; vertical-align: top; }
+  table.calc td.k { color: var(--ink); }
+  table.calc td.v { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; font-weight: 600; }
+  .ref { display: inline-block; font-size: 10.5px; color: var(--accent); border: 1px solid #c3d0dc; border-radius: 3px; padding: 0 4px; margin-left: 6px; font-weight: 500; }
+  .tag { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 11.5px; font-weight: 600; }
+  .tag.ok { background: var(--ok-bg); color: var(--ok); }
+  .tag.bad { background: var(--bad-bg); color: var(--bad); }
+  .tag.warn { background: var(--warn-bg); color: var(--warn); }
+  table.alt { width: 100%; border-collapse: collapse; font-size: 12.5px; margin: 6px 0 10px; }
+  table.alt th { text-align: right; font-size: 11.5px; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--line); padding: 5px 7px; white-space: nowrap; }
+  table.alt th:first-child, table.alt td:first-child { text-align: left; }
+  table.alt td { padding: 4px 7px; border-bottom: 1px solid #eef0f3; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+  table.alt td.malo { color: var(--bad); font-weight: 600; }
+  .esquema { display: block; width: 100%; max-width: 330px; margin: 8px auto 4px; }
+  .dibujo { display: flex; justify-content: center; padding: 6px 16px 4px; }
+  .dibujo svg { width: 760px; }
+  .toolbar { display: flex; justify-content: flex-end; padding: 10px 16px 0; gap: 8px; flex-wrap: wrap; }
+  .btn { padding: 7px 14px; border-radius: 5px; border: 1px solid var(--head); background: var(--head); color: #fff; font: inherit; font-size: 13px; cursor: pointer; }
+  .btn.sec { background: #fff; color: var(--head); }
+  footer { text-align: center; color: var(--muted); font-size: 12px; padding: 10px 0 24px; }
+
+  @media print {
+    body { background: #fff; }
+    header { background: #fff; color: #000; border-bottom: 2px solid #000; }
+    header span { color: #333; }
+    header a.home { display: none; }
+    main { display: block; padding: 0; }
+    #inputs, .toolbar, footer { display: none; }
+    .panel { border: 0; }
+    .memo h3 { break-after: avoid; }
+    table.calc tr { break-inside: avoid; }
+  }
+</style>
+<link rel="stylesheet" href="aura.css?v=9">
+<script src="lateral.js?v=3"></script>
+</head>
+<body>
+<header>
+  <a class="marca" href="index.html" aria-label="Inicio"><span class="logo-tile"><span class="logo"><img src="icons/logo-mmp.webp" alt="MMP"></span></span></a>
+  <a class="home" href="index.html">← Inicio</a>
+  <h1>Zapata aislada</h1>
+  <span>Fundación superficial bajo pilar · Tensiones de contacto, corte, punzonamiento y flexión ACI 318-08 · Sismo según guía (por verificar) · Unidades tf – m</span>
+</header>
+
+<main>
+  <!-- ===================== ENTRADAS ===================== -->
+  <section class="panel" id="inputs">
+    <h2>Datos de entrada</h2>
+    <div class="body">
+      <svg class="esquema" viewBox="0 0 330 230" aria-label="Esquema de la zapata aislada">
+        <rect x="40" y="20" width="110" height="140" fill="#e3e8ee" stroke="#3d4450" stroke-width="1.4"/>
+        <rect x="83" y="78" width="24" height="24" fill="#c3c9d1" stroke="#3d4450"/>
+        <g font-size="10" fill="#3d4450">
+          <line x1="40" y1="172" x2="150" y2="172" stroke="#5f6b7a"/><text x="90" y="184">B</text>
+          <line x1="28" y1="20" x2="28" y2="160" stroke="#5f6b7a"/><text x="16" y="94">L</text>
+          <text x="88" y="74">a</text><text x="110" y="94">b</text>
+          <path d="M95 210 L95 196" stroke="#5b7c99"/><text x="98" y="206">y</text>
+          <path d="M60 214 L76 214" stroke="#5b7c99"/><text x="78" y="217">x</text>
+        </g>
+        <path d="M180 120 L320 120" stroke="#9a7b45" stroke-dasharray="4 3"/>
+        <rect x="190" y="150" width="120" height="30" fill="#e3e8ee" stroke="#3d4450" stroke-width="1.4"/>
+        <rect x="240" y="60" width="20" height="90" fill="#c3c9d1" stroke="#3d4450"/>
+        <g font-size="10" fill="#3d4450">
+          <path d="M222 70 L238 70" stroke="#c0392b" stroke-width="1.4"/><text x="200" y="66">H</text>
+          <path d="M250 30 L250 56" stroke="#c0392b" stroke-width="1.4"/><text x="254" y="40">P</text>
+          <line x1="300" y1="60" x2="300" y2="120" stroke="#5f6b7a"/><text x="304" y="94">h<tspan font-size="7" dy="2">t</tspan></text>
+          <line x1="318" y1="120" x2="318" y2="180" stroke="#5f6b7a"/><text x="304" y="140">D<tspan font-size="7" dy="2">f</tspan></text>
+          <line x1="184" y1="150" x2="184" y2="180" stroke="#5f6b7a"/><text x="168" y="169">h<tspan font-size="7" dy="2">c</tspan></text>
+          <text x="196" y="116" fill="#7a5f2c">terreno</text>
+        </g>
+      </svg>
+      <div class="unit" style="text-align:center">Planta (B según x, L según y) y elevación · H aplicada a h<sub>t</sub> sobre el terreno</div>
+
+      <fieldset>
+        <legend>1. Geometría [m]</legend>
+        <label for="modo">Dimensiones en planta</label>
+        <select id="modo">
+          <option value="dim" selected>Calcular B con L fijo (como el ejercicio del curso)</option>
+          <option value="ver">Verificar B y L dados</option>
+        </select>
+        <div class="row3">
+          <div id="boxB"><label for="B">Ancho B (x)</label><input id="B" type="number" step="0.05" value="2.4"></div>
+          <div><label for="Lz">Largo L (y)</label><input id="Lz" type="number" step="0.05" value="2.9"></div>
+          <div id="boxPaso"><label for="paso">Redondeo de B</label><input id="paso" type="number" step="0.05" value="0.1"></div>
+          <div><label for="hc">Altura h<sub>c</sub></label><input id="hc" type="number" step="0.05" value="0.55"></div>
+          <div><label for="Df">Sello D<sub>f</sub></label><input id="Df" type="number" step="0.05" value="0.7"></div>
+          <div><label for="ht">Carga sobre terreno h<sub>t</sub></label><input id="ht" type="number" step="0.05" value="0.1"></div>
+        </div>
+        <div class="cbTit">Columna o pedestal</div>
+        <div class="row3">
+          <div><label for="ca">a (x) <span class="unit">[cm]</span></label><input id="ca" type="number" step="5" value="30"></div>
+          <div><label for="cb">b (y) <span class="unit">[cm]</span></label><input id="cb" type="number" step="5" value="60"></div>
+          <div><label for="dbc">Barra φ<sub>c</sub> <span class="unit">[mm]</span></label><input id="dbc" type="number" step="1" value="16"></div>
+        </div>
+        <div class="unit" style="margin-top:4px">φ<sub>c</sub>: barra o perno que se ancla en la zapata (longitud de desarrollo con gancho).</div>
+      </fieldset>
+
+      <fieldset>
+        <legend>2. Suelo</legend>
+        <div class="row3">
+          <div><label for="sadm">σ<sub>adm</sub> <span class="unit">[tf/m²]</span></label><input id="sadm" type="number" step="1" value="20"></div>
+          <div><label for="gs">γ<sub>s</sub> <span class="unit">[tf/m³]</span></label><input id="gs" type="number" step="0.05" value="1.8"></div>
+          <div><label for="gh">γ<sub>h</sub> <span class="unit">[tf/m³]</span></label><input id="gh" type="number" step="0.05" value="2.5"></div>
+        </div>
+        <div class="unit" style="margin-top:4px">Con γ = 0 se desprecian los pesos, como en el ejercicio del curso.</div>
+      </fieldset>
+
+      <fieldset>
+        <legend>3. Cargas en la base de la columna</legend>
+        <div class="unit">P en compresión positiva [tf]; H horizontales [tf]; M momentos de la columna [tf·m] (0 en un pilar rotulado). En el sello: M<sub>x</sub> + H<sub>y</sub>(D<sub>f</sub> + h<sub>t</sub>) y M<sub>y</sub> + H<sub>x</sub>(D<sub>f</sub> + h<sub>t</sub>).</div>
+        <table class="cargas">
+          <thead><tr><th></th><th>P</th><th>H<sub>x</sub></th><th>H<sub>y</sub></th><th>M<sub>x</sub></th><th>M<sub>y</sub></th></tr></thead>
+          <tbody>
+            <tr><td>D</td><td><input id="PD" type="number" step="0.5" value="20" aria-label="P de la carga muerta"></td><td><input id="HxD" type="number" step="0.1" value="-0.625" aria-label="Hx de la carga muerta"></td><td><input id="HyD" type="number" step="0.1" value="-0.625" aria-label="Hy de la carga muerta"></td><td><input id="MxD" type="number" step="0.1" value="0" aria-label="Mx de la carga muerta"></td><td><input id="MyD" type="number" step="0.1" value="0" aria-label="My de la carga muerta"></td></tr>
+            <tr><td>L</td><td><input id="PL" type="number" step="0.5" value="60" aria-label="P de la sobrecarga"></td><td><input id="HxL" type="number" step="0.1" value="10.625" aria-label="Hx de la sobrecarga"></td><td><input id="HyL" type="number" step="0.1" value="-14.375" aria-label="Hy de la sobrecarga"></td><td><input id="MxL" type="number" step="0.1" value="0" aria-label="Mx de la sobrecarga"></td><td><input id="MyL" type="number" step="0.1" value="0" aria-label="My de la sobrecarga"></td></tr>
+            <tr class="filaE"><td>E</td><td><input id="PE" type="number" step="0.5" value="0" aria-label="P del sismo"></td><td><input id="HxE" type="number" step="0.1" value="8" aria-label="Hx del sismo"></td><td><input id="HyE" type="number" step="0.1" value="0" aria-label="Hy del sismo"></td><td><input id="MxE" type="number" step="0.1" value="0" aria-label="Mx del sismo"></td><td><input id="MyE" type="number" step="0.1" value="0" aria-label="My del sismo"></td></tr>
+          </tbody>
+        </table>
+        <label class="chk"><input id="sismo" type="checkbox"> Incluir sismo E (nivel de servicio, NCh 433)</label>
+        <div id="sismoBox">
+          <div class="avisoSismo">⚠ Procedimiento sísmico <b>por verificar</b>: se calcula según la guía de integración del análisis sísmico (NCh 3171, NCh 433, NCh 2369 y ACI 318), que aún no está confirmada. Sus resultados se informan aparte y no entran en el veredicto.</div>
+          <div class="row3">
+            <div><label for="kSis">Aumento σ<sub>adm</sub></label><input id="kSis" type="number" step="0.01" value="1.33"></div>
+            <div><label for="pcMin">Contacto mín. <span class="unit">[%]</span></label><input id="pcMin" type="number" step="5" value="80"></div>
+            <div><label for="mu">Roce μ = tan δ</label><input id="mu" type="number" step="0.01" value="0.45"></div>
+            <div><label for="coh">Adherencia c <span class="unit">[tf/m²]</span></label><input id="coh" type="number" step="0.5" value="0"></div>
+            <div><label for="fsv">FS volcamiento</label><input id="fsv" type="number" step="0.05" value="1.5"></div>
+            <div><label for="fsd">FS deslizamiento</label><input id="fsd" type="number" step="0.05" value="1.5"></div>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>4. Materiales y armaduras</legend>
+        <div class="row2">
+          <div><label for="fc">Hormigón f'<sub>c</sub> <span class="unit">[kgf/cm²]</span></label><input id="fc" type="number" step="10" value="250"></div>
+          <div><label for="fy">Acero f<sub>y</sub> <span class="unit">[kgf/cm²]</span></label><input id="fy" type="number" step="100" value="4200"></div>
+          <div><label for="rec">Recubrimiento r <span class="unit">[cm]</span></label><input id="rec" type="number" step="0.5" value="5"></div>
+          <div><label for="vc3">Punzonamiento, 3.ª expresión</label>
+            <select id="vc3"><option value="1" selected>√f'c b₀ d (pauta del curso)</option><option value="1.06">1.06 √f'c b₀ d (ACI 318-08 11-33)</option></select></div>
+        </div>
+        <div class="cbTit">Diámetros de la parrilla inferior [mm]</div>
+        <div class="row2">
+          <div><label for="dbx">Barras según x (A<sub>sx</sub>)</label><input id="dbx" type="number" step="1" value="12"></div>
+          <div><label for="dby">Barras según y (A<sub>sy</sub>)</label><input id="dby" type="number" step="1" value="16"></div>
+        </div>
+        <div class="unit" style="margin-top:4px">Espaciamiento propuesto: el entero en cm que da el área requerida, con s ≤ mín(3h<sub>c</sub> ; 45 cm).</div>
+      </fieldset>
+    </div>
+  </section>
+
+  <!-- ===================== RESULTADOS ===================== -->
+  <section>
+    <div class="panel">
+      <h2 id="resTitle">Resultados</h2>
+      <div class="summary" id="summary"></div>
+      <div id="verdict"></div>
+      <div class="dibujo" id="dibujo"></div>
+      <div class="toolbar">
+        <button class="btn sec" type="button" onclick="window.print()">Imprimir</button>
+        <button class="btn sec" type="button" onclick="descargarDXF()" title="Plano DXF en lámina con viñeta (dxf.js), en milímetros y por capas">Descargar plano (.dxf)</button>
+        <button class="btn" type="button" onclick="descargarZipMemoria(ultimoTex, ultimoNombre, document.body)">Descargar memoria (.zip)</button>
+      </div>
+      <div class="memo" id="memo"></div>
+    </div>
+  </section>
+</main>
+<footer>Herramienta de apoyo académico basada en el procedimiento del curso de Hormigón Armado (zapatas aisladas). El análisis sísmico sigue una guía aún no confirmada. No reemplaza la memoria de cálculo del ingeniero del proyecto. Verifique siempre los resultados.</footer>
+
+<script src="memo.js?v=38"></script>
+<script src="tablero.js?v=3"></script>
+<script src="dxf.js?v=2"></script>
+<script src="modelo3d.js?v=6"></script>
+<script>
+"use strict";
+// ---------------------------------------------------------------------------
+// Zapata aislada de hormigón armado bajo una columna o pedestal.
+// Unidades internas: kgf y cm. Se muestran en tf, m, tf/m² y tf·m como en el ejercicio del curso.
+// Ejes: x según B, y según L, origen en el centro de la zapata. Mx gira en torno a x (varía la presión según y),
+// My en torno a y (varía según x): ex = My/P, ey = Mx/P.
+// Procedimiento estático: ejercicio y pauta del curso (cargas D y L, tensiones de Navier dentro del núcleo central).
+// Procedimiento sísmico: guía de integración del análisis sísmico (NCh 3171, NCh 433, NCh 2369, ACI 318), POR VERIFICAR.
+// ---------------------------------------------------------------------------
+const PHI_F = 0.9, PHI_V = 0.75;              // ACI 318-08 9.3.2.1 y 9.3.2.3
+const RHO_MIN = 0.0018;                        // criterio del curso (sobre b·d)
+const ALFA_S = 40;                             // columna interior (ACI 318-08 11.11.2.1)
+const BW = 100;                                // ancho de diseño [cm]
+
+// ---------------------------------------------------------------------------
+// Utilidades de formato
+// ---------------------------------------------------------------------------
+const fmt = (x, d = 2) => Number.isFinite(x)
+  ? x.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d }).replace(/,/g, " ")
+  : "—";
+const $ = (id) => document.getElementById(id);
+const num = (id) => { const v = parseFloat($(id).value); return Number.isFinite(v) ? v : 0; };
+const L = String.raw;
+const tn = (x, d = 2) => Number.isFinite(x) ? fmt(x, d).replace(/ /g, "\\,") : "\\infty";
+const LE = L`\le`;
+const texTxt = (t) => t.replace(/—/g, "---").replace(/%/g, "\\%");
+const estado = (dc) => (dc <= 1 + 1e-9 ? "Cumple" : "No cumple");
+const tag = (ok, txt) => `<span class="tag ${ok ? "ok" : "bad"}">${txt}</span>`;
+const tagDC = (dc) => tag(dc <= 1 + 1e-9, `D/C = ${fmt(dc, 3)}`);
+const cmp = (dc) => (dc <= 1 + 1e-9 ? LE : ">");
+const T = (kgf) => kgf / 1000;                 // kgf → tf
+const TM = (kgfcm) => kgfcm / 1e5;             // kgf·cm → tf·m
+const M = (cm) => cm / 100;                    // cm → m
+const S = (kgfcm2) => kgfcm2 * 10;             // kgf/cm² → tf/m²
+
+class Memo {
+  constructor() { this.out = []; this.tex = []; this.n = 0; }
+  h(t) { memoTexCerrar(this); this.n++; this.out.push(`<h3>${this.n}. ${t}</h3>`); this.tex.push(`\\section{${texTxt(t)}}`); }
+  sub(t) { memoTexCerrar(this); this.out.push(`<h4>${t}</h4>`); this.tex.push(`\\subsection{${texTxt(t)}}`); }
+  row(k, v, ref) { this.out.push({ k, v, ref }); }
+  note(t, tt) { this.out.push(`<div class="note">${t}</div>`); if (tt) this.tex.push(`\\textit{${tt}}\n`); }
+  eq(s, ref) { this.tex.push(texDisplay(s, ref)); this.out.push({ tex: s + (ref ? `\\tag*{(${ref})}` : ""), eq: true }); }
+  p(s, soloTex) { memoTexP(this, s); if (!soloTex) this.out.push({ tex: s }); }
+  html_(h) { this.out.push(h); }
+  raw(t) { memoTexCerrar(this); this.tex.push(t); }
+  texto() { memoTexCerrar(this); return this.tex.join("\n"); }
+  html() { return memoHTML(this.out); }
+}
+
+// ---------------------------------------------------------------------------
+// Datos
+// ---------------------------------------------------------------------------
+function leerDatos() {
+  const m = (id) => num(id) * 100;
+  const carga = (s) => ({ P: num("P" + s) * 1000, Hx: num("Hx" + s) * 1000, Hy: num("Hy" + s) * 1000, Mx: num("Mx" + s) * 1e5, My: num("My" + s) * 1e5 });
+  return {
+    modo: $("modo").value, B: m("B"), Ly: m("Lz"), paso: m("paso"), hc: m("hc"), Df: m("Df"), ht: m("ht"),
+    a: num("ca"), b: num("cb"), dbc: num("dbc") / 10,
+    sadm: num("sadm") / 10, gs: num("gs") / 1000, gh: num("gh") / 1000,
+    D: carga("D"), Lv: carga("L"), E: carga("E"),
+    sismo: $("sismo").checked, kSis: num("kSis"), pcMin: num("pcMin"), mu: num("mu"), coh: num("coh") / 10, fsv: num("fsv"), fsd: num("fsd"),
+    fc: num("fc"), fy: num("fy"), rec: num("rec"), k3: parseFloat($("vc3").value), dbx: num("dbx") / 10, dby: num("dby") / 10,
+  };
+}
+function reglasDatos() {
+  const r = [["Lz", 0, true], ["hc", 0, true], ["Df", 0, true], ["ht", 0], ["ca", 0, true], ["cb", 0, true], ["dbc", 0, true],
+    ["sadm", 0, true], ["gs", 0], ["gh", 0], ["PD", 0], ["PL", 0],
+    ...["HxD", "HyD", "MxD", "MyD", "HxL", "HyL", "MxL", "MyL"].map(id => [id, -1e12]),
+    ["fc", 0, true], ["fy", 0, true], ["rec", 0, true], ["dbx", 0, true], ["dby", 0, true]];
+  r.push($("modo").value === "ver" ? ["B", 0, true] : ["paso", 0, true]);
+  if ($("sismo").checked) r.push(...["PE", "HxE", "HyE", "MxE", "MyE"].map(id => [id, -1e12]), ["kSis", 0, true], ["pcMin", 0], ["mu", 0, true], ["coh", 0], ["fsv", 0, true], ["fsd", 0, true]);
+  return r;
+}
+function reglasMaximos() {
+  return [
+    ["hc", num("Df"), "La altura de la zapata h<sub>c</sub> no puede superar la profundidad del sello D<sub>f</sub>"],
+    ["ca", ($("modo").value === "ver" ? num("B") : 99) * 100 - 1, "La columna (a) debe caber en el ancho B"],
+    ["cb", num("Lz") * 100 - 1, "La columna (b) debe caber en el largo L"],
+    ["rec", num("hc") * 100 / 3, "El recubrimiento es demasiado grande para la altura de la zapata"],
+    ["pcMin", 100, "El contacto mínimo no puede superar el 100 %"],
+  ];
+}
+
+// ---------------------------------------------------------------------------
+// Cálculo
+// ---------------------------------------------------------------------------
+// Combinación de cargas: k = { D, L, E } con el signo del sismo incluido en E
+const comb = (d, k, W = 0) => {
+  const f = (c) => k.D * d.D[c] + k.L * d.Lv[c] + k.E * d.E[c];
+  const h = d.Df + d.ht;
+  const P = f("P") + k.D * W, Hx = f("Hx"), Hy = f("Hy");
+  return { P, Hx, Hy, Mxc: f("Mx"), Myc: f("My"), Mx: f("Mx") + Hy * h, My: f("My") + Hx * h };
+};
+// Tensiones de Navier en las esquinas (curso): 1 (+x,+y), 2 (−x,+y), 3 (+x,−y), 4 (−x,−y)
+function navier(P, ex, ey, B, Ly) {
+  const A = B * Ly, kx = 6 * ex / B, ky = 6 * ey / Ly;
+  return { A, kx, ky, s1: P / A * (1 + kx + ky), s2: P / A * (1 - kx + ky), s3: P / A * (1 + kx - ky), s4: P / A * (1 - kx - ky) };
+}
+// Ancho B para que la tensión máxima de servicio iguale σ_na, con L fijo (bisección; f decrece con B)
+function anchoNecesario(P, Mx, My, Ly, sna) {
+  const f = (B) => P / (B * Ly) + 6 * My / (B * B * Ly) + 6 * Mx / (B * Ly * Ly) - sna;
+  let lo = 10, hi = 3000;
+  if (f(hi) > 0) return NaN;
+  if (f(lo) <= 0) return lo;
+  for (let i = 0; i < 80; i++) { const mid = (lo + hi) / 2; if (f(mid) > 0) lo = mid; else hi = mid; }
+  return hi;
+}
+// Flexión por metro de ancho (curso): μ, ε = 1 − √(1 − 2μ), ρ, A_s = máx(ρ ; 0.0018) b d, barras y φM_n
+function flexion(Mu, dEf, db, d0) {
+  const { fc, fy, hc } = d0;
+  const mu = Mu / (PHI_F * 0.85 * fc * BW * dEf * dEf);
+  const insuf = !(2 * mu < 1);
+  const eps = insuf ? NaN : 1 - Math.sqrt(1 - 2 * mu);
+  const rho = insuf ? NaN : 0.85 * fc * eps / fy;
+  const As = Math.max(rho, RHO_MIN) * BW * dEf;
+  const Ab = Math.PI * db * db / 4, sMax = Math.min(3 * hc, 45);
+  const sCalc = BW * Ab / As, s = Math.max(1, Math.min(sMax, Math.floor(sCalc + 1e-9)));
+  const Asp = BW * Ab / s, a = Asp * fy / (0.85 * fc * BW), phiMn = PHI_F * Asp * fy * (dEf - a / 2);
+  return { Mu, mu, eps, rho, As, Ab, sCalc, s, sMax, Asp, a, phiMn, insuf, db, gob: insuf ? "—" : rho > RHO_MIN ? "ρ calculada" : "ρ mínima",
+    dc: insuf ? Infinity : Mu / phiMn };
+}
+const barra = (db, s) => `φ${fmt(db * 10, 0)} @ ${fmt(s, 0)} cm`;
+const barraTex = (db, s) => L`$\phi$${tn(db * 10, 0)} @ ${tn(s, 0)} cm`;
+
+// Contacto de una zapata rígida sobre un suelo sin tracción, flexión biaxial (Newton sobre una grilla).
+// σ(x, y) = s0 + gx·x + gy·y en la zona comprimida; ∫σ dA = P, ∫σ x dA = My, ∫σ y dA = Mx.
+function contactoBiaxial(P, Mx, My, B, Ly, n = 60) {
+  const res = { P, Mx, My, B, Ly, n, ok: false };
+  if (!(P > 0)) return { ...res, motivo: "sin compresión neta (la zapata se levanta)" };
+  const ex = My / P, ey = Mx / P;
+  if (Math.abs(ex) >= B / 2 || Math.abs(ey) >= Ly / 2) return { ...res, ex, ey, motivo: "la resultante cae fuera de la zapata (vuelca)" };
+  const dx = B / n, dy = Ly / n, dA = dx * dy, xs = [], ys = [];
+  for (let i = 0; i < n; i++) { xs.push(-B / 2 + (i + 0.5) * dx); ys.push(-Ly / 2 + (i + 0.5) * dy); }
+  const A = B * Ly, Iy = Ly * B ** 3 / 12, Ix = B * Ly ** 3 / 12;
+  let t = [P / A, My / Iy, Mx / Ix];
+  const evalua = (t) => {
+    const R = [-P, -My, -Mx], J = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]; let nc = 0;
+    for (const x of xs) for (const y of ys) {
+      const s = t[0] + t[1] * x + t[2] * y;
+      if (s <= 0) continue;
+      nc++; const v = [1, x, y];
+      R[0] += s * dA; R[1] += s * x * dA; R[2] += s * y * dA;
+      for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) J[i][j] += v[i] * v[j] * dA;
+    }
+    return { R, J, nc };
+  };
+  const norma = (R) => Math.abs(R[0]) / P + (Math.abs(R[1]) + Math.abs(R[2])) / (P * Math.max(B, Ly));
+  let ev = evalua(t), err = norma(ev.R);
+  for (let it = 0; it < 100 && err > 1e-9; it++) {
+    const dl = resolver3(ev.J, ev.R);
+    if (!dl) break;
+    let paso = 1, tn2, ev2, err2;
+    do { tn2 = t.map((v, i) => v - paso * dl[i]); ev2 = evalua(tn2); err2 = norma(ev2.R); paso /= 2; } while (err2 > err && paso > 1 / 64);
+    t = tn2; ev = ev2; err = err2;
+  }
+  if (err > 1e-4 || !ev.nc) return { ...res, ex, ey, motivo: "no se encontró la zona de contacto" };
+  const sigma = (x, y) => Math.max(0, t[0] + t[1] * x + t[2] * y);
+  let smax = 0;
+  for (const x of [-B / 2, B / 2]) for (const y of [-Ly / 2, Ly / 2]) smax = Math.max(smax, sigma(x, y));
+  return { ...res, ok: true, ex, ey, t, sigma, smax, frac: ev.nc / (n * n), xs, ys, dx, dy, dA };
+}
+function resolver3(J, R) {
+  const det = (m) => m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0]) + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
+  const D = det(J);
+  if (!Number.isFinite(D) || Math.abs(D) < 1e-30) return null;
+  return [0, 1, 2].map(c => det(J.map((f, i) => f.map((v, j) => (j === c ? R[i] : v)))) / D);
+}
+
+// Solicitaciones internas con una presión no uniforme: franjas de 1 cm de ancho en cada dirección (la más exigida)
+function internos(c, w, d0, dEf) {
+  const { a, b } = d0, { xs, ys, dx, dy, dA, sigma } = c;
+  const r = { MpX: 0, MnX: 0, VX: 0, MpY: 0, MnY: 0, VY: 0, Vp: 0 };
+  for (const y of ys) {                                  // franjas según x (armadura A_sx)
+    for (const lado of [1, -1]) {
+      let Mo = 0, V = 0;
+      for (const x of xs) {
+        const u = lado * x - a / 2;                      // distancia desde la cara de la columna
+        if (u <= 0) continue;
+        const q = sigma(x, y) - w;
+        Mo += q * u * dx; if (u > dEf) V += q * dx;
+      }
+      r.MpX = Math.max(r.MpX, Mo); r.MnX = Math.max(r.MnX, -Mo); r.VX = Math.max(r.VX, V);
+    }
+  }
+  for (const x of xs) {                                  // franjas según y (armadura A_sy)
+    for (const lado of [1, -1]) {
+      let Mo = 0, V = 0;
+      for (const y of ys) {
+        const u = lado * y - b / 2;
+        if (u <= 0) continue;
+        const q = sigma(x, y) - w;
+        Mo += q * u * dy; if (u > dEf) V += q * dy;
+      }
+      r.MpY = Math.max(r.MpY, Mo); r.MnY = Math.max(r.MnY, -Mo); r.VY = Math.max(r.VY, V);
+    }
+  }
+  // Punzonamiento: presión neta fuera del perímetro crítico a d/2 de la columna
+  for (const x of xs) for (const y of ys) if (Math.abs(x) > (a + dEf) / 2 || Math.abs(y) > (b + dEf) / 2) r.Vp += (sigma(x, y) - w) * dA;
+  // Por metro de ancho
+  r.MpX *= BW; r.MnX *= BW; r.MpY *= BW; r.MnY *= BW;
+  return r;
+}
+
+let ultimoTex = "", ultimoNombre = "memoria.tex", ultimoR = null, ultimoD = null;
+
+function verificar(d, m) {
+  const checks = [], sis = [];
+  const ck = (k, dem, cap, dc, html, grupo) => checks.push({ k, dem, cap, dc, html, grupo });
+  const h = d.Df + d.ht;
+
+  // ---------- a) Cargas y momentos a nivel de sello ----------
+  m.h("Cargas y momentos a nivel de sello");
+  m.p(L`Se combinan las cargas en la base de la columna con las combinaciones del curso: de servicio (ASD) $D + L$ para las tensiones de contacto y mayorada (LRFD) $1.2D + 1.6L$ para el diseño del hormigón armado. Los momentos en el sello suman el de la columna y el de las fuerzas horizontales con el brazo $D_f + h_t$.`);
+  // Mayorada: 1.2D + 1.6L del curso; con poca sobrecarga gobierna 1.4D (ACI 318-08 9-1)
+  const ca = comb(d, { D: 1, L: 1, E: 0 }), cu16 = comb(d, { D: 1.2, L: 1.6, E: 0 }), cu14 = comb(d, { D: 1.4, L: 0, E: 0 });
+  const gob14 = Math.abs(cu14.P) > Math.abs(cu16.P), cu = gob14 ? cu14 : cu16;
+  const Pa = Math.abs(ca.P), Mxa = Math.abs(ca.Mx), Mya = Math.abs(ca.My);
+  const Pu = Math.abs(cu.P), Mxu = Math.abs(cu.Mx), Myu = Math.abs(cu.My);
+  m.row("Brazo de las fuerzas horizontales D<sub>f</sub> + h<sub>t</sub>", `${fmt(M(d.Df), 2)} + ${fmt(M(d.ht), 2)} = ${fmt(M(h), 2)} m`);
+  m.row("ASD: P<sub>a</sub> ; H<sub>xa</sub> ; H<sub>ya</sub>", `${fmt(T(Pa), 2)} ; ${fmt(T(ca.Hx), 3)} ; ${fmt(T(ca.Hy), 3)} tf`);
+  m.row("ASD: M<sub>xa</sub> = |M<sub>x</sub> + H<sub>y</sub>(D<sub>f</sub> + h<sub>t</sub>)| ; M<sub>ya</sub> = |M<sub>y</sub> + H<sub>x</sub>(D<sub>f</sub> + h<sub>t</sub>)|", `${fmt(TM(Mxa), 2)} ; ${fmt(TM(Mya), 2)} tf·m`);
+  m.eq(L`P_a = |P_D + P_L| = ${tn(T(Pa), 2)}\ \mathrm{tf} \qquad M_{xa} = |M_x + H_y\,(D_f + h_t)| = ${tn(TM(Mxa), 2)}\ \mathrm{tf\,m} \qquad M_{ya} = |M_y + H_x\,(D_f + h_t)| = ${tn(TM(Mya), 2)}\ \mathrm{tf\,m}`);
+  m.row("LRFD: P<sub>u</sub> ; M<sub>xu</sub> ; M<sub>yu</sub>", `${fmt(T(Pu), 2)} tf ; ${fmt(TM(Mxu), 2)} ; ${fmt(TM(Myu), 2)} tf·m`, gob14 ? "1.4D (ACI 318-08 9-1)" : "1.2D + 1.6L");
+  m.eq(gob14
+    ? L`P_u = |1.4\,P_D| = ${tn(T(Pu), 2)}\ \mathrm{tf} > |1.2\,P_D + 1.6\,P_L| = ${tn(T(Math.abs(cu16.P)), 2)}\ \mathrm{tf} \qquad M_{xu} = ${tn(TM(Mxu), 2)}\ \mathrm{tf\,m} \qquad M_{yu} = ${tn(TM(Myu), 2)}\ \mathrm{tf\,m}`
+    : L`P_u = |1.2\,P_D + 1.6\,P_L| = ${tn(T(Pu), 2)}\ \mathrm{tf} \qquad M_{xu} = ${tn(TM(Mxu), 2)}\ \mathrm{tf\,m} \qquad M_{yu} = ${tn(TM(Myu), 2)}\ \mathrm{tf\,m}`);
+  if (gob14) m.note("Con poca sobrecarga gobierna 1.4D (ACI 318-08 9-1) en vez de 1.2D + 1.6L.", L`Con poca sobrecarga gobierna la combinación $1.4D$ (ACI 318-08 9-1) en vez de $1.2D + 1.6L$.`);
+
+  // ---------- b) Peralte por transferencia de carga columna – zapata ----------
+  m.h("Peralte por transferencia de carga columna – zapata");
+  const Ldh = d.dbc * 0.075 * d.fy / Math.sqrt(d.fc);
+  // Con gancho (12.5.2) y, si la barra trabaja en compresión, recta (12.3.2: ≥ 0.0043 fy db y ≥ 20 cm): se toma el mayor
+  const ldc = Math.max(Ldh, 0.0043 * d.fy * d.dbc, 20);
+  const ldh = Math.max(Ldh, 8 * d.dbc, 15, ldc), hReq = ldh + d.rec, dcH = hReq / d.hc;
+  m.p(L`La barra (o perno) de la columna se ancla en la zapata con gancho estándar; con $\psi_e = 1$ y $\lambda = 1$ la longitud de desarrollo es $l_{dh} = (0.075\,\psi_e f_y / \lambda\sqrt{f'_c})\,d_b$, no menor que $8 d_b$ ni que 15 cm (ACI 318-08 12.5.2). La altura de la zapata debe alojarla más el recubrimiento.`);
+  m.row("l<sub>dh</sub> = 0.075 ψ<sub>e</sub> f<sub>y</sub> / (λ √f'<sub>c</sub>) · φ<sub>c</sub>", `${fmt(Ldh, 2)} cm`, "ACI 318-08 12.5.2");
+  m.eq(L`l_{dh} = \phi_c\,\frac{0.075\,\psi_e\,f_y}{\lambda\sqrt{f'_c}} = ${tn(d.dbc, 1)}\cdot\frac{0.075\cdot 1\cdot ${tn(d.fy, 0)}}{1\cdot\sqrt{${tn(d.fc, 0)}}} = ${tn(Ldh, 2)}\ \mathrm{cm}`, "ACI 318-08 12.5.2");
+  m.row("En compresión: l<sub>dc</sub> = máx(0.075 f<sub>y</sub> φ<sub>c</sub>/√f'<sub>c</sub> ; 0.0043 f<sub>y</sub> φ<sub>c</sub> ; 20 cm)", `${fmt(ldc, 2)} cm`, "ACI 318-08 12.3.2");
+  m.row("h<sub>c,mín</sub> = máx(l<sub>dh</sub> ; 8φ<sub>c</sub> ; 15 cm ; l<sub>dc</sub>) + r", `${fmt(ldh, 2)} + ${fmt(d.rec, 1)} = ${fmt(hReq, 1)} cm ≤ h<sub>c</sub> = ${fmt(d.hc, 0)} cm ${tagDC(dcH)}`);
+  m.eq(L`h_{c,m\acute{i}n} = l_{dh} + r = ${tn(ldh, 2)} + ${tn(d.rec, 1)} = ${tn(hReq, 1)}\ \mathrm{cm} \qquad \frac{h_{c,m\acute{i}n}}{h_c} = \frac{${tn(hReq, 1)}}{${tn(d.hc, 0)}} = ${tn(dcH, 3)} ${cmp(dcH)} 1.0`);
+  ck("Peralte por anclaje", L`$h_{c,m\acute{i}n} = ${tn(hReq, 1)}$ cm`, L`$h_c = ${tn(d.hc, 0)}$ cm`, dcH, "Peralte por anclaje");
+
+  // ---------- c) Área basal y tensiones de contacto ----------
+  m.h("Área basal y tensiones de contacto");
+  const sna = d.sadm - (d.gs * (d.Df - d.hc) + d.gh * d.hc);
+  m.p(L`La tensión admisible neta descuenta el peso del suelo sobre la zapata y el de la zapata. Las tensiones de servicio se obtienen con la fórmula de Navier en las cuatro esquinas, que vale mientras la resultante quede dentro del núcleo central.`);
+  m.row("σ<sub>na</sub> = σ<sub>adm</sub> − (γ<sub>s</sub>(D<sub>f</sub> − h<sub>c</sub>) + γ<sub>h</sub> h<sub>c</sub>)", `${fmt(S(sna), 2)} tf/m²`);
+  m.eq(L`\sigma_{na} = \sigma_{adm} - \left(\gamma_s\,(D_f - h_c) + \gamma_h\,h_c\right) = ${tn(S(d.sadm), 2)} - \left(${tn(d.gs * 1000, 2)}\,(${tn(M(d.Df), 2)} - ${tn(M(d.hc), 2)}) + ${tn(d.gh * 1000, 2)}\cdot ${tn(M(d.hc), 2)}\right) = ${tn(S(sna), 2)}\ \mathrm{tf/m^2}`);
+  if (!(sna > 0)) return { error: "La tensión admisible neta σna es menor o igual a cero (revise σadm, Df y los pesos específicos)." };
+  let B = d.B, Broot = NaN;
+  const Ly = d.Ly;
+  if (d.modo === "dim") {
+    Broot = sna > 0 ? anchoNecesario(Pa, Mxa, Mya, Ly, sna) : NaN;
+    B = Number.isFinite(Broot) ? Math.max(Math.ceil(Broot / d.paso - 1e-9) * d.paso, d.a + 2 * d.paso) : NaN;
+    m.row("B tal que σ<sub>máx</sub> = σ<sub>na</sub> (L fijo)", Number.isFinite(Broot) ? `${fmt(M(Broot), 3)} m → <b>B = ${fmt(M(B), 2)} m</b>` : tag(false, "sin solución: aumente L o revise σ<sub>na</sub>"));
+    m.eq(L`\frac{P_a}{B\,L} + \frac{6\,M_{ya}}{B^2 L} + \frac{6\,M_{xa}}{B\,L^2} = \sigma_{na} \;\Rightarrow\; B_1 = ${tn(M(Broot), 3)}\ \mathrm{m} \;\Rightarrow\; B = ${tn(M(B), 2)}\ \mathrm{m}`);
+    if (!Number.isFinite(B)) return { error: "No existe un ancho B que cumpla con σ_na para el largo L dado." };
+  }
+  const nav = navier(Pa, Mya / Pa, Mxa / Pa, B, Ly);
+  const exa = Mya / Pa, eya = Mxa / Pa, nucleo = nav.kx + nav.ky;
+  m.row("A<sub>c</sub> = B · L", `${fmt(M(B), 2)} · ${fmt(M(Ly), 2)} = ${fmt(nav.A / 1e4, 2)} m²`);
+  m.row("e<sub>xa</sub> = M<sub>ya</sub>/P<sub>a</sub> ; e<sub>ya</sub> = M<sub>xa</sub>/P<sub>a</sub>", `${fmt(M(exa), 3)} ; ${fmt(M(eya), 3)} m`);
+  m.row("Núcleo central: 6e<sub>xa</sub>/B + 6e<sub>ya</sub>/L ≤ 1", `${fmt(nucleo, 3)} ${tagDC(nucleo)}`);
+  m.eq(L`e_{xa} = \frac{M_{ya}}{P_a} = ${tn(M(exa), 3)}\ \mathrm{m} \qquad e_{ya} = \frac{M_{xa}}{P_a} = ${tn(M(eya), 3)}\ \mathrm{m} \qquad 6\,\frac{e_{xa}}{B} + 6\,\frac{e_{ya}}{L} = ${tn(nucleo, 3)} ${cmp(nucleo)} 1`);
+  if (nucleo <= 1 + 1e-9) m.p(L`La resultante queda dentro del núcleo central: la distribución de tensiones es trapecial y toda la base está en compresión.`);
+  else m.note("La resultante cae fuera del núcleo central: parte de la base se levanta y la fórmula de Navier deja de valer. Aumente las dimensiones.", L`La resultante cae fuera del núcleo central: parte de la base se levanta y la fórmula de Navier deja de ser válida; se deben aumentar las dimensiones.`);
+  ck("Resultante en el núcleo central", L`$6e_x/B + 6e_y/L = ${tn(nucleo, 3)}$`, "1", nucleo, "Núcleo central");
+  m.row("σ<sub>1a</sub> ; σ<sub>2a</sub> ; σ<sub>3a</sub> ; σ<sub>4a</sub>", `${fmt(S(nav.s1), 2)} ; ${fmt(S(nav.s2), 2)} ; ${fmt(S(nav.s3), 2)} ; ${fmt(S(nav.s4), 2)} tf/m²`);
+  m.eq(L`\sigma_{ia} = \frac{P_a}{A_c}\left(1 \pm \frac{6\,e_{xa}}{B} \pm \frac{6\,e_{ya}}{L}\right) \;\Rightarrow\; \sigma_{1a} = ${tn(S(nav.s1), 2)},\ \sigma_{2a} = ${tn(S(nav.s2), 2)},\ \sigma_{3a} = ${tn(S(nav.s3), 2)},\ \sigma_{4a} = ${tn(S(nav.s4), 2)}\ \mathrm{tf/m^2}`);
+  const dcS = nav.s1 / sna;
+  m.row("σ<sub>1a</sub> ≤ σ<sub>na</sub>", `${fmt(S(nav.s1), 2)} ≤ ${fmt(S(sna), 2)} tf/m² ${tagDC(dcS)}`);
+  m.eq(L`\frac{\sigma_{1a}}{\sigma_{na}} = \frac{${tn(S(nav.s1), 2)}}{${tn(S(sna), 2)}} = ${tn(dcS, 3)} ${cmp(dcS)} 1.0`);
+  ck("Tensión de contacto (ASD)", L`$\sigma_{1a} = ${tn(S(nav.s1), 2)}$ tf/m$^2$`, L`$\sigma_{na} = ${tn(S(sna), 2)}$ tf/m$^2$`, dcS, "Tensión de contacto");
+
+  // ---------- d) Corte ----------
+  m.h("Diseño a corte");
+  const dEf = d.hc - d.rec;
+  const nu = navier(Pu, Myu / Pu, Mxu / Pu, B, Ly);
+  m.row("Altura útil d = h<sub>c</sub> − r", `${fmt(d.hc, 1)} − ${fmt(d.rec, 1)} = ${fmt(dEf, 1)} cm`, "criterio del curso");
+  m.row("e<sub>xu</sub> ; e<sub>yu</sub> ; 6e<sub>xu</sub>/B + 6e<sub>yu</sub>/L", `${fmt(M(Myu / Pu), 3)} ; ${fmt(M(Mxu / Pu), 3)} m ; ${fmt(nu.kx + nu.ky, 3)}`);
+  m.row("σ<sub>1u</sub> ; σ<sub>2u</sub> ; σ<sub>3u</sub> ; σ<sub>4u</sub>", `${fmt(S(nu.s1), 2)} ; ${fmt(S(nu.s2), 2)} ; ${fmt(S(nu.s3), 2)} ; ${fmt(S(nu.s4), 2)} tf/m²`);
+  m.eq(L`\sigma_{iu} = \frac{P_u}{A_c}\left(1 \pm \frac{6\,e_{xu}}{B} \pm \frac{6\,e_{yu}}{L}\right) \;\Rightarrow\; \sigma_{1u} = ${tn(S(nu.s1), 2)},\ \sigma_{2u} = ${tn(S(nu.s2), 2)},\ \sigma_{3u} = ${tn(S(nu.s3), 2)},\ \sigma_{4u} = ${tn(S(nu.s4), 2)}\ \mathrm{tf/m^2}`);
+  const nucU = nu.kx + nu.ky;
+  if (nucU > 1 + 1e-9) m.note("La resultante mayorada cae fuera del núcleo central: las presiones de Navier dejan de valer y subestiman el corte y la flexión. Aumente las dimensiones.", L`La resultante mayorada cae fuera del núcleo central: las presiones de Navier dejan de ser válidas y subestiman el corte y la flexión; se deben aumentar las dimensiones.`);
+  ck("Resultante mayorada en el núcleo", L`$6e_{xu}/B + 6e_{yu}/L = ${tn(nucU, 3)}$`, "1", nucU, "Núcleo central mayorado");
+  const sq = Math.sqrt(d.fc);
+  m.sub("Corte tipo viga (a una distancia d de la cara)");
+  const ax = (B + d.a) / 2 + dEf, ay = (Ly + d.b) / 2 + dEf;
+  const sx = ax / B * (nu.s1 - nu.s2) + nu.s2, sy = ay / Ly * (nu.s1 - nu.s3) + nu.s3;
+  const Ax = Math.max(0, B - ax) * Ly, Ay = Math.max(0, Ly - ay) * B;
+  const Vux = (nu.s1 + sx) / 2 * Ax, Vuy = (nu.s1 + sy) / 2 * Ay;
+  const Vcx = 0.53 * sq * Ly * dEf, Vcy = 0.53 * sq * B * dEf;
+  const dcVx = Vux / (PHI_V * Vcx), dcVy = Vuy / (PHI_V * Vcy);
+  m.row("Dirección x (sección 1-1): a<sub>x</sub> = (B + a)/2 + d ; A<sub>x</sub> = (B − a<sub>x</sub>) L", `${fmt(M(ax), 3)} m ; ${fmt(Ax / 1e4, 3)} m²`);
+  m.row("σ<sub>x</sub> = a<sub>x</sub>/B (σ<sub>1u</sub> − σ<sub>2u</sub>) + σ<sub>2u</sub> ; V<sub>ux</sub> = (σ<sub>1u</sub> + σ<sub>x</sub>)/2 · A<sub>x</sub>", `${fmt(S(sx), 2)} tf/m² ; ${fmt(T(Vux), 2)} tf`);
+  m.row("V<sub>cx</sub> = 0.53 √f'<sub>c</sub> L d ; V<sub>ux</sub>/φV<sub>cx</sub>", `${fmt(T(Vcx), 2)} tf ${tagDC(dcVx)}`, "ACI 318-08 11-3");
+  m.eq(L`V_{ux} = \frac{\sigma_{1u} + \sigma_x}{2}\,A_x = \frac{${tn(S(nu.s1), 2)} + ${tn(S(sx), 2)}}{2}\cdot ${tn(Ax / 1e4, 3)} = ${tn(T(Vux), 2)}\ \mathrm{tf} \qquad V_{cx} = 0.53\sqrt{f'_c}\,L\,d = ${tn(T(Vcx), 2)}\ \mathrm{tf} \qquad \frac{V_{ux}}{\phi V_{cx}} = ${tn(dcVx, 3)} ${cmp(dcVx)} 1`, "ACI 318-08 11-3");
+  m.row("Dirección y (sección 2-2): a<sub>y</sub> = (L + b)/2 + d ; A<sub>y</sub> = (L − a<sub>y</sub>) B", `${fmt(M(ay), 3)} m ; ${fmt(Ay / 1e4, 3)} m²`);
+  m.row("σ<sub>y</sub> = a<sub>y</sub>/L (σ<sub>1u</sub> − σ<sub>3u</sub>) + σ<sub>3u</sub> ; V<sub>uy</sub> = (σ<sub>1u</sub> + σ<sub>y</sub>)/2 · A<sub>y</sub>", `${fmt(S(sy), 2)} tf/m² ; ${fmt(T(Vuy), 2)} tf`);
+  m.row("V<sub>cy</sub> = 0.53 √f'<sub>c</sub> B d ; V<sub>uy</sub>/φV<sub>cy</sub>", `${fmt(T(Vcy), 2)} tf ${tagDC(dcVy)}`, "ACI 318-08 11-3");
+  m.eq(L`V_{uy} = \frac{\sigma_{1u} + \sigma_y}{2}\,A_y = \frac{${tn(S(nu.s1), 2)} + ${tn(S(sy), 2)}}{2}\cdot ${tn(Ay / 1e4, 3)} = ${tn(T(Vuy), 2)}\ \mathrm{tf} \qquad V_{cy} = 0.53\sqrt{f'_c}\,B\,d = ${tn(T(Vcy), 2)}\ \mathrm{tf} \qquad \frac{V_{uy}}{\phi V_{cy}} = ${tn(dcVy, 3)} ${cmp(dcVy)} 1`, "ACI 318-08 11-3");
+  ck("Corte tipo viga en x", L`$V_{ux} = ${tn(T(Vux), 2)}$ tf`, L`$\phi V_{cx} = ${tn(T(PHI_V * Vcx), 2)}$ tf`, dcVx, "Corte tipo viga x", "ha");
+  ck("Corte tipo viga en y", L`$V_{uy} = ${tn(T(Vuy), 2)}$ tf`, L`$\phi V_{cy} = ${tn(T(PHI_V * Vcy), 2)}$ tf`, dcVy, "Corte tipo viga y", "ha");
+
+  m.sub("Corte por punzonamiento (a d/2 de la cara)");
+  const qu = Pu / nav.A, A0 = (d.a + dEf) * (d.b + dEf), Vup = qu * Math.max(0, nav.A - A0);
+  const bo = 2 * ((d.a + dEf) + (d.b + dEf)), beta = Math.max(d.a, d.b) / Math.min(d.a, d.b);
+  const Vc1 = 0.53 * (1 + 2 / beta) * sq * bo * dEf, Vc2 = 0.27 * (ALFA_S * dEf / bo + 2) * sq * bo * dEf, Vc3 = d.k3 * sq * bo * dEf;
+  const Vcp = Math.min(Vc1, Vc2, Vc3), dcP = Vup / (PHI_V * Vcp);
+  m.p(L`Con la resultante dentro del núcleo central se usa la presión media $q_u = P_u/A_c$ sobre el área fuera del perímetro crítico, como en el procedimiento del curso.`);
+  m.row("q<sub>u</sub> = P<sub>u</sub>/A<sub>c</sub> ; V<sub>u</sub> = q<sub>u</sub>(A<sub>c</sub> − (a + d)(b + d))", `${fmt(S(qu), 2)} tf/m² ; ${fmt(T(Vup), 2)} tf`);
+  m.eq(L`q_u = \frac{P_u}{A_c} = ${tn(S(qu), 2)}\ \mathrm{tf/m^2} \qquad V_u = q_u\left(A_c - (a + d)(b + d)\right) = ${tn(T(Vup), 2)}\ \mathrm{tf}`);
+  m.row("b<sub>0</sub> = 2((a + d) + (b + d)) ; β = lado mayor/lado menor ; α<sub>s</sub>", `${fmt(bo, 1)} cm ; ${fmt(beta, 2)} ; ${ALFA_S}`, "ACI 318-08 11.11.2.1");
+  m.row("V<sub>c1</sub> = 0.53 (1 + 2/β) √f'<sub>c</sub> b<sub>0</sub> d", `${fmt(T(Vc1), 2)} tf`, "ACI 318-08 11-31");
+  m.row("V<sub>c2</sub> = 0.27 (α<sub>s</sub> d/b<sub>0</sub> + 2) √f'<sub>c</sub> b<sub>0</sub> d", `${fmt(T(Vc2), 2)} tf`, "ACI 318-08 11-32");
+  m.row(`V<sub>c3</sub> = ${d.k3 === 1 ? "" : fmt(d.k3, 2) + " "}√f'<sub>c</sub> b<sub>0</sub> d`, `${fmt(T(Vc3), 2)} tf`, d.k3 === 1 ? "pauta del curso" : "ACI 318-08 11-33");
+  m.row("V<sub>c</sub> = mín ; V<sub>u</sub>/φV<sub>c</sub>", `${fmt(T(Vcp), 2)} tf ${tagDC(dcP)}`);
+  m.eq(L`V_c = \min\left(0.53\left(1 + \frac{2}{\beta}\right),\ 0.27\left(\frac{\alpha_s d}{b_0} + 2\right),\ ${d.k3 === 1 ? "1" : tn(d.k3, 2)}\right)\sqrt{f'_c}\,b_0\,d = \min(${tn(T(Vc1), 2)};\ ${tn(T(Vc2), 2)};\ ${tn(T(Vc3), 2)}) = ${tn(T(Vcp), 2)}\ \mathrm{tf} \qquad \frac{V_u}{\phi V_c} = ${tn(dcP, 3)} ${cmp(dcP)} 1`, "ACI 318-08 11.11.2.1");
+  if (d.k3 === 1) m.note("La pauta del curso usa √f'c b₀ d en la tercera expresión; el ACI 318-08 (11-33) usa 1.06 √f'c b₀ d. Puede cambiarlo en los datos.", L`La pauta del curso usa $\sqrt{f'_c}\,b_0\,d$ en la tercera expresión; el ACI 318-08 (11-33) usa $1.06\sqrt{f'_c}\,b_0\,d$, por lo que el valor del curso es conservador.`);
+  if (!(Vup > 0)) m.note("El perímetro crítico queda fuera de la zapata: no hay corte por punzonamiento que verificar.", L`El perímetro crítico queda fuera de la zapata, por lo que no hay corte por punzonamiento que verificar.`);
+  ck("Punzonamiento", L`$V_u = ${tn(T(Vup), 2)}$ tf`, L`$\phi V_c = ${tn(T(PHI_V * Vcp), 2)}$ tf`, dcP, "Punzonamiento", "ha");
+  // Transferencia de momento por corte excéntrico (ACI 318-08 11.11.7): complementa el procedimiento del curso
+  const hTop = d.ht + d.Df - d.hc, MxT = Math.abs(cu.Mxc + cu.Hy * hTop), MyT = Math.abs(cu.Myc + cu.Hx * hTop);
+  const b1x = d.a + dEf, b2x = d.b + dEf;
+  const gvf = (b1, b2) => 1 - 1 / (1 + 2 / 3 * Math.sqrt(b1 / b2));
+  const Jcf = (b1, b2) => dEf * b1 ** 3 / 6 + b1 * dEf ** 3 / 6 + dEf * b2 * b1 * b1 / 2;
+  const vuM = Vup / (bo * dEf) + gvf(b1x, b2x) * MyT * (b1x / 2) / Jcf(b1x, b2x) + gvf(b2x, b1x) * MxT * (b2x / 2) / Jcf(b2x, b1x);
+  const dcPM = vuM / (PHI_V * Vcp / (bo * dEf));
+  if (MxT + MyT > 0) {
+    m.p(L`El procedimiento del curso no considera el momento que la columna transfiere a la zapata. Como complemento, se agrega la fracción $\gamma_v$ de ese momento (en el coronamiento de la zapata) transferida por corte excéntrico (ACI 318-08 11.11.7.2).`);
+    m.row("M<sub>x</sub> ; M<sub>y</sub> en el coronamiento = |M + H (h<sub>t</sub> + D<sub>f</sub> − h<sub>c</sub>)|", `${fmt(TM(MxT), 2)} ; ${fmt(TM(MyT), 2)} tf·m`);
+    m.row("v<sub>u</sub> = V<sub>u</sub>/(b<sub>0</sub>d) + γ<sub>v</sub> M<sub>y</sub> c/J<sub>c</sub> + γ<sub>v</sub> M<sub>x</sub> c/J<sub>c</sub> ≤ φ V<sub>c</sub>/(b<sub>0</sub>d)", `${fmt(S(vuM), 1)} ≤ ${fmt(S(PHI_V * Vcp / (bo * dEf)), 1)} tf/m² ${tagDC(dcPM)}`, "ACI 318-08 11.11.7.2");
+    m.eq(L`v_u = \frac{V_u}{b_0 d} + \frac{\gamma_{v}\,M_y\,c}{J_c} + \frac{\gamma_{v}\,M_x\,c}{J_c} = ${tn(S(vuM), 1)}\ \mathrm{tf/m^2} \qquad \gamma_v = 1 - \frac{1}{1 + \frac{2}{3}\sqrt{b_1/b_2}} \qquad \frac{v_u}{\phi v_c} = ${tn(dcPM, 3)} ${cmp(dcPM)} 1`, "ACI 318-08 11.11.7.2");
+    ck("Punzonamiento con momento", L`$v_u = ${tn(S(vuM), 1)}$ tf/m$^2$`, L`$\phi v_c = ${tn(S(PHI_V * Vcp / (bo * dEf)), 1)}$ tf/m$^2$`, dcPM, "Punzonamiento con momento", "ha");
+  }
+  // Aplastamiento en la zapata bajo la columna (ACI 318-08 10.14.1, φ = 0.65, √(A2/A1) ≤ 2)
+  m.sub("Aplastamiento bajo la columna");
+  const A1 = d.a * d.b, rA = Math.min(2, Math.sqrt(Math.min(B / d.a, Ly / d.b) ** 2));
+  const phiBn = 0.65 * 0.85 * d.fc * A1 * rA, dcAp = Pu / phiBn;
+  m.row("φB<sub>n</sub> = 0.65 · 0.85 f'<sub>c</sub> A<sub>1</sub> √(A<sub>2</sub>/A<sub>1</sub>), con √(A<sub>2</sub>/A<sub>1</sub>) ≤ 2", `${fmt(T(phiBn), 1)} tf ${tagDC(dcAp)}`, "ACI 318-08 10.14.1");
+  m.eq(L`\phi B_n = 0.65\cdot 0.85\,f'_c\,A_1\sqrt{A_2/A_1} = 0.65\cdot 0.85\cdot ${tn(d.fc, 0)}\cdot ${tn(A1, 0)}\cdot ${tn(rA, 2)} = ${tn(T(phiBn), 1)}\ \mathrm{tf} \qquad \frac{P_u}{\phi B_n} = ${tn(dcAp, 3)} ${cmp(dcAp)} 1`, "ACI 318-08 10.14.1");
+  m.p(L`La resistencia al aplastamiento de la columna o del pedestal y la armadura mínima de traspaso ($0.005\,A_g$, ACI 318-08 15.8.2) dependen de la columna y no se verifican aquí.`);
+  ck("Aplastamiento en la zapata", L`$P_u = ${tn(T(Pu), 1)}$ tf`, L`$\phi B_n = ${tn(T(phiBn), 1)}$ tf`, dcAp, "Aplastamiento", "ha");
+
+  // ---------- e) Flexión ----------
+  m.h("Diseño a flexión");
+  m.p(L`El momento se calcula en la cara de la columna integrando la presión mayorada del borde más cargado hacia el voladizo, por metro de ancho. La cuantía mínima del curso es $\rho_{m\acute{i}n} = 0.0018$ sobre $b\,d$.`);
+  const asx = (B + d.a) / 2, asy = (Ly + d.b) / 2, lx = B - asx, ly = Ly - asy;
+  const ssx = asx / B * (nu.s1 - nu.s2) + nu.s2, ssy = asy / Ly * (nu.s1 - nu.s3) + nu.s3;
+  const Mux = (ssx * lx * lx / 2 + (nu.s1 - ssx) * lx * lx / 3) * BW, Muy = (ssy * ly * ly / 2 + (nu.s1 - ssy) * ly * ly / 3) * BW;
+  const fx = flexion(Mux, dEf, d.dbx, d), fy = flexion(Muy, dEf, d.dby, d);
+  const memoFlex = (f, eje, sec, sMom, l, cara) => {
+    m.sub(`Dirección ${eje} (sección ${sec})`);
+    m.row(`σ<sub>s${eje}</sub> en la cara ; voladizo ${eje === "x" ? "B" : "L"} − a<sub>s${eje}</sub>`, `${fmt(S(sMom), 2)} tf/m² ; ${fmt(M(l), 3)} m`);
+    m.row(`M<sub>u${eje}</sub> = (σ<sub>s${eje}</sub> l²/2 + (σ<sub>1u</sub> − σ<sub>s${eje}</sub>) l²/3) · 1 m`, `${fmt(TM(f.Mu), 2)} tf·m/m`);
+    m.eq(L`M_{u${eje}} = \left(\sigma_{s${eje}}\,\frac{l^2}{2} + (\sigma_{1u} - \sigma_{s${eje}})\,\frac{l^2}{3}\right)\cdot 1\ \mathrm{m} = \left(${tn(S(sMom), 2)}\cdot\frac{${tn(M(l), 3)}^2}{2} + ${tn(S(nu.s1 - sMom), 2)}\cdot\frac{${tn(M(l), 3)}^2}{3}\right) = ${tn(TM(f.Mu), 2)}\ \mathrm{tf\,m}`);
+    if (f.insuf) { m.row("μ", `${fmt(f.mu, 4)} ${tag(false, "sección insuficiente")}`); return; }
+    m.row("μ = M<sub>u</sub>/(φ 0.85 f'<sub>c</sub> b d²) ; ε = 1 − √(1 − 2μ) ; ρ = 0.85 f'<sub>c</sub> ε/f<sub>y</sub>", `${fmt(f.mu, 4)} ; ${fmt(f.eps, 4)} ; ${fmt(f.rho, 5)}`);
+    m.eq(L`\mu = \frac{M_u}{\phi\,0.85\,f'_c\,b\,d^2} = ${tn(f.mu, 4)} \qquad \varepsilon = 1 - \sqrt{1 - 2\mu} = ${tn(f.eps, 4)} \qquad \rho = 0.85\,f'_c\,\frac{\varepsilon}{f_y} = ${tn(f.rho, 5)} ${f.rho > RHO_MIN ? ">" : "<"} \rho_{m\acute{i}n} = 0.0018`);
+    m.row(`A<sub>s${eje}</sub> = máx(ρ ; ρ<sub>mín</sub>) · 100 · d (${f.gob}) → ${cara}`, `${fmt(f.As, 2)} cm²/m → <b>${barra(f.db, f.s)}</b>`, "criterio del curso");
+    m.eq(L`A_{s${eje}} = ${tn(Math.max(f.rho, RHO_MIN), 5)}\cdot 100\cdot ${tn(dEf, 1)} = ${tn(f.As, 2)}\ \mathrm{cm^2/m} \;\Rightarrow\; \phi${tn(f.db * 10, 0)}\ @\ ${tn(f.s, 0)}\ \mathrm{cm}\ (${tn(f.Asp, 2)}\ \mathrm{cm^2/m})`);
+    m.row("φM<sub>n</sub> con la armadura propuesta", `${fmt(TM(f.phiMn), 2)} tf·m/m ${tagDC(f.dc)}`, "ACI 318-08 10.2");
+  };
+  memoFlex(fx, "x", "S1-S1", ssx, lx, "barras paralelas a B");
+  memoFlex(fy, "y", "S2-S2", ssy, ly, "barras paralelas a L");
+  ck("Flexión en x", L`$M_{ux} = ${tn(TM(Mux), 2)}$ tf m/m`, L`$\phi M_n = ${tn(TM(fx.phiMn), 2)}$ tf m/m`, fx.dc, "Flexión x", "ha");
+  ck("Flexión en y", L`$M_{uy} = ${tn(TM(Muy), 2)}$ tf m/m`, L`$\phi M_n = ${tn(TM(fy.phiMn), 2)}$ tf m/m`, fy.dc, "Flexión y", "ha");
+
+  // ---------- Requisitos de detalle de zapatas (ACI 318-08 Cap. 15) ----------
+  m.h("Requisitos de detalle");
+  const dcD15 = 15 / dEf;
+  m.row("Altura sobre la armadura inferior d ≥ 15 cm", `${fmt(dEf, 1)} cm ${tagDC(dcD15)}`, "ACI 318-08 15.7");
+  ck("Altura mínima d", L`15 cm`, L`$d = ${tn(dEf, 1)}$ cm`, dcD15, "Altura mínima", "ha");
+  // Anclaje de la parrilla desde la cara de la columna: barras con pata de 90° (gancho), l_dh ≤ voladizo − r
+  const anclaje = (db, l, eje) => {
+    const ldhB = Math.max(0.075 * d.fy * db / Math.sqrt(d.fc), 8 * db, 15), disp = l - d.rec, dc = ldhB / disp;
+    m.row(`Anclaje de A<sub>s${eje}</sub> con gancho desde la cara: l<sub>dh</sub> ≤ voladizo − r`, `${fmt(ldhB, 1)} ≤ ${fmt(disp, 1)} cm ${tagDC(dc)}`, "ACI 318-08 15.6.3 y 12.5.2");
+    ck(`Anclaje de la armadura en ${eje}`, L`$l_{dh} = ${tn(ldhB, 1)}$ cm`, L`${tn(disp, 1)} cm`, dc, `Anclaje ${eje}`, "ha");
+  };
+  anclaje(d.dbx, lx, "x"); anclaje(d.dby, ly, "y");
+  const bLargo = Math.max(B, Ly) / Math.min(B, Ly);
+  if (bLargo > 1 + 1e-6) {
+    const fr = 2 / (bLargo + 1), corta = B <= Ly ? "x (paralelas a B)" : "y (paralelas a L)";
+    m.row(`Zapata rectangular: fracción de la armadura corta, barras ${corta}, en una banda central de ancho ${fmt(M(Math.min(B, Ly)), 2)} m = 2/(β + 1)`, `${fmt(fr * 100, 0)} %`, "ACI 318-08 15.4.4.2");
+    m.p(L`En la dirección corta, una fracción $2/(\beta + 1) = ${tn(fr * 100, 0)}\,\%$ de la armadura ($\beta = ${tn(bLargo, 3)}$) se concentra en una banda central de ancho igual al lado corto y el resto se reparte en los extremos (ACI 318-08 15.4.4.2). El espaciamiento propuesto es el uniforme.`, true);
+  }
+
+  const dcMax = Math.max(...checks.map(c => c.dc));
+  const r = { B, Broot, Ly, h, sna, Pa, Mxa, Mya, Pu, Mxu, Myu, nav, nu, nucleo, dEf, Ldh, hReq, fx, fy, Vux, Vuy, Vup, Vcp, checks, dcMax, ok: dcMax <= 1 + 1e-9 };
+
+  // ---------- Sismo (por verificar) ----------
+  if (d.sismo) r.sis = sismico(d, m, r, sis);
+  r.sisChecks = sis;
+  return r;
+}
+
+// ---------------------------------------------------------------------------
+// Análisis sísmico — PROCEDIMIENTO POR VERIFICAR (guía de integración del análisis sísmico)
+// ---------------------------------------------------------------------------
+function sismico(d, m, r, sis) {
+  // Marcas del bloque por verificar: ámbar si cumple, roja si no
+  const tagDC = (dc) => `<span class="tag ${dc <= 1 + 1e-9 ? "warn" : "bad"}">D/C = ${fmt(dc, 3)}${dc <= 1 + 1e-9 ? " · por verificar" : ""}</span>`;
+  const sk = (k, dem, cap, dc, html) => sis.push({ k, dem, cap, dc, html });
+  const { B, Ly, dEf } = r;
+  m.h("Análisis sísmico — procedimiento por verificar");
+  m.note("⚠ PROCEDIMIENTO POR VERIFICAR. Esta sección sigue la guía de integración del análisis sísmico al diseño de zapatas aisladas (NCh 3171, NCh 433, NCh 2369 y ACI 318), que todavía no está confirmada. Sus resultados son referenciales y no entran en el veredicto.",
+    L`\textbf{Procedimiento por verificar.} Esta sección sigue una guía de integración del análisis sísmico al diseño de zapatas aisladas (NCh 3171, NCh 433, NCh 2369 y ACI 318) que todavía no está confirmada. Sus resultados son referenciales y no forman parte de la conclusión de esta memoria.`);
+  // Pesos propios (obligatorios con sismo)
+  const Wc = d.gh * B * Ly * d.hc, Ws = d.gs * B * Ly * (d.Df - d.hc), W = Wc + Ws;
+  m.sub("Pesos propios");
+  m.p(L`Con sismo no se desprecian los pesos de la zapata ni del suelo sobre ella, porque estabilizan frente al volcamiento. El peso del pedestal se asimila al del suelo que reemplaza. Se suman a la carga muerta en todas las combinaciones.`);
+  m.row("W<sub>c</sub> = γ<sub>h</sub> B L h<sub>c</sub> ; W<sub>s</sub> = γ<sub>s</sub> B L (D<sub>f</sub> − h<sub>c</sub>)", `${fmt(T(Wc), 2)} ; ${fmt(T(Ws), 2)} tf`);
+  m.eq(L`W_c = \gamma_h\,B\,L\,h_c = ${tn(T(Wc), 2)}\ \mathrm{tf} \qquad W_s = \gamma_s\,B\,L\,(D_f - h_c) = ${tn(T(Ws), 2)}\ \mathrm{tf}`);
+  if (W <= 0) m.note("Con γ<sub>h</sub> = γ<sub>s</sub> = 0 la zapata no tiene peso estabilizante: ingrese los pesos específicos para el análisis sísmico.", L`Con $\gamma_h = \gamma_s = 0$ la zapata no tiene peso estabilizante; el análisis sísmico requiere los pesos específicos.`);
+
+  // Combinaciones de servicio (tensiones de contacto y estabilidad)
+  m.sub("Combinaciones de servicio con sismo: contacto y estabilidad");
+  m.p(L`Combinaciones ASD de la NCh 3171 con el sismo de la NCh 433 Of.1996 a nivel de servicio, en ambos sentidos: $D + E$, $D + 0.75L + 0.75E$ y $0.6D + E$. Con sismo la resultante puede salir del núcleo central; la presión se calcula como la de una zapata rígida sobre un suelo que no resiste tracción (flexión biaxial resuelta numéricamente) y se exige que al menos el ${tn(d.pcMin, 0)}\,\% de la base quede comprimida. La tensión admisible aumenta ${tn(d.kSis, 2)} veces.`);
+  const sAdmS = d.kSis * d.sadm;
+  const ASD = [["D + E", 1, 0, 1], ["D + 0.75L + 0.75E", 1, 0.75, 0.75], ["0.6D + E", 0.6, 0, 1]];
+  const filasA = [];
+  for (const [n, kD, kL, kE] of ASD) for (const s of [1, -1]) {
+    const c = comb(d, { D: kD, L: kL, E: s * kE }, W);
+    const ct = contactoBiaxial(c.P, c.Mx, c.My, B, Ly);
+    const FSVx = !(c.P > 0) ? 0 : c.My ? Math.abs(c.P * B / 2 / c.My) : Infinity, FSVy = !(c.P > 0) ? 0 : c.Mx ? Math.abs(c.P * Ly / 2 / c.Mx) : Infinity;
+    const H = Math.hypot(c.Hx, c.Hy), Aef = ct.ok ? ct.frac * B * Ly : 0;
+    const FSD = H > 0 ? (Math.max(c.P, 0) * d.mu + d.coh * Aef) / H : Infinity;
+    filasA.push({ n: `${n.replace("E", s > 0 ? "E" : "(−E)")}`, nTex: n.replace("E", s > 0 ? "E" : "(-E)"), c, ct, FSVx, FSVy, FSD });
+  }
+  const celdaA = (f) => [fmt(T(f.c.P), 2), fmt(TM(f.c.Mx), 2), fmt(TM(f.c.My), 2), f.ct.ok ? fmt(S(f.ct.smax), 2) : "—", f.ct.ok ? fmt(f.ct.frac * 100, 1) : "0", fmt(Math.min(f.FSVx, f.FSVy), 2), fmt(f.FSD, 2)];
+  m.html_(`<div class="tablaWrap"><table class="alt"><tr><th>Combinación</th><th>P [tf]</th><th>M<sub>x</sub> [tf·m]</th><th>M<sub>y</sub> [tf·m]</th><th>σ<sub>máx</sub> [tf/m²]</th><th>Contacto [%]</th><th>FS<sub>V</sub></th><th>FS<sub>D</sub></th></tr>${filasA.map(f => `<tr><td>${f.n}</td>${celdaA(f).map((v, i) => `<td class="${(i === 3 && f.ct.smax > sAdmS) || (i === 4 && (!f.ct.ok || f.ct.frac * 100 < d.pcMin)) || (i === 5 && Math.min(f.FSVx, f.FSVy) < d.fsv) || (i === 6 && f.FSD < d.fsd) ? "malo" : ""}">${v}</td>`).join("")}</tr>`).join("")}</table></div>`);
+  m.raw(L`\begin{table}[H]
+\centering
+\small
+\caption{Combinaciones de servicio con sismo (procedimiento por verificar).}
+\begin{tabular}{lrrrrrrr}
+\toprule
+Combinación & $P$ [tf] & $M_x$ [tf m] & $M_y$ [tf m] & $\sigma_{m\acute{a}x}$ [tf/m$^2$] & Contacto [\%] & $FS_V$ & $FS_D$\\
+\midrule
+${filasA.map(f => `$${f.nTex}$ & ${celdaA(f).map(v => v.replace(/ /g, "\\,").replace("—", "---")).join(" & ")}\\\\`).join("\n")}
+\bottomrule
+\end{tabular}
+\end{table}`);
+  m.p(L`$FS_V = P\,B/2\,/\,|M|$ en cada dirección (se informa el menor) y $FS_D = (P\,\mu + c\,A_{ef})/H$, con $\mu = ${tn(d.mu, 2)}$ y $c = ${tn(S(d.coh), 2)}$ tf/m$^2$ sobre el área comprimida.`);
+  const peor = (arr, f) => arr.reduce((a, x) => (f(x) > f(a) ? x : a), arr[0]);
+  const fS = peor(filasA, f => f.ct.ok ? f.ct.smax : Infinity), fC = peor(filasA, f => f.ct.ok ? -f.ct.frac : Infinity);
+  const fV = peor(filasA, f => -Math.min(f.FSVx, f.FSVy)), fD = peor(filasA, f => -f.FSD);
+  const dcSs = fS.ct.ok ? fS.ct.smax / sAdmS : Infinity, dcC = fC.ct.ok ? d.pcMin / 100 / fC.ct.frac : Infinity;
+  const fsvMin = Math.min(fV.FSVx, fV.FSVy), dcV = d.fsv / fsvMin, dcD = d.fsd / fD.FSD;
+  m.row(`σ<sub>máx</sub> ≤ ${fmt(d.kSis, 2)} σ<sub>adm</sub> (${fS.n})`, `${fS.ct.ok ? fmt(S(fS.ct.smax), 2) : "—"} ≤ ${fmt(S(sAdmS), 2)} tf/m² ${tagDC(dcSs)}`);
+  m.row(`Área comprimida ≥ ${fmt(d.pcMin, 0)} % (${fC.n})`, `${fC.ct.ok ? fmt(fC.ct.frac * 100, 1) : "0"} % ${tagDC(dcC)}`, "NCh 433 / NCh 2369");
+  m.row(`FS volcamiento ≥ ${fmt(d.fsv, 2)} (${fV.n})`, `${fmt(fsvMin, 2)} ${tagDC(dcV)}`);
+  m.row(`FS deslizamiento ≥ ${fmt(d.fsd, 2)} (${fD.n})`, `${fmt(fD.FSD, 2)} ${tagDC(dcD)}`);
+  if (!fC.ct.ok) m.note(`En la combinación ${fC.n} ${fC.ct.motivo}.`, `En la combinación $${fC.nTex}$ ${fC.ct.motivo}.`);
+  sk("Tensión de contacto sísmica", L`$\sigma_{m\acute{a}x} = ${fS.ct.ok ? tn(S(fS.ct.smax), 2) : "\\infty"}$ tf/m$^2$`, L`$${tn(d.kSis, 2)}\,\sigma_{adm} = ${tn(S(sAdmS), 2)}$ tf/m$^2$`, dcSs, "Tensión sísmica");
+  sk("Área comprimida", L`${fC.ct.ok ? tn(fC.ct.frac * 100, 1) : "0"}\,\%`, L`${tn(d.pcMin, 0)}\,\%`, dcC, "Área comprimida");
+  sk("Volcamiento", L`$FS_V = ${tn(fsvMin, 2)}$`, L`${tn(d.fsv, 2)}`, dcV, "Volcamiento");
+  sk("Deslizamiento", L`$FS_D = ${tn(fD.FSD, 2)}$`, L`${tn(d.fsd, 2)}`, dcD, "Deslizamiento");
+
+  // Combinaciones mayoradas (hormigón armado)
+  m.sub("Combinaciones mayoradas con sismo: corte, punzonamiento y flexión");
+  m.p(L`Combinaciones LRFD de la NCh 3171: $1.2D + 1.0L \pm 1.4E$ y $0.9D \pm 1.4E$. La presión del suelo se obtiene con las cargas totales (incluidos los pesos mayorados con el factor de $D$) y a ella se le resta el peso mayorado de la zapata y del suelo sobre ella; donde la base se despega queda solo el peso, que flecta la zapata hacia abajo y pide una parrilla superior. Las solicitaciones se toman en la franja de 1 m más exigida. El punzonamiento incluye la transferencia de momento por corte excéntrico (ACI 318-08 11.11.7.2).`);
+  const LR = [["1.2D + 1.0L + 1.4E", 1.2, 1.0, 1.4], ["0.9D + 1.4E", 0.9, 0, 1.4]];
+  const sq = Math.sqrt(d.fc), wU = (k) => k * (d.gh * d.hc + d.gs * (d.Df - d.hc));
+  const b1x = d.a + dEf, b2x = d.b + dEf, bo = 2 * (b1x + b2x);
+  const gv = (b1, b2) => 1 - 1 / (1 + 2 / 3 * Math.sqrt(b1 / b2));
+  const Jc = (b1, b2) => dEf * b1 ** 3 / 6 + b1 * dEf ** 3 / 6 + dEf * b2 * b1 * b1 / 2;
+  const beta = Math.max(d.a, d.b) / Math.min(d.a, d.b);
+  const vc = Math.min(0.53 * (1 + 2 / beta), 0.27 * (ALFA_S * dEf / bo + 2), d.k3) * sq;
+  const hTop = d.ht + d.Df - d.hc;
+  const filasU = [];
+  for (const [n, kD, kL, kE] of LR) for (const s of [1, -1]) {
+    const c = comb(d, { D: kD, L: kL, E: s * kE }, W);
+    const ct = contactoBiaxial(c.P, c.Mx, c.My, B, Ly);
+    const nTxt = n.replace("1.4E", s > 0 ? "1.4E" : "(−1.4E)"), nTex = n.replace("1.4E", s > 0 ? "1.4E" : "(-1.4E)");
+    if (!ct.ok) { filasU.push({ n: nTxt, nTex, c, ct }); continue; }
+    const it = internos(ct, wU(kD), d, dEf);
+    const MxT = Math.abs(c.Mxc + c.Hy * hTop), MyT = Math.abs(c.Myc + c.Hx * hTop);
+    const vu = it.Vp / (bo * dEf) + gv(b1x, b2x) * MyT * (b1x / 2) / Jc(b1x, b2x) + gv(b2x, b1x) * MxT * (b2x / 2) / Jc(b2x, b1x);
+    filasU.push({ n: nTxt, nTex, c, ct, it, vu, MxT, MyT });
+  }
+  const celdaU = (f) => f.ct.ok
+    ? [fmt(T(f.c.P), 2), fmt(TM(f.c.Mx), 2), fmt(TM(f.c.My), 2), fmt(S(f.ct.smax), 2), fmt(f.ct.frac * 100, 1), fmt(TM(f.it.MpX), 2), fmt(TM(f.it.MpY), 2), fmt(TM(Math.max(f.it.MnX, f.it.MnY)), 2), fmt(S(f.vu), 1)]
+    : [fmt(T(f.c.P), 2), fmt(TM(f.c.Mx), 2), fmt(TM(f.c.My), 2), "—", "0", "—", "—", "—", "—"];
+  m.html_(`<div class="tablaWrap"><table class="alt"><tr><th>Combinación</th><th>P<sub>u</sub> [tf]</th><th>M<sub>xu</sub></th><th>M<sub>yu</sub></th><th>σ<sub>máx</sub> [tf/m²]</th><th>Contacto [%]</th><th>M<sub>u</sub><sup>+</sup> x [tf·m/m]</th><th>M<sub>u</sub><sup>+</sup> y</th><th>M<sub>u</sub><sup>−</sup> sup.</th><th>v<sub>u</sub> punz. [tf/m²]</th></tr>${filasU.map(f => `<tr><td>${f.n}</td>${celdaU(f).map(v => `<td>${v}</td>`).join("")}</tr>`).join("")}</table></div>`);
+  m.raw(L`\begin{table}[H]
+\centering
+\scriptsize
+\caption{Combinaciones mayoradas con sismo (procedimiento por verificar). Momentos por metro de ancho.}
+\begin{tabular}{lrrrrrrrrr}
+\toprule
+Combinación & $P_u$ [tf] & $M_{xu}$ & $M_{yu}$ & $\sigma_{m\acute{a}x}$ & Cont. [\%] & $M_u^+$ x & $M_u^+$ y & $M_u^-$ sup. & $v_u$ punz.\\
+\midrule
+${filasU.map(f => `$${f.nTex}$ & ${celdaU(f).map(v => v.replace(/ /g, "\\,").replace("—", "---")).join(" & ")}\\\\`).join("\n")}
+\bottomrule
+\end{tabular}
+\end{table}`);
+  const okU = filasU.filter(f => f.ct.ok);
+  if (okU.length < filasU.length) { const t = `En ${filasU.length - okU.length} combinación(es) mayorada(s) la zapata no queda en equilibrio (${filasU.find(f => !f.ct.ok).ct.motivo}).`; m.note(t, t); }
+  if (okU.length) {
+    const mx = (f) => Math.max(...okU.map(f));
+    const VX = mx(f => f.it.VX), VY = mx(f => f.it.VY), vuP = mx(f => f.vu), MpX = mx(f => f.it.MpX), MpY = mx(f => f.it.MpY), Mn = mx(f => Math.max(f.it.MnX, f.it.MnY));
+    const vcV = PHI_V * 0.53 * sq * dEf;                       // por cm de ancho
+    const dcVx = VX / vcV, dcVy = VY / vcV, dcPu = vuP / (PHI_V * vc);
+    const dcMx = MpX / r.fx.phiMn, dcMy = MpY / r.fy.phiMn;
+    m.row("Corte tipo viga x: V<sub>u</sub> en la franja más exigida / φ 0.53 √f'<sub>c</sub> d", `${fmt(T(VX * BW), 2)} tf/m ${tagDC(dcVx)}`, "ACI 318-08 11-3");
+    m.row("Corte tipo viga y", `${fmt(T(VY * BW), 2)} tf/m ${tagDC(dcVy)}`, "ACI 318-08 11-3");
+    m.row("Punzonamiento con momento: v<sub>u</sub> = V<sub>u</sub>/(b<sub>0</sub>d) + γ<sub>v</sub>M c/J<sub>c</sub> (x e y) ≤ φv<sub>c</sub>", `${fmt(S(vuP), 1)} ≤ ${fmt(S(PHI_V * vc), 1)} tf/m² ${tagDC(dcPu)}`, "ACI 318-08 11.11.7.2");
+    m.eq(L`v_u = \frac{V_u}{b_0\,d} + \frac{\gamma_{vx}\,M_{y}\,c_x}{J_{cx}} + \frac{\gamma_{vy}\,M_{x}\,c_y}{J_{cy}} = ${tn(S(vuP), 1)}\ \mathrm{tf/m^2} \qquad \gamma_v = 1 - \frac{1}{1 + \frac{2}{3}\sqrt{b_1/b_2}} \qquad \frac{v_u}{\phi v_c} = ${tn(dcPu, 3)} ${cmp(dcPu)} 1`, "ACI 318-08 11.11.7.2");
+    m.row(`Flexión inferior x con la armadura estática ${barra(d.dbx, r.fx.s)}`, `M<sub>u</sub> = ${fmt(TM(MpX), 2)} tf·m/m ${tagDC(dcMx)}`);
+    m.row(`Flexión inferior y con la armadura estática ${barra(d.dby, r.fy.s)}`, `M<sub>u</sub> = ${fmt(TM(MpY), 2)} tf·m/m ${tagDC(dcMy)}`);
+    sk("Corte tipo viga sísmico", L`$V_u = ${tn(T(Math.max(VX, VY) * BW), 2)}$ tf/m`, L`$\phi V_c = ${tn(T(vcV * BW), 2)}$ tf/m`, Math.max(dcVx, dcVy), "Corte sísmico");
+    sk("Punzonamiento con momento", L`$v_u = ${tn(S(vuP), 1)}$ tf/m$^2$`, L`$\phi v_c = ${tn(S(PHI_V * vc), 1)}$ tf/m$^2$`, dcPu, "Punzonamiento sísmico");
+    sk("Flexión inferior sísmica", L`$M_u = ${tn(TM(Math.max(MpX, MpY)), 2)}$ tf m/m`, L`$\phi M_n = ${tn(TM(dcMx >= dcMy ? r.fx.phiMn : r.fy.phiMn), 2)}$ tf m/m`, Math.max(dcMx, dcMy), "Flexión sísmica");
+    if (Mn > 5000) {                                           // sobre 0.05 tf·m/m (se descartan restos numéricos)
+      const fs = flexion(Mn, d.hc - d.rec, Math.min(d.dbx, d.dby), d);
+      m.row("Parrilla superior por despegue: M<sub>u</sub><sup>−</sup> (peso de la zapata y del suelo sin reacción)", `${fmt(TM(Mn), 2)} tf·m/m → A<sub>s</sub> = ${fmt(fs.As, 2)} cm²/m → <b>${barra(fs.db, fs.s)}</b> superior ${tag(true, "requerida")}`);
+      m.note(`Con el sismo una parte de la base se despega: se requiere una parrilla superior (${barra(fs.db, fs.s)} en ambas direcciones, con la cuantía mínima del curso). Confirme este criterio antes de usarlo.`,
+        L`Con el sismo una parte de la base se despega y se requiere una parrilla superior (${barraTex(fs.db, fs.s)} en ambas direcciones, con la cuantía mínima del curso), sujeta a la confirmación del procedimiento.`);
+      r.parrillaSup = barra(fs.db, fs.s);
+    } else m.row("Parrilla superior por despegue", "no se requiere (toda la base queda comprimida o el peso no flecta hacia abajo)");
+  }
+  const dcSis = sis.length ? Math.max(...sis.map(c => c.dc)) : NaN;
+  return { W, Wc, Ws, filasA, filasU, dcSis };
+}
+
+// ---------------------------------------------------------------------------
+// Dibujo: planta con la parrilla y elevación con la presión de servicio (SVG en pantalla y TikZ en la memoria)
+// ---------------------------------------------------------------------------
+function svgZapata(d, r) {
+  const B = r.B, Ly = r.Ly, k = 240 / Math.max(B, Ly);
+  const c = "#3d4450", arm = "#c62828", t = (x, y, s, a = "start", fs = 10.5) => `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" font-size="${fs}" fill="${c}" text-anchor="${a}">${s}</text>`;
+  // Planta (origen en el centro)
+  const ox = 60 + B * k / 2, oy = 40 + Ly * k / 2, X = (x) => ox + x * k, Y = (y) => oy - y * k;
+  const nBar = (len, s) => Math.max(2, Math.min(40, Math.floor((len - 2 * d.rec) / s) + 1));
+  let barras = "";
+  const nX = nBar(Ly, r.fx.s), nY = nBar(B, r.fy.s);
+  for (let i = 0; i < nX; i++) { const y = -Ly / 2 + d.rec + i * (Ly - 2 * d.rec) / (nX - 1); barras += `<line x1="${X(-B / 2 + d.rec)}" y1="${Y(y)}" x2="${X(B / 2 - d.rec)}" y2="${Y(y)}" stroke="${arm}" stroke-width="0.8"/>`; }
+  for (let i = 0; i < nY; i++) { const x = -B / 2 + d.rec + i * (B - 2 * d.rec) / (nY - 1); barras += `<line x1="${X(x)}" y1="${Y(Ly / 2 - d.rec)}" x2="${X(x)}" y2="${Y(-Ly / 2 + d.rec)}" stroke="#1f5fa8" stroke-width="0.8"/>`; }
+  const cota = (x1, y1, x2, y2, s, tx, ty, a = "middle") => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#8a93a0"/>${t(tx, ty, s, a, 10)}`;
+  const planta = `<rect x="${X(-B / 2)}" y="${Y(Ly / 2)}" width="${B * k}" height="${Ly * k}" fill="#e3e8ee" stroke="${c}" stroke-width="1.6"/>${barras}
+    <rect x="${X(-d.a / 2)}" y="${Y(d.b / 2)}" width="${d.a * k}" height="${d.b * k}" fill="#aab2bd" stroke="${c}"/>
+    <rect x="${X(-(d.a + r.dEf) / 2)}" y="${Y((d.b + r.dEf) / 2)}" width="${(d.a + r.dEf) * k}" height="${(d.b + r.dEf) * k}" fill="none" stroke="${c}" stroke-dasharray="4 3"/>
+    ${cota(X(-B / 2), Y(-Ly / 2) + 18, X(B / 2), Y(-Ly / 2) + 18, `B = ${fmt(M(B), 2)} m`, ox, Y(-Ly / 2) + 32)}
+    ${cota(X(-B / 2) - 18, Y(Ly / 2), X(-B / 2) - 18, Y(-Ly / 2), `L = ${fmt(M(Ly), 2)}`, X(-B / 2) - 22, oy + 4, "end")}
+    ${t(X(B / 2) + 6, Y(Ly / 2 - d.rec) + 4, `A<tspan font-size="8" dy="2">sx</tspan><tspan dy="-2"> ${r.fx.s ? barra(d.dbx, r.fx.s) : ""}</tspan>`, "start", 9.5)}
+    ${t(X(-B / 2 + d.rec), Y(Ly / 2) - 6, `A<tspan font-size="8" dy="2">sy</tspan><tspan dy="-2"> ${barra(d.dby, r.fy.s)}</tspan>`, "start", 9.5)}
+    ${t(ox, 28, "PLANTA", "middle", 11)}`;
+  // Elevación según x (corte por el centro)
+  const ex0 = 60 + B * k + 150, H = d.Df + d.ht, kv = Math.min(k, 230 / (H + 60));
+  const EX = (x) => ex0 + (x + B / 2) * kv, EY = (y) => 50 + (H - y) * kv;      // y desde el sello
+  const sMax = Math.max(r.nav.s1, r.nav.s2, 1e-9), pk = 46 / sMax;
+  const sIzq = Math.max(0, r.nav.s2), sDer = r.nav.s1;
+  const yP = EY(0) + 16;
+  const elev = `<line x1="${EX(-B / 2) - 30}" y1="${EY(d.Df)}" x2="${EX(B / 2) + 30}" y2="${EY(d.Df)}" stroke="#9a7b45" stroke-dasharray="5 3"/>
+    <rect x="${EX(-B / 2)}" y="${EY(d.hc)}" width="${B * kv}" height="${d.hc * kv}" fill="#e3e8ee" stroke="${c}" stroke-width="1.6"/>
+    <rect x="${EX(-d.a / 2)}" y="${EY(H)}" width="${d.a * kv}" height="${(H - d.hc) * kv}" fill="#aab2bd" stroke="${c}"/>
+    <path d="M${EX(-B / 2 + d.rec)},${EY(d.hc - d.rec)} L${EX(-B / 2 + d.rec)},${EY(d.rec)} L${EX(B / 2 - d.rec)},${EY(d.rec)} L${EX(B / 2 - d.rec)},${EY(d.hc - d.rec)}" fill="none" stroke="${arm}" stroke-width="1.6"/>
+    <polygon points="${EX(-B / 2)},${yP} ${EX(B / 2)},${yP} ${EX(B / 2)},${yP + sDer * pk} ${EX(-B / 2)},${yP + sIzq * pk}" fill="#f4e2d6" stroke="#c0703c"/>
+    ${t(EX(-B / 2) - 4, yP + sIzq * pk + 4, fmt(S(r.nav.s2), 1), "end", 9.5)}${t(EX(B / 2) + 4, yP + sDer * pk + 4, `${fmt(S(r.nav.s1), 1)} tf/m²`, "start", 9.5)}
+    ${t(EX(B / 2) + 34, EY(d.Df) + 4, `D<tspan font-size="8" dy="2">f</tspan><tspan dy="-2"> = ${fmt(M(d.Df), 2)}</tspan>`, "start", 10)}
+    ${t(EX(B / 2) + 6, EY(d.hc / 2) + 4, `h<tspan font-size="8" dy="2">c</tspan><tspan dy="-2"> = ${fmt(M(d.hc), 2)}</tspan>`, "start", 10)}
+    ${t((EX(-B / 2) + EX(B / 2)) / 2, 28, "ELEVACIÓN (según x)", "middle", 11)}`;
+  const W = ex0 + B * kv + 110, Ht = Math.max(40 + Ly * k + 50, yP + Math.max(sIzq, sDer) * pk + 30);
+  return `<svg viewBox="0 0 ${W.toFixed(0)} ${Ht.toFixed(0)}" role="img" aria-label="Planta y elevación de la zapata">
+    ${planta}${elev}
+    <text x="4" y="${(Ht - 6).toFixed(0)}" font-size="10" fill="#8a93a0">Cotas en m · perímetro crítico de punzonamiento en línea segmentada · presiones de servicio en el borde más cargado</text>
+  </svg>`;
+}
+function tikzZapata(d, r) {
+  const B = r.B, Ly = r.Ly, k = 7 / Math.max(B, Ly), f = (v) => (v * k).toFixed(3);
+  return L`\begin{figure}[H]
+\centering
+\begin{tikzpicture}[>=stealth, cota/.style={<->,thin}]
+\filldraw[fill=gray!15,draw=black,thick] (${f(-B / 2)},${f(-Ly / 2)}) rectangle (${f(B / 2)},${f(Ly / 2)});
+\filldraw[fill=gray!45,draw=black] (${f(-d.a / 2)},${f(-d.b / 2)}) rectangle (${f(d.a / 2)},${f(d.b / 2)});
+\draw[dashed] (${f(-(d.a + r.dEf) / 2)},${f(-(d.b + r.dEf) / 2)}) rectangle (${f((d.a + r.dEf) / 2)},${f((d.b + r.dEf) / 2)});
+\draw[cota] (${f(-B / 2)},${f(-Ly / 2 - 30)}) -- (${f(B / 2)},${f(-Ly / 2 - 30)}) node[midway,below]{\small $B = ${tn(M(B), 2)}$ m};
+\draw[cota] (${f(-B / 2 - 30)},${f(-Ly / 2)}) -- (${f(-B / 2 - 30)},${f(Ly / 2)}) node[midway,above,sloped]{\small $L = ${tn(M(Ly), 2)}$ m};
+\node[right] at (${f(B / 2)},${f(Ly / 4)}) {\small $A_{sx}$: ${barraTex(d.dbx, r.fx.s)}};
+\node[right] at (${f(B / 2)},${f(-Ly / 4)}) {\small $A_{sy}$: ${barraTex(d.dby, r.fy.s)}};
+\end{tikzpicture}
+\caption{Planta de la zapata con la columna y el perímetro crítico de punzonamiento (cotas en m).}
+\end{figure}
+`;
+}
+
+// ---------------------------------------------------------------------------
+// Memoria LaTeX
+// ---------------------------------------------------------------------------
+function documentoTex(d, r, cuerpo) {
+  const fecha = new Date().toLocaleDateString("es-CL", { day: "numeric", month: "long", year: "numeric" });
+  const fila = (a, b) => `${a} & ${b}\\\\`;
+  const cargaTex = (c) => L`$P = ${tn(T(c.P), 2)}$, $H_x = ${tn(T(c.Hx), 3)}$, $H_y = ${tn(T(c.Hy), 3)}$ tf; $M_x = ${tn(TM(c.Mx), 2)}$, $M_y = ${tn(TM(c.My), 2)}$ tf m`;
+  const datos = [
+    fila("Tipo", "Zapata aislada de hormigón armado bajo columna o pedestal"),
+    fila(L`Planta $B \times L$ ; altura $h_c$`, L`${tn(M(r.B), 2)} $\times$ ${tn(M(r.Ly), 2)} m ; ${tn(M(d.hc), 2)} m${d.modo === "dim" ? " (B calculado con L fijo)" : ""}`),
+    fila(L`Sello $D_f$ ; altura de aplicación $h_t$`, L`${tn(M(d.Df), 2)} m ; ${tn(M(d.ht), 2)} m sobre el terreno`),
+    fila(L`Columna $a \times b$ ; barra anclada $\phi_c$`, L`${tn(d.a, 0)} $\times$ ${tn(d.b, 0)} cm ; ${tn(d.dbc * 10, 0)} mm`),
+    fila("Suelo", L`$\sigma_{adm} = ${tn(S(d.sadm), 2)}$ tf/m$^2$, $\gamma_s = ${tn(d.gs * 1000, 2)}$ tf/m$^3$`),
+    fila("Materiales", L`$f'_c = ${tn(d.fc, 0)}$ kgf/cm$^2$, $f_y = ${tn(d.fy, 0)}$ kgf/cm$^2$, $\gamma_h = ${tn(d.gh * 1000, 2)}$ tf/m$^3$, recubrimiento ${tn(d.rec, 1)} cm`),
+    fila("Carga muerta D", cargaTex(d.D)),
+    fila("Sobrecarga L", cargaTex(d.Lv)),
+    ...(d.sismo ? [fila("Sismo E (servicio)", cargaTex(d.E))] : []),
+  ].join("\n");
+  const resumen = r.checks.map(c => `${c.k} & ${c.dem} & ${c.cap} & ${tn(c.dc, 3)} & ${estado(c.dc)}\\\\`).join("\n");
+  const resumenSis = (r.sisChecks || []).map(c => `${c.k} & ${c.dem} & ${c.cap} & ${tn(c.dc, 3)} & ${estado(c.dc)} (por verificar)\\\\`).join("\n");
+  const alcance = [
+    L`Se sigue el procedimiento del curso para zapatas aisladas: combinaciones $D + L$ (servicio) y $1.2D + 1.6L$ (mayorada), tensiones de Navier en las esquinas y diseño a corte, punzonamiento y flexión según el ACI 318-08.`,
+    L`La zapata se considera rígida. En la condición estática se exige que la resultante quede dentro del núcleo central (toda la base comprimida).`,
+    L`La altura útil se toma como $d = h_c - r$ y la cuantía mínima de flexión como $0.0018\,b\,d$, como en el curso (el ACI 318-08, 7.12.2.1, la expresa sobre $b\,h$).`,
+    L`El corte tipo viga y la flexión usan la presión del borde más cargado en todo el ancho, lo que es conservador. El punzonamiento estático usa la presión media $P_u/A_c$, sin transferencia de momento.`,
+    d.k3 === 1 ? L`En el punzonamiento la tercera expresión se toma como $\sqrt{f'_c}\,b_0\,d$, como en la pauta del curso (el ACI 318-08 indica $1.06\sqrt{f'_c}\,b_0\,d$).` : "",
+    d.sismo ? L`\textbf{El análisis sísmico es un procedimiento por verificar}: sigue una guía de integración (NCh 3171, NCh 433, NCh 2369 y ACI 318) no confirmada. Sus resultados se informan como referencia y no forman parte de la conclusión.` : L`No se considera el sismo.`,
+    L`El recubrimiento $r$ se mide hasta la cara de las barras; el ACI 318-08 (7.7.1) exige al menos 7.5 cm para hormigón colocado contra el suelo, y con emplantillado se suele usar 5 cm.`,
+    L`No se verifican los asentamientos, la capacidad de soporte del suelo (se usa la tensión admisible entregada), el aplastamiento de la columna, la armadura de traspaso, los pernos de anclaje ni la placa base; deben ser definidos por el ingeniero del proyecto.`,
+  ].filter(Boolean).map(t => `\\item ${t}`).join("\n");
+  return L`\documentclass[11pt,letterpaper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-tabla,es-noshorthands,es-nolists]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+${TEX_ESTILO}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{tikz}
+\usepackage{fancyhdr}
+\setlength{\headheight}{14pt}
+\pagestyle{fancy}
+\fancyhf{}
+\chead{Diseño de zapata aislada}
+\lfoot{Memoria de cálculo --- Zapata aislada, ACI 318-08}
+\rfoot{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+\allowdisplaybreaks
+
+\begin{document}
+
+\begin{center}
+{\Large\bfseries Memoria de Cálculo}\\[4pt]
+{\large Zapata aislada de hormigón armado}\\[2pt]
+$B \times L \times h_c = ${tn(M(r.B), 2)} \times ${tn(M(r.Ly), 2)} \times ${tn(M(d.hc), 2)}$ m\\[2pt]
+{\small ${fecha}}
+\end{center}
+
+\section{Datos de diseño}
+\begin{table}[H]
+\centering
+\caption{Datos de la zapata aislada.}
+\begin{tabular}{lp{9cm}}
+\toprule
+Parámetro & Valor\\
+\midrule
+${datos}
+\bottomrule
+\end{tabular}
+\end{table}
+
+${tikzZapata(d, r)}
+
+\section{Metodología}
+Se determinan las cargas y momentos a nivel de sello, se verifica la altura de la zapata por anclaje de la columna, se dimensiona o verifica el área basal con la tensión admisible neta y se diseñan el corte tipo viga, el punzonamiento y la flexión en ambas direcciones según el ACI 318-08, con cargas mayoradas${d.sismo ? ". Al final se incluye un análisis sísmico por verificar" : ""}.
+
+${cuerpo}
+
+\section{Alcance, hipótesis y limitaciones}
+\begin{itemize}
+${alcance}
+\end{itemize}
+
+\section{Resumen de resultados}
+\begin{table}[H]
+\centering
+\small
+\caption{Comparación demanda versus capacidad (condición estática).}
+\begin{tabular}{lllcc}
+\toprule
+Verificación & Demanda & Capacidad & D/C & Estado\\
+\midrule
+${resumen}
+\bottomrule
+\end{tabular}
+\end{table}
+${resumenSis ? L`
+\begin{table}[H]
+\centering
+\small
+\caption{Verificaciones sísmicas (procedimiento por verificar; no forman parte de la conclusión).}
+\begin{tabular}{lllcc}
+\toprule
+Verificación & Demanda & Capacidad & D/C & Estado\\
+\midrule
+${resumenSis}
+\bottomrule
+\end{tabular}
+\end{table}` : ""}
+
+\begin{table}[H]
+\centering
+\small
+\caption{Armaduras propuestas.}
+\begin{tabular}{ll}
+\toprule
+Ubicación & Armadura\\
+\midrule
+Parrilla inferior, barras según $x$ ($A_{sx}$) & ${barraTex(d.dbx, r.fx.s)}\\
+Parrilla inferior, barras según $y$ ($A_{sy}$) & ${barraTex(d.dby, r.fy.s)}\\
+${r.parrillaSup ? L`Parrilla superior (sismo, por verificar) & ${r.parrillaSup.replace("φ", "$\\phi$")}\\` : ""}
+\bottomrule
+\end{tabular}
+\end{table}
+
+Por lo tanto, como la relación demanda-capacidad máxima de la condición estática es $D/C = ${tn(r.dcMax, 3)}$ ${r.dcMax <= 1 ? L`$\le 1.0$` : L`$> 1.0$`}, la zapata \textbf{${r.ok ? "cumple" : "no cumple"}} con las verificaciones estáticas indicadas.${d.sismo ? L` La condición sísmica queda \textbf{por verificar}.` : ""}
+
+\end{document}
+`;
+}
+
+// ---------------------------------------------------------------------------
+// Cálculo e interfaz
+// ---------------------------------------------------------------------------
+function calcular() {
+  const sismo = $("sismo").checked, ver = $("modo").value === "ver";
+  $("sismoBox").classList.toggle("hidden", !sismo);
+  document.querySelector(".filaE").classList.toggle("hidden", !sismo);
+  $("boxB").classList.toggle("hidden", !ver); $("boxPaso").classList.toggle("hidden", ver);
+  limpiarInvalidos($("inputs"));
+  let malos = datosInvalidos(reglasDatos());
+  if (!malos.length) malos = datosSobreMaximo(reglasMaximos());
+  if (!malos.length && !(num("PD") + num("PL") > 0)) malos = ["La carga vertical P (D + L) debe ser de compresión"];
+  const limpiar = (msg) => {
+    $("resTitle").textContent = "Resultados";
+    $("summary").innerHTML = ""; $("memo").innerHTML = ""; $("dibujo").innerHTML = "";
+    $("verdict").innerHTML = msg;
+    ultimoTex = ""; ultimoR = null; ultimoD = null;
+  };
+  if (malos.length) { limpiar(avisoInvalidos(malos)); return; }
+  const d = leerDatos();
+  const m = new Memo();
+  const r = verificar(d, m);
+  if (r.error) { limpiar(`<div class="verdict bad">✘ ${r.error} Datos inválidos para el cálculo.</div>`); return; }
+
+  const g = (pref) => r.checks.filter(c => c.html.startsWith(pref));
+  const peor = (arr) => arr.reduce((a, c) => (c.dc > (a?.dc ?? -1) ? c : a), null);
+  const ten = peor([...g("Tensión"), ...g("Núcleo")]), cor = peor([...g("Corte"), ...g("Punz")]), fle = peor(g("Flexión")), anc = peor([...g("Peralte"), ...g("Altura"), ...g("Anclaje"), ...g("Aplastamiento")]);
+  const cards = [
+    { t: "Tensión de contacto", v: fmt(ten.dc, 3), s: `σ<sub>1a</sub> = ${fmt(S(r.nav.s1), 2)} / σ<sub>na</sub> = ${fmt(S(r.sna), 2)} tf/m²`, r: ten.dc },
+    { t: "Corte y punzonamiento", v: fmt(cor.dc, 3), s: `más exigido: ${cor.html.toLowerCase()}`, r: cor.dc },
+    { t: "Flexión", v: fmt(fle.dc, 3), s: `A<sub>sx</sub> ${barra(d.dbx, r.fx.s)} · A<sub>sy</sub> ${barra(d.dby, r.fy.s)}`, r: fle.dc },
+    { t: "Anclaje y detalle", v: fmt(anc.dc, 3), s: `más exigido: ${anc.html.toLowerCase()}`, r: anc.dc },
+  ];
+  $("summary").innerHTML = cards.map(c => {
+    const w = Math.min(100, Math.max(0, c.r * 100));
+    return `<div class="card"><div class="t">${c.t}</div><div class="v">${c.v}</div>
+      <div class="bar ${c.r > 1 + 1e-9 ? "bad" : ""}"><i style="width:${w}%"></i></div><div class="s">${c.s}</div></div>`;
+  }).join("") + (r.sis ? `<div class="card"><div class="t">Sismo (por verificar)</div><div class="v">${(Number.isFinite(r.sis.dcSis) ? fmt(r.sis.dcSis, 3) : "∞")}</div><div class="s">D/C sísmico máximo; no entra en el veredicto</div></div>` : "");
+
+  $("resTitle").textContent = `Resultados — Zapata aislada · ${fmt(M(r.B), 2)} × ${fmt(M(r.Ly), 2)} × ${fmt(M(d.hc), 2)} m`;
+  const rm = Number.isFinite(r.dcMax) ? fmt(r.dcMax, 3) : "∞";
+  const fallas = r.checks.filter(c => c.dc > 1 + 1e-9).map(c => c.html.toLowerCase());
+  $("verdict").innerHTML = `<div class="verdict ${r.ok ? "ok" : "bad"}">${r.ok ? "✔ La zapata CUMPLE en la condición estática" : `✘ La zapata NO CUMPLE (${fallas.join(", ")})`} — razón máxima = ${rm}${r.sis ? " · sismo SIN VERIFICAR" : ""}</div>`
+    + (r.sis ? `<div class="note">⚠ Sismo: procedimiento <b>por verificar</b>, no incluido en el veredicto. D/C sísmico máximo = ${(Number.isFinite(r.sis.dcSis) ? fmt(r.sis.dcSis, 3) : "∞")}${r.parrillaSup ? ` · requiere parrilla superior ${r.parrillaSup}` : ""}.</div>` : "");
+  if (d.modo === "dim") $("B").value = fmt(M(r.B), 2);
+  $("dibujo").innerHTML = svgZapata(d, r);
+  $("memo").innerHTML = m.html();
+
+  ultimoR = r; ultimoD = d;
+  ultimoTex = documentoTex(d, r, m.texto());
+  ultimoNombre = `memoria_zapata_${fmt(M(r.B), 2).replace(".", "_")}x${fmt(M(r.Ly), 2).replace(".", "_")}.tex`;
+}
+
+// ---------------------------------------------------------------------------
+// Plano DXF en lámina con viñeta (dxf.js): planta con la parrilla, corte A-A, cuadro de armaduras y notas
+// ---------------------------------------------------------------------------
+function descargarDXF() {
+  if (!ultimoTex || !ultimoR) { alert("Corrija los datos inválidos antes de descargar el plano."); return; }
+  const d = ultimoD, r = ultimoR, k = 10;                     // cm → mm
+  const B = r.B * k, Ly = r.Ly * k, hc = d.hc * k, Df = d.Df * k, ht = d.ht * k, a = d.a * k, b = d.b * k, rec = d.rec * k;
+  const dbx = d.dbx * 10, dby = d.dby * 10, sx = r.fx.s * k, sy = r.fy.s * k;
+  const ø = (t) => String(t).replace(/φ/g, "ø");
+  const pata = (db) => Math.max(0, Math.min(12 * db, hc - 2 * rec - 2 * db));
+  const grado = { 170: "G17", 200: "G20", 250: "G25", 300: "G30", 350: "G35", 400: "G40" }[d.fc] || `f'c = ${d.fc} kgf/cm²`;
+  const pl = new PlanoDXF({ titulo: `ZAPATA AISLADA ${fmt(M(r.B), 2)} x ${fmt(M(r.Ly), 2)} m`, contenido: "planta, corte, armaduras y especificaciones" });
+  pl.vista({
+    titulo: "Planta", bbox: [-B / 2 - 400, -Ly / 2 - 400, B / 2 + 400, Ly / 2 + 300], objetivo: [200, 200], margen: [22, 20, 40, 10],
+    dibujar: (v) => {
+      v.poly("CONTORNO", [[-B / 2, -Ly / 2], [B / 2, -Ly / 2], [B / 2, Ly / 2], [-B / 2, Ly / 2]]);
+      v.poly("CONTORNO", [[-a / 2, -b / 2], [a / 2, -b / 2], [a / 2, b / 2], [-a / 2, b / 2]]);
+      v.line("EJES", -B / 2 - 300, 0, B / 2 + 300, 0); v.line("EJES", 0, -Ly / 2 - 300, 0, Ly / 2 + 300);
+      // Parrilla inferior: A_sx (paralelas a B) y A_sy (paralelas a L), a su separación real
+      for (let y = -Ly / 2 + rec; y <= Ly / 2 - rec + 1e-6; y += sx) v.line("ARM_INFERIOR", -B / 2 + rec, y, B / 2 - rec, y);
+      for (let x = -B / 2 + rec; x <= B / 2 - rec + 1e-6; x += sy) v.line("ARM_INFERIOR", x, -Ly / 2 + rec, x, Ly / 2 - rec);
+      v.line("SECCION", -B / 2 - 250, 0, -B / 2 - 80, 0); v.line("SECCION", B / 2 + 80, 0, B / 2 + 250, 0);
+      v.text("SECCION", -B / 2 - 250, v.pp(2), 3, "A"); v.text("SECCION", B / 2 + 250, v.pp(2), 3, "A", 2);
+      v.referencia(B / 4, -Ly / 2 + rec + sx, B / 2 + v.pp(8), -Ly / 2 + v.pp(10), `Asx ${ø(barra(d.dbx, r.fx.s))} inf.`, "ARM_INFERIOR");
+      v.referencia(-B / 2 + rec + sy, Ly / 4, B / 2 + v.pp(8), Ly / 2 - v.pp(4), `Asy ${ø(barra(d.dby, r.fy.s))} inf.`, "ARM_INFERIOR");
+      v.cotaH(-B / 2, B / 2, -Ly / 2, -12, `B = ${fmtCota(B)}`); v.cotaH(-a / 2, a / 2, b / 2, 6);
+      v.cotaV(-Ly / 2, Ly / 2, -B / 2, -12, `L = ${fmtCota(Ly)}`); v.cotaV(-b / 2, b / 2, a / 2, 6);
+    },
+  });
+  pl.vista({
+    titulo: "Corte A-A", bbox: [-B / 2 - 400, -200, B / 2 + 400, Df + ht + 300], objetivo: [200, 110], margen: [22, 16, 40, 10],
+    dibujar: (v) => {
+      v.poly("CONTORNO", [[-B / 2, 0], [B / 2, 0], [B / 2, hc], [a / 2, hc], [a / 2, Df + ht], [-a / 2, Df + ht], [-a / 2, hc], [-B / 2, hc]]);
+      v.line("NIVELES", -B / 2 - 400, Df, -a / 2, Df); v.line("NIVELES", a / 2, Df, B / 2 + 400, Df);
+      v.text("TEXTOS", -B / 2 - 400, Df + v.pp(1.5), 2, "Terreno natural");
+      v.nivel(B / 2 + v.pp(6), 0, "-" + fmt(M(d.Df), 2) + " (sello)"); v.nivel(B / 2 + v.pp(6), Df, "+-0.00");
+      const yI = rec + dby + dbx / 2;
+      v.poly("ARM_INFERIOR", [[-B / 2 + rec, yI + pata(dbx)], [-B / 2 + rec, yI], [B / 2 - rec, yI], [B / 2 - rec, yI + pata(dbx)]], false);
+      for (let x = -B / 2 + rec; x <= B / 2 - rec + 1e-6; x += sy) v.punto("ARM_INFERIOR", x, rec + dby / 2, dby);
+      v.referencia(B / 4, yI, B / 2 + v.pp(8), -v.pp(6), `Asx ${ø(barra(d.dbx, r.fx.s))}`, "ARM_INFERIOR");
+      v.cotaH(-B / 2, B / 2, 0, -10, `B = ${fmtCota(B)}`);
+      v.cotaV(0, hc, -B / 2, -8, fmtCota(hc)); v.cotaV(0, Df, -B / 2, -16, `Df = ${fmtCota(Df)}`);
+      if (ht > 0) v.cotaV(Df, Df + ht, a / 2, 8, fmtCota(ht));
+      v.text("TEXTOS", 0, Df + ht + v.pp(4), 2.2, `Columna o pedestal ${fmt(d.a, 0)} x ${fmt(d.b, 0)} cm`, 1, 0);
+      v.achurado(-B / 2 - v.pp(12), -v.pp(4), B / 2 + v.pp(12), 0, 3);
+    },
+  });
+  const nX = Math.floor((Ly - 2 * rec) / sx) + 1, nY = Math.floor((B - 2 * rec) / sy) + 1;
+  const largo = (Lb, db) => fmtCota(Lb - 2 * rec + 2 * pata(db));
+  const filas = [
+    ["Asx", "Parrilla inferior, paralelas a B", ø(barra(d.dbx, r.fx.s)), String(nX), largo(B, dbx)],
+    ["Asy", "Parrilla inferior, paralelas a L", ø(barra(d.dby, r.fy.s)), String(nY), largo(Ly, dby)],
+    ...(r.parrillaSup ? [["Sup", "Parrilla superior (sismo, por verificar)", ø(r.parrillaSup), "-", "-"]] : []),
+  ];
+  pl.tabla({ titulo: "Cuadro de armaduras", columnas: [["Marca", 12], ["Ubicación", 56], ["Armadura", 28], ["Cant.", 12], ["Largo [mm]", 20]], filas,
+    nota: "ø = diámetro en mm; @ = separación en cm. Largo con patas de 12 db (ACI 318-08 Cap. 12)." });
+  pl.notas([
+    "Cotas en mm salvo indicación; niveles en m. No medir sobre el plano.",
+    `Hormigón ${grado} según NCh 170 (f'c = ${d.fc} kgf/cm²); acero de refuerzo ${d.fy >= 4200 ? "A630-420H" : "A440-280H"} según NCh 204 (fy = ${d.fy} kgf/cm²). Recubrimiento libre ${fmt(d.rec, 1)} cm.`,
+    `Diseño según ACI 318-08 y NCh 430. Tensión admisible del suelo ${fmt(S(d.sadm), 1)} tf/m²; tensión máxima de servicio ${fmt(S(r.nav.s1), 2)} tf/m² (neta admisible ${fmt(S(r.sna), 2)} tf/m²). Validar con el estudio de mecánica de suelos.`,
+    `Razón demanda/capacidad máxima ${Number.isFinite(r.dcMax) ? fmt(r.dcMax, 3) : "infinita"} (${r.ok ? "cumple" : "NO CUMPLE"}) en la condición estática.${d.sismo ? " Condición sísmica: procedimiento POR VERIFICAR." : ""}`,
+    "Emplantillado de hormigón pobre de 5 cm bajo la zapata. Sello de fundación limpio y compactado, aprobado por el mecánico de suelos antes de hormigonar.",
+    "Pernos de anclaje, placa base y pedestal según el proyecto de la columna.",
+  ]);
+  descargarPlano(pl, `plano_zapata_${fmt(M(r.B), 2).replace(".", "_")}x${fmt(M(r.Ly), 2).replace(".", "_")}.dxf`);
+}
+
+function init() {
+  $("inputs").addEventListener("input", (e) => { if (e.target.tagName === "INPUT" && e.target.type !== "checkbox") calcular(); });
+  $("inputs").addEventListener("change", () => calcular());
+  calcular();
+}
+init();
+
+// ---------------------------------------------------------------------------
+// Vista 2D / 3D (modelo3d.js): zapata, pedestal y parrilla inferior a escala real (x = B, y = vertical, z = L; mm)
+// ---------------------------------------------------------------------------
+window.Zona2D3D?.montar({
+  antes: document.querySelector(".toolbar"),
+  fuente2D: () => $("dibujo").querySelector("svg"),
+  observar: [$("verdict"), $("dibujo")],
+  capas: [["hormigon", "Hormigón"], ["suelo", "Relleno"]],
+  nota: "zapata y pedestal hasta h_t sobre el terreno; en naranja si no cumple",
+  construir: () => {
+    if (!ultimoTex || !ultimoR) return null;
+    const d = ultimoD, r = ultimoR, k = 10;
+    const B = r.B * k, Ly = r.Ly * k, hc = d.hc * k, Df = d.Df * k, ht = d.ht * k, a = d.a * k, b = d.b * k, rec = d.rec * k;
+    const dbx = d.dbx * 10, dby = d.dby * 10, sx = r.fx.s * k, sy = r.fy.s * k;
+    const pata = (db) => Math.max(0, Math.min(12 * db, hc - 2 * rec - 2 * db));
+    const e = new Geo3D.Escena(), ARM = { mat: "armadura" }, mat = r.ok ? "hormigon" : "critico";
+    e.caja({ mat, alfa: 0.32, grupo: "hormigon" }, -B / 2, B / 2, 0, hc, -Ly / 2, Ly / 2);
+    e.caja({ mat: "hormigon", alfa: 0.6, grupo: "hormigon" }, -a / 2, a / 2, hc, Df + ht, -b / 2, b / 2);
+    if (Df > hc) e.caja({ mat: "relleno", alfa: 0.18, grupo: "suelo" }, -B / 2, B / 2, hc, Df, -Ly / 2, Ly / 2);
+    const yX = rec + dby + dbx / 2, yY = rec + dby / 2;
+    for (let z = -Ly / 2 + rec; z <= Ly / 2 - rec + 1e-6; z += sx)
+      e.barra(ARM, [[-B / 2 + rec, yX + pata(dbx), z], [-B / 2 + rec, yX, z], [B / 2 - rec, yX, z], [B / 2 - rec, yX + pata(dbx), z]], dbx / 2);
+    for (let x = -B / 2 + rec; x <= B / 2 - rec + 1e-6; x += sy)
+      e.barra(ARM, [[x, yY + pata(dby), -Ly / 2 + rec], [x, yY, -Ly / 2 + rec], [x, yY, Ly / 2 - rec], [x, yY + pata(dby), Ly / 2 - rec]], dby / 2);
+    return e;
+  },
+});
+// Integración con proyectos (proyectos.js): datos para guardar y restaurar este cálculo
+window.AURA_MEMO = {
+  tipo: "Zapata aislada",
+  elemento: () => "", tex: () => ultimoTex, nombre: () => ultimoNombre,
+  recalcular: () => calcular(),
+};
+</script>
+<script src="proyectos.js?v=37"></script>
+<script>
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
+</script>
+</body>
+</html>
