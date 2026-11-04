@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#3d4450">
+<meta name="theme-color" content="#00008B">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="AURA">
@@ -11,44 +11,83 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <title>Acceso — AURA</title>
+<!-- Antes de los estilos propios: los botones y campos de esta página tienen su propio tamaño -->
+<link rel="stylesheet" href="aura.css?v=2">
 <style>
   html { -webkit-text-size-adjust: 100%; }
   @media (max-width: 900px) { input { font-size: 16px !important; } }
-  :root { --bg: #f4f5f7; --panel: #fff; --ink: #1d2330; --muted: #5f6b7a; --line: #dde1e7; --head: #3d4450; --calc: #e8711c; }
+  :root { --ink: #141a26; --muted: #556070; --line: #d9dde3; }
   * { box-sizing: border-box; }
-  body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--ink); font: 14px/1.45 "Segoe UI", system-ui, -apple-system, sans-serif; display: flex; flex-direction: column; }
-  header { background: var(--head); color: #fff; padding: 14px 24px; }
-  header h1 { margin: 0; font-size: 19px; font-weight: 600; }
-  header span { color: #c9ced6; font-size: 13px; }
-  main { flex: 1; display: flex; align-items: flex-start; justify-content: center; padding: 48px 16px; }
-  .caja { width: min(400px, 100%); background: var(--panel); border: 1px solid var(--line); border-top: 4px solid var(--calc); border-radius: 10px; padding: 22px 24px 20px; }
-  .caja h2 { margin: 0 0 4px; font-size: 19px; }
-  .caja p.sub { margin: 0 0 16px; color: var(--muted); font-size: 13px; }
-  .tabs { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid var(--line); }
-  .tabs button { font: inherit; background: none; border: none; padding: 8px 12px; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; }
-  .tabs button.on { color: var(--ink); border-bottom-color: var(--calc); font-weight: 600; }
-  form { display: grid; gap: 12px; }
-  label { display: grid; gap: 4px; font-size: 12px; color: var(--muted); }
-  input { font: inherit; padding: 9px 11px; border: 1px solid var(--line); border-radius: 6px; color: var(--ink); }
-  input:focus { outline: 2px solid var(--calc); outline-offset: -1px; }
-  .btn { font: inherit; font-weight: 600; padding: 10px 14px; border-radius: 6px; border: 1px solid var(--calc); background: var(--calc); color: #fff; cursor: pointer; }
+  body { margin: 0; min-height: 100vh; color: var(--ink); font: 14px/1.45 "Segoe UI", system-ui, -apple-system, sans-serif; }
+  .acceso { min-height: 100vh; display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(380px, 1fr); }
+
+  /* Vitrina: logo, lema y modelo 3D sobre retícula de plano */
+  .vitrina { position: relative; display: flex; flex-direction: column; padding: 32px 40px 28px; overflow: hidden;
+             background-color: #f6f7fb; border-right: 1px solid var(--line);
+             background-image: linear-gradient(rgba(0,0,139,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,139,.05) 1px, transparent 1px);
+             background-size: 28px 28px; }
+  .vitrina .logo { height: 64px; }
+  .vitrina h1 { margin: 26px 0 0; font-size: 34px; line-height: 1.12; letter-spacing: -.015em; color: var(--azul); max-width: 520px; }
+  .vitrina p.lema { margin: 10px 0 0; color: var(--muted); font-size: 15px; max-width: 500px; }
+  .escena { position: relative; flex: 1; min-height: 320px; margin-top: 10px; }
+  .escena canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .visor-estado { position: absolute; left: 0; right: 0; top: 45%; text-align: center; font-size: 13px; color: var(--muted); pointer-events: none; }
+  .vitrina .pie { display: flex; align-items: center; justify-content: space-between; gap: 6px 10px; flex-wrap: wrap; }
+  .vitrina .pie small { color: var(--muted); font-size: 12px; }
+  .vitrina .pie .credito { font-size: 11px; }
+  .vitrina .pie a { color: var(--muted); }
+
+  /* Formulario */
+  .lado { display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 40px 28px 24px; background: var(--acero); }
+  .caja { width: min(400px, 100%); background: var(--nieve); border: 1px solid var(--line); border-radius: 18px; padding: 28px 28px 24px; box-shadow: 0 12px 40px rgba(10,16,48,.10); }
+  .caja h2 { margin: 0 0 4px; font-size: 22px; color: var(--azul); }
+  .caja p.sub { margin: 0 0 18px; color: var(--muted); font-size: 13.5px; }
+  .tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; margin-bottom: 18px; background: var(--acero); border-radius: 10px; padding: 3px; }
+  .tabs button { font: inherit; font-weight: 600; background: none; border: none; padding: 8px 12px; cursor: pointer; color: #3b4556; border-radius: 8px; }
+  .tabs button.on { color: #fff; background: var(--azul); box-shadow: 0 1px 3px rgba(0,0,60,.3); }
+  form { display: grid; gap: 14px; }
+  label { display: grid; gap: 5px; font-size: 12.5px; font-weight: 500; color: var(--muted); }
+  input { font: inherit; padding: 11px 12px; border: 1px solid #cfd5dd; border-radius: 9px; color: var(--ink); background: #fff; transition: border-color .15s, box-shadow .15s; }
+  input:focus { outline: none; border-color: var(--azul); box-shadow: 0 0 0 4px rgba(0,0,139,.13); }
+  .btn { font: inherit; font-size: 15px; font-weight: 600; padding: 12px 14px; border-radius: 9px; border: 1px solid var(--azul); background: var(--azul); color: #fff; cursor: pointer; transition: background .15s; }
+  .btn:hover:not(:disabled) { background: var(--azul-hover); }
   .btn:disabled { opacity: .6; cursor: default; }
-  .link { background: none; border: none; color: #2a6fb0; cursor: pointer; font: inherit; font-size: 13px; padding: 0; justify-self: start; }
-  .msg { font-size: 13px; padding: 9px 11px; border-radius: 6px; display: none; }
+  .link { background: none; border: none; color: var(--azul); cursor: pointer; font: inherit; font-size: 13px; padding: 0; justify-self: start; text-decoration: underline; text-underline-offset: 3px; }
+  .msg { font-size: 13px; padding: 10px 12px; border-radius: 9px; display: none; }
   .msg.err { display: block; background: #fdecea; color: #b3261e; border: 1px solid #f3c2bd; }
   .msg.ok { display: block; background: #e3f3ea; color: #1e7a46; border: 1px solid #bfe3cd; }
   .hidden { display: none !important; }
-  footer { text-align: center; color: var(--muted); font-size: 12px; padding: 10px 0 24px; }
+  footer { text-align: center; color: var(--muted); font-size: 12px; padding: 18px 0 0; }
+
+  @media (max-width: 860px) {
+    .acceso { grid-template-columns: 1fr; }
+    .vitrina { padding: 20px 18px 14px; border-right: 0; border-bottom: 1px solid var(--line); }
+    .vitrina .logo { height: 44px; }
+    .vitrina h1 { font-size: 24px; margin-top: 14px; }
+    .vitrina p.lema { display: none; }
+    .escena { flex: none; height: 240px; min-height: 0; }
+    .lado { padding: 24px 16px 20px; justify-content: flex-start; }
+  }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js" integrity="sha384-K0oxqktRvaThvYgGL4G+OK2Ih6VS6Uyu7j3+7WJgp/uWM0Yv6Xi4YEiw0BB+mPfi" crossorigin="anonymous"></script>
 <script src="nube.js?v=28"></script>
 </head>
 <body>
-<header>
-  <h1>AURA — Ingeniería estructural</h1>
-  <span>Cálculo de elementos, espectros de diseño sísmico y diseño vial</span>
-</header>
-<main>
+<div class="acceso">
+<section class="vitrina">
+  <span class="logo"><img src="icons/logo-mmp.webp" alt="MMP"></span>
+  <h1>Ingeniería estructural</h1>
+  <p class="lema">Cálculo de elementos de acero, hormigón y madera, espectros de diseño sísmico y diseño vial, con memoria de cálculo lista para entregar.</p>
+  <div class="escena">
+    <canvas id="modelo3d" role="img" aria-label="Modelo 3D de una torre de oficinas girando"></canvas>
+    <span class="visor-estado" id="visorEstado">Cargando modelo 3D…</span>
+  </div>
+  <div class="pie">
+    <small>Arrastre para girar</small>
+    <small class="credito"><a href="https://sketchfab.com/3d-models/skyscraper-tower-8c141fda071f4f6a927f4d7047f48ec7" target="_blank" rel="noopener">«Skyscraper Tower»</a> de VertaScan · <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a></small>
+  </div>
+</section>
+<main class="lado">
   <div class="caja">
     <h2 id="titulo">Bienvenido</h2>
     <p class="sub" id="subtitulo">Ingrese con su cuenta para acceder a sus proyectos.</p>
@@ -85,8 +124,16 @@
       <button class="btn" type="submit">Guardar nueva contraseña</button>
     </form>
   </div>
+  <footer>Herramienta de apoyo académico. Verifique siempre los resultados.</footer>
 </main>
-<footer>Herramienta de apoyo académico. Verifique siempre los resultados.</footer>
+</div>
+<script src="modelo3d.js?v=3"></script>
+<script>
+"use strict";
+Modelo3D.montar(document.getElementById("modelo3d"), { url: "modelos/torre.glb" }).listo
+  .then(() => document.getElementById("visorEstado").remove())
+  .catch((e) => { console.error(e); document.getElementById("visorEstado").textContent = "No se pudo mostrar el modelo 3D."; });
+</script>
 
 <script>
 "use strict";
@@ -112,7 +159,7 @@ async function enviar(form, fn) {
   try { await fn(); } catch (e) { mensaje(errorEnEspanol(e)); } finally { b.disabled = false; }
 }
 // Solo se vuelve a páginas propias de la app (lista blanca); cualquier otro valor va al inicio
-const PAGINAS_APP = ["index.html", "acero.html", "hormigon.html", "madera.html", "mle.html", "espectros.html", "vial.html", "rigido.html"];
+const PAGINAS_APP = ["index.html", "acero.html", "reticulada.html", "hormigon.html", "madera.html", "mle.html", "espectros.html", "vial.html", "rigido.html"];
 const destino = () => {
   const v = new URLSearchParams(location.search).get("volver");
   if (!v) return "index.html";
