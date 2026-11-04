@@ -9,7 +9,9 @@ Todo el texto de la interfaz, las memorias y los commits va en **español (Chile
 - `index.html`: inicio con buscador y filtros de herramientas, visor 3D y proyectos.
 - `login.html`: acceso (Supabase) con visor 3D.
 - `aura.css`: estilo común de pantalla (colores, cabecera, logo MMP, paneles y campos). Se carga después de los estilos de cada página (en `login.html`, antes) y solo aplica en `@media screen`, salvo el recorte del logo.
-  - Colores: azul `#00008B` (barras y botones principales), gris acero `#e3e6ea` (fondo), blanco nieve `#fffafa` (paneles) y naranja `#bf4b00` (acciones críticas y máximos).
+  - Colores: azul `#00008B` (barra lateral y botones principales), gris acero `#e3e6ea` (fondo), blanco nieve `#fffafa` (paneles) y naranja `#e65c00` (acciones críticas y máximos).
+  - Línea técnica y sobria: variables en `:root` (`--tinta`, `--tenue`, `--linea`, `--verde`, `--ambar`, radios `--r-s/m/l` de 4, 6 y 8 px), superficies planas, sin degradados ni sombras salvo en el menú móvil y los diálogos. Usar estas variables en vez de valores sueltos.
+- `lateral.js`: barra lateral de navegación (inicio, mis proyectos y todas las herramientas agrupadas por material, la página actual marcada con `aria-current`). Se carga en el `<head>` después de `aura.css` (en todas las páginas menos `login.html`) para reservar su espacio antes de pintar. En escritorio se puede contraer a íconos (`localStorage` `auraLateralCorta`; entre 900 y 1280 px va contraída por defecto, sin guardar la elección); bajo 900 px es un menú que se abre con el botón de la cabecera (modal: el resto de la página queda `inert`; Escape o el velo lo cierran). Agrega el enlace "Saltar al contenido". Muestra el proyecto activo (abre el panel de `proyectos.js`, cuya pestaña derecha se oculta en escritorio) y lleva al pie el usuario y "Cerrar sesión" que `proyectos.js` pone en la cabecera. Al agregar una página de cálculo, sumarla también a `GRUPOS` de `lateral.js`.
 - `modelo3d.js`: visor WebGL propio, sin dependencias, para modelos `.glb` sin texturas. Lo usan el inicio y el acceso con `modelos/torre.glb`.
   - `Geo3D.Escena`: geometría paramétrica en mm (`caja`, `extruir` de un contorno con `aPunto(u, v, w)`, `tubo`, `barra` por polilínea, `dobleT` con acuerdos) con colores por material (`Geo3D.MAT`: acero, hormigón, armadura, madera, MLE, OSB, placa, capas de pavimento; `critico` = naranja) y grupos que se pueden ocultar.
   - `Zona2D3D.montar({ antes, fuente2D, construir, observar, capas })`: zona "Vista del elemento" con la copia del dibujo 2D de la página y el modelo 3D (2D, 3D o ambos; vistas iso/frente/lado/planta, zoom, capas). Se actualiza sola con un `MutationObserver` sobre los resultados: no hay que tocar las funciones de cálculo. La copia 2D lleva `data-sin-figura` para no alterar las figuras de la memoria. La usan todas las páginas de cálculo menos espectros; cada una arma su modelo desde los resultados ya guardados (`ultimoViga`, `ultimoLosa`, `ultimoMadera`, `ultimoMLE`, `ultimoR`, `ultimoRes`, `ultimoD`, `ultimoPav`).
@@ -83,14 +85,14 @@ Todo el texto de la interfaz, las memorias y los commits va en **español (Chile
 
 ## Al agregar o cambiar una página de cálculo
 
-1. **Página:** copiar la cabecera (con el logo MMP) y los estilos de `acero.html`, cargar `aura.css` al final del `<head>` y `tablero.js` después de `memo.js`, para mantener el aspecto y la presentación de resultados. Las marcas `.tag.bad` que no sean una falla (clasificaciones, recortes constructivos) deben agregarse a `INFORMATIVAS` en `tablero.js`.
+1. **Página:** copiar la cabecera (con el logo MMP) y los estilos de `acero.html`, cargar `aura.css` y `lateral.js` al final del `<head>` y `tablero.js` después de `memo.js`, para mantener el aspecto y la presentación de resultados. Las marcas `.tag.bad` que no sean una falla (clasificaciones, recortes constructivos) deben agregarse a `INFORMATIVAS` en `tablero.js`.
 2. **Plano y memoria:** botones "Descargar plano (.dxf)" (con `dxf.js`) y "Descargar memoria (.zip)" (`descargarZipMemoria` de `memo.js`).
 3. **Integración con proyectos:** definir `window.AURA_MEMO = { tipo, elemento(), tex(), nombre(), recalcular(valores) }`. Todos los campos del formulario deben estar dentro de `<main>` y tener `id`, porque así se guardan y se restauran.
 4. **Registro en la app:**
    - agregar la página a `PAGINAS_CALCULO` en `proyectos.js`;
    - agregar el enlace en `index.html`;
    - agregarla a `ARCHIVOS` en `sw.js`.
-5. **Versiones y caché:** al publicar cambios, subir `VERSION` en `sw.js` para que los dispositivos actualicen la copia sin conexión. Si se modifica `memo.js`, `proyectos.js`, `aura.css`, `modelo3d.js`, `dxf.js` o `tablero.js`, subir también el `?v=N` con que lo cargan las páginas.
+5. **Versiones y caché:** al publicar cambios, subir `VERSION` en `sw.js` para que los dispositivos actualicen la copia sin conexión. Si se modifica `memo.js`, `proyectos.js`, `aura.css`, `modelo3d.js`, `dxf.js`, `tablero.js` o `lateral.js`, subir también el `?v=N` con que lo cargan las páginas.
 6. **Recursos externos:** solo KaTeX (cdnjs) y supabase-js (jsdelivr). No agregar otras dependencias externas.
 
 ## Catálogos de perfiles

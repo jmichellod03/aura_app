@@ -29,10 +29,6 @@
   html { scroll-behavior: smooth; scroll-padding-top: 76px; }
   body { margin: 0; color: var(--ink); font: 14px/1.45 "Segoe UI", system-ui, -apple-system, sans-serif; min-height: 100vh; }
 
-  header nav { display: flex; gap: 4px; margin-left: 18px; }
-  header nav a { color: #dfe1f5; text-decoration: none; font-size: 13.5px; padding: 6px 12px; border-radius: 999px; }
-  header nav a:hover { background: rgba(255,255,255,.12); color: #fff; }
-  @media (max-width: 560px) { header nav { display: none; } }
 
   /* ---------- Portada: herramientas + visor 3D ---------- */
   .inicio { background-color: #f6f7fb;
@@ -42,41 +38,41 @@
                grid-template-areas: "cab visor" "herr visor"; align-items: start; }
   .cab { grid-area: cab; }
   .eyebrow { margin: 0 0 6px; font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--naranja); }
-  .cab h1 { margin: 0; font-size: 32px; line-height: 1.15; letter-spacing: -.015em; color: var(--azul); }
+  .cab h1 { margin: 0; font-size: 30px; line-height: 1.15; letter-spacing: -.02em; color: var(--tinta); }
   .cab p.lead { margin: 8px 0 18px; color: var(--muted); font-size: 15px; max-width: 620px; }
 
   .buscar { position: relative; display: block; max-width: 620px; }
   .buscar svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; color: #7b8494; pointer-events: none; }
-  .buscar input { width: 100%; font: inherit; font-size: 15px; padding: 13px 14px 13px 42px; border: 1px solid #cfd5dd; border-radius: 12px; background: #fff; box-shadow: var(--sombra); }
+  .buscar input { width: 100%; font: inherit; font-size: 15px; padding: 13px 14px 13px 42px; border: 1px solid #cfd5dd; border-radius: var(--r-m); background: #fff; }
   .buscar input:focus { outline: none; border-color: var(--azul); box-shadow: 0 0 0 4px rgba(0,0,139,.13); }
   .filtros { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0 0; }
-  .filtros button { font: inherit; font-size: 13px; font-weight: 600; padding: 6px 14px; border-radius: 999px; border: 1px solid #cfd5dd; background: #fff; color: #3b4556; cursor: pointer; transition: all .15s; }
+  .filtros button { font: inherit; font-size: 13px; font-weight: 600; padding: 5px 12px; border-radius: var(--r-m); border: 1px solid #cfd5dd; background: #fff; color: #3b4556; cursor: pointer; transition: all .15s; }
   .filtros button:hover { border-color: var(--azul); color: var(--azul); }
   .filtros button[aria-pressed="true"] { background: var(--azul); border-color: var(--azul); color: #fff; }
 
   .herr { grid-area: herr; }
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; }
-  .tool { position: relative; display: flex; gap: 14px; align-items: flex-start; padding: 16px; background: #fff; border: 1px solid var(--line); border-radius: 14px;
-          text-decoration: none; color: var(--ink); box-shadow: var(--sombra); transition: transform .15s, box-shadow .15s, border-color .15s; }
-  a.tool:hover, a.tool:focus-visible { transform: translateY(-2px); border-color: var(--azul); box-shadow: 0 8px 24px rgba(0,0,139,.13); outline: none; }
-  .tool .ico { flex: 0 0 44px; width: 44px; height: 44px; border-radius: 11px; background: var(--azul-tinte); display: grid; place-items: center; }
+  .tool { position: relative; display: flex; gap: 14px; align-items: flex-start; padding: 16px; background: #fff; border: 1px solid var(--line); border-radius: var(--r-l);
+          text-decoration: none; color: var(--ink); transition: border-color .15s, background .15s; }
+  a.tool:hover, a.tool:focus-visible { border-color: var(--azul); background: #fbfbff; outline: none; }
+  .tool .ico { flex: 0 0 44px; width: 44px; height: 44px; border-radius: var(--r-m); background: var(--azul-tinte); display: grid; place-items: center; }
   .tool .ico svg { width: 28px; height: 28px; }
   .tool .tx { flex: 1; min-width: 0; }
   .tool b { display: block; font-size: 15px; }
   .tool small { display: block; color: var(--muted); font-size: 12.5px; margin-top: 2px; }
-  .tool .norma { display: inline-block; margin-top: 8px; font-size: 11px; font-weight: 700; letter-spacing: .03em; color: var(--azul); background: var(--azul-tinte); border-radius: 5px; padding: 2px 7px; }
+  .tool .norma { display: inline-block; margin-top: 8px; font-size: 11px; font-weight: 700; letter-spacing: .03em; color: var(--azul); background: var(--azul-tinte); border-radius: var(--r-s); padding: 2px 7px; }
   a.tool::after { content: "→"; position: absolute; right: 14px; top: 14px; color: #a3abb8; font-weight: 700; transition: color .15s, transform .15s; }
   a.tool:hover::after { color: var(--azul); transform: translateX(3px); }
   .tool .normas { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-  .tool .normas a { font-size: 12px; font-weight: 600; text-decoration: none; color: var(--azul); border: 1px solid #c5cae9; border-radius: 7px; padding: 4px 9px; background: #fff; transition: all .15s; }
+  .tool .normas a { font-size: 12px; font-weight: 600; text-decoration: none; color: var(--azul); border: 1px solid #c5cae9; border-radius: var(--r-s); padding: 4px 9px; background: #fff; transition: all .15s; }
   .tool .normas a:hover, .tool .normas a:focus-visible { background: var(--azul); color: #fff; border-color: var(--azul); outline: none; }
   .tool.ancha { grid-column: 1 / -1; }
   .tool[hidden] { display: none; }
-  .sinres { display: none; padding: 22px; text-align: center; color: var(--muted); background: #fff; border: 1px dashed var(--acero-osc); border-radius: 14px; }
+  .sinres { display: none; padding: 22px; text-align: center; color: var(--muted); background: #fff; border: 1px dashed var(--acero-osc); border-radius: var(--r-l); }
 
-  .visor { grid-area: visor; position: sticky; top: 80px; background: #fff; border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--sombra); overflow: hidden; }
+  .visor { grid-area: visor; position: sticky; top: 24px; background: #fff; border: 1px solid var(--line); border-radius: var(--r-l); overflow: hidden; }
   .visor canvas { display: block; width: 100%; height: 440px;
-                  background: radial-gradient(ellipse at 50% 40%, #ffffff 0%, #e9ecf4 100%); }
+                  background: #f3f5f8; }
   .visor-pie { display: flex; align-items: center; justify-content: space-between; gap: 6px 10px; padding: 10px 14px; border-top: 1px solid var(--line); flex-wrap: wrap; }
   .visor-pie small { color: var(--muted); font-size: 12px; }
   .visor-pie .credito { font-size: 11px; }
@@ -99,44 +95,44 @@
   .zona-cab p { margin: 0; color: var(--muted); font-size: 13px; flex-basis: 100%; order: 3; }
   .zona-cab .pb { margin-left: auto; }
 
-  .pb { font: inherit; font-size: 13px; font-weight: 600; padding: 8px 15px; border-radius: 8px; border: 1px solid var(--azul); background: var(--azul); color: #fff; cursor: pointer; transition: background .15s; }
+  .pb { font: inherit; font-size: 13px; font-weight: 600; padding: 8px 15px; border-radius: var(--r-m); border: 1px solid var(--azul); background: var(--azul); color: #fff; cursor: pointer; transition: background .15s; }
   .pb:hover:not(:disabled) { background: var(--azul-hover); }
   .pb.sec { background: #fff; color: var(--azul); border-color: var(--acero-osc); font-weight: 500; }
   .pb.sec:hover:not(:disabled) { background: var(--azul-tinte); }
   .pb:disabled { opacity: .5; cursor: default; }
   #listaProyectos { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
-  .proy { background: var(--nieve); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; box-shadow: var(--sombra); position: relative; overflow: hidden; }
+  .proy { background: var(--nieve); border: 1px solid var(--line); border-radius: var(--r-l); padding: 16px 18px; position: relative; overflow: hidden; }
   .proy::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--azul); }
   .proy.activo { border-color: var(--naranja); }
   .proy.activo::before { background: var(--naranja); }
   .proy-t { display: flex; align-items: center; gap: 8px; }
   .proy h3 { margin: 0; font-size: 16px; }
-  .proy-act { font-size: 11px; font-weight: 700; color: #fff; background: var(--naranja); border-radius: 999px; padding: 2px 8px; }
+  .proy-act { font-size: 11px; font-weight: 700; color: #fff; background: var(--naranja); border-radius: var(--r-s); padding: 2px 8px; }
   .proy p { margin: 6px 0 0; color: var(--muted); font-size: 13px; }
   .proy p b { color: var(--ink); }
   .proy .proy-m { font-size: 12px; }
   .proy-acc { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
   .proy-acc .pb { padding: 5px 11px; font-size: 12.5px; }
-  .proy-vacio { grid-column: 1 / -1; display: flex; gap: 16px; align-items: center; background: var(--nieve); border: 1px dashed var(--acero-osc); border-radius: 14px; padding: 20px 22px; color: var(--muted); }
-  .proy-vacio::before { content: "+"; flex: 0 0 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; font-size: 22px; font-weight: 600; color: var(--azul); background: var(--azul-tinte); }
+  .proy-vacio { grid-column: 1 / -1; display: flex; gap: 16px; align-items: center; background: var(--nieve); border: 1px dashed var(--acero-osc); border-radius: var(--r-l); padding: 20px 22px; color: var(--muted); }
+  .proy-vacio::before { content: "+"; flex: 0 0 40px; height: 40px; border-radius: var(--r-m); display: grid; place-items: center; font-size: 22px; font-weight: 600; color: var(--azul); background: var(--azul-tinte); }
 
   footer { text-align: center; color: var(--muted); font-size: 12px; padding: 0 16px 28px; }
 
-  dialog { border: none; border-radius: 16px; padding: 0; width: min(460px, 92vw); box-shadow: 0 24px 60px rgba(0,0,40,.3); background: var(--nieve); }
+  dialog { border: none; border-radius: var(--r-l); padding: 0; width: min(460px, 92vw); box-shadow: 0 24px 60px rgba(0,0,40,.3); background: var(--nieve); }
   dialog::backdrop { background: rgba(0,0,40,.45); backdrop-filter: blur(2px); }
   dialog form { padding: 22px 24px; display: grid; gap: 12px; }
   dialog h2 { margin: 0 0 4px; font-size: 19px; color: var(--azul); }
   dialog label { font-size: 12px; font-weight: 500; color: var(--muted); display: grid; gap: 4px; }
-  dialog input { font: inherit; padding: 9px 11px; border: 1px solid #cfd5dd; border-radius: 8px; background: #fff; }
+  dialog input { font: inherit; padding: 9px 11px; border: 1px solid #cfd5dd; border-radius: var(--r-s); background: #fff; }
   dialog input:focus { outline: none; border-color: var(--azul); box-shadow: 0 0 0 3px rgba(0,0,139,.15); }
   dialog .dlg-acc { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
 </style>
-<link rel="stylesheet" href="aura.css?v=8">
+<link rel="stylesheet" href="aura.css?v=9">
+<script src="lateral.js?v=2"></script>
 </head>
 <body>
-<header>
+<header class="solo-movil">
   <a class="marca" href="index.html"><span class="logo-tile"><span class="logo"><img src="icons/logo-mmp.webp" alt="MMP"></span></span></a>
-  <nav aria-label="Secciones"><a href="#herramientas">Herramientas</a><a href="#misProyectos">Mis proyectos</a></nav>
 </header>
 
 <section class="inicio" id="herramientas">
