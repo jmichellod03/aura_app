@@ -211,9 +211,11 @@
         <div id="sismoBox">
           <div class="row2">
             <div><label for="Ri">Factor R<sub>i</sub> del relleno <span class="unit">[MC Vol. 3]</span></label><input id="Ri" type="number" step="0.05" value="0.3"></div>
-            <div><label for="critPant">Sismo en la pantalla</label>
-              <select id="critPant"><option value="curso" selected>Como el ejemplo del curso (H y todas las fuerzas)</option><option value="pantalla">Solo la pantalla (H<sub>m</sub> y su inercia)</option></select></div>
+            <div><label for="critPant">Solicitaciones de la pantalla en sismo</label>
+              <select id="critPant"><option value="total" selected>Simplificado: todas las fuerzas con H</option><option value="curso">Mixto: estático con Hm, sismo con H</option><option value="pantalla">Exacto: solo la pantalla con Hm</option></select></div>
           </div>
+          <label for="talSis">Talón en sismo</label>
+          <select id="talSis"><option value="csv" selected>Con sismo vertical: (1,2 + Csv) D + 1,0 L</option><option value="12">Sin sismo vertical: 1,2 D + 1,6 L</option></select>
         </div>
       </fieldset>
 
@@ -338,7 +340,7 @@ function leerDatos() {
     phiR: num("phiR"), gR: num("gR") / 1000, phiS: num("phiS"), gS: num("gS") / 1000,
     cS: num("cS"), su: num("su"), pasivo: $("pasivo").value,
     q: num("q") / 10, qEstab: $("qEstab").checked,
-    zona, Ao: ZONAS[zona], Ri: num("Ri"), critPant: $("critPant").value,
+    zona, Ao: ZONAS[zona], Ri: num("Ri"), critPant: $("critPant").value, talSis: $("talSis").value,
     fsV: num("fsV"), fsD: num("fsD"), fsT: num("fsT"), fsVs: num("fsVs"), fsDs: num("fsDs"), fsTs: num("fsTs"), pcMin: num("pcMin"),
     fc: num("fc"), fy: num("fy"), gH: num("gH") / 1000, rec: num("rec"),
     dbP: num("dbP") / 10, dbPc: num("dbPc") / 10, dbH: num("dbH") / 10,
@@ -705,10 +707,17 @@ function verificar(d, m) {
   if (conSismo) {
     m.sub("Solicitaciones sísmicas (1,6 H + 1,0 E)");
     let Vu2, Mu2;
-    if (d.critPant === "curso") {
+    if (d.critPant === "total") {
+      const Pst = 1.6 * (Ps + Pq), Mst = 1.6 * (Ps * H / 3 + Pq * H / 2);
+      Vu2 = Pst + dEa + dEq + F;
+      Mu2 = Mst + dEa * 2 * H / 3 + dEq * H / 2 + MyS;
+      m.p(L`Por simplicidad se toman las fuerzas totales sobre el muro: los empujes estáticos y sísmicos con la altura total $H$ y todas las fuerzas inerciales del muro, el relleno y la sobrecarga, con sus brazos desde la base de la zapata (criterio conservador).`);
+      m.eq(L`V_u = 1{,}6\,(P_s + P_q) + \Delta DE_a + \Delta DE_q + \sum F_i = 1{,}6\,(${tn(T(Ps), 3)} + ${tn(T(Pq), 3)}) + ${tn(T(dEa), 3)} + ${tn(T(dEq), 3)} + ${tn(T(F), 3)} = ${tn(T(Vu2), 3)}\ \mathrm{tf}`);
+      m.eq(L`M_u = 1{,}6\left(P_s\frac{H}{3} + P_q\frac{H}{2}\right) + \Delta DE_a\frac{2H}{3} + \Delta DE_q\frac{H}{2} + \sum F_i d_{y,i} = ${tn(TM(Mst), 3)} + ${tn(TM(dEa * 2 * H / 3), 3)} + ${tn(TM(dEq * H / 2), 3)} + ${tn(TM(MyS), 3)} = ${tn(TM(Mu2), 3)}\ \mathrm{tf\,m}`);
+    } else if (d.critPant === "curso") {
       Vu2 = Vu1 + dEa + dEq + F;
       Mu2 = Mu1 + dEa * 2 * H / 3 + dEq * H / 2 + MyS;
-      m.p(L`Como en el ejemplo del curso, se suman a las solicitaciones estáticas los incrementos dinámicos calculados con la altura total $H$ y todas las fuerzas inerciales del muro, el relleno y la sobrecarga, con sus brazos desde la base de la zapata (criterio conservador).`);
+      m.p(L`Se suman a las solicitaciones estáticas de la pantalla los incrementos dinámicos calculados con la altura total $H$ y todas las fuerzas inerciales del muro, el relleno y la sobrecarga, con sus brazos desde la base de la zapata (criterio conservador).`);
       m.eq(L`V_u = ${tn(T(Vu1), 3)} + \Delta DE_a + \Delta DE_q + \sum F_i = ${tn(T(Vu1), 3)} + ${tn(T(dEa), 3)} + ${tn(T(dEq), 3)} + ${tn(T(F), 3)} = ${tn(T(Vu2), 3)}\ \mathrm{tf}`);
       m.eq(L`M_u = ${tn(TM(Mu1), 3)} + \Delta DE_a\frac{2H}{3} + \Delta DE_q\frac{H}{2} + \sum F_i d_{y,i} = ${tn(TM(Mu2), 3)}\ \mathrm{tf\,m}`);
     } else {
@@ -793,14 +802,14 @@ function verificar(d, m) {
 
   // ---------- 7. Talón ----------
   m.h("Diseño de la zapata: talón");
-  m.p(L`Cálculo simplificado del curso: se desprecia la reacción del suelo bajo el talón (del lado seguro) y se consideran el peso propio del talón y del relleno mayorados por 1,2 y la sobrecarga por 1,6. En el caso sísmico (1,2 D + 1,0 E + 1,0 L) el peso se amplifica por $1{,}2 + C_{sv}$. La sección crítica de flexión está en la cara del trasdós y la de corte a una distancia $d$ de ella (ACI 318-08 15.5.2).`);
+  m.p(L`Cálculo simplificado del curso: se desprecia la reacción del suelo bajo el talón (del lado seguro) y se consideran el peso propio del talón y del relleno mayorados por 1,2 y la sobrecarga por 1,6. ${d.talSis === "csv" ? L`En el caso sísmico (1,2 D + 1,0 E + 1,0 L) el peso se amplifica por $1{,}2 + C_{sv}$ para considerar el sismo vertical.` : L`En el caso sísmico se usa la misma combinación (1,2 D + 1,6 L), sin sismo vertical.`} La sección crítica de flexión está en la cara del trasdós y la de corte a una distancia $d$ de ella (ACI 318-08 15.5.2).`);
   const Wt = d.Hf * d.Bt * d.gH * BW, Wr = d.Bt * d.Hm * d.gR * BW, Wq = d.q * d.Bt * BW;
-  const Vt1 = 1.2 * (Wt + Wr) + 1.6 * Wq, Vt2 = conSismo ? (1.2 + Csv) * (Wt + Wr) + 1.0 * Wq : 0;
+  const Vt1 = 1.2 * (Wt + Wr) + 1.6 * Wq, Vt2 = conSismo && d.talSis === "csv" ? (1.2 + Csv) * (Wt + Wr) + 1.0 * Wq : 0;
   const tal = { Vu: Math.max(Vt1, Vt2), Mu: Math.max(Vt1, Vt2) * d.Bt / 2 };
   m.row("W<sub>talón</sub> ; W<sub>relleno</sub> ; W<sub>q</sub> = q B<sub>t</sub>", `${fmt(T(Wt), 3)} ; ${fmt(T(Wr), 3)} ; ${fmt(T(Wq), 3)} tf`);
   m.row("Estático: V<sub>u</sub> = 1,2 (W<sub>t</sub> + W<sub>r</sub>) + 1,6 W<sub>q</sub>", `${fmt(T(Vt1), 3)} tf`);
   m.eq(L`V_u = 1{,}2\,(${tn(T(Wt), 3)} + ${tn(T(Wr), 3)}) + 1{,}6\cdot ${tn(T(Wq), 3)} = ${tn(T(Vt1), 3)}\ \mathrm{tf}`);
-  if (conSismo) {
+  if (conSismo && d.talSis === "csv") {
     m.row("Sísmico: V<sub>u</sub> = (1,2 + C<sub>sv</sub>)(W<sub>t</sub> + W<sub>r</sub>) + 1,0 W<sub>q</sub>", `${fmt(T(Vt2), 3)} tf`);
     m.eq(L`V_u = (1{,}2 + ${tn(Csv, 3)})(${tn(T(Wt), 3)} + ${tn(T(Wr), 3)}) + 1{,}0\cdot ${tn(T(Wq), 3)} = ${tn(T(Vt2), 3)}\ \mathrm{tf}`);
   }
@@ -955,7 +964,7 @@ function documentoTex(d, r, cuerpo) {
     d.qEstab ? L`La sobrecarga sobre el talón se suma al peso estabilizante, como en el ejemplo del curso; el criterio más conservador es no considerarla.` : L`La sobrecarga sobre el talón no se suma al peso estabilizante (criterio conservador).`,
     L`El diseño en hormigón armado sigue el ACI 318-08 con las cuantías mínimas del curso: 0,0018 $b\,d$ en la armadura principal, 0,0015 $b\,d$ en la cara opuesta y 0,001 $b\,h$ por cara en la armadura de repartición; la cuantía máxima se limita a $0{,}75\,\rho_b$.`,
     L`El pie y el talón se calculan con el método simplificado del curso (presión de servicio mayorada bajo el pie; talón sin reacción del suelo).`,
-    d.Ao > 0 ? (d.critPant === "curso" ? L`Las solicitaciones sísmicas de la pantalla siguen el ejemplo del curso (altura total y todas las fuerzas inerciales), lo que es conservador.` : L`Las solicitaciones sísmicas de la pantalla consideran solo la altura de la pantalla y su propia inercia.`) : "",
+    d.Ao > 0 ? ({ total: L`Las solicitaciones sísmicas de la pantalla se calculan con las fuerzas totales sobre el muro (empujes con la altura total y todas las fuerzas inerciales), lo que es conservador.`, curso: L`Las solicitaciones sísmicas de la pantalla suman a las estáticas de la pantalla los incrementos dinámicos con la altura total y todas las fuerzas inerciales, lo que es conservador.`, pantalla: L`Las solicitaciones sísmicas de la pantalla consideran solo la altura de la pantalla y su propia inercia.` }[d.critPant]) : "",
     L`No se verifican la estabilidad global del talud, los asentamientos, la fisuración, las longitudes de anclaje y empalme de las barras ni el corte por fricción en la junta pantalla-zapata; deben ser definidos por el ingeniero del proyecto.`,
   ].filter(Boolean).map(t => `\\item ${t}`).join("\n");
   return L`\documentclass[11pt,letterpaper]{article}
