@@ -1,6 +1,6 @@
 // Service worker de AURA: guarda la app completa para uso sin conexión.
 // Al publicar cambios, incremente VERSION para que los dispositivos descarguen la nueva versión.
-const VERSION = "aura-v68";
+const VERSION = "aura-v69";
 const ARCHIVOS = [
   "./",
   "./index.html",
@@ -28,6 +28,7 @@ const ARCHIVOS = [
   "./modelo3d.js",
   "./dxf.js",
   "./tablero.js",
+  "./lateral.js",
 ];
 // KaTeX (ecuaciones de la memoria). Las fuentes .woff2 se guardan al usarse por primera vez.
 const KATEX = [
