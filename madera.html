@@ -102,7 +102,7 @@
     .panel { border: 0; }
   }
 </style>
-<link rel="stylesheet" href="aura.css?v=2">
+<link rel="stylesheet" href="aura.css?v=3">
 </head>
 <body>
 <header>
@@ -488,6 +488,7 @@
 
 <script src="memo.js?v=32"></script>
 <script src="dxf.js?v=1"></script>
+<script src="modelo3d.js?v=4"></script>
 <script>
 "use strict";
 // ---------------------------------------------------------------------------
@@ -2239,6 +2240,54 @@ function init() {
   actualizar();
 }
 init();
+
+// ---------------------------------------------------------------------------
+// Vista 2D / 3D (modelo3d.js): cada elemento a escala real en mm (x = largo o ancho del muro, y = vertical,
+// z = profundidad); el elemento verificado en naranja si no cumple
+// ---------------------------------------------------------------------------
+Zona2D3D.montar({
+  antes: document.querySelector(".toolbar"),
+  fuente2D: () => $("figMuro").querySelector("svg"),
+  observar: [$("verdict"), $("figMuro"), $("summary")],
+  capas: [["osb", "Tablero"], ["apoyos", "Apoyos"]],
+  construir: () => {
+    if (!ultimoTex || !ultimoMadera) return null;
+    const { modo: el, d, r, ok } = ultimoMadera, b = d.b, h = d.h, e = new Geo3D.Escena();
+    const PIEZA = { mat: ok ? "madera" : "critico" }, MAD = { mat: "madera" }, APO = { mat: "hormigon", grupo: "apoyos" };
+    if (el === "env") {
+      // Vigas del envigado (o la viga maestra) sobre soleras de apoyo, con la separación calculada
+      const L = d.Lm * 1000, n = d.maestra || !(d.s > 0) ? 1 : 4, s = d.s * 1000;
+      for (let i = 0; i < n; i++) e.caja(i === 1 || n === 1 ? PIEZA : MAD, 0, L, 0, h, i * s, i * s + b);
+      const ancho = (n - 1) * s + b;
+      for (const x of [0, L]) e.caja({ mat: "madera", grupo: "apoyos" }, x - 70, x + 70, -90, 0, -100, ancho + 100);
+    } else if (el === "tab") {
+      // Tramo tipo: tres pies derechos, soleras y cadenetas (b en el plano del muro, h hacia afuera)
+      const L = d.L * 10, s = d.s * 1000, W = 2 * s + b;
+      e.caja(MAD, -b, W + b, -b, 0, 0, h); e.caja(MAD, -b, W + b, L, L + b, 0, h);
+      for (let i = 0; i < 3; i++) e.caja(i === 1 ? PIEZA : MAD, i * s, i * s + b, 0, L, 0, h);
+      for (const f of fraccionesCadenetas(d)) for (let i = 0; i < 2; i++) e.caja(MAD, i * s + b, (i + 1) * s, f * L - b / 2, f * L + b / 2, 0, h);
+    } else if (el === "pil") {
+      // Pilar con anclaje metálico y pedestal de hormigón (referenciales)
+      const L = d.L * 10;
+      e.caja(PIEZA, -b / 2, b / 2, 100, 100 + L, -h / 2, h / 2);
+      e.caja({ mat: "acero" }, -b / 2 - 6, -b / 2, 0, 250, -h / 2, h / 2); e.caja({ mat: "acero" }, b / 2, b / 2 + 6, 0, 250, -h / 2, h / 2);
+      e.caja({ mat: "acero" }, -b / 2 - 6, b / 2 + 6, 94, 100, -h / 2, h / 2);
+      e.caja(APO, -b * 1.5, b * 1.5, -400, 0, -h * 1.5, h * 1.5);
+    } else {
+      // Muro de corte: soleras, pies de borde de n piezas, tablero OSB y anclajes en los extremos, por piso
+      const W = d.bm * 1000, Hm = d.hm * 1000, bb = d.n * b, tOSB = d.tabla === "42" ? 9.5 : 11.1;
+      for (let p = 0; p < d.pisos; p++) {
+        const y0 = p * Hm;
+        e.caja(MAD, 0, W, y0, y0 + b, 0, h); e.caja(MAD, 0, W, y0 + Hm - b, y0 + Hm, 0, h);
+        for (const x of [0, W - bb]) for (let i = 0; i < d.n; i++) e.caja(p === 0 ? PIEZA : MAD, x + i * b, x + (i + 1) * b, y0 + b, y0 + Hm - b, 0, h);
+        for (let c = 0; c < d.caras; c++) e.caja({ mat: "osb", alfa: 0.55, grupo: "osb" }, 0, W, y0, y0 + Hm, c ? -tOSB : h, c ? 0 : h + tOSB);
+      }
+      for (const x of [bb / 2, W - bb / 2]) e.caja({ mat: "acero" }, x - 40, x + 40, -150, 350, h / 2 - 30, h / 2 + 30);
+      e.caja(APO, -200, W + 200, -400, 0, -150, h + 150);
+    }
+    return e;
+  },
+});
 // Integración con proyectos (proyectos.js): datos para guardar y restaurar este cálculo
 window.AURA_MEMO = {
   get tipo() { return { env: "Madera aserrada — envigado", tab: "Madera aserrada — pie derecho de tabique", pil: "Madera aserrada — pilar", muro: "Madera aserrada — muro de corte" }[modo]; },

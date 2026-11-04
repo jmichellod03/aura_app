@@ -108,7 +108,7 @@
     .panel { border: 0; }
   }
 </style>
-<link rel="stylesheet" href="aura.css?v=2">
+<link rel="stylesheet" href="aura.css?v=3">
 </head>
 <body>
 <header>
@@ -284,6 +284,7 @@
 
 <script src="memo.js?v=32"></script>
 <script src="dxf.js?v=1"></script>
+<script src="modelo3d.js?v=4"></script>
 <script>
 "use strict";
 // ---------------------------------------------------------------------------
@@ -1339,6 +1340,39 @@ function init() {
   else actualizar();
 }
 init();
+
+// ---------------------------------------------------------------------------
+// Vista 2D / 3D (modelo3d.js): viga o columna a escala real con cada lámina visible (colores alternados);
+// en naranja si no cumple
+// ---------------------------------------------------------------------------
+Zona2D3D.montar({
+  antes: document.querySelector(".toolbar"),
+  fuente2D: () => $("svgSec").querySelector("svg"),
+  observar: [$("verdict"), $("svgSec")],
+  capas: [["apoyos", "Apoyos"]],
+  construir: () => {
+    if (!ultimoTex || !ultimoMLE) return null;
+    const { esViga, d, ok } = ultimoMLE, b = d.b, h = d.h, L = d.Lm * 1000, e = new Geo3D.Escena();
+    const horiz = d.lam === "horizontal", n = Math.max(1, Math.round((horiz ? h : b) / d.t)), t = (horiz ? h : b) / n;
+    const lam = (i) => ({ mat: ok ? (i % 2 ? "mle2" : "mle") : "critico" });
+    if (esViga) {
+      for (let i = 0; i < n; i++) {
+        if (horiz) e.caja(lam(i), 0, L, i * t, (i + 1) * t, -b / 2, b / 2);
+        else e.caja(lam(i), 0, L, 0, h, -b / 2 + i * t, -b / 2 + (i + 1) * t);
+      }
+      const ap = Math.max(d.Lap || 150, 100);
+      for (const x of [0, L]) e.caja({ mat: "hormigon", grupo: "apoyos" }, x - ap / 2, x + ap / 2, -300, 0, -b, b);
+    } else {
+      for (let i = 0; i < n; i++) {
+        if (horiz) e.caja(lam(i), -b / 2, b / 2, 0, L, -h / 2 + i * t, -h / 2 + (i + 1) * t);
+        else e.caja(lam(i), -b / 2 + i * t, -b / 2 + (i + 1) * t, 0, L, -h / 2, h / 2);
+      }
+      e.caja({ mat: "acero" }, -b / 2 - 8, b / 2 + 8, -8, 0, -h / 2 - 8, h / 2 + 8);
+      e.caja({ mat: "hormigon", grupo: "apoyos" }, -b, b, -400, -8, -h, h);
+    }
+    return e;
+  },
+});
 // Integración con proyectos (proyectos.js): datos para guardar y restaurar este cálculo
 window.AURA_MEMO = {
   get tipo() { return modo === "col" ? "Madera laminada MLE — columna" : "Madera laminada MLE — viga"; },
