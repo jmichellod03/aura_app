@@ -65,4 +65,27 @@
   .memo h4 { color: var(--azul); }
   .ref { color: var(--azul); border-color: #b9bfe6; background: var(--azul-tinte); }
   footer { padding-top: 6px; }
+
+  /* ---------- Zona 2D / 3D (modelo3d.js) ---------- */
+  .zona23 { margin: 6px 16px 16px; border: 1px solid #d9dde3; border-radius: 12px; background: #fff; overflow: hidden; }
+  .z23-cab { display: flex; align-items: center; gap: 10px; padding: 9px 14px; border-bottom: 1px solid #e3e6ea; flex-wrap: wrap; }
+  .z23-cab b { color: var(--azul); font-size: 13px; letter-spacing: .06em; text-transform: uppercase; }
+  .z23-modo { margin-left: auto; display: inline-flex; background: var(--acero); border-radius: 8px; padding: 2px; gap: 2px; }
+  .z23-modo button, .z23-bar button { font: inherit; font-size: 12px; font-weight: 600; border: 0; background: transparent; color: #3b4556; padding: 4px 10px; border-radius: 6px; cursor: pointer; }
+  .z23-modo button[aria-pressed="true"] { background: var(--azul); color: #fff; }
+  .z23-cuerpo { display: grid; grid-template-columns: 1fr 1fr; min-height: 320px; }
+  .zona23[data-modo="2d"] .z23-cuerpo, .zona23[data-modo="3d"] .z23-cuerpo { grid-template-columns: 1fr; }
+  .zona23[data-modo="2d"] .z23-3d, .zona23[data-modo="3d"] .z23-2d { display: none; }
+  .z23-2d { padding: 10px; border-right: 1px solid #e3e6ea; display: flex; align-items: center; justify-content: center; min-width: 0; }
+  .z23-2d svg { width: 100%; height: auto; max-height: 420px; }
+  .z23-3d { position: relative; min-width: 0; display: flex; flex-direction: column; background: radial-gradient(ellipse at 50% 40%, #ffffff 0%, #eef0f5 100%); }
+  .z23-3d canvas { flex: 1; width: 100%; min-height: 300px; display: block; }
+  .z23-bar { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; padding: 6px 10px; border-top: 1px solid #e3e6ea; background: #fff; }
+  .z23-bar button { border: 1px solid #d3d8de; background: #fff; }
+  .z23-bar button:hover { border-color: var(--azul); color: var(--azul); }
+  .z23-bar label { font-size: 12px; display: inline-flex; gap: 4px; align-items: center; margin-left: 6px; color: #3b4556; }
+  .z23-nota { padding: 0 10px 6px; background: #fff; color: #7b8494; font-size: 11px; }
+  .z23-vacio { color: #7b8494; font-size: 13px; padding: 20px; text-align: center; }
+  @media (max-width: 900px) { .z23-cuerpo { grid-template-columns: 1fr; } .z23-2d { border-right: 0; border-bottom: 1px solid #e3e6ea; } }
 }
+@media print { .zona23 { display: none; } }
