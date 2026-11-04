@@ -54,6 +54,15 @@
   select:focus, input:focus, textarea:focus { outline: none; border-color: var(--azul); box-shadow: 0 0 0 2px rgba(0,0,139,.25); }
   label { font-weight: 500; }
 
+  /* Campos en fila: si una etiqueta ocupa más líneas, las más cortas bajan para que todos los campos queden alineados */
+  :is(.row2, .row3, .row4) > div:not(.row2, .row3, .row4) { display: flex; flex-direction: column; }
+  :is(.row2, .row3, .row4) > div:not(.row2, .row3, .row4) > label { margin-top: auto; padding-top: 10px; }
+  :is(.row2, .row3, .row4) > :is(.row2, .row3, .row4) { align-self: end; }
+  .chk input { flex: 0 0 auto; }
+  /* Misma altura para listas, campos y valores calculados (las tablas de datos conservan la suya) */
+  .panel :is(select, input[type=number], input[type=text], .cbOut):not(table *) { height: 36px; }
+  @media (max-width: 900px) { .panel :is(select, input[type=number], input[type=text], .cbOut):not(table *) { height: 40px; } }
+
   .tabs { border: 1px solid var(--trazo); background: #fff; border-radius: 4px; padding: 2px; gap: 2px; }
   .tabs button { background: transparent; color: #3b4556; border-radius: 3px; transition: background .15s, color .15s; }
   .tabs button:hover:not(.on) { background: var(--azul-tinte); }
