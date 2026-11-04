@@ -366,15 +366,15 @@ function estilosPanel() {
     box-shadow: -6px 0 18px rgba(29,35,48,.10); z-index: 60; display: flex; flex-direction: column; transform: translateX(100%); transition: transform .22s ease; font: 13.5px/1.4 "Segoe UI", system-ui, sans-serif; color: #1d2330; }
   body.ap-abierto #auraPanel { transform: none; }
   @media (min-width: 1180px) { body.ap-abierto { padding-right: 320px; } }
-  #auraPanel .ap-head { background: #3d4450; color: #fff; padding: 12px 14px; display: flex; gap: 10px; align-items: flex-start; }
-  #auraPanel .ap-head small { display: block; color: #c9ced6; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; }
+  #auraPanel .ap-head { background: #00008B; color: #fff; padding: 12px 14px; display: flex; gap: 10px; align-items: flex-start; }
+  #auraPanel .ap-head small { display: block; color: #c8cbe8; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; }
   #auraPanel .ap-head b { display: block; font-size: 15px; }
-  #auraPanel .ap-head span { color: #c9ced6; font-size: 12px; }
+  #auraPanel .ap-head span { color: #c8cbe8; font-size: 12px; }
   #auraPanel .ap-head > div { flex: 1; min-width: 0; }
-  #auraPanel .ap-min { background: none; border: 1px solid #6b7380; color: #fff; border-radius: 4px; cursor: pointer; font-size: 15px; padding: 1px 8px; }
+  #auraPanel .ap-min { background: none; border: 1px solid rgba(255,255,255,.35); color: #fff; border-radius: 4px; cursor: pointer; font-size: 15px; padding: 1px 8px; }
   #auraPanel .ap-acc { padding: 10px 14px; display: grid; gap: 7px; border-bottom: 1px solid #eef0f3; }
-  #auraPanel button.ap-b { font: inherit; padding: 7px 10px; border-radius: 5px; border: 1px solid #e8711c; background: #e8711c; color: #fff; cursor: pointer; text-align: center; }
-  #auraPanel button.ap-b.sec { background: #fff; color: #3d4450; border-color: #c9ced6; }
+  #auraPanel button.ap-b { font: inherit; padding: 7px 10px; border-radius: 5px; border: 1px solid #00008B; background: #00008B; color: #fff; cursor: pointer; text-align: center; }
+  #auraPanel button.ap-b.sec { background: #fff; color: #00008B; border-color: #c3c9d1; }
   #auraPanel button.ap-b:disabled { opacity: .5; cursor: default; }
   #auraPanel .ap-nuevo { display: grid; gap: 6px; }
   #auraPanel .ap-sal { display: flex; gap: 6px; }
@@ -393,7 +393,7 @@ function estilosPanel() {
   #auraPanel .ap-vacio { color: #5f6b7a; padding: 14px; }
   #auraPanel .ap-foot { padding: 10px 14px; border-top: 1px solid #eef0f3; display: flex; justify-content: space-between; }
   #auraPanel .ap-foot a { color: #2a6fb0; text-decoration: none; font-size: 13px; }
-  #auraPanelTab { position: fixed; right: 0; top: 42%; z-index: 59; background: #3d4450; color: #fff; border: none; border-radius: 6px 0 0 6px; padding: 10px 7px;
+  #auraPanelTab { position: fixed; right: 0; top: 42%; z-index: 59; background: #00008B; color: #fff; border: none; border-radius: 6px 0 0 6px; padding: 10px 7px;
     writing-mode: vertical-rl; transform: rotate(180deg); cursor: pointer; font: 600 12.5px "Segoe UI", system-ui, sans-serif; letter-spacing: .04em; box-shadow: -2px 2px 8px rgba(0,0,0,.15); }
   body.ap-abierto #auraPanelTab { display: none; }
   @media print { #auraPanel, #auraPanelTab { display: none !important; } body.ap-abierto { padding-right: 0; } }`;
@@ -615,9 +615,9 @@ function pintarUsuario() {
   if (!h) return;
   const d = document.createElement("div");
   d.id = "auraUsuario";
-  d.style.cssText = "margin-left:auto;display:flex;align-items:center;gap:10px;font-size:12.5px;color:#c9ced6";
+  d.style.cssText = "margin-left:auto;display:flex;align-items:center;gap:10px;font-size:12.5px;color:#c8cbe8";
   const nombre = usuarioActual.user_metadata?.nombre || usuarioActual.email;
-  d.innerHTML = `<span title="${esc(usuarioActual.email)}">${esc(nombre)}</span><button type="button" style="font:inherit;color:#fff;background:none;border:1px solid #6b7380;border-radius:4px;padding:3px 9px;cursor:pointer">Cerrar sesión</button>`;
+  d.innerHTML = `<span title="${esc(usuarioActual.email)}">${esc(nombre)}</span><button type="button" style="font:inherit;color:#fff;background:none;border:1px solid rgba(255,255,255,.35);border-radius:4px;padding:3px 9px;cursor:pointer">Cerrar sesión</button>`;
   d.querySelector("button").addEventListener("click", cerrarSesion);
   if (getComputedStyle(h).display !== "flex") { h.style.display = "flex"; h.style.flexWrap = "wrap"; h.style.alignItems = "baseline"; h.style.gap = "6px 16px"; }
   h.appendChild(d);

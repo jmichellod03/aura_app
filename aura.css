@@ -1,0 +1,68 @@
+/* Estilo común de AURA (pantalla). Se carga después de los estilos propios de cada página y solo cambia
+   el aspecto: no toca los cálculos ni la impresión de la memoria. */
+:root {
+  --azul: #00008B;          /* primario: barras, botones principales, isotipo */
+  --azul-hover: #1a1aa8;
+  --azul-tinte: #eceefb;
+  --acero: #e3e6ea;         /* gris acero claro: separa las zonas de trabajo */
+  --acero-osc: #c3c9d1;
+  --nieve: #fffafa;         /* blanco nieve: paneles de entrada */
+  --naranja: #e65c00;       /* naranja seguridad: acciones críticas y máximos */
+  --sombra: 0 1px 2px rgba(10,16,48,.06), 0 4px 14px rgba(10,16,48,.06);
+}
+
+/* ---------- Logo MMP (el archivo trae márgenes transparentes; aquí se recorta al dibujo) ---------- */
+.logo { display: block; position: relative; overflow: hidden; height: 34px; width: auto; aspect-ratio: 1643 / 568; flex: 0 0 auto; align-self: flex-start; }
+.logo img { position: absolute; width: 107.97%; left: -4.93%; top: -28.52%; height: auto; max-width: none; }
+.logo-tile { display: inline-flex; background: #fff; border-radius: 8px; padding: 5px 9px; box-shadow: 0 1px 0 rgba(255,255,255,.4) inset; }
+
+@media screen {
+  body { background: var(--acero); }
+
+  /* ---------- Barra superior ---------- */
+  header { position: sticky; top: 0; z-index: 50; background: var(--azul); color: #fff; padding: 8px 24px; min-height: 60px;
+           display: flex; align-items: center; gap: 6px 14px; flex-wrap: wrap; box-shadow: 0 2px 10px rgba(0,0,60,.25); }
+  header .marca { display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; }
+  header h1 { margin: 0; font-size: 17px; font-weight: 600; }
+  header > span { color: #c8cbe8; font-size: 12.5px; flex-basis: 100%; order: 9; padding-left: 2px; }
+  header a.home { color: #fff; text-decoration: none; font-size: 13px; border: 1px solid rgba(255,255,255,.3); border-radius: 999px; padding: 4px 12px; transition: background .15s; }
+  header a.home:hover { background: rgba(255,255,255,.12); }
+  @media (max-width: 680px) { header { position: static; padding: 8px 16px; } header > span { font-size: 11.5px; } header h1 { font-size: 15px; flex-basis: 100%; } }
+
+  /* ---------- Páginas de cálculo: paneles, campos y resultados ---------- */
+  .panel { background: var(--nieve); border: 1px solid #d9dde3; border-radius: 12px; box-shadow: var(--sombra); }
+  .panel > h2 { color: var(--azul); font-weight: 700; letter-spacing: .08em; padding: 12px 18px; background: #fff; border-radius: 12px 12px 0 0; display: flex; align-items: center; gap: 8px; }
+  .panel > h2::before { content: ""; width: 4px; height: 14px; border-radius: 2px; background: var(--azul); flex: 0 0 4px; }
+  main { gap: 22px; }
+
+  select, input[type=number], input[type=text], textarea { border-radius: 7px; border-color: #cfd5dd; padding: 8px 10px; transition: border-color .15s, box-shadow .15s; }
+  select:hover, input[type=number]:hover, input[type=text]:hover { border-color: #9aa3ae; }
+  select:focus, input:focus, textarea:focus { outline: none; border-color: var(--azul); box-shadow: 0 0 0 3px rgba(0,0,139,.15); }
+  label { font-weight: 500; }
+
+  .tabs { border: 0; background: var(--acero); border-radius: 9px; padding: 3px; gap: 3px; }
+  .tabs button { background: transparent; color: #3b4556; border-radius: 7px; transition: background .15s, color .15s; }
+  .tabs button:hover:not(.on) { background: rgba(255,255,255,.6); }
+  .tabs button.on { background: var(--azul); color: #fff; box-shadow: 0 1px 3px rgba(0,0,60,.3); }
+
+  fieldset { border-color: #d9dde3; border-radius: 10px; background: #fff; }
+  legend { color: var(--azul); font-weight: 700; }
+  details { border-radius: 8px; border-color: #cfd5dd; background: #fff; }
+  details summary { color: var(--azul); }
+
+  .btn { border-radius: 7px; font-weight: 600; padding: 8px 16px; border-color: var(--azul); background: var(--azul); transition: background .15s; }
+  .btn:hover { background: var(--azul-hover); }
+  .btn.sec { background: #fff; color: var(--azul); border-color: var(--acero-osc); }
+  .btn.sec:hover { background: var(--azul-tinte); }
+  .mini { border-radius: 6px; border-color: var(--acero-osc); color: var(--azul); }
+  .mini:hover { background: var(--azul-tinte); }
+
+  .card { background: #fff; border-color: #d9dde3; border-radius: 10px; box-shadow: var(--sombra); }
+  .card .v { color: var(--azul); }
+  .bar { height: 7px; border-radius: 4px; }
+  .verdict { border-radius: 10px; border-left: 5px solid currentColor; }
+  .memo h3 { border-bottom-color: var(--azul); color: var(--azul); }
+  .memo h4 { color: var(--azul); }
+  .ref { color: var(--azul); border-color: #b9bfe6; background: var(--azul-tinte); }
+  footer { padding-top: 6px; }
+}
