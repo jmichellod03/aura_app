@@ -117,7 +117,7 @@
     table.calc tr { break-inside: avoid; }
   }
 </style>
-<link rel="stylesheet" href="aura.css?v=2">
+<link rel="stylesheet" href="aura.css?v=3">
 </head>
 <body>
 <header>
@@ -281,6 +281,7 @@
 
 <script src="memo.js?v=32"></script>
 <script src="dxf.js?v=1"></script>
+<script src="modelo3d.js?v=4"></script>
 <script>
 "use strict";
 // ---------------------------------------------------------------------------
@@ -1420,6 +1421,56 @@ function init() {
   calcular();
 }
 init();
+
+// ---------------------------------------------------------------------------
+// Vista 2D / 3D (modelo3d.js): tramo de 2 m del muro con su armadura a escala real
+// (x = transversal, y = vertical, z = a lo largo del muro; mm)
+// ---------------------------------------------------------------------------
+Zona2D3D.montar({
+  antes: document.querySelector(".toolbar"),
+  fuente2D: () => $("dibujo").querySelector("svg"),
+  observar: [$("verdict"), $("dibujo")],
+  capas: [["hormigon", "Hormigón"], ["suelo", "Relleno"]],
+  construir: () => {
+    if (!ultimoTex || !ultimoR) return null;
+    const d = leerDatos(), r = ultimoR, a = r.arm, k = 10, Lz = 2000;
+    const Bp = d.Bp * k, eb = d.eb * k, Bt = d.Bt * k, ec = d.ec * k, Hf = d.Hf * k, Hm = d.Hm * k;
+    const B = r.B * k, H = r.H * k, xs = Bp + eb, rec = d.rec * k;
+    const sep = (txt) => { const m = /@\s*([\d,.]+)/.exec(txt || ""); return m ? parseFloat(m[1].replace(",", ".")) * 10 : 0; };
+    const dbP = d.dbP * 10, dbPc = d.dbPc * 10, dbH = d.dbH * 10, dbZp = d.dbZp * 10, dbZt = d.dbZt * 10, dbZr = d.dbZr * 10;
+    const e = new Geo3D.Escena(), ARM = { mat: "armadura" };
+    e.extruir({ mat: "hormigon", alfa: 0.32, grupo: "hormigon" }, contorno(d).map(([x, y]) => [x * k, y * k]), 0, Lz, (u, v, w) => [u, v, w]);
+    if (Bt > 0) e.caja({ mat: "relleno", alfa: 0.22, grupo: "suelo" }, xs, B + 400, Hf, H, 0, Lz);
+    const cadaZ = (s, f) => { if (s > 0) for (let z = s / 2; z < Lz; z += s) f(z); };
+    // Pantalla: verticales cara del relleno (con pata en la zapata) y cara exterior, horizontales en ambas caras
+    const xP = xs - rec - dbP / 2, yPie = rec + Math.max(dbZp, dbZr) + dbP / 2;
+    cadaZ(sep(a.pant), (z) => e.barra(ARM, [[xP, H - rec, z], [xP, yPie, z], [Math.min(B - rec, xP + 12 * dbP + 150), yPie, z]], dbP / 2));
+    const t0 = [xs - ec + rec + dbPc / 2, H - rec], t1 = [Bp + rec + dbPc / 2, Hf];
+    cadaZ(sep(a.pantC), (z) => e.barra(ARM, [[t0[0], t0[1], z], [t1[0], t1[1], z], [t1[0], yPie, z], [Math.max(rec, t1[0] - 12 * dbPc - 150), yPie, z]], dbPc / 2));
+    const sH = sep(a.pantH);
+    if (sH > 0) for (let y = Hf + sH / 2; y < H - rec; y += sH) {
+      const f = (y - Hf) / Hm, xF = Bp + (xs - ec - Bp) * f + rec + dbPc + dbH / 2;
+      e.tubo(ARM, [xP - dbP / 2 - dbH / 2, y, 0], [xP - dbP / 2 - dbH / 2, y, Lz], dbH / 2, 8);
+      e.tubo(ARM, [xF, y, 0], [xF, y, Lz], dbH / 2, 8);
+    }
+    // Zapata: Z1 inferior bajo el pie, Z2 superior sobre el talón, Z3 en las caras opuestas, Z4 longitudinal
+    const pata = (db) => Math.max(0, Math.min(12 * db, Hf - 2 * rec - 2 * db));
+    const yI = rec + Math.max(dbZp, dbZr) / 2, yS = Hf - rec - Math.max(dbZt, dbZr) / 2;
+    if (d.Bp > 0) {
+      cadaZ(sep(a.pie), (z) => e.barra(ARM, [[rec, yI + pata(dbZp), z], [rec, yI, z], [xs, yI, z]], dbZp / 2));
+      cadaZ(sep(a.zC), (z) => e.barra(ARM, [[rec, yS - pata(dbZr), z], [rec, yS, z], [xs, yS, z]], dbZr / 2));
+    }
+    if (d.Bt > 0) {
+      cadaZ(sep(a.tal), (z) => e.barra(ARM, [[Bp, yS, z], [B - rec, yS, z], [B - rec, yS - pata(dbZt), z]], dbZt / 2));
+      cadaZ(sep(a.zC), (z) => e.barra(ARM, [[Bp, yI, z], [B - rec, yI, z], [B - rec, yI + pata(dbZr), z]], dbZr / 2));
+    }
+    const sR = sep(a.zL);
+    if (sR > 0) for (let x = rec + sR / 2; x < B - rec; x += sR) {
+      for (const y of [yI + Math.max(dbZp, dbZr) / 2 + dbZr / 2, yS - Math.max(dbZt, dbZr) / 2 - dbZr / 2]) e.tubo(ARM, [x, y, 0], [x, y, Lz], dbZr / 2, 8);
+    }
+    return e;
+  },
+});
 // Integración con proyectos (proyectos.js): datos para guardar y restaurar este cálculo
 window.AURA_MEMO = {
   tipo: "Muro de contención",
