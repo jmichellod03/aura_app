@@ -106,11 +106,12 @@ const Modelo3D = (() => {
 
   // Nunca lanza: cualquier falla (sin WebGL, shader, archivo) llega como rechazo de "listo"
   function montar(canvas, opciones = {}) {
-    try { return montarVisor(canvas, opciones); } catch (e) { return { listo: Promise.reject(e) }; }
+    try { return montarVisor(canvas, opciones); }
+    catch (e) { const listo = Promise.reject(e); listo.catch(() => {}); return { listo }; }   // sin "Uncaught (in promise)" si nadie la espera
   }
 
   function montarVisor(canvas, opciones) {
-    const gl = canvas.getContext("webgl", { antialias: true, premultipliedAlpha: true, alpha: true, preserveDrawingBuffer: !!opciones.captura });
+    const gl = canvas.getContext("webgl", { antialias: true, premultipliedAlpha: true, alpha: true });
     if (!gl) throw new Error("Este navegador no permite WebGL");
     const ext32 = gl.getExtension("OES_element_index_uint");
     const quieto = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -196,8 +197,10 @@ const Modelo3D = (() => {
     let pedido = false;
     const redibujar = () => { if (corriendo || pedido) return; pedido = true; requestAnimationFrame(() => { pedido = false; dibujar(); }); };
 
-    // Arrastrar para girar (mouse o dedo), rueda o dos dedos para acercar; con un dedo la página sigue desplazándose
-    canvas.style.touchAction = opciones.zoom ? "none" : "pan-y"; canvas.style.cursor = "grab";
+    // Arrastrar para girar (mouse o dedo en horizontal); rueda para acercar. En celulares el desplazamiento vertical de
+    // la página se conserva (pan-y): el acercamiento se hace con los botones de la zona
+    const inclMax = opciones.zoom ? 1.55 : 1.2;
+    canvas.style.touchAction = "pan-y"; canvas.style.cursor = "grab";
     canvas.addEventListener("pointerdown", (e) => {
       punteros.set(e.pointerId, { x: e.clientX, y: e.clientY });
       arrastre = { x: e.clientX, y: e.clientY }; canvas.setPointerCapture(e.pointerId); canvas.style.cursor = "grabbing";
@@ -213,11 +216,17 @@ const Modelo3D = (() => {
       }
       punteros.set(e.pointerId, { x: e.clientX, y: e.clientY });
       giro += (e.clientX - arrastre.x) * 0.01;
-      inclinacion = Math.max(-1.55, Math.min(1.55, inclinacion + (e.clientY - arrastre.y) * 0.006));
+      inclinacion = Math.max(opciones.zoom ? -inclMax : -0.05, Math.min(inclMax, inclinacion + (e.clientY - arrastre.y) * 0.006));
       arrastre = { x: e.clientX, y: e.clientY };
       redibujar();
     });
-    const soltar = (e) => { punteros.delete(e.pointerId); if (!arrastre || punteros.size) return; arrastre = null; pausaHasta = performance.now() + 1500; canvas.style.cursor = "grab"; };
+    const soltar = (e) => {
+      punteros.delete(e.pointerId);
+      if (!arrastre) return;
+      // Al levantar uno de dos dedos se sigue desde el que queda (sin salto del giro)
+      if (punteros.size) { const q = [...punteros.values()][0]; arrastre = { x: q.x, y: q.y }; return; }
+      arrastre = null; pausaHasta = performance.now() + 1500; canvas.style.cursor = "grab";
+    };
     canvas.addEventListener("pointerup", soltar); canvas.addEventListener("pointercancel", soltar);
     if (opciones.zoom) canvas.addEventListener("wheel", (e) => { e.preventDefault(); zoom = Math.max(0.08, Math.min(4, zoom * Math.exp(e.deltaY * 0.0012))); redibujar(); }, { passive: false });
 
@@ -241,8 +250,8 @@ const Modelo3D = (() => {
       vista(nombre) { const v = VISTAS[nombre]; if (!v) return; [giro, inclinacion] = v; zoom = 1; redibujar(); },
       acercar(f) { zoom = Math.max(0.08, Math.min(4, zoom * f)); redibujar(); },
       mostrar(grupo, si) { if (si) ocultos.delete(grupo); else ocultos.add(grupo); redibujar(); },
-      // Imagen PNG de la vista actual (requiere opciones.captura para conservar el búfer)
-      capturar() { dibujar(); return canvas.toDataURL("image/png"); },
+      // Imagen PNG de la vista actual: se mide, se dibuja y se lee en la misma llamada (no hace falta conservar el búfer)
+      capturar() { medir(); dibujar(); return canvas.toDataURL("image/png"); },
     };
   }
 
@@ -288,7 +297,9 @@ const Geo3D = (() => {
     // Extrusión de un contorno 2D (lista de [u, v], sin repetir el primero) entre w0 y w1;
     // aPunto(u, v, w) → [x, y, z] define la orientación (por defecto contorno en el plano z-y, extruido en x)
     extruir(o, contorno, w0, w1, aPunto = (u, v, w) => [w, v, u]) {
-      const pts = area(contorno) < 0 ? contorno.slice().reverse() : contorno;
+      const limpio = depurar(contorno);
+      if (limpio.length < 3) return;
+      const pts = area(limpio) < 0 ? limpio.slice().reverse() : limpio;
       const tris = triangular(pts);
       const A = (i, w) => aPunto(pts[i][0], pts[i][1], w);
       for (const [i, j, k] of tris) { this.tri(o, A(i, w0), A(k, w0), A(j, w0)); this.tri(o, A(i, w1), A(j, w1), A(k, w1)); }
@@ -326,6 +337,20 @@ const Geo3D = (() => {
     const out = [];
     for (let i = 0; i <= n; i++) { const t = a0 + (a1 - a0) * i / n, x = Math.cos(t) * r, y = Math.sin(t) * r; out.push([c[0] + e1[0] * x + e2[0] * y, c[1] + e1[1] * x + e2[1] * y, c[2] + e1[2] * x + e2[2] * y]); }
     return out;
+  }
+  // Quita vértices repetidos y alineados (por ejemplo, el muro con pie Bp = 0 o un perfil sin acuerdos), que
+  // impedirían recortar orejas y dejarían huecos en las tapas de la extrusión
+  function depurar(p) {
+    let q = p.filter((v, i) => { const w = p[(i + p.length - 1) % p.length]; return Math.hypot(v[0] - w[0], v[1] - w[1]) > 1e-6; });
+    for (let cambio = true; cambio && q.length > 3;) {
+      cambio = false;
+      for (let i = 0; i < q.length; i++) {
+        const a = q[(i + q.length - 1) % q.length], b = q[i], c = q[(i + 1) % q.length];
+        const cz = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]), esc = Math.hypot(c[0] - a[0], c[1] - a[1]) || 1;
+        if (Math.abs(cz) / esc < 1e-6) { q.splice(i, 1); cambio = true; break; }
+      }
+    }
+    return q;
   }
   function area(p) { let s = 0; for (let i = 0; i < p.length; i++) { const j = (i + 1) % p.length; s += p[i][0] * p[j][1] - p[j][0] * p[i][1]; } return s / 2; }
   // Triangulación por recorte de orejas (contornos simples en sentido antihorario)
@@ -367,10 +392,15 @@ const Geo3D = (() => {
 // Zona "Vista del elemento" de las páginas de cálculo: el dibujo 2D de la página (copia) y el modelo 3D lado a lado,
 // actualizados solos cuando cambian los resultados (se observa el DOM; no se tocan las funciones de cálculo).
 //   Zona2D3D.montar({ antes: elemento, fuente2D: () => svg | null, construir: () => Geo3D.Escena | null,
-//                     observar: [elementos], capas: [["hormigon", "Hormigón"], ...] })
+//                     observar: [elementos], capas: [["hormigon", "Hormigón"], ...], nota: "qué es referencial" })
 // ---------------------------------------------------------------------------
 const Zona2D3D = (() => {
-  function montar({ antes, fuente2D, construir, observar = [], capas = [], titulo = "Vista del elemento" }) {
+  let nCopias = 0;
+  // Nunca lanza: una falla de la zona no debe impedir que la página defina AURA_MEMO ni que calcule
+  function montar(op) {
+    try { return montarZona(op); } catch (e) { console.error(e); return { actualizar() {}, capturar: () => null }; }
+  }
+  function montarZona({ antes, fuente2D, construir, observar = [], capas = [], titulo = "Vista del elemento", nota = "" }) {
     const z = document.createElement("section");
     z.className = "zona23"; z.setAttribute("data-sin-figura", "");          // la copia 2D no cuenta como figura de la memoria
     z.innerHTML = `<div class="z23-cab"><b>${titulo}</b>
@@ -383,13 +413,14 @@ const Zona2D3D = (() => {
             <button type="button" data-z="0.8" title="Acercar">+</button><button type="button" data-z="1.25" title="Alejar">−</button>
             ${capas.map(([g, t]) => `<label><input type="checkbox" data-g="${g}" checked> ${t}</label>`).join("")}
           </div>
-          <small class="z23-nota">Arrastre para girar · rueda o dos dedos para acercar · escala real</small>
+          <small class="z23-nota">Arrastre para girar · rueda o botones + y − para acercar · escala real${nota ? ` · ${nota}` : ""}</small>
+          <p class="z23-aviso">Sin modelo 3D: corrija los datos del cálculo.</p>
         </div>
       </div>`;
     antes.parentNode.insertBefore(z, antes);
     const p2 = z.querySelector(".z23-2d"), canvas = z.querySelector("canvas");
     let visor = null;
-    try { visor = Modelo3D.montar(canvas, { girar: false, zoom: true, captura: true, giro: 0.6, inclinacion: 0.42, margen: 1.02, luz: 1.05 }); }
+    try { visor = Modelo3D.montar(canvas, { girar: false, zoom: true, giro: 0.6, inclinacion: 0.42, margen: 1.02, luz: 1.05 }); }
     catch { /* sin WebGL */ }
     if (!visor || !visor.fijar) z.querySelector(".z23-3d").innerHTML = `<p class="z23-vacio">Este navegador no permite mostrar el modelo 3D (WebGL).</p>`;
 
@@ -405,19 +436,29 @@ const Zona2D3D = (() => {
     function actualizar() {
       clearTimeout(pendiente);
       pendiente = setTimeout(() => {
-        // 2D: copia del dibujo de la página, sin ids (evita duplicados; los marcadores siguen resolviéndose)
-        const s = fuente2D && fuente2D();
+        // 2D: copia del dibujo de la página con ids propios (prefijo) y sus referencias url(#…) / href="#…"
+        // reescritas, para que el dibujo original no tome los marcadores de la copia (oculta al imprimir o en modo 3D)
+        let s = null;
+        try { s = fuente2D && fuente2D(); } catch (e) { console.error(e); }
         p2.innerHTML = "";
         if (s) {
-          const c = s.cloneNode(true);
-          c.removeAttribute("id"); c.querySelectorAll("[id]").forEach(e => { if (!e.closest("defs")) e.removeAttribute("id"); });
-          c.removeAttribute("role"); p2.appendChild(c);
+          const c = s.cloneNode(true), pre = `z23c${++nCopias}-`, ids = new Set();
+          c.removeAttribute("id"); c.removeAttribute("role");
+          c.querySelectorAll("[id]").forEach(e => { ids.add(e.id); e.id = pre + e.id; });
+          if (ids.size) c.querySelectorAll("*").forEach(e => {
+            for (const at of [...e.attributes]) {
+              const v = at.value.replace(/url\(#([^)]+)\)/g, (m, id) => (ids.has(id) ? `url(#${pre}${id})` : m));
+              const v2 = (at.name === "href" || at.name === "xlink:href") && v.startsWith("#") && ids.has(v.slice(1)) ? "#" + pre + v.slice(1) : v;
+              if (v2 !== at.value) e.setAttribute(at.name, v2);
+            }
+          });
+          p2.appendChild(c);
         } else p2.innerHTML = `<p class="z23-vacio">Sin dibujo 2D para este elemento.</p>`;
-        // 3D
+        // 3D: con datos inválidos (o un error) se vacía la escena para no mostrar el modelo del cálculo anterior
         if (visor?.fijar) {
           let esc = null;
           try { esc = construir(); } catch (e) { console.error(e); }
-          if (esc) visor.fijar(esc.armar());
+          visor.fijar((esc || new Geo3D.Escena()).armar());
           z.classList.toggle("z23-sin3d", !esc);
         }
       }, 120);
@@ -427,8 +468,14 @@ const Zona2D3D = (() => {
     actualizar();
     const zona = {
       actualizar,
-      // PNG de la vista 3D si está a la vista (la página puede tener más de una zona, como hormigón con viga y losa)
-      capturar: () => (visor?.capturar && !z.classList.contains("z23-sin3d") && canvas.getBoundingClientRect().width > 0 ? visor.capturar() : null),
+      // PNG de la vista 3D de una zona a la vista (la página puede tener más de una, como hormigón con viga y losa).
+      // En modo "2D" el lienzo mide 0: se muestra un instante para capturarlo y se vuelve al modo elegido.
+      capturar: () => {
+        if (!visor?.capturar || z.classList.contains("z23-sin3d") || !z.offsetParent) return null;
+        const antes = z.dataset.modo;
+        if (canvas.getBoundingClientRect().width === 0) modo("ambos");
+        try { return canvas.getBoundingClientRect().width > 0 ? visor.capturar() : null; } finally { modo(antes); }
+      },
     };
     zonas.push(zona);
     return zona;
@@ -438,3 +485,6 @@ const Zona2D3D = (() => {
   window.AURA_3D = () => { for (const zn of zonas) { const u = zn.capturar(); if (u) return u; } return null; };
   return { montar };
 })();
+// Las páginas montan la zona con window.Zona2D3D?.montar(…): si este archivo no carga, la página sigue funcionando
+// (un const global no queda como propiedad de window, por eso se publica explícitamente)
+window.Zona2D3D = Zona2D3D;

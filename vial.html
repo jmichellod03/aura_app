@@ -112,7 +112,7 @@
     .panel { border: 0; }
   }
 </style>
-<link rel="stylesheet" href="aura.css?v=3">
+<link rel="stylesheet" href="aura.css?v=4">
 </head>
 <body>
 <header>
@@ -297,8 +297,8 @@
 </main>
 <footer>Herramienta de apoyo académico basada en el Manual de Carreteras, Volumen N° 3 (Edición 2025), Capítulo 3.600. Verifique siempre los resultados.</footer>
 
-<script src="memo.js?v=33"></script>
-<script src="modelo3d.js?v=4"></script>
+<script src="memo.js?v=34"></script>
+<script src="modelo3d.js?v=5"></script>
 <script>
 "use strict";
 // ---------------------------------------------------------------------------
@@ -999,17 +999,21 @@ init();
 // ---------------------------------------------------------------------------
 // Vista 2D / 3D (modelo3d.js): bloque de 1,5 × 1,5 m del paquete estructural, cada capa con su espesor real (mm)
 // ---------------------------------------------------------------------------
-Zona2D3D.montar({
+window.Zona2D3D?.montar({
   antes: document.querySelector(".toolbar"),
   fuente2D: () => $("svgPaq").querySelector("svg"),
   observar: [$("verdict"), $("svgPaq")],
   capas: [["subrasante", "Subrasante"]],
+  nota: "bloque de 1,5 x 1,5 m; la capa de rodadura en naranja si el paquete no cumple",
   construir: () => {
     if (!ultimoTex || !ultimoPav) return null;
     const { d, r } = ultimoPav, capas = listaDibujo(d, r), A = 1500, e = new Geo3D.Escena();
     const MATC = { asf: "asfalto", asf2: [0.32, 0.32, 0.35], base: "base", sb: "subbase", mej: [0.70, 0.66, 0.50] };
+    const falla = !!$("verdict").querySelector(".verdict.bad");
     let y = 0;
-    for (const c of capas.slice().reverse()) { e.caja({ mat: MATC[c.tipo] || "base" }, 0, A, y, y + c.h, 0, A); y += c.h; }
+    capas.slice().reverse().forEach((c, i, lista) => {
+      e.caja({ mat: falla && i === lista.length - 1 ? "critico" : MATC[c.tipo] || "base" }, 0, A, y, y + c.h, 0, A); y += c.h;
+    });
     e.caja({ mat: "subrasante", grupo: "subrasante" }, 0, A, -300, 0, 0, A);
     return e;
   },

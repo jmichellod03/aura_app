@@ -127,7 +127,7 @@
     table.calc tr { break-inside: avoid; }
   }
 </style>
-<link rel="stylesheet" href="aura.css?v=3">
+<link rel="stylesheet" href="aura.css?v=4">
 </head>
 <body>
 <header>
@@ -371,9 +371,9 @@
 </main>
 <footer>Herramienta de apoyo académico. Las solicitaciones deben corresponder a la envolvente de combinaciones mayoradas. Verifique siempre los resultados.</footer>
 
-<script src="memo.js?v=33"></script>
+<script src="memo.js?v=34"></script>
 <script src="dxf.js?v=1"></script>
-<script src="modelo3d.js?v=4"></script>
+<script src="modelo3d.js?v=5"></script>
 <script>
 "use strict";
 // ---------------------------------------------------------------------------
@@ -1890,39 +1890,46 @@ init();
 // Vista 2D / 3D (modelo3d.js), a escala real en mm. Hormigón semitransparente; se oculta para ver la armadura.
 // ---------------------------------------------------------------------------
 // Viga: tramo de 1,5 m (la página no pide la luz) con barras longitudinales y estribos cerrados con ganchos de 135°
-Zona2D3D.montar({
+window.Zona2D3D?.montar({
   antes: document.querySelector("#resViga .toolbar"),
   fuente2D: () => $("memo").querySelector(".secwrap svg"),
-  observar: [$("verdict"), $("memo")],
+  observar: [$("verdict")],
   capas: [["hormigon", "Hormigón"]],
+  nota: "tramo de 1,5 m (la luz no es dato); en naranja si no cumple",
   construir: () => {
     if (!ultimoTex || !ultimoViga) return null;
-    const { g, inf, sup, v } = ultimoViga;
+    const { g, inf, sup, v, ok } = ultimoViga;
     if (!Number.isFinite(inf.Nb) || !Number.isFinite(sup.Nb)) return null;
     const b = g.b * 10, h = g.h * 10, r = g.rec * 10, de = g.de, s = v.s * 10, Lv = 1500, ARM = { mat: "armadura" };
     const e = new Geo3D.Escena();
-    e.caja({ mat: "hormigon", alfa: 0.3, grupo: "hormigon" }, 0, Lv, 0, h, -b / 2, b / 2);
+    e.caja({ mat: ok ? "hormigon" : "critico", alfa: 0.3, grupo: "hormigon" }, 0, Lv, 0, h, -b / 2, b / 2);
     for (const [N, db, y] of [[inf.Nb, inf.db, r + de + inf.db / 2], [sup.Nb, sup.db, h - r - de - sup.db / 2]])
       posBarras(N, -b / 2 + r + de + db / 2, b / 2 - r - de - db / 2).forEach(z => e.tubo(ARM, [0, y, z], [Lv, y, z], db / 2, 10));
     const z0 = -b / 2 + r + de / 2, z1 = b / 2 - r - de / 2, y0 = r + de / 2, y1 = h - r - de / 2, lg = g.hk.ext * 10 / Math.SQRT2;
     for (let x = s / 2; x < Lv; x += s) {
       e.barra({ mat: "armadura", grupo: "estribos" }, [[x, y1 - lg - 2 * de, z0 + lg], [x, y1 - 2 * de, z0], [x, y0, z0], [x, y0, z1], [x, y1, z1], [x, y1, z0 + 2 * de], [x, y1 - lg, z0 + 2 * de + lg]], de / 2);
+      // Ramas adicionales (trabas verticales) cuando el corte usa más de dos ramas
+      for (let k = 1; k <= g.ramas - 2; k++) {
+        const z = z0 + (z1 - z0) * k / (g.ramas - 1);
+        e.barra({ mat: "armadura", grupo: "estribos" }, [[x, y1 - lg, z + lg], [x, y1, z], [x, y0, z], [x, y0 + lg, z - lg]], de / 2);
+      }
     }
     return e;
   },
 });
 // Losa: paño completo con mallas inferiores, suples sobre los bordes continuos y muros o vigas de apoyo
-Zona2D3D.montar({
+window.Zona2D3D?.montar({
   antes: document.querySelector("#resLosa .toolbar"),
   fuente2D: () => $("lplano").querySelector("svg"),
   observar: [$("lverdict"), $("lplano")],
   capas: [["hormigon", "Hormigón"], ["apoyos", "Apoyos"]],
+  nota: "muros o vigas de apoyo referenciales; en naranja si no cumple",
   construir: () => {
     if (!ultimoTexLosa || !ultimoLosa) return null;
-    const { g, R, sol } = ultimoLosa, Lx = g.Lx * 1000, Ly = g.Ly * 1000, e = g.e * 10, rec = g.rec * 10;
+    const { g, R, sol, ok } = ultimoLosa, Lx = g.Lx * 1000, Ly = g.Ly * 1000, e = g.e * 10, rec = g.rec * 10;
     const es = new Geo3D.Escena(), INF = { mat: "armadura" }, SUP = { mat: "armadura", grupo: "suples" };
     // Planta en el plano x-z (z = dirección Y de la losa), espesor en y
-    es.caja({ mat: "hormigon", alfa: 0.28, grupo: "hormigon" }, 0, Lx, 0, e, 0, Ly);
+    es.caja({ mat: ok ? "hormigon" : "critico", alfa: 0.28, grupo: "hormigon" }, 0, Lx, 0, e, 0, Ly);
     for (const [x0, x1, z0, z1] of [[-150, 0, -150, Ly + 150], [Lx, Lx + 150, -150, Ly + 150], [0, Lx, -150, 0], [0, Lx, Ly, Ly + 150]])
       es.caja({ mat: "hormigon", grupo: "apoyos" }, x0, x1, -600, 0, z0, z1);
     const cortaX = sol.corta === "X", dXi = R.Xi?.db || 8, dYi = R.Yi?.db || 8, dXs = R.Xs?.db || 8, dYs = R.Ys?.db || 8;

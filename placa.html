@@ -125,7 +125,7 @@
     table.calc tr { break-inside: avoid; }
   }
 </style>
-<link rel="stylesheet" href="aura.css?v=3">
+<link rel="stylesheet" href="aura.css?v=4">
 </head>
 <body>
 <header>
@@ -252,8 +252,8 @@
 </main>
 <footer>Herramienta de apoyo académico basada en las tablas del fabricante (Ficha y Manual Técnico Instadeck, Cintac). No reemplaza la memoria de cálculo del ingeniero del proyecto. Verifique siempre los resultados.</footer>
 
-<script src="memo.js?v=33"></script>
-<script src="modelo3d.js?v=4"></script>
+<script src="memo.js?v=34"></script>
+<script src="modelo3d.js?v=5"></script>
 <script>
 "use strict";
 // ---------------------------------------------------------------------------
@@ -1133,14 +1133,16 @@ init();
 // Vista 2D / 3D (modelo3d.js): paño de losa entre dos vigas, tres avances de placa de ancho, a escala real (mm).
 // x = luz entre vigas (sentido de los nervios), y = vertical (valle en y = 0), z = a lo largo de las vigas.
 // ---------------------------------------------------------------------------
-Zona2D3D.montar({
+window.Zona2D3D?.montar({
   antes: document.querySelector(".toolbar"),
   fuente2D: () => document.querySelector("#memo svg[role='img']"),
   observar: [$("verdict")],
   capas: [["hormigon", "Hormigón"], ["vigas", "Vigas"]],
+  nota: "ancho de tres avances de placa; con perfil \"otro\" la viga se dibuja genérica 200x100; en naranja si no cumple",
   construir: () => {
     if (!ultimoTex || !ultimoD || !ultimoR) return null;
     const d = ultimoD, r = ultimoR, hr = PLACA.hr * 10, et = r.et * 10, L = d.L * 10, W = 3 * DECK.p, e = new Geo3D.Escena();
+    const falla = !!$("verdict").querySelector(".verdict.bad");
     const pv = d.pv ? { h: d.pv.h * 10, b: d.pv.b * 10, tw: d.pv.tw * 10, tf: d.pv.tf * 10 } : { h: 200, b: 100, tw: 6, tf: 9 };
     // Perfil de la placa en (z, y): valle - alma - cresta - alma, por avance
     const perfil = [];
@@ -1148,7 +1150,7 @@ Zona2D3D.montar({
     perfil.push([W, 0]);
     const XZ = (u, v, w) => [w, v, u];                      // contorno en (z, y) extruido a lo largo de x
     const x0 = -pv.b / 2, x1 = L + pv.b / 2;
-    e.extruir({ mat: "hormigon", alfa: 0.3, grupo: "hormigon" }, [...perfil, [W, et], [0, et]], x0, x1, XZ);
+    e.extruir({ mat: falla ? "critico" : "hormigon", alfa: 0.3, grupo: "hormigon" }, [...perfil, [W, et], [0, et]], x0, x1, XZ);
     e.extruir({ mat: "placa" }, [...perfil, ...perfil.slice().reverse().map(([z, y]) => [z, y - Math.max(PLACA.e * 10, 0.8)])], x0, x1, XZ);
     // Malla de retracción a 25 mm de la cara superior
     const dM = d.dM, sM = d.sM * 10, yM = et - 25;

@@ -102,7 +102,7 @@
     .panel { border: 0; }
   }
 </style>
-<link rel="stylesheet" href="aura.css?v=3">
+<link rel="stylesheet" href="aura.css?v=4">
 </head>
 <body>
 <header>
@@ -486,9 +486,9 @@
 </main>
 <footer>Herramienta de apoyo académico basada en NCh 1198:2024 y en la planilla «FULL MADERA». Verifique siempre los resultados.</footer>
 
-<script src="memo.js?v=33"></script>
+<script src="memo.js?v=34"></script>
 <script src="dxf.js?v=1"></script>
-<script src="modelo3d.js?v=4"></script>
+<script src="modelo3d.js?v=5"></script>
 <script>
 "use strict";
 // ---------------------------------------------------------------------------
@@ -2245,11 +2245,13 @@ init();
 // Vista 2D / 3D (modelo3d.js): cada elemento a escala real en mm (x = largo o ancho del muro, y = vertical,
 // z = profundidad); el elemento verificado en naranja si no cumple
 // ---------------------------------------------------------------------------
-Zona2D3D.montar({
+window.Zona2D3D?.montar({
   antes: document.querySelector(".toolbar"),
-  fuente2D: () => $("figMuro").querySelector("svg"),
+  // El envigado no tiene dibujo 2D: #figMuro queda oculto con el del elemento anterior
+  fuente2D: () => ($("figMuro").classList.contains("hidden") || ultimoMadera?.modo === "env" ? null : $("figMuro").querySelector("svg")),
   observar: [$("verdict"), $("figMuro"), $("summary")],
   capas: [["osb", "Tablero"], ["apoyos", "Apoyos"]],
+  nota: "soleras de apoyo, anclajes y pedestales referenciales; en naranja la pieza verificada si no cumple",
   construir: () => {
     if (!ultimoTex || !ultimoMadera) return null;
     const { modo: el, d, r, ok } = ultimoMadera, b = d.b, h = d.h, e = new Geo3D.Escena();

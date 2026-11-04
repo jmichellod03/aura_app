@@ -662,7 +662,7 @@ function figura3D(fig) {
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.8\linewidth]{${ruta}}
-\caption{Modelo 3D a escala real generado por AURA con las dimensiones y la armadura o conexiones de esta memoria (vista referencial).}
+\caption{Modelo 3D ilustrativo generado por AURA a escala real con las dimensiones de esta memoria. Los apoyos, uniones, placas, anclajes y largos de tramo que no se verifican en esta memoria se dibujan solo como referencia.}
 \end{figure}
 \end{document}
 `);

@@ -117,7 +117,7 @@
     table.calc tr { break-inside: avoid; }
   }
 </style>
-<link rel="stylesheet" href="aura.css?v=3">
+<link rel="stylesheet" href="aura.css?v=4">
 </head>
 <body>
 <header>
@@ -279,9 +279,9 @@
 </main>
 <footer>Herramienta de apoyo académico basada en el procedimiento del curso Diseño de Proyectos de Ingeniería (muros de contención). No reemplaza la memoria de cálculo del ingeniero del proyecto. Verifique siempre los resultados.</footer>
 
-<script src="memo.js?v=33"></script>
+<script src="memo.js?v=34"></script>
 <script src="dxf.js?v=1"></script>
-<script src="modelo3d.js?v=4"></script>
+<script src="modelo3d.js?v=5"></script>
 <script>
 "use strict";
 // ---------------------------------------------------------------------------
@@ -1426,11 +1426,12 @@ init();
 // Vista 2D / 3D (modelo3d.js): tramo de 2 m del muro con su armadura a escala real
 // (x = transversal, y = vertical, z = a lo largo del muro; mm)
 // ---------------------------------------------------------------------------
-Zona2D3D.montar({
+window.Zona2D3D?.montar({
   antes: document.querySelector(".toolbar"),
   fuente2D: () => $("dibujo").querySelector("svg"),
   observar: [$("verdict"), $("dibujo")],
   capas: [["hormigon", "Hormigón"], ["suelo", "Relleno"]],
+  nota: "tramo de 2 m del muro; en naranja si no cumple",
   construir: () => {
     if (!ultimoTex || !ultimoR) return null;
     const d = leerDatos(), r = ultimoR, a = r.arm, k = 10, Lz = 2000;
@@ -1439,7 +1440,7 @@ Zona2D3D.montar({
     const sep = (txt) => { const m = /@\s*([\d,.]+)/.exec(txt || ""); return m ? parseFloat(m[1].replace(",", ".")) * 10 : 0; };
     const dbP = d.dbP * 10, dbPc = d.dbPc * 10, dbH = d.dbH * 10, dbZp = d.dbZp * 10, dbZt = d.dbZt * 10, dbZr = d.dbZr * 10;
     const e = new Geo3D.Escena(), ARM = { mat: "armadura" };
-    e.extruir({ mat: "hormigon", alfa: 0.32, grupo: "hormigon" }, contorno(d).map(([x, y]) => [x * k, y * k]), 0, Lz, (u, v, w) => [u, v, w]);
+    e.extruir({ mat: r.ok ? "hormigon" : "critico", alfa: 0.32, grupo: "hormigon" }, contorno(d).map(([x, y]) => [x * k, y * k]), 0, Lz, (u, v, w) => [u, v, w]);
     if (Bt > 0) e.caja({ mat: "relleno", alfa: 0.22, grupo: "suelo" }, xs, B + 400, Hf, H, 0, Lz);
     const cadaZ = (s, f) => { if (s > 0) for (let z = s / 2; z < Lz; z += s) f(z); };
     // Pantalla: verticales cara del relleno (con pata en la zapata) y cara exterior, horizontales en ambas caras

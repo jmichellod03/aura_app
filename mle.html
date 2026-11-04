@@ -108,7 +108,7 @@
     .panel { border: 0; }
   }
 </style>
-<link rel="stylesheet" href="aura.css?v=3">
+<link rel="stylesheet" href="aura.css?v=4">
 </head>
 <body>
 <header>
@@ -282,9 +282,9 @@
 </main>
 <footer>Herramienta de apoyo académico basada en NCh 2165:2023, NCh 1198:2024 y la planilla «MLE v4». Verifique siempre los resultados.</footer>
 
-<script src="memo.js?v=33"></script>
+<script src="memo.js?v=34"></script>
 <script src="dxf.js?v=1"></script>
-<script src="modelo3d.js?v=4"></script>
+<script src="modelo3d.js?v=5"></script>
 <script>
 "use strict";
 // ---------------------------------------------------------------------------
@@ -1345,11 +1345,12 @@ init();
 // Vista 2D / 3D (modelo3d.js): viga o columna a escala real con cada lámina visible (colores alternados);
 // en naranja si no cumple
 // ---------------------------------------------------------------------------
-Zona2D3D.montar({
+window.Zona2D3D?.montar({
   antes: document.querySelector(".toolbar"),
   fuente2D: () => $("svgSec").querySelector("svg"),
   observar: [$("verdict"), $("svgSec")],
   capas: [["apoyos", "Apoyos"]],
+  nota: "apoyos y placa base referenciales; en naranja si no cumple",
   construir: () => {
     if (!ultimoTex || !ultimoMLE) return null;
     const { esViga, d, ok } = ultimoMLE, b = d.b, h = d.h, L = d.Lm * 1000, e = new Geo3D.Escena();
@@ -1360,7 +1361,7 @@ Zona2D3D.montar({
         if (horiz) e.caja(lam(i), 0, L, i * t, (i + 1) * t, -b / 2, b / 2);
         else e.caja(lam(i), 0, L, 0, h, -b / 2 + i * t, -b / 2 + (i + 1) * t);
       }
-      const ap = Math.max(d.Lap || 150, 100);
+      const ap = d.Lap > 0 ? d.Lap : 150;                 // longitud de apoyo ingresada [mm]
       for (const x of [0, L]) e.caja({ mat: "hormigon", grupo: "apoyos" }, x - ap / 2, x + ap / 2, -300, 0, -b, b);
     } else {
       for (let i = 0; i < n; i++) {
