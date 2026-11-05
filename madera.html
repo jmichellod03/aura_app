@@ -111,7 +111,7 @@
   <a class="marca" href="index.html" aria-label="Inicio"><span class="logo-tile"><span class="logo"><img src="icons/logo-mmp.webp" alt="MMP"></span></span></a>
   <a class="home" href="index.html">← Inicio</a>
   <h1>Madera aserrada</h1>
-  <span>NCh 1198:2024 · tensiones admisibles · pino radiata · unidades kgf – cm</span>
+  <span>NCh 1198:2024 · tensiones admisibles · pino radiata y especies del Anexo U · unidades kgf – cm</span>
 </header>
 
 <main>
@@ -136,6 +136,7 @@
         </div>
         <div id="ggFcn" class="hidden"><label for="Fcn">Compresión normal F<sub>cn</sub> (no tabulada para la especie) <span class="unit">[MPa]</span></label><input id="Fcn" type="number" step="0.1" min="0" placeholder="ingresar valor">
           <div class="unit" id="FcnNota"></div></div>
+        <div class="unit hidden" id="EspNota" style="margin:-4px 0 8px"></div>
         <label for="esc">Escuadría (cepillada)</label>
         <select id="esc"></select>
         <div class="row2" id="gCustom">
@@ -248,6 +249,7 @@
         </div>
         <div id="tgFcn" class="hidden"><label for="tFcn">Compresión normal F<sub>cn</sub> (no tabulada para la especie) <span class="unit">[MPa]</span></label><input id="tFcn" type="number" step="0.1" min="0" placeholder="ingresar valor">
           <div class="unit" id="tFcnNota"></div></div>
+        <div class="unit hidden" id="tEspNota" style="margin:-4px 0 8px"></div>
         <label for="tEsc">Escuadría</label>
         <select id="tEsc"></select>
         <div class="row2" id="tgCustom">
@@ -325,6 +327,7 @@
         </div>
         <div id="pigFcn" class="hidden"><label for="piFcn">Compresión normal F<sub>cn</sub> (no tabulada para la especie) <span class="unit">[MPa]</span></label><input id="piFcn" type="number" step="0.1" min="0" placeholder="ingresar valor">
           <div class="unit" id="piFcnNota"></div></div>
+        <div class="unit hidden" id="piEspNota" style="margin:-4px 0 8px"></div>
         <label for="piEsc">Escuadría</label>
         <select id="piEsc"></select>
         <div class="row2" id="pigCustom">
@@ -397,15 +400,11 @@
       <div id="inMuro" class="hidden">
       <fieldset>
         <legend>Pie derecho de borde</legend>
-        <label for="mEspecie">Especie (NCh 1198:2024, Anexo U)</label>
-        <select id="mEspecie"><option value="radiata" selected>Pino radiata (Tabla U.1)</option><option value="ponderosa">Pino ponderosa (Tabla U.2)</option><option value="oregon">Pino oregón (Tabla U.3)</option><option value="nitens">Eucaliptus nitens (Tabla U.4)</option><option value="rauli">Raulí (Tabla U.5)</option><option value="lenga">Lenga (Tabla U.6)</option><option value="roble">Roble (Tabla U.7)</option><option value="acacia">Acacia dealbata (Tabla U.8)</option></select>
         <div class="row2">
-          <div><label for="mGrado">Grado estructural</label>
-            <select id="mGrado"><option>GS</option><option>G1+</option><option selected>G1</option><option>G2</option><option>C24</option><option>C16</option><option>MGP10</option><option>MGP12</option><option value="N1">N°1</option><option value="N2">N°2</option></select></div>
+          <div><label for="mGrado">Grado (pino radiata, 12.2.2 a 12.2.4)</label>
+            <select id="mGrado"><option>GS</option><option>G1+</option><option selected>G1</option><option>G2</option><option>C24</option><option>C16</option><option>MGP10</option><option>MGP12</option></select></div>
           <div><label for="mH">Humedad H <span class="unit">[%]</span></label><input id="mH" type="number" step="1" min="12" max="40" value="18"></div>
         </div>
-        <div id="mgFcn" class="hidden"><label for="mFcn">Compresión normal F<sub>cn</sub> (no tabulada para la especie) <span class="unit">[MPa]</span></label><input id="mFcn" type="number" step="0.1" min="0" placeholder="ingresar valor">
-          <div class="unit" id="mFcnNota"></div></div>
         <label for="mEsc">Escuadría de cada pieza del pie derecho de borde</label>
         <select id="mEsc"></select>
         <div class="row2" id="mgCustom">
@@ -522,7 +521,8 @@ const U1 = {
   "MGP10": [8.4, 10, 4.0, 2.5, 1.3, 10000], "MGP12": [13.5, 15.5, 6.0, 2.5, 1.3, 12700],
 };
 // Tablas U.2 a U.8 — especies con tabla propia, madera seca (H = 12 %), en MPa, mismo orden que U1.
-// Esas tablas no dan F_cn: va null y lo ingresa el usuario (campo F_cn del formulario).
+// Esas tablas no dan F_cn: va null y lo ingresa el usuario (campo F_cn del formulario), salvo el roble,
+// que la Tabla U.10 sí incluye por su grupo de la Tabla A.1 (fcnU10: [seco ES4, verde E4]).
 // verde: grupo de la Tabla A.1 y clase estructural por grado (Tabla U.11) para H ≥ 20 % (solo especies que figuran en la Tabla A.1).
 const ESPECIES = {
   radiata: { nom: "Pino radiata", tabla: "U.1", pag: 225, conifera: true, grados: U1 },
@@ -539,7 +539,7 @@ const ESPECIES = {
     grados: { N1: [14.7, 11.3, 8.8, null, 0.8, 11056], N2: [10.7, 9.4, 5.0, null, 0.6, 11085] } },
   roble: { nom: "Roble", tabla: "U.7", pag: 227, conifera: false, clasif: "NCh 1970/1",
     grados: { N1: [24.4, 16.6, 13.9, null, 1.28, 12435], N2: [15.5, 13.2, 7.1, null, 1.12, 11111] },
-    verde: { grupo: "E4", N1: "F11", N2: "F7" }, notaFcn: "Referencia: Tabla U.10, roble en grupo ES4 (Tabla A.1) → 5.0 MPa." },
+    verde: { grupo: "E4", N1: "F11", N2: "F7" }, verdeSeco: "ES4", fcnU10: [5.0, 2.8] },
   acacia: { nom: "Acacia dealbata", tabla: "U.8", pag: 228, conifera: false, clasif: "NCh 1970/1",
     grados: { N1: [19.9, 11.0, 7.4, null, 1.1, 11515], N2: [15.9, 10.4, 6.7, null, 1.0, 10595] } },
 };
@@ -550,28 +550,36 @@ const DR_GENERAL = { Ff: 0.0205, Fcp: 0.043, Ftp: 0.0205, Fcz: 0.016, Fcn: 0, Ef
 const H_VERDE = 20;                   // 7.1.1 y Anexo U: H ≥ 20 % se trata como madera verde (especies distintas del pino radiata)
 const archG = (d) => `${d.especie === "radiata" ? "" : d.especie + "_"}${d.grado}`;
 const gradoTxt = (g) => g.replace(/^N(\d)$/, "N°$1");
+// Anexo U (pág. 217): con H ≥ 20 % o piezas de espesor mayor que 100 mm se asigna como madera verde
+const esVerde = (esp, H, b, h) => esp !== "radiata" && (H >= H_VERDE || Math.min(b, h) > 100);
 // Grados disponibles según especie y estado (en verde, los de la Tabla U.11)
-function gradosEspecie(esp, H) {
+function gradosEspecie(esp, verde) {
   const e = ESPECIES[esp];
-  if (esp !== "radiata" && H >= H_VERDE && e.verde) return ["N1", "N2"];
+  if (verde && e.verde) return ["N1", "N2"];
   return Object.keys(e.grados);
 }
 // Material de diseño: tensiones base (MPa), factores que dependen de la especie y textos para la memoria
 function material(d) {
   const e = ESPECIES[d.especie], radiata = d.especie === "radiata";
-  const verde = !radiata && d.H >= H_VERDE;
+  const verde = esVerde(d.especie, d.H, d.b, d.h);
+  const porEspesor = verde && d.H < H_VERDE;
+  const u10 = e.fcnU10;                               // roble: F_cn de la Tabla U.10
   let base, clase = null;
   if (verde) {
     clase = e.verde[d.grado];
     const [Ff, Fcp, Ftp, Fcz, Ef] = U9[clase];
-    base = { Ff, Fcp, Ftp, Fcn: d.Fcn, Fcz, Ef };
+    base = { Ff, Fcp, Ftp, Fcn: u10 ? u10[1] : d.Fcn, Fcz, Ef };
   } else {
     const [Ff, Fcp, Ftp, Fcn, Fcz, Ef] = e.grados[d.grado];
-    base = { Ff, Fcp, Ftp, Fcn: radiata ? Fcn : d.Fcn, Fcz, Ef };
+    base = { Ff, Fcp, Ftp, Fcn: radiata ? Fcn : u10 ? u10[0] : d.Fcn, Fcz, Ef };
   }
   const mgp = radiata && d.grado.startsWith("MGP");
-  // K_H: pino radiata como antes; otras especies, Tabla 3 (seco) o valores de la clase en verde (F_cn ingresado × 0.67, nota de la Tabla 4)
-  const KH = radiata ? (k) => factorKH(d.H, k) : verde ? (k) => (k === "Fcn" ? VERDE.Fcn : 1) : (k) => 1 - (d.H - 12) * DR_GENERAL[k];
+  // F_cn en especies en general (Tabla 3, nota *): K_H de la Tabla 4, interpolado entre seco (12 %) y verde (20 %) según 7.1.1.
+  // Roble: interpolación entre los valores seco y verde de la Tabla U.10 (5.0 y 2.8 MPa).
+  const rFcn = u10 ? u10[1] / u10[0] : VERDE.Fcn;
+  const KHfcn = verde ? (u10 ? 1 : VERDE.Fcn) : 1 - (d.H - 12) / (H_VERDE - 12) * (1 - rFcn);
+  const KH = radiata ? (k) => factorKH(d.H, k)
+    : (k) => (k === "Fcn" ? KHfcn : verde ? 1 : 1 - (d.H - 12) * DR_GENERAL[k]);
   // 8.2.2.3: pino radiata (90/h)^(1/5) o MGP (160/h)^…; demás especies (50/h)^(1/9)
   const khfLim = mgp ? 160 : radiata ? 90 : 50;
   const khfExp = mgp ? (d.grado === "MGP10" ? 1 / 3 : 1 / 2) : radiata ? 1 / 5 : 1 / 9;
@@ -584,44 +592,69 @@ function material(d) {
   const nom = `${e.nom} ${gradoTxt(d.grado)}`;
   const fuente = verde ? `Tablas A.1, U.11 y U.9 (grupo ${e.verde.grupo}, clase ${clase})` : `Tabla ${e.tabla}`;
   return {
-    e, radiata, verde, clase, base, grado: d.grado, mgp, KH, Khf, khfLim, khfTex, KhE, khfSym, nom, fuente,
-    estado: verde ? `verde (H ≥ ${H_VERDE} %)` : "seca (H = 12 %)",
-    cc: ["G2", "C16", "N2"].includes(d.grado) ? 0.80 : 0.85,          // Tabla 9
+    e, radiata, verde, porEspesor, clase, base, grado: d.grado, mgp, KH, KHfcn, rFcn, u10, fcnIng: !radiata && !u10,
+    Khf, khfLim, khfTex, KhE, khfSym, nom, fuente,
+    estado: verde ? (porEspesor ? "verde (espesor > 100 mm)" : `verde (H ≥ ${H_VERDE} %)`) : "seca (H = 12 %)",
+    cc: ["G2", "C16"].includes(d.grado) ? 0.80 : 0.85,                // Tabla 9: N°1 y N°2 con 0.85
     kG: e.conifera ? 0.065 : 0.07,                                    // Anexo B.3, G_LT
     DR: radiata ? DR : DR_GENERAL,
     clasif: radiata ? (VISUALES.includes(d.grado) ? "clasificación visual según NCh 1207" : "grado estructural según NCh 1198:2024")
       : verde ? "clasificación visual según NCh 1207 y NCh 1970" : `clasificación visual según ${e.clasif}`,
   };
 }
-// Datos de especie comunes a los cuatro formularios (prefijo de ids: "", "t", "pi", "m")
+// Datos de especie de los formularios (prefijo de ids: "", "t", "pi"; el muro de corte es solo de pino radiata, 12.2.2 a 12.2.4)
 const ID_ESP = { "": ["especie", "grado", "H", "Fcn", "ggFcn"], t: ["tEspecie", "tGrado", "tH", "tFcn", "tgFcn"], pi: ["piEspecie", "piGrado", "piH", "piFcn", "pigFcn"], m: ["mEspecie", "mGrado", "mH", "mFcn", "mgFcn"] };
-function leerEspecie(pre) {
-  const [ie, ig, , ifc] = ID_ESP[pre];
-  const especie = ESPECIES[$(ie).value] ? $(ie).value : "radiata";
-  return { especie, grado: $(ig).value, Fcn: especie === "radiata" ? null : num(ifc), espNom: ESPECIES[especie].nom, gTxt: gradoTxt($(ig).value) };
+const ID_ESC = { "": ["esc", "b", "h"], t: ["tEsc", "tb", "th"], pi: ["piEsc", "pib", "pih"], m: ["mEsc", "mb", "mh"] };
+function especieForm(pre) {
+  const el = $(ID_ESP[pre][0]);
+  return el && ESPECIES[el.value] ? el.value : "radiata";
 }
-// Muestra solo los grados de la especie (y estado) elegida y el campo F_cn cuando la tabla no lo trae
+function dimsForm(pre) {
+  const [ie, ib, ih] = ID_ESC[pre];
+  return $(ie).value === "custom" ? [num(ib), num(ih)] : ESCUADRIAS[$(ie).value] || [0, 0];
+}
+function leerEspecie(pre) {
+  const [, ig, , ifc] = ID_ESP[pre];
+  const especie = especieForm(pre);
+  const ingresa = especie !== "radiata" && !ESPECIES[especie].fcnU10;
+  return { especie, grado: $(ig).value, Fcn: ingresa ? num(ifc) : null, espNom: ESPECIES[especie].nom, gTxt: gradoTxt($(ig).value) };
+}
+// Muestra solo los grados de la especie (y estado) elegida, el campo F_cn cuando la norma no lo trae y los avisos de la especie
 function sincEspecie(pre) {
-  const [ie, ig, ih, ifc, ig2] = ID_ESP[pre];
-  const esp = ESPECIES[$(ie).value] ? $(ie).value : "radiata";
-  const lista = gradosEspecie(esp, Math.max(12, num(ih)));
+  const [, ig, ih, ifc, ig2] = ID_ESP[pre];
+  const esp = especieForm(pre), e = ESPECIES[esp];
+  const H = Math.max(12, num(ih)), [b, h] = dimsForm(pre);
+  const verde = esVerde(esp, H, b, h), grueso = Math.min(b, h) > 100 && H < H_VERDE;
+  const lista = gradosEspecie(esp, verde);
   const sel = $(ig);
   [...sel.options].forEach(o => { o.hidden = !lista.includes(o.value); o.disabled = o.hidden; });
   if (!lista.includes(sel.value)) sel.value = lista.includes("G1") ? "G1" : lista[0];
-  $(ig2).classList.toggle("hidden", esp === "radiata");
-  const verde = esp !== "radiata" && num(ih) >= H_VERDE;
-  $(ifc + "Nota").textContent = esp === "radiata" ? "" :
-    `Valor para madera seca (H = 12 %)${verde ? "; en estado verde se multiplica por 0.67 (Tabla 4, nota 1)" : ""}. ${ESPECIES[esp].notaFcn || ""}`.trim();
+  if (!$(ig2)) return;
+  $(ig2).classList.toggle("hidden", esp === "radiata" || !!e.fcnU10);
+  $(ifc + "Nota").textContent = esp === "radiata" || e.fcnU10 ? "" : verde
+    ? "Valor para madera seca (H = 12 %); en estado verde se multiplica por 0.67 (Tabla 4)."
+    : "Valor para madera seca (H = 12 %). Sobre 12 % se reduce linealmente hasta 0.67 en H = 20 % (Tablas 3 y 4, 7.1.1).";
+  const avisos = [];
+  if (verde && e.verde) {
+    avisos.push(`${grueso ? "Espesor mayor que 100 mm" : `H ≥ ${H_VERDE} %`}: se trata como madera verde, con los grados N°1 y N°2 (Tabla U.11) y la clase de la Tabla U.9 por el grupo ${e.verde.grupo} de la Tabla A.1. Es un criterio: la Tabla U.9 excluye en su título a las especies con tabla propia. Las tensiones bajan de golpe respecto de la madera seca.`);
+    if (esp === "oregon") avisos.push("Los grados GS, G1 y G2 del pino oregón son solo de madera seca (Tabla U.3).");
+  }
+  if (e.fcnU10) avisos.push(`F<sub>cn</sub> de la Tabla U.10: ${fmt(e.fcnU10[0], 1)} MPa en seco (grupo ${e.verdeSeco}) y ${fmt(e.fcnU10[1], 1)} MPa en verde (grupo ${e.verde.grupo}), interpolado entre 12 % y 20 % (7.1.1).`);
+  const nota = $((pre || "") + "EspNota");
+  nota.innerHTML = avisos.join(" ");
+  nota.classList.toggle("hidden", !avisos.length);
 }
 // Reglas propias de la especie: F_cn ingresado (obligatorio) y especies sin valores en estado verde
 function datosEspecie(pre) {
-  const [ie, , ih, ifc] = ID_ESP[pre];
-  const esp = $(ie).value;
-  if (esp === "radiata" || !ESPECIES[esp]) return [];
-  const malos = datosInvalidos([[ifc, 0, true]]);
-  if (num(ih) >= H_VERDE && !ESPECIES[esp].verde) {
-    $(ih).classList.add("invalido");
-    malos.push(`la NCh 1198:2024 da valores de ${ESPECIES[esp].nom.toLowerCase()} solo para madera seca (H < ${H_VERDE} %)`);
+  const [, , ih, ifc] = ID_ESP[pre];
+  const esp = especieForm(pre);
+  if (esp === "radiata") return [];
+  const e = ESPECIES[esp], H = Math.max(12, num(ih)), [b, h] = dimsForm(pre);
+  const malos = e.fcnU10 ? [] : datosInvalidos([[ifc, 0, true]]);
+  if (esVerde(esp, H, b, h) && !e.verde) {
+    const porH = H >= H_VERDE;
+    if (porH) $(ih).classList.add("invalido");
+    malos.push(`la NCh 1198:2024 da valores de ${e.nom.toLowerCase()} solo para madera seca ${porH ? `(H < ${H_VERDE} %)` : "y piezas de espesor hasta 100 mm (Anexo U)"}`);
   }
   return malos;
 }
@@ -714,12 +747,12 @@ class Memo {
 // Tabla de propiedades mecánicas admisibles (Tabla U.1), en pantalla y en el .tex
 function tablaProps(m, mat, maestra) {
   m.h(`Propiedades mecánicas admisibles — ${mat.verde ? "Tablas U.11 y U.9" : "Tabla " + mat.e.tabla}`);
-  const v = mat.base, fcnIng = !mat.radiata;
+  const v = mat.base, fcnIng = mat.fcnIng;
   const props = [
     ["Tensión admisible en flexión", "F<sub>f</sub>", L`$F_f$`, v.Ff],
     ["Tensión admisible en compresión paralela", "F<sub>cp</sub>", L`$F_{cp}$`, v.Fcp],
     ["Tensión admisible en tracción paralela", "F<sub>tp</sub>", L`$F_{tp}$`, v.Ftp],
-    [`Tensión admisible en compresión normal${fcnIng ? " (ingresada)" : ""}`, "F<sub>cn</sub>", L`$F_{cn}$`, v.Fcn],
+    [`Tensión admisible en compresión normal${fcnIng ? " (ingresada)" : mat.u10 ? " (Tabla U.10)" : ""}`, "F<sub>cn</sub>", L`$F_{cn}$`, v.Fcn],
     ["Tensión admisible en cizalle", "F<sub>cz</sub>", L`$F_{cz}$`, v.Fcz],
     ["Módulo de elasticidad en flexión", "E<sub>f</sub>", L`$E_f$`, v.Ef],
   ];
@@ -729,7 +762,9 @@ function tablaProps(m, mat, maestra) {
   const origen = mat.verde
     ? `Valores de madera verde de la clase ${mat.clase} (Tabla U.9), asignada por el grupo ${mat.e.verde.grupo} de la Tabla A.1 y el grado ${gradoTxt(mat.grado)} (Tabla U.11)`
     : `Valores base para madera seca (H = 12 %) de la Tabla ${mat.e.tabla}`;
-  const notaFcn = fcnIng ? ` La Tabla ${mat.e.tabla} no da F<sub>cn</sub>: se usa el valor ingresado para madera seca.` : "";
+  const criterioVerde = mat.verde ? ` Criterio: la Tabla U.9 excluye en su título a las especies con tabla propia; la asignación por grupo de la madera verde (Anexo U, pág. 217) se aplica igual a ${mat.e.nom.toLowerCase()}${mat.porEspesor ? ", tratada como verde por tener espesor mayor que 100 mm" : ""}.` : "";
+  const notaFcn = (fcnIng ? ` La Tabla ${mat.e.tabla} no da F<sub>cn</sub>: se usa el valor ingresado para madera seca.`
+    : mat.u10 ? ` F<sub>cn</sub> de la Tabla U.10 por el grupo ${mat.verde ? mat.e.verde.grupo : mat.e.verdeSeco} de la Tabla A.1.` : "") + criterioVerde;
   m.out.push(`<table class="prop"><tr><th>Propiedad (${titulo})</th><th>Símbolo</th><th>kgf/cm²</th></tr>` +
     props.map(([n, s, , x]) => `<tr><td>${n}</td><td>${s}</td><td class="num">${fmt(x * MPA, dec(x))}</td></tr>`).join("") +
     (mat.radiata ? `<tr><td>Índice de aplastamiento en compresión normal</td><td>E<sub>cn,h</sub></td><td class="num">56.5 kgf/cm²/mm</td></tr>` : "") + `</table>
@@ -746,7 +781,7 @@ ${mat.radiata ? L`Índice de aplastamiento en compresión normal & $E_{cn,h}$ & 
 \bottomrule
 \end{tabular}
 \end{table}
-${mat.verde ? L`Valores de la Tabla U.9` : L`Valores de la Tabla ${mat.e.tabla}`} convertidos con 1 MPa $= 10$ kgf/cm$^2$.${fcnIng ? L` La Tabla ${mat.e.tabla} no entrega $F_{cn}$; se usa el valor ingresado por el calculista para madera seca.` : ""}
+${mat.verde ? L`Valores de la Tabla U.9` : L`Valores de la Tabla ${mat.e.tabla}`} convertidos con 1 MPa $= 10$ kgf/cm$^2$.${fcnIng ? L` La Tabla ${mat.e.tabla} no entrega $F_{cn}$; se usa el valor ingresado por el calculista para madera seca.` : mat.u10 ? L` $F_{cn}$ de la Tabla U.10, grupo ${mat.verde ? mat.e.verde.grupo : mat.e.verdeSeco} de la Tabla A.1.` : ""}${mat.verde ? L` Criterio: la Tabla U.9 excluye en su título a las especies con tabla propia; la asignación por grupo de la madera verde (Anexo U) se aplica igual a ${mat.e.nom.toLowerCase()}${mat.porEspesor ? ", tratada como verde por tener espesor mayor que 100\,mm" : ""}.` : ""}
 `);
 }
 
@@ -754,7 +789,7 @@ ${mat.verde ? L`Valores de la Tabla U.9` : L`Valores de la Tabla ${mat.e.tabla}`
 const NOMK = { Ff: "F_f", Fcp: "F_{cp}", Ftp: "F_{tp}", Fcz: "F_{cz}", Fcn: "F_{cn}", Ef: "E_f" };
 function bloqueKH(m, mat, H, claves) {
   if (mat.verde) {
-    m.p(L`\textbf{Factor de modificación por humedad} (7.1.1). Con $H = ${tn(H, 1)}\,\% \ge ${H_VERDE}\,\%$ la madera se trata en estado verde: las propiedades de la clase ${mat.clase} (Tablas U.11 y U.9) ya corresponden a ese estado, por lo que $K_H = 1$; a la compresión normal ingresada para madera seca se aplica el factor de la Tabla 4 (nota 1, también para especies en general):`, true);
+    m.p(L`\textbf{Factor de modificación por humedad} (7.1.1). ${mat.porEspesor ? L`La pieza tiene espesor mayor que 100\,mm, por lo que se asigna como madera verde (Anexo U)` : L`Con $H = ${tn(H, 1)}\,\% \ge ${H_VERDE}\,\%$ la madera se trata en estado verde`}: las propiedades de la clase ${mat.clase} (Tablas U.11 y U.9) ya corresponden a ese estado, por lo que $K_H = 1$; ${mat.u10 ? L`la compresión normal es el valor verde de la Tabla U.10 (grupo ${mat.e.verde.grupo}), también con $K_H = 1$` : L`a la compresión normal ingresada para madera seca se aplica el factor de la Tabla 4 (nota 1, también para especies en general)`}. Al pasar del estado seco al verde las tensiones admisibles bajan de golpe:`, true);
     m.eq(claves.map(k => L`K_{H,${NOMK[k]}} = ${tn(mat.KH(k), 2)}`).join(L` \qquad `), "7.1.1");
     return;
   }
@@ -765,8 +800,14 @@ function bloqueKH(m, mat, H, claves) {
     m.p(L`Para $H ${rel}\,\%$ se usa $K_H = 1 - (H - 12)\,\Delta R$, con $\Delta R$ propio de cada propiedad (${grupo}):`, true);
     m.out.push({ tex: L`Factor de humedad para $H = ${tn(H, 1)}\,\%$ ($${rel}\,\%$): $K_H = 1 - (H - 12)\,\Delta R$, con $\Delta R$ de la Tabla 3 (${grupo}):` });
     m.eq(L`\begin{aligned}
-${claves.map(k => L`\Delta R_{${NOMK[k]}} &= ${tn(mat.DR[k], mat.radiata ? 3 : 4)} & \quad K_{H,${NOMK[k]}} &= 1 - (${tn(H, 1)} - 12)\cdot ${tn(mat.DR[k], mat.radiata ? 3 : 4)} = ${tn(mat.KH(k), 3)}`).join(" \\\\\n")}
+${claves.filter(k => mat.radiata || k !== "Fcn").map(k => L`\Delta R_{${NOMK[k]}} &= ${tn(mat.DR[k], mat.radiata ? 3 : 4)} & \quad K_{H,${NOMK[k]}} &= 1 - (${tn(H, 1)} - 12)\cdot ${tn(mat.DR[k], mat.radiata ? 3 : 4)} = ${tn(mat.KH(k), 3)}`).join(" \\\\\n")}
 \end{aligned}`, "7.1.1");
+    if (!mat.radiata && claves.includes("Fcn")) {
+      m.p(mat.u10
+        ? L`Para la compresión normal del ${mat.e.nom.toLowerCase()}, la Tabla U.10 da ${tn(mat.u10[0], 1)} MPa en estado seco (grupo ${mat.e.verdeSeco}) y ${tn(mat.u10[1], 1)} MPa en estado verde (grupo ${mat.e.verde.grupo}); entre 12\,\% y ${H_VERDE}\,\% se interpola linealmente (7.1.1):`
+        : L`Para la compresión normal, la Tabla 3 remite al factor de la Tabla 4 para especies en general ($K_H = ${tn(VERDE.Fcn, 2)}$ en estado verde); entre 12\,\% y ${H_VERDE}\,\% se interpola linealmente desde 1 (7.1.1):`, true);
+      m.eq(L`K_{H,F_{cn}} = 1 - \frac{H - 12}{${H_VERDE} - 12}\,(1 - ${tn(mat.rFcn, 3)}) = 1 - \frac{${tn(H, 1)} - 12}{${H_VERDE - 12}}\cdot ${tn(1 - mat.rFcn, 3)} = ${tn(mat.KHfcn, 3)}`, "7.1.1");
+    }
   } else {
     m.p(L`Factor de humedad para $H = ${tn(H, 1)}\,\% > 18\,\%$: se usan los factores de madera verde de la Tabla 4, propios de cada propiedad:`);
     m.eq(claves.map(k => L`K_{H,${NOMK[k]}} = ${tn(VERDE[k], 2)}`).join(L` \qquad `), "7.1.1");

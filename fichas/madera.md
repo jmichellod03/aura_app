@@ -10,9 +10,11 @@ Documentos: NCh 1198:2024.
 - NCh 1198 es un PDF escaneado: la página indicada es donde empieza la sección según su índice o tabla, no siempre la del subpunto.
 - Muro de corte: la fuerza horizontal de techo con cos α es criterio de la planilla FULL MADERA.
 - NCh 432 (viento) y NCh 1537 no están en el proyecto.
-- Especies: pino radiata (Tabla U.1) y las siete con tabla propia de madera seca: pino ponderosa (U.2), pino oregón (U.3), eucaliptus nitens (U.4), raulí (U.5), lenga (U.6), roble (U.7) y acacia dealbata (U.8). Las demás especies de la Tabla A.1 no están en la app.
-- Las Tablas U.2 a U.8 no dan compresión normal: el calculista ingresa F_cn para madera seca. Para roble se indica como referencia el valor de la Tabla U.10 de su grupo ES4.
-- Especies distintas del pino radiata con H ≥ 20 %: solo pino oregón (grupo E5) y roble (grupo E4), que figuran en la Tabla A.1, con la clase estructural de la Tabla U.11 y los valores de la Tabla U.9 (K_H = 1; al F_cn ingresado se aplica 0.67 de la Tabla 4, nota 1). Para las otras cinco no se calcula en estado verde.
+- Especies: pino radiata (Tabla U.1) y las siete con tabla propia de madera seca: pino ponderosa (U.2), pino oregón (U.3), eucaliptus nitens (U.4), raulí (U.5), lenga (U.6), roble (U.7) y acacia dealbata (U.8), en envigado, tabique y pilar. Las demás especies de la Tabla A.1 no están en la app.
+- Muro de corte: solo pino radiata, porque 12.2.2 a 12.2.4 exigen pies derechos y soleras con las tensiones de la Tabla U.1 y la Tabla 42 remite a esos requisitos.
+- Las Tablas U.2 a U.8 no dan compresión normal: el calculista ingresa F_cn para madera seca, salvo en roble, que la Tabla U.10 sí incluye (grupo ES4 en seco y E4 en verde) y se interpola entre ambos valores para H entre 12 % y 20 % (7.1.1).
+- F_cn ingresado con H entre 12 % y 20 %: K_H interpolado desde 1 hasta 0.67 (Tabla 3, nota de la compresión normal, y Tabla 4).
+- Especies distintas del pino radiata con H ≥ 20 % o piezas de espesor mayor que 100 mm (madera verde, Anexo U): solo pino oregón (grupo E5) y roble (grupo E4), que figuran en la Tabla A.1, con la clase estructural de la Tabla U.11 y los valores de la Tabla U.9 (K_H = 1; al F_cn ingresado del oregón se aplica 0.67 de la Tabla 4). Es un criterio declarado en la memoria: la Tabla U.9 excluye en su título a las especies con tabla propia. Para las otras cinco no se calcula en estado verde.
 - Bajo 20 % de humedad, las especies distintas del pino radiata usan ΔR de "especies en general" (Tabla 3). El pino radiata mantiene su criterio anterior (ΔR hasta 18 % y Tabla 4 sobre 18 %).
 - Factor de altura en flexión y tracción para especies distintas del pino radiata: (50/h)^(1/9) (8.2.2.3). El factor de altura en E (8.2.4.2) y el índice E_cn,h son solo de pino radiata.
 - Módulo de corte: G = 0.065 E en coníferas y 0.07 E en latifoliadas (Anexo B.3, G_LT).
@@ -62,5 +64,6 @@ Documentos: NCh 1198:2024.
 | Propiedades mecánicas admisibles (otras especies) | Grupo de pino oregón y roble | Tabla A.1 | NCh 1198:2024 | 174 |
 | Factores de modificación y propiedades de diseño | Factor de humedad, especies en general: ΔR | Tabla 3 | NCh 1198:2024 | 21 |
 | Factores de modificación y propiedades de diseño | Factor de altura, especies distintas del pino radiata: Khf | 8.2.2.3 | NCh 1198:2024 | 28 |
-| Pandeo | Coeficiente de proporcionalidad para grados N°1 y N°2: c | Tabla 9 | NCh 1198:2024 | 51 |
+| Pandeo | Coeficiente de proporcionalidad (N°1 y N°2: 0.85): c | Tabla 9 | NCh 1198:2024 | 51 |
 | Deformaciones | Módulo de corte en coníferas y latifoliadas: G | Anexo B.3 | NCh 1198:2024 | 175 |
+| Muro de corte | Requisito de pino radiata para pies derechos y soleras | 12.2.2 a 12.2.4 | NCh 1198:2024 | 155 |
