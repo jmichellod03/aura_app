@@ -1,0 +1,675 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#00008B">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="AURA">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js" integrity="sha384-K0oxqktRvaThvYgGL4G+OK2Ih6VS6Uyu7j3+7WJgp/uWM0Yv6Xi4YEiw0BB+mPfi" crossorigin="anonymous"></script>
+<script src="nube.js?v=28"></script>
+<style>
+  /* PWA: sin zoom automático de iOS al enfocar campos y texto estable al rotar */
+  html { -webkit-text-size-adjust: 100%; }
+  @media (max-width: 900px) { input, select, textarea { font-size: 16px !important; } }
+  main > *, .row2 > *, .row3 > *, fieldset { min-width: 0; }
+  input, select { min-width: 0; max-width: 100%; }
+  .memo, .tablaWrap { overflow-x: auto; }
+  svg { max-width: 100%; }
+</style>
+<title>Corte en Muros</title>
+<style>
+  :root {
+    --bg: #e3e6ea;
+    --panel: #fffafa;
+    --ink: #1d2330;
+    --muted: #5f6b7a;
+    --line: #dde1e7;
+    --accent: #5b7c99;
+    --accent-ink: #ffffff;
+    --head: #00008B;
+    --ok: #1f8a4c;
+    --ok-bg: #e6f4ec;
+    --bad: #c62828;
+    --bad-bg: #fbe9e9;
+    --warn: #9a6400;
+    --warn-bg: #fff4dc;
+    --mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 "Segoe UI", system-ui, -apple-system, sans-serif; }
+  header { background: var(--head); color: #fff; padding: 10px 24px; display: flex; align-items: center; gap: 8px 16px; flex-wrap: wrap; }
+  header h1 { margin: 0; font-size: 19px; font-weight: 600; }
+  header a.home { color: #fff; text-decoration: none; font-size: 13px; border: 1px solid rgba(255,255,255,.35); border-radius: 4px; padding: 3px 9px; }
+  header span { color: #c8cbe8; font-size: 13px; }
+  main { display: grid; grid-template-columns: 380px 1fr; gap: 20px; padding: 20px 24px; max-width: 1400px; margin: 0 auto; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; padding: 16px; } }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+  .panel > h2 { margin: 0; padding: 10px 16px; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); border-bottom: 1px solid var(--line); }
+  .body { padding: 14px 16px; }
+  label { display: block; font-size: 12px; color: var(--muted); margin: 10px 0 4px; }
+  select, input[type=number] { width: 100%; padding: 7px 9px; border: 1px solid var(--line); border-radius: 5px; font: inherit; background: #fff; color: var(--ink); }
+  select:focus, input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  input[type=file] { width: 100%; font-size: 13px; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .unit { color: var(--muted); font-size: 11px; }
+  fieldset { border: 1px solid var(--line); border-radius: 6px; margin: 14px 0 0; padding: 4px 12px 12px; }
+  legend { font-size: 12px; font-weight: 600; color: var(--head); padding: 0 4px; }
+  .hidden { display: none !important; }
+  .invalido { border-color: var(--bad) !important; background: var(--bad-bg) !important; }
+  .geomWrap { max-height: 420px; overflow-y: auto; margin-top: 8px; border: 1px solid var(--line); border-radius: 5px; }
+  table.geom { width: 100%; border-collapse: collapse; font-size: 12px; }
+  table.geom th { position: sticky; top: 0; background: var(--panel); color: var(--muted); font-weight: 600; padding: 4px 6px; text-align: left; border-bottom: 1px solid var(--line); z-index: 1; }
+  table.geom td { padding: 2px 4px; }
+  table.geom td:first-child { font-weight: 600; color: var(--head); white-space: nowrap; padding-left: 6px; }
+  table.geom input { padding: 4px 6px; text-align: right; }
+
+  .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; padding: 14px 16px; }
+  .card { border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; }
+  .card .t { font-size: 12px; color: var(--muted); }
+  .card .v { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .card .s { font-size: 12px; color: var(--muted); }
+  .bar { height: 6px; background: #eceef1; border-radius: 3px; margin-top: 6px; overflow: hidden; }
+  .bar > i { display: block; height: 100%; background: var(--ok); }
+  .bar.bad > i { background: var(--bad); }
+  .verdict { margin: 0 16px 14px; padding: 12px 14px; border-radius: 6px; font-weight: 600; font-size: 15px; }
+  .verdict.ok { background: var(--ok-bg); color: var(--ok); }
+  .verdict.bad { background: var(--bad-bg); color: var(--bad); }
+  .note { margin: 8px 0; padding: 8px 10px; border-radius: 5px; background: var(--warn-bg); color: var(--warn); font-size: 12.5px; }
+  #verdict .note { margin: -6px 16px 14px; }
+  #verdict > .note:first-child { margin: 14px 16px; }
+
+  .memo { padding: 4px 16px 16px; }
+  .memo h3 { font-size: 14px; margin: 18px 0 6px; padding-bottom: 4px; border-bottom: 2px solid var(--accent); color: var(--head); }
+  .memo h4 { font-size: 13px; margin: 12px 0 4px; color: var(--head); }
+  table.calc { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.calc td { padding: 4px 8px; border-bottom: 1px solid #eef0f3; vertical-align: top; }
+  table.calc td.k { color: var(--ink); }
+  table.calc td.v { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; font-weight: 600; }
+  .ref { display: inline-block; font-size: 10.5px; color: var(--accent); border: 1px solid #c3d0dc; border-radius: 3px; padding: 0 4px; margin-left: 6px; font-weight: 500; }
+  .tag { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 11.5px; font-weight: 600; }
+  .tag.ok { background: var(--ok-bg); color: var(--ok); }
+  .tag.bad { background: var(--bad-bg); color: var(--bad); }
+  .tag.warn { background: var(--warn-bg); color: var(--warn); }
+  table.alt { width: 100%; border-collapse: collapse; font-size: 12.5px; margin: 6px 0 10px; }
+  table.alt th { text-align: right; font-size: 11.5px; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--line); padding: 5px 7px; white-space: nowrap; }
+  table.alt th:first-child, table.alt td:first-child { text-align: left; }
+  table.alt td { padding: 4px 7px; border-bottom: 1px solid #eef0f3; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+  table.alt td.malo { color: var(--bad); font-weight: 600; }
+  table.alt td.aviso { color: var(--warn); font-weight: 600; }
+  .toolbar { display: flex; justify-content: flex-end; padding: 10px 16px 0; gap: 8px; flex-wrap: wrap; }
+  .btn { padding: 7px 14px; border-radius: 5px; border: 1px solid var(--head); background: var(--head); color: #fff; font: inherit; font-size: 13px; cursor: pointer; }
+  .btn.sec { background: #fff; color: var(--head); }
+  footer { text-align: center; color: var(--muted); font-size: 12px; padding: 10px 0 24px; }
+
+  @media print {
+    body { background: #fff; }
+    header { background: #fff; color: #000; border-bottom: 2px solid #000; }
+    header span { color: #333; }
+    header a.home { display: none; }
+    main { display: block; padding: 0; }
+    #inputs, .toolbar, footer { display: none; }
+    .panel { border: 0; }
+    .memo h3 { break-after: avoid; }
+    table.calc tr { break-inside: avoid; }
+  }
+</style>
+<link rel="stylesheet" href="aura.css?v=9">
+<script src="lateral.js?v=4"></script>
+</head>
+<body>
+<header>
+  <a class="marca" href="index.html" aria-label="Inicio"><span class="logo-tile"><span class="logo"><img src="icons/logo-mmp.webp" alt="MMP"></span></span></a>
+  <a class="home" href="index.html">← Inicio</a>
+  <h1>Corte en muros</h1>
+  <span>Piers importados desde ETABS · Verificación al corte y armadura horizontal · Unidades kgf – m</span>
+</header>
+
+<main>
+  <!-- ===================== ENTRADAS ===================== -->
+  <section class="panel" id="inputs">
+    <h2>Datos de entrada</h2>
+    <div class="body">
+      <fieldset>
+        <legend>1. Tabla Pier Forces de ETABS</legend>
+        <label for="archivoPier">Archivo .xlsx</label>
+        <input type="file" id="archivoPier" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+        <div class="unit" id="infoArchivo" style="margin-top:6px">Exporte la tabla Pier Forces desde ETABS a Excel.</div>
+        <div id="boxCaso" class="hidden">
+          <label for="caso">Caso o combinación</label>
+          <select id="caso"></select>
+        </div>
+        <textarea id="datosPier" hidden aria-hidden="true"></textarea>
+        <textarea id="geomPier" hidden aria-hidden="true"></textarea>
+        <input type="hidden" id="nombrePier">
+      </fieldset>
+
+      <fieldset>
+        <legend>2. Materiales y armadura</legend>
+        <div class="row2">
+          <div><label for="fc">Hormigón f'<sub>c</sub> <span class="unit">[kgf/cm²]</span></label><input id="fc" type="number" step="10" value="250"></div>
+          <div><label for="fy">Acero f<sub>y</sub> <span class="unit">[kgf/cm²]</span></label><input id="fy" type="number" step="100" value="4200"></div>
+          <div><label for="db">Barra horizontal φ <span class="unit">[mm]</span></label>
+            <select id="db"><option selected>8</option><option>10</option><option>12</option><option>16</option><option>18</option><option>20</option><option>22</option><option>25</option><option>32</option></select></div>
+          <div><label for="pierSel">Pier a desarrollar</label><select id="pierSel"><option value="">Pier crítico</option></select></div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>3. Geometría</legend>
+        <div class="row2">
+          <div><label for="Hw">Altura del muro H<sub>w</sub> <span class="unit">[m]</span></label><input id="Hw" type="number" step="0.01" min="0"></div>
+          <div><label for="eDef">Espesor por defecto e <span class="unit">[m]</span></label><input id="eDef" type="number" step="0.01" min="0" value="0.2"></div>
+        </div>
+        <div id="boxGeom" class="hidden">
+          <div class="unit" style="margin-top:8px">Ingrese el largo de cada pier. Si deja e vacío, se usa el espesor por defecto. También puede pegar desde Excel columnas de largo y espesor, con o sin el nombre del pier.</div>
+          <div class="geomWrap"><table class="geom"><thead><tr><th>Pier</th><th>L<sub>w</sub> [m]</th><th>e [m]</th></tr></thead><tbody id="tablaGeom"></tbody></table></div>
+        </div>
+      </fieldset>
+    </div>
+  </section>
+
+  <!-- ===================== RESULTADOS ===================== -->
+  <section>
+    <div class="panel">
+      <h2 id="resTitle">Resultados</h2>
+      <div class="summary" id="summary"></div>
+      <div id="verdict"></div>
+      <div class="toolbar">
+        <button class="btn sec" type="button" onclick="window.print()">Imprimir</button>
+        <button class="btn" type="button" onclick="descargarZipMemoria(ultimoTex, ultimoNombre, document.body)">Descargar memoria (.zip)</button>
+      </div>
+      <div class="memo" id="memo"></div>
+    </div>
+  </section>
+</main>
+<footer>Herramienta de apoyo basada en la planilla de muros del Informe IIO348. Verifica solo el corte: la flexocompresión y los elementos de borde quedan sin verificar. No reemplaza la memoria de cálculo del ingeniero del proyecto. Verifique siempre los resultados.</footer>
+
+<script src="memo.js?v=38"></script>
+<script src="tablero.js?v=3"></script>
+<script>
+"use strict";
+// ---------------------------------------------------------------------------
+// Corte en muros de hormigón armado a partir de la tabla Pier Forces de ETABS.
+// Las fórmulas reproducen la hoja "Muro" de la planilla del Informe IIO348, incluidos sus criterios.
+// Unidades como en la planilla: fuerzas en kgf, largos en m, tensiones en kgf/cm².
+// ---------------------------------------------------------------------------
+// <calculo>
+const PHI = 0.75;                              // planilla, celda E23
+function corteFila(Vu, Lw, e, c) {
+  const raiz = Math.sqrt(c.fc);
+  const Vc = 0.53 * raiz * e * 100 * Lw * 0.8 * 100;
+  const Vs = Vu / PHI - Vc;
+  const Vsmax = 2.2 * raiz * e * Lw * 0.8 * 10000;
+  const Avs = Vs / (c.fy * Lw * 0.8 * 100) * 100;            // cm²/m
+  const rho = Avs / (100 * e * 100);
+  const rhoMin = Vu < 0.27 * e * 100 * Lw * 100 * raiz ? 0.002 : 0.0025;
+  const As = rho > rhoMin ? rho * 100 * e * 100 : rhoMin * 100 * e * 100;   // cm²/m
+  const alfa = c.Hw / Lw <= 1.5 ? 0.8 : 0.53;                // informativo: la planilla usa 0.53 en φVn
+  const phiVn = e * 100 * Lw * 100 * (0.53 * raiz + rhoMin * c.fy) * PHI;
+  const limite = Vsmax * 0.75;
+  const Ab = Math.PI * (c.db / 20) ** 2;
+  const s = Math.floor(100 * Ab / (As / 2));
+  const dc = Math.max(Vu / phiVn, Vu / limite, Vs / Vsmax);
+  return { Vu, Vc, Vs, Vsmax, Avs, rho, rhoMin, As, alfa, phiVn, limite, Ab, s, dc };
+}
+// </calculo>
+
+// ---------------------------------------------------------------------------
+// Utilidades de formato
+// ---------------------------------------------------------------------------
+const fmt = (x, d = 2) => Number.isFinite(x)
+  ? x.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d }).replace(/,/g, " ")
+  : "—";
+const $ = (id) => document.getElementById(id);
+const num = (id) => { const v = parseFloat($(id).value); return Number.isFinite(v) ? v : 0; };
+const L = String.raw;
+const tn = (x, d = 2) => Number.isFinite(x) ? fmt(x, d).replace(/ /g, "\\,") : "\\infty";
+const LE = L`\le`;
+const cmp = (a, b) => (a <= b ? LE : ">");
+const escH = (t) => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+const estado = (dc) => (dc <= 1 + 1e-9 ? "Cumple" : "No cumple");
+const tag = (ok, txt) => `<span class="tag ${ok ? "ok" : "bad"}">${txt}</span>`;
+const tagDC = (dc) => tag(dc <= 1 + 1e-9, `D/C = ${fmt(dc, 3)}`);
+const barra = (db, s) => `φ${db} @ ${s} cm`;
+
+class Memo {
+  constructor() { this.out = []; this.tex = []; this.n = 0; }
+  h(t) { memoTexCerrar(this); this.n++; this.out.push(`<h3>${this.n}. ${escH(t)}</h3>`); this.tex.push(`\\section{${escTex(t)}}`); }
+  sub(t) { memoTexCerrar(this); this.out.push(`<h4>${escH(t)}</h4>`); this.tex.push(`\\subsection{${escTex(t)}}`); }
+  row(k, v, ref) { this.out.push({ k, v, ref }); }
+  note(t, tt) { this.out.push(`<div class="note">${t}</div>`); if (tt) this.tex.push(`\\textit{${tt}}\n`); }
+  eq(s, ref) { this.tex.push(texDisplay(s, ref)); this.out.push({ tex: s + (ref ? `\\tag*{(${ref})}` : ""), eq: true }); }
+  p(s, soloTex) { memoTexP(this, s); if (!soloTex) this.out.push({ tex: s }); }
+  html_(h) { this.out.push(h); }
+  raw(t) { memoTexCerrar(this); this.tex.push(t); }
+  texto() { memoTexCerrar(this); return this.tex.join("\n"); }
+  html() { return memoHTML(this.out); }
+}
+
+// ---------------------------------------------------------------------------
+// Lectura del .xlsx que exporta ETABS (zip con XML), sin librerías externas
+// ---------------------------------------------------------------------------
+const MAX_XLSX = 50e6, MAX_XML = 200e6;
+async function inflar(datos) {
+  const lector = new Blob([datos]).stream().pipeThrough(new DecompressionStream("deflate-raw")).getReader();
+  const partes = []; let total = 0;
+  for (;;) {
+    const { done, value } = await lector.read();
+    if (done) break;
+    total += value.length;
+    if (total > MAX_XML) { await lector.cancel(); throw new Error("El archivo descomprimido es demasiado grande."); }
+    partes.push(value);
+  }
+  return new Blob(partes).text();
+}
+function entradasZip(buf) {
+  const v = new DataView(buf), bytes = new Uint8Array(buf), txt = new TextDecoder();
+  let fin = -1;
+  for (let i = buf.byteLength - 22; i >= Math.max(0, buf.byteLength - 66000); i--) if (v.getUint32(i, true) === 0x06054b50) { fin = i; break; }
+  if (fin < 0) throw new Error("El archivo no es un .xlsx válido.");
+  const n = v.getUint16(fin + 10, true);
+  let p = v.getUint32(fin + 16, true);
+  const mapa = new Map();
+  for (let i = 0; i < n; i++) {
+    if (p + 46 > buf.byteLength || v.getUint32(p, true) !== 0x02014b50) throw new Error("El archivo no es un .xlsx válido.");
+    const metodo = v.getUint16(p + 10, true), comp = v.getUint32(p + 20, true);
+    const lN = v.getUint16(p + 28, true), lE = v.getUint16(p + 30, true), lC = v.getUint16(p + 32, true), ini = v.getUint32(p + 42, true);
+    mapa.set(txt.decode(bytes.subarray(p + 46, p + 46 + lN)), { metodo, comp, ini });
+    p += 46 + lN + lE + lC;
+  }
+  return async (nombre) => {
+    const e = mapa.get(nombre);
+    if (!e) return null;
+    const desde = e.ini + 30 + v.getUint16(e.ini + 26, true) + v.getUint16(e.ini + 28, true);
+    const crudo = bytes.subarray(desde, desde + e.comp);
+    if (e.metodo === 0) return txt.decode(crudo);
+    if (e.metodo === 8) return inflar(crudo);
+    throw new Error("El .xlsx usa una compresión no soportada.");
+  };
+}
+const xml = (t) => {
+  const d = new DOMParser().parseFromString(t, "application/xml");
+  if (d.querySelector("parsererror")) throw new Error("El archivo no es un .xlsx válido.");
+  return d;
+};
+const nodos = (raiz, nombre) => [...raiz.getElementsByTagNameNS("*", nombre)];
+function filasHoja(doc, compartidas) {
+  return nodos(doc, "row").map(fila => {
+    const celdas = {};
+    for (const c of nodos(fila, "c")) {
+      const col = (c.getAttribute("r") || "").replace(/\d+/g, ""), t = c.getAttribute("t");
+      const v = nodos(c, "v")[0]?.textContent;
+      if (t === "s") celdas[col] = compartidas[+v] ?? "";
+      else if (t === "inlineStr") celdas[col] = nodos(c, "t").map(x => x.textContent).join("");
+      else if (v !== undefined) celdas[col] = v;
+    }
+    return celdas;
+  });
+}
+// Factor a kgf según la unidad que indica ETABS bajo el encabezado
+const FACTOR_FUERZA = { kgf: 1, kg: 1, tonf: 1000, tf: 1000, ton: 1000, n: 0.101972, kn: 101.972, kip: 453.592, kips: 453.592, lb: 0.453592 };
+async function leerPierForces(buf) {
+  const leer = entradasZip(buf);
+  const textoLibro = await leer("xl/workbook.xml"), textoRels = await leer("xl/_rels/workbook.xml.rels");
+  if (!textoLibro || !textoRels) throw new Error("El archivo no es un .xlsx válido.");
+  const ss = await leer("xl/sharedStrings.xml");
+  const compartidas = ss ? nodos(xml(ss), "si").map(si => nodos(si, "t").map(t => t.textContent).join("")) : [];
+  const rels = {};
+  for (const r of nodos(xml(textoRels), "Relationship")) rels[r.getAttribute("Id")] = r.getAttribute("Target");
+  for (const h of nodos(xml(textoLibro), "sheet")) {
+    const rid = [...h.attributes].find(a => a.localName === "id")?.value, destino = rels[rid];
+    if (!destino) continue;
+    const texto = await leer(destino.startsWith("/") ? destino.slice(1) : "xl/" + destino.replace(/^\.\//, ""));
+    if (!texto) continue;
+    const filas = filasHoja(xml(texto), compartidas);
+    const iEnc = filas.findIndex(f => { const v = Object.values(f); return v.includes("Pier") && v.includes("V2") && v.includes("Story"); });
+    if (iEnc < 0) continue;
+    const col = {};
+    for (const [c, t] of Object.entries(filas[iEnc])) col[t] = c;
+    const uni = String(filas[iEnc + 1]?.[col.V2] ?? "").trim().toLowerCase();
+    const factor = FACTOR_FUERZA[uni];
+    if (!factor) throw new Error(`No se reconoce la unidad de V2 ("${uni || "sin unidad"}"). Exporte la tabla con la unidad de fuerza en kgf, tonf, kN o kip.`);
+    const salida = [];
+    let omitidas = 0;
+    for (const f of filas.slice(iEnc + 2)) {
+      if (!f[col.Pier] && !f[col.Story]) continue;
+      const v = parseFloat(f[col.V2]);
+      if (!f[col.Pier] || !Number.isFinite(v)) { omitidas++; continue; }
+      salida.push([f[col.Story] ?? "", f[col.Pier], f[col["Output Case"]] ?? "", f[col.Location] ?? "", f[col["Step Type"]] ?? "", +(v * factor).toFixed(3)]);
+    }
+    if (!salida.length) throw new Error("La tabla Pier Forces no tiene filas con datos.");
+    return { filas: salida, omitidas };
+  }
+  throw new Error("No se encontró la tabla Pier Forces (columnas Story, Pier y V2).");
+}
+
+// ---------------------------------------------------------------------------
+// Datos importados y geometría (se guardan en campos ocultos para los proyectos)
+// ---------------------------------------------------------------------------
+const json = (id, def) => { try { return JSON.parse($(id).value) ?? def; } catch { return def; } };
+const filasPier = () => json("datosPier", []);
+const geometria = () => json("geomPier", {});
+const listaPiers = (filas) => [...new Set(filas.map(f => f[1]))];
+
+function pintarSelectores(casoV, pierV) {
+  const filas = filasPier();
+  const casos = [...new Set(filas.map(f => f[2]))];
+  $("caso").innerHTML = casos.map(c => `<option value="${escH(c)}">${escH(c || "(sin nombre)")}</option>`).join("");
+  if (casoV !== undefined && casos.includes(casoV)) $("caso").value = casoV;
+  $("boxCaso").classList.toggle("hidden", casos.length < 2);
+  const piers = listaPiers(filas);
+  $("pierSel").innerHTML = `<option value="">Pier crítico</option>` + piers.map(p => `<option value="${escH(p)}">${escH(p)}</option>`).join("");
+  if (pierV && piers.includes(pierV)) $("pierSel").value = pierV;
+}
+function pintarGeometria() {
+  const piers = listaPiers(filasPier()), g = geometria();
+  $("boxGeom").classList.toggle("hidden", !piers.length);
+  // Sin id: estos campos se guardan juntos en el campo oculto geomPier
+  $("tablaGeom").innerHTML = piers.map(p => `<tr data-pier="${escH(p)}"><td>${escH(p)}</td>
+    <td><input type="number" step="0.01" min="0" data-k="L" aria-label="Largo del pier ${escH(p)} en metros" value="${escH(g[p]?.L ?? "")}"></td>
+    <td><input type="number" step="0.01" min="0" data-k="e" aria-label="Espesor del pier ${escH(p)} en metros" value="${escH(g[p]?.e ?? "")}"></td></tr>`).join("");
+}
+function guardarGeometria() {
+  const g = geometria();     // conserva piers de otros modelos: permiten reimportar sin volver a ingresar
+  $("tablaGeom").querySelectorAll("tr").forEach(tr => {
+    g[tr.dataset.pier] = { L: tr.querySelector('[data-k="L"]').value, e: tr.querySelector('[data-k="e"]').value };
+  });
+  $("geomPier").value = JSON.stringify(g);
+}
+function infoArchivo() {
+  const filas = filasPier();
+  if (!filas.length) return;
+  $("infoArchivo").textContent = `${$("nombrePier").value || "Archivo"}: ${fmt(filas.length, 0)} filas, ${listaPiers(filas).length} piers.`;
+}
+// Pegado desde Excel: columnas [pier] L [e]; con nombre se asigna por pier y sin nombre, desde la fila actual hacia abajo
+const decimal = (t) => t.trim().replace(",", ".");
+function pegarGeometria(ev) {
+  const celda = ev.target.closest("input"), texto = ev.clipboardData.getData("text");
+  if (!celda || !/[\t\n]/.test(texto.trim())) return;
+  ev.preventDefault();
+  const filasT = [...$("tablaGeom").querySelectorAll("tr")], porNombre = new Map(filasT.map(tr => [tr.dataset.pier, tr]));
+  const k0 = celda.dataset.k;
+  let i = filasT.indexOf(celda.closest("tr"));
+  for (const linea of texto.split(/\r?\n/)) {
+    if (!linea.trim()) continue;
+    const cols = linea.split("\t").map(c => c.trim());
+    const nombre = cols.findIndex(c => porNombre.has(c));
+    const tr = nombre >= 0 ? porNombre.get(cols[nombre]) : filasT[i++];
+    if (!tr) break;
+    const valores = (nombre >= 0 ? cols.slice(nombre + 1) : cols).map(decimal).filter(c => Number.isFinite(parseFloat(c)));
+    const claves = nombre >= 0 || k0 === "L" ? ["L", "e"] : ["e"];
+    claves.forEach((k, j) => { if (valores[j] !== undefined) tr.querySelector(`[data-k="${k}"]`).value = valores[j]; });
+  }
+  guardarGeometria(); calcular();
+}
+async function importar(ev) {
+  const archivo = ev.target.files[0];
+  if (!archivo) return;
+  try {
+    if (archivo.size > MAX_XLSX) throw new Error("El archivo supera los 50 MB.");
+    const { filas, omitidas } = await leerPierForces(await archivo.arrayBuffer());
+    guardarGeometria();
+    $("datosPier").value = JSON.stringify(filas);
+    $("nombrePier").value = archivo.name;
+    pintarSelectores(); pintarGeometria(); infoArchivo();
+    if (omitidas) $("infoArchivo").textContent += ` Se omitieron ${omitidas} filas sin V2 numérico.`;
+    calcular();
+  } catch (e) {
+    $("infoArchivo").textContent = `No se pudo leer el archivo: ${e.message}`;
+  } finally { ev.target.value = ""; }
+}
+
+// ---------------------------------------------------------------------------
+// Verificación de todos los piers
+// ---------------------------------------------------------------------------
+function analizar(c) {
+  const g = geometria(), todas = filasPier();
+  const filas = todas.filter(f => f[2] === $("caso").value);
+  const res = [], faltan = [];
+  for (const p of listaPiers(filas)) {
+    const Lw = parseFloat(g[p]?.L), eTxt = g[p]?.e, e = eTxt === undefined || eTxt === "" ? c.eDef : parseFloat(eTxt);
+    if (!(Lw > 0) || !(e > 0)) { faltan.push(p); continue; }
+    let crit = null, gob = null;
+    for (const f of filas) {
+      if (f[1] !== p) continue;
+      const r = { ...corteFila(Math.abs(f[5]), Lw, e, c), piso: f[0], ubic: f[3], paso: f[4] };
+      if (!crit || r.dc > crit.dc) crit = r;
+      if (!gob || r.Vu > gob.Vu) gob = r;
+    }
+    res.push({ p, Lw, e, crit, gob, dc: crit.dc, svMax: Math.min(Lw * 100 / 3, 3 * e * 100, 45) });
+  }
+  res.sort((a, b) => b.dc - a.dc);
+  return { res, faltan, n: filas.length };
+}
+
+function memoPier(m, r, c) {
+  const { p, Lw, e, gob: f } = r, raiz = Math.sqrt(c.fc), d = 0.8 * Lw, hl = c.Hw / Lw;
+  const Acv = e * Lw, Acw = e * c.Hw, limAcv = 2.12 * Acv * raiz * 1e4, limAcw = 2.65 * Acw * raiz * 1e4;
+  m.h(`Pier ${p}`);
+  m.sub("Geometría y demanda");
+  m.row("Largo ; espesor ; altura útil: L<sub>w</sub> ; e ; d", `${fmt(Lw, 2)} ; ${fmt(e, 2)} ; ${fmt(d, 2)} m`);
+  m.eq(L`d = 0.8\,L_w = 0.8\cdot ${tn(Lw, 2)} = ${tn(d, 2)}\ \mathrm{m}`);
+  m.row("Esbeltez del muro ; clasificación: H<sub>w</sub>/L<sub>w</sub>", `${fmt(hl, 3)} ; ${hl > 2 ? "esbelto" : "chato"}`);
+  m.row("Coeficiente de la clasificación: α<sub>c</sub>", fmt(f.alfa, 2));
+  m.eq(L`\frac{H_w}{L_w} = \frac{${tn(c.Hw, 2)}}{${tn(Lw, 2)}} = ${tn(hl, 3)} \qquad \alpha_c = ${hl <= 1.5 ? L`0.80\ \ (H_w/L_w \le 1.5)` : L`0.53\ \ (H_w/L_w > 1.5)`}`);
+  m.row(`Corte máximo (${escH(f.piso)}, ${escH(f.ubic)}${f.paso ? ", " + escH(f.paso) : ""}): V<sub>u</sub>`, `${fmt(f.Vu, 1)} kgf`);
+  m.p(L`Largo $L_w = ${tn(Lw, 2)}$ m y espesor $e = ${tn(e, 2)}$ m. El corte máximo del pier es $V_u = ${tn(f.Vu, 1)}$ kgf, en ${escTex(f.piso)}, ${escTex(f.ubic)}${f.paso ? ", " + escTex(f.paso) : ""}.`, true);
+
+  m.sub("Resistencia al corte y armadura horizontal");
+  m.row("Corte nominal requerido: V<sub>n</sub>", `${fmt(f.Vu / PHI, 1)} kgf`);
+  m.eq(L`V_n = \frac{V_u}{\phi} = \frac{${tn(f.Vu, 1)}}{${PHI}} = ${tn(f.Vu / PHI, 1)}\ \mathrm{kgf}`);
+  m.row("Corte que resiste el hormigón: V<sub>c</sub>", `${fmt(f.Vc, 1)} kgf`);
+  m.eq(L`V_c = 0.53\sqrt{f'_c}\,e\,d = 0.53\sqrt{${tn(c.fc, 0)}}\cdot ${tn(e * 100, 0)}\cdot ${tn(d * 100, 1)} = ${tn(f.Vc, 1)}\ \mathrm{kgf}`);
+  m.row("Corte que debe resistir el acero: V<sub>s</sub>", `${fmt(f.Vs, 1)} kgf`);
+  m.eq(L`V_s = V_n - V_c = ${tn(f.Vu / PHI, 1)} - ${tn(f.Vc, 1)} = ${tn(f.Vs, 1)}\ \mathrm{kgf}`);
+  const dcVs = Math.max(0, f.Vs / f.Vsmax);
+  m.row("Límite del corte del acero: V<sub>s</sub> ≤ V<sub>s,máx</sub>", `${fmt(f.Vs, 1)} ≤ ${fmt(f.Vsmax, 1)} kgf ${tagDC(dcVs)}`, "ACI 318-08 11.4.7.9");
+  m.eq(L`V_{s,m\acute{a}x} = 2.2\sqrt{f'_c}\,e\,d = 2.2\sqrt{${tn(c.fc, 0)}}\cdot ${tn(e * 100, 0)}\cdot ${tn(d * 100, 1)} = ${tn(f.Vsmax, 1)}\ \mathrm{kgf} \qquad \frac{V_s}{V_{s,m\acute{a}x}} = ${tn(f.Vs / f.Vsmax, 3)} ${cmp(f.Vs / f.Vsmax, 1)} 1`, "ACI 318-08 11.4.7.9");
+  m.row("Armadura requerida por corte: A<sub>v</sub>/s", `${fmt(f.Avs, 3)} cm²/m`);
+  m.eq(L`\frac{A_v}{s} = \frac{V_s}{f_y\,d}\cdot 100 = \frac{${tn(f.Vs, 1)}}{${tn(c.fy, 0)}\cdot ${tn(d * 100, 1)}}\cdot 100 = ${tn(f.Avs, 3)}\ \mathrm{cm^2/m}`);
+  m.row("Cuantía requerida ; cuantía mínima: ρ ; ρ<sub>mín</sub>", `${fmt(f.rho, 5)} ; ${fmt(f.rhoMin, 4)}`, "ACI 318-08 21.9.2.1");
+  m.eq(L`\rho = \frac{A_v/s}{100\,e} = \frac{${tn(f.Avs, 3)}}{100\cdot ${tn(e * 100, 0)}} = ${tn(f.rho, 5)}`);
+  m.eq(L`0.27\,L_w\,e\sqrt{f'_c} = ${tn(0.27 * e * 100 * Lw * 100 * raiz, 1)}\ \mathrm{kgf} \;\Rightarrow\; \rho_{m\acute{i}n} = ${f.rhoMin === 0.002 ? L`0.0020\ \ (V_u < 0.27\,L_w\,e\sqrt{f'_c})` : L`0.0025\ \ (V_u \ge 0.27\,L_w\,e\sqrt{f'_c})`}`, "ACI 318-08 21.9.2.1");
+  m.row("Armadura horizontal total: A<sub>s</sub>", `${fmt(f.As, 2)} cm²/m`);
+  m.eq(L`A_s = \max(\rho;\ \rho_{m\acute{i}n})\cdot 100\,e = ${tn(Math.max(f.rho, f.rhoMin), 5)}\cdot 100\cdot ${tn(e * 100, 0)} = ${tn(f.As, 2)}\ \mathrm{cm^2/m}`);
+  const excede = f.s > r.svMax;
+  m.row("Espaciamiento por armadura en dos capas: s", `<b>${barra(c.db, f.s)}</b> por cara`);
+  m.eq(L`s = \left\lfloor\frac{100\,A_b}{A_s/2}\right\rfloor = \left\lfloor\frac{100\cdot ${tn(f.Ab, 3)}}{${tn(f.As / 2, 2)}}\right\rfloor = ${f.s}\ \mathrm{cm}`);
+  m.row("Espaciamiento máximo: S<sub>v,máx</sub>", `${fmt(r.svMax, 1)} cm ${excede ? `<span class="tag warn">s mayor que el máximo</span>` : `<span class="tag ok">s dentro del máximo</span>`}`);
+  m.eq(L`S_{v,m\acute{a}x} = \min\left(\frac{L_w}{3};\ 3e;\ 45\ \mathrm{cm}\right) = \min(${tn(Lw * 100 / 3, 1)};\ ${tn(3 * e * 100, 1)};\ 45) = ${tn(r.svMax, 1)}\ \mathrm{cm}`);
+
+  m.sub("Condiciones de resistencia");
+  m.row("Resistencia al corte: V<sub>u</sub> ≤ φV<sub>n</sub>", `${fmt(f.Vu, 1)} ≤ ${fmt(f.phiVn, 1)} kgf ${tagDC(f.Vu / f.phiVn)}`, "ACI 318-08 21.9.4.1");
+  m.eq(L`\phi V_n = \phi\,L_w\,e\left(0.53\sqrt{f'_c} + \rho_{m\acute{i}n}\,f_y\right) = ${PHI}\cdot ${tn(Lw * 100, 0)}\cdot ${tn(e * 100, 0)}\left(0.53\sqrt{${tn(c.fc, 0)}} + ${tn(f.rhoMin, 4)}\cdot ${tn(c.fy, 0)}\right) = ${tn(f.phiVn, 1)}\ \mathrm{kgf}`, "ACI 318-08 21.9.4.1");
+  m.eq(L`\frac{V_u}{\phi V_n} = \frac{${tn(f.Vu, 1)}}{${tn(f.phiVn, 1)}} = ${tn(f.Vu / f.phiVn, 3)} ${cmp(f.Vu / f.phiVn, 1)} 1`, "ACI 318-08 21.9.4.1");
+  m.row("Límite de resistencia: V<sub>u</sub> ≤ 0.75 V<sub>s,máx</sub>", `${fmt(f.Vu, 1)} ≤ ${fmt(f.limite, 1)} kgf ${tagDC(f.Vu / f.limite)}`, "ACI 318-08 21.9.4.4");
+  m.eq(L`0.75\,V_{s,m\acute{a}x} = 0.75\cdot ${tn(f.Vsmax, 1)} = ${tn(f.limite, 1)}\ \mathrm{kgf} \qquad \frac{V_u}{0.75\,V_{s,m\acute{a}x}} = ${tn(f.Vu / f.limite, 3)} ${cmp(f.Vu / f.limite, 1)} 1`, "ACI 318-08 21.9.4.4");
+  if (r.crit.dc > f.dc + 1e-9) m.note(`La razón máxima de este pier, D/C = ${fmt(r.crit.dc, 3)}, se da en ${escH(r.crit.piso)}, ${escH(r.crit.ubic)}, con V<sub>u</sub> = ${fmt(r.crit.Vu, 1)} kgf y ρ<sub>mín</sub> = ${fmt(r.crit.rhoMin, 4)}.`,
+    L`La razón máxima de este pier, $D/C = ${tn(r.crit.dc, 3)}$, se da en ${escTex(r.crit.piso)}, ${escTex(r.crit.ubic)}, con $V_u = ${tn(r.crit.Vu, 1)}$ kgf y $\rho_{m\acute{i}n} = ${tn(r.crit.rhoMin, 4)}$.`);
+
+  m.sub("Límites para machones");
+  m.row("Área del largo ; área de la altura: A<sub>cv</sub> ; A<sub>cw</sub>", `${fmt(Acv, 3)} ; ${fmt(Acw, 3)} m²`);
+  m.row("Límite con A<sub>cv</sub> ; límite con A<sub>cw</sub>", `${fmt(limAcv, 0)} ; ${fmt(limAcw, 0)} kgf`, "ACI 318-08 21.9.4.4");
+  m.eq(L`2.12\,A_{cv}\sqrt{f'_c} = ${tn(limAcv, 0)}\ \mathrm{kgf} \qquad 2.65\,A_{cw}\sqrt{f'_c} = ${tn(limAcw, 0)}\ \mathrm{kgf}`, "ACI 318-08 21.9.4.4");
+  m.p(L`La planilla calcula estos límites como referencia y no los compara con la demanda, por lo que no entran en la razón D/C.`);
+}
+
+// ---------------------------------------------------------------------------
+// Memoria LaTeX
+// ---------------------------------------------------------------------------
+function documentoTex(c, A, cuerpo) {
+  const fecha = new Date().toLocaleDateString("es-CL", { day: "numeric", month: "long", year: "numeric" });
+  const dcMax = A.res[0].dc;
+  const filas = A.res.map(r => `${escTex(r.p)} & ${tn(r.Lw, 2)} & ${tn(r.e, 2)} & ${escTex(r.crit.piso)} & ${tn(r.crit.Vu, 0)} & ${tn(r.crit.phiVn, 0)} & ${tn(r.crit.limite, 0)} & ${tn(r.dc, 3)} & ${tn(r.gob.As, 2)} & $\\phi$${c.db} @ ${r.gob.s} & ${estado(r.dc)}\\\\`).join("\n");
+  const concl = dcMax <= 1 + 1e-9 && !A.faltan.length ? "cumplen" : "no cumplen en su totalidad";
+  return L`\documentclass[11pt,letterpaper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-tabla,es-noshorthands,es-nolists]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+${TEX_ESTILO}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{float}
+\usepackage{fancyhdr}
+\setlength{\headheight}{14pt}
+\pagestyle{fancy}
+\fancyhf{}
+\chead{Corte en muros}
+\lfoot{Memoria de cálculo --- Corte en muros, ACI 318-08}
+\rfoot{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+\allowdisplaybreaks
+
+\begin{document}
+
+\begin{center}
+{\Large\bfseries Memoria de Cálculo}\\[4pt]
+{\large Corte en muros de hormigón armado}\\[2pt]
+{\small ${fecha}}
+\end{center}
+
+\section{Datos de diseño}
+\begin{table}[H]
+\centering
+\caption{Datos generales.}
+\begin{tabular}{ll}
+\toprule
+Parámetro & Valor\\
+\midrule
+Solicitaciones & Tabla Pier Forces de ETABS, ${escTex($("caso").value || "sin nombre")}\\
+Filas y piers verificados & ${A.n} filas, ${A.res.length} piers\\
+Hormigón $f'_c$ ; acero $f_y$ & ${tn(c.fc, 0)} ; ${tn(c.fy, 0)} kgf/cm$^2$\\
+Altura del muro $H_w$ & ${tn(c.Hw, 2)} m\\
+Barra horizontal & $\phi$${c.db} en dos capas\\
+Factor de reducción $\phi$ & ${PHI}\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Metodología}
+Se verifican al corte todas las filas de la tabla de cada pier, con el corte $V_2$ en valor absoluto y las expresiones de la planilla de diseño de muros del Informe IIO348, basadas en los capítulos 11 y 21 del ACI 318-08. A continuación se desarrolla el detalle de los piers indicados y al final se resumen todos los piers.
+
+${cuerpo}
+
+\section{Alcance, hipótesis y limitaciones}
+\begin{itemize}
+\item Esta memoria verifica solo el corte. \textbf{La flexocompresión y los elementos de borde quedan sin verificar.}
+\item La geometría de cada pier es un dato ingresado por el usuario; $H_w$ es único para todos los piers.
+\item La altura útil se toma como $d = 0.8\,L_w$.
+\item Criterios de la planilla: $\phi V_n$ se calcula con 0.53 en lugar de $\alpha_c$ y con $\rho_{m\acute{i}n}$ en lugar de la cuantía dispuesta; el límite de resistencia se toma como $0.75\,V_{s,m\acute{a}x}$; y $S_{v,m\acute{a}x}$ usa $L_w/3$.
+\item El espaciamiento propuesto no se limita automáticamente a $S_{v,m\acute{a}x}$.
+${A.faltan.length ? L`\item Quedaron sin verificar ${A.faltan.length} piers sin geometría: ${A.faltan.map(escTex).join(", ")}.` : ""}
+\end{itemize}
+
+\section{Resumen de resultados}
+{\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{longtable}{lrrlrrrrrll}
+\caption{Verificación al corte de los piers, ordenados por razón D/C. $V_u$, $\phi V_n$ y el límite corresponden a la fila más exigida.}\\
+\toprule
+Pier & $L_w$ [m] & $e$ [m] & Piso & $V_u$ [kgf] & $\phi V_n$ [kgf] & Límite [kgf] & D/C & $A_s$ [cm$^2$/m] & Barra [cm] & Estado\\
+\midrule
+\endhead
+${filas}
+\bottomrule
+\end{longtable}
+}
+
+La razón demanda-capacidad máxima al corte es $D/C = ${tn(dcMax, 3)}$, en el pier ${escTex(A.res[0].p)}. Los piers verificados \textbf{${concl}} las condiciones de corte indicadas. La flexocompresión y los elementos de borde quedan \textbf{sin verificar}.
+
+\end{document}
+`;
+}
+
+// ---------------------------------------------------------------------------
+// Cálculo e interfaz
+// ---------------------------------------------------------------------------
+let ultimoTex = "", ultimoNombre = "memoria_corte_muros.tex";
+function limpiar(html) {
+  $("resTitle").textContent = "Resultados";
+  $("summary").innerHTML = ""; $("memo").innerHTML = ""; $("verdict").innerHTML = html;
+  ultimoTex = "";
+}
+function calcular() {
+  limpiarInvalidos($("inputs"));
+  if (!filasPier().length) { limpiar(`<div class="note">Importe el archivo .xlsx con la tabla Pier Forces de ETABS para comenzar.</div>`); return; }
+  const malos = datosInvalidos([["fc", 0, true], ["fy", 0, true], ["Hw", 0, true], ["eDef", 0, true]]);
+  if (malos.length) { limpiar(avisoInvalidos(malos)); return; }
+  const c = { fc: num("fc"), fy: num("fy"), Hw: num("Hw"), db: parseInt($("db").value, 10), eDef: num("eDef") };
+  const A = analizar(c);
+  $("tablaGeom").querySelectorAll("tr").forEach(tr => {
+    const faltaL = !(parseFloat(tr.querySelector('[data-k="L"]').value) > 0), ee = tr.querySelector('[data-k="e"]');
+    tr.querySelector('[data-k="L"]').classList.toggle("invalido", faltaL);
+    ee.classList.toggle("invalido", ee.value !== "" && !(parseFloat(ee.value) > 0));
+  });
+  if (!A.res.length) { limpiar(`<div class="note">Ingrese el largo L<sub>w</sub> de los piers para calcular (faltan ${A.faltan.length}).</div>`); return; }
+
+  const crit = A.res[0], fallan = A.res.filter(r => r.dc > 1 + 1e-9), excedenS = A.res.filter(r => r.gob.s > r.svMax);
+  const maxV = A.res.reduce((a, r) => (r.gob.Vu > a.gob.Vu ? r : a), A.res[0]);
+  const maxAs = A.res.reduce((a, r) => (r.gob.As > a.gob.As ? r : a), A.res[0]);
+  const rm = Number.isFinite(crit.dc) ? fmt(crit.dc, 3) : "∞";
+  const w = Math.min(100, Math.max(0, crit.dc * 100));
+  $("summary").innerHTML = `
+    <div class="card"><div class="t">Pier crítico</div><div class="v">${escH(crit.p)}</div><div class="bar ${crit.dc > 1 + 1e-9 ? "bad" : ""}"><i style="width:${w}%"></i></div><div class="s">D/C = ${rm} en ${escH(crit.crit.piso)}</div></div>
+    <div class="card"><div class="t">Mayor corte</div><div class="v">${fmt(maxV.gob.Vu / 1000, 1)} tf</div><div class="s">${escH(maxV.p)}, ${escH(maxV.gob.piso)}</div></div>
+    <div class="card"><div class="t">Mayor armadura horizontal</div><div class="v">${fmt(maxAs.gob.As, 2)} cm²/m</div><div class="s">${escH(maxAs.p)}: ${barra(c.db, maxAs.gob.s)} por cara</div></div>
+    <div class="card"><div class="t">Piers verificados</div><div class="v">${A.res.length} de ${A.res.length + A.faltan.length}</div><div class="s">${A.faltan.length ? `faltan ${A.faltan.length} por geometría` : `${fmt(A.n, 0)} filas revisadas`}</div></div>`;
+
+  $("resTitle").textContent = `Resultados — Corte en ${A.res.length} piers`;
+  const lista = (a) => a.slice(0, 6).map(r => escH(r.p ?? r)).join(", ") + (a.length > 6 ? ` y ${a.length - 6} más` : "");
+  const sinVerificar = "flexocompresión y elementos de borde SIN VERIFICAR";
+  const incompleto = A.faltan.length ? ` · ${A.faltan.length} piers sin geometría` : "";
+  const avisos = [];
+  if (fallan.length) avisos.push(`La flexocompresión y los elementos de borde quedan sin verificar.`);
+  if (A.faltan.length) avisos.push(`Faltan los datos de geometría de: ${lista(A.faltan)}.`);
+  if (excedenS.length) avisos.push(`En ${excedenS.length} piers el espaciamiento propuesto es mayor que S<sub>v,máx</sub>: ${lista(excedenS)}.`);
+  $("verdict").innerHTML = (fallan.length
+    ? `<div class="verdict bad">✘ NO CUMPLE al corte en ${fallan.length} ${fallan.length === 1 ? "pier" : "piers"} (${lista(fallan)}) — razón máxima = ${rm}${incompleto}</div>`
+    : `<div class="verdict ok">✔ ${A.faltan.length ? "Los piers ingresados cumplen" : "Todos los piers cumplen"} al corte — razón máxima = ${rm}${incompleto} · ${sinVerificar}</div>`)
+    + avisos.map(t => `<div class="note">⚠ ${t}</div>`).join("");
+
+  const m = new Memo();
+  const sel = A.res.find(r => r.p === $("pierSel").value);
+  m.h("Criterio de verificación");
+  m.p(L`En cada fila se calcula la mayor de las razones $V_u/\phi V_n$, $V_u/(0.75\,V_{s,m\acute{a}x})$ y $V_s/V_{s,m\acute{a}x}$. La razón de cada pier es la mayor de sus filas, y el pier crítico es el de mayor razón.`, true);
+  m.row("Filas revisadas ; piers verificados", `${fmt(A.n, 0)} ; ${A.res.length}`);
+  m.row("Caso o combinación", escH($("caso").value || "—"));
+  memoPier(m, crit, c);
+  if (sel && sel !== crit) memoPier(m, sel, c);
+  m.h("Resumen de todos los piers");
+  m.html_(`<div class="tablaWrap"><table class="alt"><tr><th>Pier</th><th>L<sub>w</sub> [m]</th><th>e [m]</th><th>Piso</th><th>V<sub>u</sub> [kgf]</th><th>φV<sub>n</sub> [kgf]</th><th>Límite [kgf]</th><th>D/C</th><th>A<sub>s</sub> [cm²/m]</th><th>Barra</th><th>S<sub>v,máx</sub> [cm]</th><th>Estado</th></tr>${A.res.map(r => `<tr><td>${escH(r.p)}</td><td>${fmt(r.Lw, 2)}</td><td>${fmt(r.e, 2)}</td><td>${escH(r.crit.piso)}</td><td>${fmt(r.crit.Vu, 0)}</td><td>${fmt(r.crit.phiVn, 0)}</td><td>${fmt(r.crit.limite, 0)}</td><td class="${r.dc > 1 + 1e-9 ? "malo" : ""}">${fmt(r.dc, 3)}</td><td>${fmt(r.gob.As, 2)}</td><td class="${r.gob.s > r.svMax ? "aviso" : ""}">${barra(c.db, r.gob.s)}</td><td>${fmt(r.svMax, 1)}</td><td class="${r.dc > 1 + 1e-9 ? "malo" : ""}">${estado(r.dc)}</td></tr>`).join("")}</table></div>`);
+  $("memo").innerHTML = m.html();
+  ultimoTex = documentoTex(c, A, m.texto());
+  ultimoNombre = `memoria_corte_muros_${A.res.length}_piers.tex`;
+}
+
+$("archivoPier").addEventListener("change", importar);
+$("tablaGeom").addEventListener("paste", pegarGeometria);
+$("tablaGeom").addEventListener("input", () => { guardarGeometria(); calcular(); });
+["caso", "fc", "fy", "db", "pierSel", "Hw", "eDef"].forEach(id => $(id).addEventListener("input", calcular));
+calcular();
+
+// Integración con proyectos (proyectos.js): datos para guardar y restaurar este cálculo
+window.AURA_MEMO = {
+  tipo: "Corte en muros",
+  sinMemoria: "Importe la tabla Pier Forces e ingrese la geometría antes de agregar el cálculo al proyecto.",
+  elemento: () => "", tex: () => ultimoTex, nombre: () => ultimoNombre,
+  recalcular: (v) => { pintarSelectores(v?.caso, v?.pierSel); pintarGeometria(); infoArchivo(); calcular(); },
+};
+</script>
+<script src="proyectos.js?v=38"></script>
+<script>
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
+</script>
+</body>
+</html>

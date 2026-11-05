@@ -40,7 +40,7 @@
   const GRUPOS = [
     ["", [["index.html", "Inicio", "inicio"], ["index.html#misProyectos", "Mis proyectos", "proyectos"]]],
     ["Acero", [["acero.html", "Vigas y columnas", "acero"], ["reticulada.html", "Vigas reticuladas", "reticulada"], ["placa.html", "Placa colaborante", "placa"]]],
-    ["Hormigón", [["hormigon.html", "Hormigón armado", "hormigon"], ["muro.html", "Muros de contención", "muro"]]],
+    ["Hormigón", [["hormigon.html", "Hormigón armado", "hormigon"], ["muro.html", "Muros de contención", "muro"], ["piers.html", "Corte en muros", "muro"]]],
     ["Fundaciones", [["zapata.html", "Zapata aislada", "zapata"]]],
     ["Madera", [["madera.html", "Madera aserrada", "madera"], ["mle.html", "Madera laminada MLE", "mle"]]],
     ["Sísmico", [["espectros.html", "Espectros de diseño", "espectros"]]],
