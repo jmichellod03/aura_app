@@ -8,6 +8,27 @@
   const pagina = location.pathname.split("/").pop() || "index.html";
   let conversacion = [], ocupado = false, claveHist = "";
 
+  // Hormi, la probeta G25: versión simplificada para tamaños chicos. El logo completo está en icons/hormi.svg.
+  const LENTES = `<g fill="#fff" stroke="#00008B" stroke-width="9"><circle cx="72" cy="94" r="24"/><circle cx="128" cy="94" r="24"/></g><path d="M96 92Q100 88 104 92" fill="none" stroke="#00008B" stroke-width="9" stroke-linecap="round"/>`;
+  const PUPILAS = (x, y) => `<g fill="#141a26"><circle cx="${x}" cy="${y}" r="12"/><circle cx="${x + 56}" cy="${y}" r="12"/></g>`;
+  const TRAZO = (d, ancho = 10) => `<path d="${d}" fill="none" stroke="#141a26" stroke-width="${ancho}" stroke-linecap="round" stroke-linejoin="round"/>`;
+  const CARAS = {
+    normal: LENTES + PUPILAS(74, 96) + TRAZO("M76 140Q100 164 124 140"),
+    fraguando: LENTES + TRAZO("M58 90Q72 106 86 90M114 90Q128 106 142 90", 9) + `<circle cx="100" cy="142" r="8" fill="#141a26"/>`,
+    feliz: LENTES + TRAZO("M58 100Q72 80 86 100M114 100Q128 80 142 100", 9) + TRAZO("M72 134Q100 172 128 134"),
+    triste: LENTES + PUPILAS(72, 104) + TRAZO("M76 158Q100 136 124 158") + TRAZO("M158 118 148 132 158 146 150 160", 6),
+    duda: `<g fill="#fff" stroke="#00008B" stroke-width="9"><circle cx="72" cy="94" r="24"/><circle cx="128" cy="100" r="18"/></g><path d="M96 94 110 98" fill="none" stroke="#00008B" stroke-width="9" stroke-linecap="round"/>` + `<circle cx="74" cy="96" r="12" fill="#141a26"/><circle cx="130" cy="101" r="9" fill="#141a26"/>` + TRAZO("M108 72Q128 62 150 72") + TRAZO("M76 146Q88 134 100 146Q112 158 124 146"),
+  };
+  const hormi = (estado = "normal", t = 28) => `<svg viewBox="0 0 200 200" width="${t}" height="${t}" aria-hidden="true"><path d="M36 40V160A64 22 0 0 0 164 160V40Z" fill="#bcc2ca" stroke="#141a26" stroke-width="10" stroke-linejoin="round"/><ellipse cx="100" cy="40" rx="64" ry="22" fill="#d3d7dc" stroke="#141a26" stroke-width="10"/>${CARAS[estado]}</svg>`;
+  // Cara del botón según el veredicto que muestra la página. NO CUMPLE manda sobre SIN VERIFICAR, y este sobre CUMPLE.
+  const caraVeredicto = () => {
+    const v = document.querySelector(".verdict");
+    if (!v || v.closest(".hidden") || !v.textContent.trim()) return "normal";
+    if (v.classList.contains("bad")) return "triste";
+    if (/SIN VERIFICAR/i.test(v.textContent)) return "duda";
+    return v.classList.contains("ok") ? "feliz" : "normal";
+  };
+
   const esc = (t) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   // Formato mínimo sobre texto ya escapado: negrita, código y listas con guiones
   const formato = (t) => esc(t).split(/\r?\n/).map(l => {
@@ -31,10 +52,19 @@
   function construir() {
     const boton = document.createElement("button");
     boton.type = "button"; boton.className = "as-abrir"; boton.setAttribute("aria-expanded", "false"); boton.setAttribute("aria-controls", "asPanel");
-    boton.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg><span>Asistente</span>`;
+    boton.title = "Hormi, asistente de AURA";
+    boton.innerHTML = `<span class="as-cara-boton">${hormi("normal", 32)}</span><span>Hormi</span>`;
+    const caraBoton = boton.firstElementChild;
+    let caraActual = "normal";
+    const actualizarCara = () => {
+      const c = caraVeredicto();
+      if (c !== caraActual) { caraActual = c; caraBoton.innerHTML = hormi(c, 32); }
+    };
+    const main = document.querySelector("main");
+    if (main) { actualizarCara(); new MutationObserver(actualizarCara).observe(main, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ["class"] }); }
     const panel = document.createElement("section");
-    panel.id = "asPanel"; panel.className = "as-panel"; panel.hidden = true; panel.setAttribute("aria-label", "Asistente de AURA");
-    panel.innerHTML = `<header class="as-cab"><b>Asistente</b><button type="button" class="as-limpiar">Limpiar</button><button type="button" class="as-cerrar" aria-label="Cerrar asistente">×</button></header>
+    panel.id = "asPanel"; panel.className = "as-panel"; panel.hidden = true; panel.setAttribute("aria-label", "Hormi, asistente de AURA");
+    panel.innerHTML = `<header class="as-cab"><span class="as-cara-cab">${hormi("normal", 30)}</span><b>Hormi</b><button type="button" class="as-limpiar">Limpiar</button><button type="button" class="as-cerrar" aria-label="Cerrar asistente">×</button></header>
       <p class="as-aviso">Resuelve dudas de uso y de cálculo, pero puede equivocarse: compruebe sus respuestas. No ve los datos de su cálculo. <b>No escriba datos de clientes:</b> en el plan gratis, Google puede revisar lo que se envía y usarlo para mejorar sus productos.</p>
       <div class="as-chat" role="log" aria-live="polite"></div>
       <form class="as-form"><label class="as-oculto" for="asTexto">Su pregunta</label><textarea id="asTexto" rows="2" maxlength="${MAX_TEXTO}" placeholder="Escriba su pregunta"></textarea><button type="submit" class="as-enviar">Enviar</button></form>`;
@@ -45,12 +75,19 @@
     const burbuja = (rol, t, clase = "") => {
       const d = document.createElement("div");
       d.className = `as-msg as-${rol} ${clase}`.trim(); d.innerHTML = formato(t);
-      chat.append(d); chat.scrollTop = chat.scrollHeight;
+      if (rol === "model") {
+        const fila = document.createElement("div");
+        fila.className = "as-fila";
+        fila.innerHTML = `<span class="as-cara">${hormi(clase === "as-espera" ? "fraguando" : "normal")}</span>`;
+        fila.append(d); chat.append(fila);
+      } else chat.append(d);
+      chat.scrollTop = chat.scrollHeight;
       return d;
     };
+    const ponerCara = (msg, estado) => { msg.previousElementSibling.innerHTML = hormi(estado); };
     const pintar = () => {
       chat.innerHTML = "";
-      if (!conversacion.length) burbuja("model", "Hola. Pregúnteme cómo usar este programa o cómo calcula algún resultado.");
+      if (!conversacion.length) chat.innerHTML = `<div class="as-bienvenida"><img src="icons/hormi.svg" width="104" height="104" alt=""><div class="as-msg as-model">Hola, soy Hormi. Pregúnteme cómo usar este programa o cómo calcula algún resultado.</div></div>`;
       conversacion.forEach(m => burbuja(m.rol, m.texto));
     };
     const abrir = (si) => {
@@ -71,10 +108,10 @@
       conversacion.push({ rol: "user", texto: pregunta });
       if (chat.querySelector(".as-msg") && conversacion.length === 1) chat.innerHTML = "";
       burbuja("user", pregunta);
-      const r = burbuja("model", "Pensando…", "as-espera");
+      const r = burbuja("model", "Fraguando la respuesta…", "as-espera");
       let acumulado = "";
       const fallar = (m) => {
-        r.classList.remove("as-espera"); r.classList.add("as-error"); r.innerHTML = formato(m);
+        r.classList.remove("as-espera"); r.classList.add("as-error"); r.innerHTML = formato(m); ponerCara(r, "triste");
         conversacion.pop();                      // la pregunta sin respuesta no queda en la conversación
       };
       try {
@@ -97,7 +134,10 @@
           const { done, value } = await lector.read();
           if (done) break;
           acumulado += dec.decode(value, { stream: true });
-          if (acumulado) { r.classList.remove("as-espera"); r.innerHTML = formato(acumulado); chat.scrollTop = chat.scrollHeight; }
+          if (acumulado) {
+            if (r.classList.contains("as-espera")) { r.classList.remove("as-espera"); ponerCara(r, "normal"); }
+            r.innerHTML = formato(acumulado); chat.scrollTop = chat.scrollHeight;
+          }
         }
         if (!acumulado.trim()) throw Object.assign(new Error("El asistente no entregó una respuesta. Intente nuevamente."), { visible: true });
         conversacion.push({ rol: "model", texto: acumulado.slice(0, 8000) }); guardar();

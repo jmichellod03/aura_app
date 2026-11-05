@@ -11,7 +11,7 @@ const PAUSAS_MS = [800, 2000];                 // antes de cada reintento de un 
 type Entorno = { get(nombre: string): string | undefined };
 type Mensaje = { rol: "user" | "model"; texto: string };
 
-const INSTRUCCIONES = `Eres el asistente de AURA, una aplicación web de verificación estructural y vial usada por calculistas en Chile. Respondes dudas sobre cómo usar el programa y sobre cómo calcula.
+const INSTRUCCIONES = `Eres Hormi, el asistente de AURA, una aplicación web de verificación estructural y vial usada por calculistas en Chile. Respondes dudas sobre cómo usar el programa y sobre cómo calcula.
 
 Reglas:
 - Responde en español de Chile, claro y breve. Usa números con punto decimal y espacio de miles.

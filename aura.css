@@ -334,9 +334,16 @@ html.lat-corta { --ancho-lat: 64px; }
 
 /* Asistente en línea (asistente.js) */
 @media screen {
-  .as-abrir { position: fixed; z-index: 75; right: 16px; bottom: 16px; display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 8px 14px; background: var(--azul); color: #fff; border: 1px solid var(--azul); border-radius: var(--r-m); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: 0 2px 8px rgba(10,16,48,.25); transition: background .15s; }
+  .as-abrir { position: fixed; z-index: 75; right: 16px; bottom: 16px; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 5px 14px 5px 8px; background: var(--azul); color: #fff; border: 1px solid var(--azul); border-radius: var(--r-m); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: 0 2px 8px rgba(10,16,48,.25); transition: background .15s; }
   .as-abrir:hover { background: var(--azul-hover); }
   .as-abrir[hidden] { display: none; }
+  .as-cara-boton, .as-cara-cab, .as-cara { display: inline-flex; flex: none; }
+  .as-cab .as-cara-cab { order: 0; padding: 2px; background: var(--azul-tinte); border-radius: var(--r-s); }
+  .as-fila { display: flex; gap: 8px; align-items: flex-start; align-self: flex-start; max-width: 100%; }
+  .as-fila .as-msg { min-width: 0; max-width: calc(100% - 36px); }
+  .as-fila:has(.as-espera) .as-cara { animation: as-fraguando 1.6s ease-in-out infinite; }
+  @keyframes as-fraguando { 50% { transform: translateY(-3px); } }
+  .as-bienvenida { display: flex; flex-direction: column; align-items: center; gap: 10px; margin: auto; text-align: center; }
   body.ap-abierto .as-abrir { right: 336px; }
   .as-panel { position: fixed; z-index: 75; right: 16px; bottom: 16px; width: 400px; max-width: calc(100vw - 32px); height: min(620px, calc(100dvh - 32px)); display: flex; flex-direction: column; background: #fff; color: var(--tinta); border: 1px solid var(--linea); border-radius: var(--r-l); box-shadow: 0 8px 28px rgba(10,16,48,.28); overflow: hidden; }
   .as-panel[hidden] { display: none; }
