@@ -22,7 +22,7 @@
   .memo, .tablaWrap { overflow-x: auto; }
   svg { max-width: 100%; }
 </style>
-<title>Corte en Muros</title>
+<title>Muros de Corte</title>
 <style>
   :root {
     --bg: #e3e6ea;
@@ -122,13 +122,13 @@
   }
 </style>
 <link rel="stylesheet" href="aura.css?v=9">
-<script src="lateral.js?v=4"></script>
+<script src="lateral.js?v=5"></script>
 </head>
 <body>
 <header>
   <a class="marca" href="index.html" aria-label="Inicio"><span class="logo-tile"><span class="logo"><img src="icons/logo-mmp.webp" alt="MMP"></span></span></a>
   <a class="home" href="index.html">← Inicio</a>
-  <h1>Corte en muros</h1>
+  <h1>Muros de corte</h1>
   <span>Piers importados desde ETABS · Verificación al corte y armadura horizontal · Unidades kgf – m</span>
 </header>
 
@@ -202,7 +202,7 @@
 <script>
 "use strict";
 // ---------------------------------------------------------------------------
-// Corte en muros de hormigón armado a partir de la tabla Pier Forces de ETABS.
+// Muros de corte de hormigón armado a partir de la tabla Pier Forces de ETABS.
 // Las fórmulas reproducen la hoja "Muro" de la planilla del Informe IIO348, incluidos sus criterios.
 // Unidades como en la planilla: fuerzas en kgf, largos en m, tensiones en kgf/cm².
 // ---------------------------------------------------------------------------
@@ -666,8 +666,8 @@ ${TEX_ESTILO}
 \setlength{\headheight}{14pt}
 \pagestyle{fancy}
 \fancyhf{}
-\chead{Corte en muros}
-\lfoot{Memoria de cálculo --- Corte en muros, ACI 318-08}
+\chead{Muros de corte}
+\lfoot{Memoria de cálculo --- Muros de corte, ACI 318-08}
 \rfoot{\thepage}
 \renewcommand{\headrulewidth}{0.4pt}
 \renewcommand{\footrulewidth}{0.4pt}
@@ -677,7 +677,7 @@ ${TEX_ESTILO}
 
 \begin{center}
 {\Large\bfseries Memoria de Cálculo}\\[4pt]
-{\large Corte en muros de hormigón armado}\\[2pt]
+{\large Muros de corte de hormigón armado}\\[2pt]
 {\small ${fecha}}
 \end{center}
 
@@ -825,7 +825,7 @@ window.Zona2D3D?.montar({
 
 // Integración con proyectos (proyectos.js): datos para guardar y restaurar este cálculo
 window.AURA_MEMO = {
-  tipo: "Corte en muros",
+  tipo: "Muros de corte",
   sinMemoria: "Importe las tablas de ETABS y revise la geometría antes de agregar el cálculo al proyecto.",
   elemento: () => "", tex: () => ultimoTex, nombre: () => ultimoNombre,
   recalcular: (v) => { pintarSelectores(v?.caso, v?.pierSel); pintarGeometria(); infoArchivo(); calcular(); },

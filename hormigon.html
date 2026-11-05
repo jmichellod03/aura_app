@@ -22,7 +22,7 @@
   .memo, .tablaWrap { overflow-x: auto; }
   svg { max-width: 100%; }
 </style>
-<title>Verificación Hormigón Armado</title>
+<title>Vigas de Hormigón</title>
 <style>
   :root {
     --bg: #e3e6ea;
@@ -128,13 +128,13 @@
   }
 </style>
 <link rel="stylesheet" href="aura.css?v=9">
-<script src="lateral.js?v=4"></script>
+<script src="lateral.js?v=5"></script>
 </head>
 <body>
 <header>
   <a class="marca" href="index.html" aria-label="Inicio"><span class="logo-tile"><span class="logo"><img src="icons/logo-mmp.webp" alt="MMP"></span></span></a>
   <a class="home" href="index.html">← Inicio</a>
-  <h1>Verificación de elementos de hormigón armado</h1>
+  <h1 id="tituloEl">Vigas de hormigón armado</h1>
   <span>ACI 318-08 · Diseño por resistencia · Unidades kgf – cm</span>
 </header>
 
@@ -143,10 +143,9 @@
   <section class="panel" id="inputs">
     <h2>Datos de entrada</h2>
     <div class="body">
-      <div class="tabs" role="tablist">
+      <div class="tabs hidden" role="tablist">
         <button type="button" data-el="viga" class="on">Viga</button>
         <button type="button" data-el="losa">Losa</button>
-        <button type="button" data-el="muro">Muro</button>
       </div>
 
       <!-- Viga -->
@@ -323,12 +322,6 @@
       </div>
 
       <!-- Muro -->
-      <div data-panel="muro" class="hidden">
-        <fieldset><legend>Geometría del muro</legend><p class="pend">Pendiente de definir.</p></fieldset>
-        <fieldset><legend>Materiales</legend><p class="pend">Pendiente de definir.</p></fieldset>
-        <fieldset><legend>Armadura</legend><p class="pend">Pendiente de definir.</p></fieldset>
-        <fieldset><legend>Solicitaciones</legend><p class="pend">Pendiente de definir.</p></fieldset>
-      </div>
     </div>
   </section>
 
@@ -357,16 +350,6 @@
         <button class="btn" type="button" onclick="descargarZipMemoria(ultimoTexLosa, ultimoNombreLosa, document.body)">Descargar memoria (.zip)</button>
       </div>
       <div class="memo" id="lmemo"></div>
-    </div>
-    <div class="vacio hidden" id="resVacio">
-      <svg viewBox="0 0 120 120" aria-hidden="true">
-        <rect x="30" y="14" width="60" height="92" rx="3" fill="#dfe6ee" stroke="#5b7c99" stroke-width="3"/>
-        <rect x="38" y="22" width="44" height="76" rx="4" fill="none" stroke="#5b7c99" stroke-width="2" stroke-dasharray="5 3"/>
-        <g fill="#3d4450"><circle cx="43" cy="27" r="4"/><circle cx="77" cy="27" r="4"/><circle cx="43" cy="93" r="4"/><circle cx="60" cy="93" r="4"/><circle cx="77" cy="93" r="4"/></g>
-      </svg>
-      <h3 id="vacioTitulo">En desarrollo</h3>
-      <div>Aquí se mostrarán los resultados y la memoria de cálculo.</div>
-      <ul id="vacioLista"></ul>
     </div>
   </section>
 </main>
@@ -1640,9 +1623,8 @@ Por lo tanto, con una relación demanda-capacidad máxima $D/C = ${tn(dc, 3)}$ (
 // Interfaz
 // ---------------------------------------------------------------------------
 const ELEMENTOS = {
-  viga: { nombre: "Viga" },
-  losa: { nombre: "Losa" },
-  muro: { nombre: "Muro", previstas: ["Flexocompresión", "Corte"] },
+  viga: { nombre: "Viga", titulo: "Vigas de hormigón armado", pestana: "Vigas de Hormigón" },
+  losa: { nombre: "Losa", titulo: "Losas de hormigón armado", pestana: "Losas de Hormigón" },
 };
 
 function setElemento(el) {
@@ -1653,11 +1635,8 @@ function setElemento(el) {
   $("resTitle").textContent = `Resultados — ${e.nombre}`;
   $("resViga").classList.toggle("hidden", el !== "viga");
   $("resLosa").classList.toggle("hidden", el !== "losa");
-  $("resVacio").classList.toggle("hidden", el !== "muro");
-  if (e.previstas) {
-    $("vacioTitulo").textContent = `Verificación de ${e.nombre.toLowerCase()} — en desarrollo`;
-    $("vacioLista").innerHTML = e.previstas.map(v => `<li>${v}</li>`).join("");
-  }
+  $("tituloEl").textContent = e.titulo;
+  document.title = e.pestana;
   // Conserva los demás parámetros (proyecto y elemento abiertos desde el panel de proyectos)
   const q = new URLSearchParams(location.search); q.set("elemento", el);
   history.replaceState(null, "", `?${q}`);

@@ -26,6 +26,8 @@
     reticulada: svg('<path d="M2 8h20M2 17h20M2 17l5-9 5 9 5-9 5 9"/>'),
     placa: svg('<path d="M2 9h20"/><path d="M2 15l2.5-4h3l2.5 4h3l2.5-4h3l2.5 4"/>'),
     hormigon: svg('<rect x="5" y="3" width="14" height="18" rx="1"/><circle cx="9" cy="17" r="1" fill="currentColor"/><circle cx="12" cy="17" r="1" fill="currentColor"/><circle cx="15" cy="17" r="1" fill="currentColor"/>'),
+    losa: svg('<path d="M2 10h20v5H2z"/><path d="M5 12.5h.01M9 12.5h.01M13 12.5h.01M17 12.5h.01"/>'),
+    pier: svg('<path d="M8 3h8v18H8z"/><path d="M8 9h8M8 15h8"/>'),
     muro: svg('<path d="M9 3h3v13h8v4H4v-4h5z"/>'),
     madera: svg('<rect x="3" y="7" width="18" height="10" rx="1"/><path d="M6 10c3 1.5 6-1.5 9 0s3 1.5 4 .5M6 14c3 1.5 6-1.5 9 0"/>'),
     mle: svg('<rect x="7" y="2" width="10" height="20" rx="1"/><path d="M7 6.5h10M7 11h10M7 15.5h10"/>'),
@@ -40,7 +42,7 @@
   const GRUPOS = [
     ["", [["index.html", "Inicio", "inicio"], ["index.html#misProyectos", "Mis proyectos", "proyectos"]]],
     ["Acero", [["acero.html", "Vigas y columnas", "acero"], ["reticulada.html", "Vigas reticuladas", "reticulada"], ["placa.html", "Placa colaborante", "placa"]]],
-    ["Hormigón", [["hormigon.html", "Hormigón armado", "hormigon"], ["muro.html", "Muros de contención", "muro"], ["piers.html", "Corte en muros", "muro"]]],
+    ["Hormigón", [["hormigon.html?elemento=viga", "Vigas", "hormigon"], ["hormigon.html?elemento=losa", "Losas", "losa"], ["piers.html", "Muros de corte", "pier"], ["muro.html", "Muros de contención", "muro"]]],
     ["Fundaciones", [["zapata.html", "Zapata aislada", "zapata"]]],
     ["Madera", [["madera.html", "Madera aserrada", "madera"], ["mle.html", "Madera laminada MLE", "mle"]]],
     ["Sísmico", [["espectros.html", "Espectros de diseño", "espectros"]]],
@@ -84,8 +86,11 @@
       for (const [href, texto, ico] of items) {
         const a = el("a", { href, title: texto, html: `${ICO[ico]}<span class="lat-tx"></span>` });
         a.querySelector(".lat-tx").textContent = texto;
-        const destino = href.split("#")[0];
-        if (destino === pagina && !(enInicio && href.includes("#"))) a.setAttribute("aria-current", "page");
+        // Una página con varios programas (hormigon.html) se distingue por ?elemento; sin él abre el primero
+        const [destino, consulta] = href.split("#")[0].split("?");
+        const elItem = new URLSearchParams(consulta).get("elemento"), elPagina = new URLSearchParams(location.search).get("elemento");
+        const mismoEl = !elItem || elItem === elPagina || (!elPagina && elItem === "viga");
+        if (destino === pagina && mismoEl && !(enInicio && href.includes("#"))) a.setAttribute("aria-current", "page");
         ul.append(el("li", {}, [a]));
       }
       nav.append(ul);
