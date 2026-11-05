@@ -136,10 +136,10 @@
     <h2>Datos de entrada</h2>
     <div class="body">
       <fieldset>
-        <legend>1. Tabla Pier Forces de ETABS</legend>
-        <label for="archivoPier">Archivo .xlsx</label>
-        <input type="file" id="archivoPier" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
-        <div class="unit" id="infoArchivo" style="margin-top:6px">Exporte la tabla Pier Forces desde ETABS a Excel.</div>
+        <legend>1. Tablas de ETABS</legend>
+        <label for="archivoPier">Archivos .xlsx</label>
+        <input type="file" id="archivoPier" multiple accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+        <div class="unit" id="infoArchivo" style="margin-top:6px">Seleccione los Excel exportados con las tablas Pier Forces y Pier Section Properties. Pueden ser uno o dos archivos.</div>
         <div id="boxCaso" class="hidden">
           <label for="caso">Caso o combinación</label>
           <select id="caso"></select>
@@ -147,6 +147,8 @@
         <textarea id="datosPier" hidden aria-hidden="true"></textarea>
         <textarea id="geomPier" hidden aria-hidden="true"></textarea>
         <input type="hidden" id="nombrePier">
+        <input type="hidden" id="nombreGeom">
+        <textarea id="piersVariables" hidden aria-hidden="true"></textarea>
       </fieldset>
 
       <fieldset>
@@ -167,7 +169,7 @@
           <div><label for="eDef">Espesor por defecto e <span class="unit">[m]</span></label><input id="eDef" type="number" step="0.01" min="0" value="0.2"></div>
         </div>
         <div id="boxGeom" class="hidden">
-          <div class="unit" style="margin-top:8px">Ingrese el largo de cada pier. Si deja e vacío, se usa el espesor por defecto. También puede pegar desde Excel columnas de largo y espesor, con o sin el nombre del pier.</div>
+          <div class="unit" style="margin-top:8px">Con la tabla Pier Section Properties, los largos y espesores se llenan solos y puede corregirlos aquí. También puede ingresarlos a mano o pegarlos desde Excel. Si deja e vacío, se usa el espesor por defecto.</div>
           <div class="geomWrap"><table class="geom"><thead><tr><th>Pier</th><th>L<sub>w</sub> [m]</th><th>e [m]</th></tr></thead><tbody id="tablaGeom"></tbody></table></div>
         </div>
       </fieldset>
@@ -312,41 +314,85 @@ function filasHoja(doc, compartidas) {
     return celdas;
   });
 }
-// Factor a kgf según la unidad que indica ETABS bajo el encabezado
+// Factores a kgf y a m según la unidad que indica ETABS bajo cada encabezado
 const FACTOR_FUERZA = { kgf: 1, kg: 1, tonf: 1000, tf: 1000, ton: 1000, n: 0.101972, kn: 101.972, kip: 453.592, kips: 453.592, lb: 0.453592 };
-async function leerPierForces(buf) {
+const FACTOR_LARGO = { m: 1, cm: 0.01, mm: 0.001, in: 0.0254, ft: 0.3048 };
+const clave = (t) => String(t ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+// Ubica el encabezado de una tabla y devuelve sus columnas por nombre normalizado, sus unidades y sus filas de datos
+function tablaEtabs(filas, requeridas) {
+  for (let i = 0; i < filas.length; i++) {
+    const col = {};
+    for (const [c, t] of Object.entries(filas[i])) col[clave(t)] = c;
+    if (!requeridas.every(alt => alt.some(a => a in col))) continue;
+    const pick = (...alt) => col[alt.find(a => a in col)];
+    return { pick, unidad: (c) => clave(filas[i + 1]?.[c]), datos: filas.slice(i + 2) };
+  }
+  return null;
+}
+const ANCHO = ["widthbottom", "widthbot"], ESPESOR = ["thicknessbottom", "thickbottom", "thickbot"];
+function extraerFuerzas(filas) {
+  const t = tablaEtabs(filas, [["story"], ["pier"], ["v2"]]);
+  if (!t) return null;
+  const cP = t.pick("pier"), cS = t.pick("story"), cV = t.pick("v2"), cC = t.pick("outputcase"), cU = t.pick("location"), cT = t.pick("steptype");
+  const factor = FACTOR_FUERZA[t.unidad(cV)];
+  if (!factor) throw new Error(`no se reconoce la unidad de V2 ("${t.unidad(cV) || "sin unidad"}"); exporte la tabla en kgf, tonf, kN o kip`);
+  const salida = [];
+  let omitidas = 0;
+  for (const f of t.datos) {
+    if (!f[cP] && !f[cS]) continue;
+    const v = parseFloat(f[cV]);
+    if (!f[cP] || !Number.isFinite(v)) { omitidas++; continue; }
+    salida.push([f[cS] ?? "", f[cP], f[cC] ?? "", f[cU] ?? "", f[cT] ?? "", +(v * factor).toFixed(3)]);
+  }
+  if (!salida.length) throw new Error("la tabla Pier Forces no tiene filas con datos");
+  return { filas: salida, omitidas };
+}
+function extraerSecciones(filas) {
+  const t = tablaEtabs(filas, [["story"], ["pier"], ANCHO, ESPESOR]);
+  if (!t) return null;
+  const cP = t.pick("pier"), cA = t.pick(...ANCHO), cE = t.pick(...ESPESOR), cAt = t.pick("widthtop"), cEt = t.pick("thicknesstop", "thicktop"), cZb = t.pick("cgbottomz", "cgbotz"), cZt = t.pick("cgtopz");
+  const fac = (c) => FACTOR_LARGO[t.unidad(c)];
+  if (!fac(cA) || !fac(cE)) throw new Error(`no se reconoce la unidad de la sección ("${t.unidad(cA) || "sin unidad"}"); exporte la tabla en m, cm, mm, in o ft`);
+  const piers = {}, variables = new Set();
+  let zMin = Infinity, zMax = -Infinity;
+  for (const f of t.datos) {
+    const Lw = parseFloat(f[cA]) * fac(cA), e = parseFloat(f[cE]) * fac(cE);
+    if (!f[cP] || !(Lw > 0) || !(e > 0)) continue;
+    // Como la planilla: un valor por pier, el de su primera fila
+    if (!piers[f[cP]]) piers[f[cP]] = { L: String(+Lw.toFixed(4)), e: String(+e.toFixed(4)) };
+    const iguales = (a, b) => Math.abs(a - b) < 1e-6;
+    const Lt = cAt ? parseFloat(f[cAt]) * fac(cAt) : Lw, et = cEt ? parseFloat(f[cEt]) * fac(cEt) : e;
+    if (!iguales(+piers[f[cP]].L, Lw) || !iguales(+piers[f[cP]].e, e) || !iguales(Lt, Lw) || !iguales(et, e)) variables.add(f[cP]);
+    if (cZb && cZt && fac(cZb) && fac(cZt)) {
+      const zb = parseFloat(f[cZb]) * fac(cZb), zt = parseFloat(f[cZt]) * fac(cZt);
+      if (zb < zMin) zMin = zb;
+      if (zt > zMax) zMax = zt;
+    }
+  }
+  if (!Object.keys(piers).length) throw new Error("la tabla Pier Section Properties no tiene filas con datos");
+  return { piers, variables: [...variables], Hw: zMax > zMin ? +(zMax - zMin).toFixed(4) : null };
+}
+// Revisa todas las hojas: un mismo archivo puede traer una o las dos tablas
+async function leerTablasEtabs(buf) {
   const leer = entradasZip(buf);
   const textoLibro = await leer("xl/workbook.xml"), textoRels = await leer("xl/_rels/workbook.xml.rels");
-  if (!textoLibro || !textoRels) throw new Error("El archivo no es un .xlsx válido.");
+  if (!textoLibro || !textoRels) throw new Error("no es un .xlsx válido");
   const ss = await leer("xl/sharedStrings.xml");
   const compartidas = ss ? nodos(xml(ss), "si").map(si => nodos(si, "t").map(t => t.textContent).join("")) : [];
   const rels = {};
   for (const r of nodos(xml(textoRels), "Relationship")) rels[r.getAttribute("Id")] = r.getAttribute("Target");
+  const res = { fuerzas: null, secciones: null };
   for (const h of nodos(xml(textoLibro), "sheet")) {
     const rid = [...h.attributes].find(a => a.localName === "id")?.value, destino = rels[rid];
     if (!destino) continue;
     const texto = await leer(destino.startsWith("/") ? destino.slice(1) : "xl/" + destino.replace(/^\.\//, ""));
     if (!texto) continue;
     const filas = filasHoja(xml(texto), compartidas);
-    const iEnc = filas.findIndex(f => { const v = Object.values(f); return v.includes("Pier") && v.includes("V2") && v.includes("Story"); });
-    if (iEnc < 0) continue;
-    const col = {};
-    for (const [c, t] of Object.entries(filas[iEnc])) col[t] = c;
-    const uni = String(filas[iEnc + 1]?.[col.V2] ?? "").trim().toLowerCase();
-    const factor = FACTOR_FUERZA[uni];
-    if (!factor) throw new Error(`No se reconoce la unidad de V2 ("${uni || "sin unidad"}"). Exporte la tabla con la unidad de fuerza en kgf, tonf, kN o kip.`);
-    const salida = [];
-    let omitidas = 0;
-    for (const f of filas.slice(iEnc + 2)) {
-      if (!f[col.Pier] && !f[col.Story]) continue;
-      const v = parseFloat(f[col.V2]);
-      if (!f[col.Pier] || !Number.isFinite(v)) { omitidas++; continue; }
-      salida.push([f[col.Story] ?? "", f[col.Pier], f[col["Output Case"]] ?? "", f[col.Location] ?? "", f[col["Step Type"]] ?? "", +(v * factor).toFixed(3)]);
-    }
-    if (!salida.length) throw new Error("La tabla Pier Forces no tiene filas con datos.");
-    return { filas: salida, omitidas };
+    res.fuerzas ||= extraerFuerzas(filas);
+    res.secciones ||= extraerSecciones(filas);
   }
-  throw new Error("No se encontró la tabla Pier Forces (columnas Story, Pier y V2).");
+  if (!res.fuerzas && !res.secciones) throw new Error("no contiene las tablas Pier Forces ni Pier Section Properties");
+  return res;
 }
 
 // ---------------------------------------------------------------------------
@@ -382,10 +428,11 @@ function guardarGeometria() {
   });
   $("geomPier").value = JSON.stringify(g);
 }
-function infoArchivo() {
-  const filas = filasPier();
-  if (!filas.length) return;
-  $("infoArchivo").textContent = `${$("nombrePier").value || "Archivo"}: ${fmt(filas.length, 0)} filas, ${listaPiers(filas).length} piers.`;
+function infoArchivo(extra = "") {
+  const filas = filasPier(), partes = [];
+  if (filas.length) partes.push(`Fuerzas: ${$("nombrePier").value || "archivo"}, ${fmt(filas.length, 0)} filas, ${listaPiers(filas).length} piers.`);
+  if ($("nombreGeom").value) partes.push(`Geometría: ${$("nombreGeom").value}.`);
+  if (partes.length || extra) $("infoArchivo").textContent = [...partes, extra].filter(Boolean).join(" ");
 }
 // Pegado desde Excel: columnas [pier] L [e]; con nombre se asigna por pier y sin nombre, desde la fila actual hacia abajo
 const decimal = (t) => t.trim().replace(",", ".");
@@ -409,20 +456,32 @@ function pegarGeometria(ev) {
   guardarGeometria(); calcular();
 }
 async function importar(ev) {
-  const archivo = ev.target.files[0];
-  if (!archivo) return;
-  try {
-    if (archivo.size > MAX_XLSX) throw new Error("El archivo supera los 50 MB.");
-    const { filas, omitidas } = await leerPierForces(await archivo.arrayBuffer());
-    guardarGeometria();
-    $("datosPier").value = JSON.stringify(filas);
-    $("nombrePier").value = archivo.name;
-    pintarSelectores(); pintarGeometria(); infoArchivo();
-    if (omitidas) $("infoArchivo").textContent += ` Se omitieron ${omitidas} filas sin V2 numérico.`;
-    calcular();
-  } catch (e) {
-    $("infoArchivo").textContent = `No se pudo leer el archivo: ${e.message}`;
-  } finally { ev.target.value = ""; }
+  const archivos = [...ev.target.files];
+  if (!archivos.length) return;
+  const mensajes = [];
+  guardarGeometria();
+  for (const archivo of archivos) {
+    try {
+      if (archivo.size > MAX_XLSX) throw new Error("supera los 50 MB");
+      const { fuerzas, secciones } = await leerTablasEtabs(await archivo.arrayBuffer());
+      if (fuerzas) {
+        $("datosPier").value = JSON.stringify(fuerzas.filas);
+        $("nombrePier").value = archivo.name;
+        if (fuerzas.omitidas) mensajes.push(`Se omitieron ${fuerzas.omitidas} filas sin V2 numérico.`);
+      }
+      if (secciones) {
+        $("geomPier").value = JSON.stringify({ ...geometria(), ...secciones.piers });
+        $("piersVariables").value = JSON.stringify(secciones.variables);
+        $("nombreGeom").value = archivo.name;
+        if (secciones.Hw) $("Hw").value = secciones.Hw;
+      }
+    } catch (e) {
+      mensajes.push(`No se pudo leer ${archivo.name}: ${e.message.replace(/\.$/, "")}.`);
+    }
+  }
+  ev.target.value = "";
+  pintarSelectores($("caso").value, $("pierSel").value); pintarGeometria(); infoArchivo(mensajes.join(" "));
+  calcular();
 }
 
 // ---------------------------------------------------------------------------
@@ -564,7 +623,7 @@ ${cuerpo}
 \section{Alcance, hipótesis y limitaciones}
 \begin{itemize}
 \item Esta memoria verifica solo el corte. \textbf{La flexocompresión y los elementos de borde quedan sin verificar.}
-\item La geometría de cada pier es un dato ingresado por el usuario; $H_w$ es único para todos los piers.
+\item La geometría de cada pier proviene de la tabla Pier Section Properties de ETABS o fue ingresada por el usuario, con un valor por pier; $H_w$ es único para todos los piers.
 \item La altura útil se toma como $d = 0.8\,L_w$.
 \item Criterios de la planilla: $\phi V_n$ se calcula con 0.53 en lugar de $\alpha_c$ y con $\rho_{m\acute{i}n}$ en lugar de la cuantía dispuesta; el límite de resistencia se toma como $0.75\,V_{s,m\acute{a}x}$; y $S_{v,m\acute{a}x}$ usa $L_w/3$.
 \item El espaciamiento propuesto no se limita automáticamente a $S_{v,m\acute{a}x}$.
@@ -602,7 +661,7 @@ function limpiar(html) {
 }
 function calcular() {
   limpiarInvalidos($("inputs"));
-  if (!filasPier().length) { limpiar(`<div class="note">Importe el archivo .xlsx con la tabla Pier Forces de ETABS para comenzar.</div>`); return; }
+  if (!filasPier().length) { limpiar(`<div class="note">Importe los archivos .xlsx con las tablas Pier Forces y Pier Section Properties de ETABS para comenzar.</div>`); return; }
   const malos = datosInvalidos([["fc", 0, true], ["fy", 0, true], ["Hw", 0, true], ["eDef", 0, true]]);
   if (malos.length) { limpiar(avisoInvalidos(malos)); return; }
   const c = { fc: num("fc"), fy: num("fy"), Hw: num("Hw"), db: parseInt($("db").value, 10), eDef: num("eDef") };
@@ -632,6 +691,9 @@ function calcular() {
   const avisos = [];
   if (fallan.length) avisos.push(`La flexocompresión y los elementos de borde quedan sin verificar.`);
   if (A.faltan.length) avisos.push(`Faltan los datos de geometría de: ${lista(A.faltan)}.`);
+  if (/ASD|SERV/i.test($("caso").value)) avisos.push(`El caso ${escH($("caso").value)} parece ser de servicio. Esta verificación usa cargas mayoradas.`);
+  const variables = json("piersVariables", []).filter(p => A.res.some(r => r.p === p));
+  if (variables.length) avisos.push(`La sección cambia en altura en: ${lista(variables)}. Se usa la de su primera fila en la tabla.`);
   if (excedenS.length) avisos.push(`En ${excedenS.length} piers el espaciamiento propuesto es mayor que S<sub>v,máx</sub>: ${lista(excedenS)}.`);
   $("verdict").innerHTML = (fallan.length
     ? `<div class="verdict bad">✘ NO CUMPLE al corte en ${fallan.length} ${fallan.length === 1 ? "pier" : "piers"} (${lista(fallan)}) — razón máxima = ${rm}${incompleto}</div>`
@@ -662,7 +724,7 @@ calcular();
 // Integración con proyectos (proyectos.js): datos para guardar y restaurar este cálculo
 window.AURA_MEMO = {
   tipo: "Corte en muros",
-  sinMemoria: "Importe la tabla Pier Forces e ingrese la geometría antes de agregar el cálculo al proyecto.",
+  sinMemoria: "Importe las tablas de ETABS y revise la geometría antes de agregar el cálculo al proyecto.",
   elemento: () => "", tex: () => ultimoTex, nombre: () => ultimoNombre,
   recalcular: (v) => { pintarSelectores(v?.caso, v?.pierSel); pintarGeometria(); infoArchivo(); calcular(); },
 };
