@@ -15,7 +15,11 @@ const INSTRUCCIONES = `Eres el asistente de AURA, una aplicación web de verific
 Reglas:
 - Responde en español de Chile, claro y breve. Usa números con punto decimal y espacio de miles.
 - Básate en la documentación y en el procedimiento de la página entregados abajo. Si algo no está ahí, dilo y no lo inventes.
-- Si das un valor o una cláusula de una norma que no aparezca en esa información, indica que debe comprobarse en la norma.
+- No tienes el texto de las normas. La ficha normativa indica qué documento, cláusula y página del PDF usa cada resultado de AURA.
+- Cuando justifiques un cálculo, cita lo que aparece en la ficha, con este formato: (ACI 318-08, 21.9.4.1, pág. PDF 367). Cita siempre el documento y la cláusula tal como están en la ficha, sin inventar páginas: si la página viene vacía, omítela.
+- La ficha dice dónde buscar, no qué dice la norma. Puedes explicar la fórmula que usa AURA según el procedimiento, pero no afirmes textualmente lo que dice una cláusula ni la cites entre comillas.
+- Si algo no está en la ficha, di que no está registrado y que debe comprobarse en la norma. Si das un valor normativo por conocimiento general, indícalo claramente y pide comprobarlo.
+- Si la ficha marca algo como criterio del curso, de la planilla o del fabricante, dilo: no lo presentes como exigencia de la norma.
 - Distingue entre lo que hace AURA y lo que exige la norma. Algunos programas siguen criterios propios o de una planilla, y debes decirlo.
 - No apruebes un diseño ni afirmes que una estructura es segura: la responsabilidad es del ingeniero del proyecto.
 - No tienes acceso a los datos ni a los resultados del cálculo abierto. Si los necesitas, pide solo los valores puntuales y recuerda no incluir datos de clientes.
@@ -96,8 +100,13 @@ export async function atender(req: Request, env: Entorno, pedir: typeof fetch = 
   if ((await uso.json()) === null) return error(429, `Alcanzó el límite de ${limite} preguntas diarias. Vuelva a intentarlo mañana.`);
 
   const base = (env.get("AURA_BASE") ?? "https://ligan12-aura.github.io/aura_app/").replace(/\/?$/, "/");
-  const [guia, pagina] = await Promise.all([documento(`${base}CLAUDE.md`, pedir), documento(`${base}${datos.pagina}`, pedir)]);
-  const sistema = `${INSTRUCCIONES}\n\nPágina abierta: ${datos.pagina}\n\n<documentacion_aura>\n${guia}\n</documentacion_aura>\n\n<procedimiento_pagina_abierta>\n${catalogoPagina(pagina)}\n</procedimiento_pagina_abierta>`;
+  const programa = datos.pagina.replace(/\.html$/, "");
+  const conFicha = programa !== "index";
+  const [guia, pagina, general, ficha] = await Promise.all([
+    documento(`${base}CLAUDE.md`, pedir), documento(`${base}${datos.pagina}`, pedir), documento(`${base}fichas/general.md`, pedir),
+    conFicha ? documento(`${base}fichas/${programa}.md`, pedir) : Promise.resolve(""),
+  ]);
+  const sistema = `${INSTRUCCIONES}\n\nPágina abierta: ${datos.pagina}\n\n<documentacion_aura>\n${guia}\n</documentacion_aura>\n\n<documentos_de_referencia>\n${general}\n</documentos_de_referencia>\n\n<ficha_normativa_pagina_abierta>\n${ficha || "No hay una página de cálculo abierta. Pida abrir el programa para citar sus referencias."}\n</ficha_normativa_pagina_abierta>\n\n<procedimiento_pagina_abierta>\n${catalogoPagina(pagina)}\n</procedimiento_pagina_abierta>`;
 
   const modelo = env.get("GEMINI_MODEL") ?? "gemini-3.8-flash";
   const respuesta = await pedir(`${GEMINI}/${encodeURIComponent(modelo)}:streamGenerateContent?alt=sse`, {
