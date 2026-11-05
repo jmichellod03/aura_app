@@ -7,6 +7,8 @@ const PAGINAS = ["index.html", "acero.html", "reticulada.html", "placa.html", "h
 const MAX_MENSAJES = 12, MAX_TEXTO = 2000, MAX_CATALOGO = 40000, CACHE_MS = 10 * 60 * 1000;
 const GEMINI = "https://generativelanguage.googleapis.com/v1beta/models";
 const PAUSAS_MS = [800, 2000];                 // antes de cada reintento de un mismo modelo
+// Tiempos máximos en ms: Supabase corta la función a los 150 s, sin dejar registro de qué quedó esperando
+export const TIEMPOS = { gemini: 30000, total: 100000, flujo: 30000, documento: 5000, supabase: 8000 };
 
 type Entorno = { get(nombre: string): string | undefined };
 type Mensaje = { rol: "user" | "model"; texto: string };
@@ -14,6 +16,7 @@ type Mensaje = { rol: "user" | "model"; texto: string };
 const INSTRUCCIONES = `Eres Hormi, el asistente de AURA, una aplicación web de verificación estructural y vial usada por calculistas en Chile. Respondes dudas sobre cómo usar el programa y sobre cómo calcula.
 
 Reglas:
+- Preséntate como Hormi al saludar o si te preguntan quién eres. Di que eres un asistente de IA: no te hagas pasar por una persona. Si preguntan qué tecnología usas, indica que funcionas con un modelo de Google Gemini.
 - Responde en español de Chile, claro y breve. Usa números con punto decimal y espacio de miles.
 - Básate en la documentación y en el procedimiento de la página entregados abajo. Si algo no está ahí, dilo y no lo inventes.
 - No tienes el texto de las normas. La ficha normativa indica qué documento, cláusula y página del PDF usa cada resultado de AURA.
@@ -60,23 +63,35 @@ export function textoDeEvento(datos: string): { texto: string; fin?: string; blo
 // Llama a Gemini y resiste la saturación: reintenta cuando el modelo está saturado y luego pasa al modelo de respaldo.
 // Un error de cupo (429) o un modelo retirado (404) no mejora reintentando el mismo modelo: pasa directo al respaldo
 export async function llamarGemini(modelos: string[], clave: string, cuerpo: string, pedir: typeof fetch, pausa = (ms: number) => new Promise(r => setTimeout(r, ms))): Promise<Response> {
-  let ultima: Response | null = null;
+  let ultima: Response = new Response(null, { status: 503 });
+  const fin = Date.now() + TIEMPOS.total;
   for (const modelo of modelos) {
     for (let intento = 0; intento <= PAUSAS_MS.length; intento++) {
       if (intento > 0) await pausa(PAUSAS_MS[intento - 1]);
-      const r = await pedir(`${GEMINI}/${encodeURIComponent(modelo)}:streamGenerateContent?alt=sse`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-goog-api-key": clave },
-        body: cuerpo,
-      });
+      const queda = fin - Date.now();
+      if (queda <= 0) return ultima;
+      let r: Response;
+      try {
+        r = await pedir(`${GEMINI}/${encodeURIComponent(modelo)}:streamGenerateContent?alt=sse`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-goog-api-key": clave },
+          body: cuerpo,
+          signal: AbortSignal.timeout(Math.min(TIEMPOS.gemini, queda)),
+        });
+      } catch (e) {
+        // Sin respuesta a tiempo o error de red: se trata como saturación. Un modelo que no contesta no se reintenta
+        console.error("Gemini", modelo, "sin respuesta:", (e as Error).name);
+        ultima = new Response(null, { status: 503 });
+        break;
+      }
       if (r.ok) return r;
       console.error("Gemini", modelo, r.status, (await r.text()).slice(0, 300));
-      ultima = r;
+      ultima = new Response(null, { status: r.status });
       if (r.status !== 503 && r.status !== 500) break;
     }
-    if (ultima && ![429, 404, 500, 503].includes(ultima.status)) break;   // otro error (clave, solicitud): el respaldo fallaría igual
+    if (![429, 404, 500, 503].includes(ultima.status)) break;   // otro error (clave, solicitud): el respaldo fallaría igual
   }
-  return ultima as Response;
+  return ultima;
 }
 
 const cache = new Map<string, { texto: string; hora: number }>();
@@ -84,7 +99,7 @@ async function documento(url: string, pedir: typeof fetch): Promise<string> {
   const c = cache.get(url);
   if (c && Date.now() - c.hora < CACHE_MS) return c.texto;
   try {
-    const r = await pedir(url);
+    const r = await pedir(url, { signal: AbortSignal.timeout(TIEMPOS.documento) });
     if (!r.ok) return c?.texto ?? "";
     const texto = await r.text();
     cache.set(url, { texto, hora: Date.now() });
@@ -104,12 +119,15 @@ export async function atender(req: Request, env: Entorno, pedir: typeof fetch = 
   if (req.method !== "POST") return error(405, "Método no permitido.");
 
   const clave = env.get("GEMINI_API_KEY"), urlSb = env.get("SUPABASE_URL");
-  if (!clave || !urlSb) return error(503, "El asistente no está configurado.");
+  if (!clave || !urlSb) return error(503, "Hormi no está configurado.");
   const token = req.headers.get("authorization") ?? "", apikey = req.headers.get("apikey") ?? env.get("SUPABASE_ANON_KEY") ?? "";
   if (!/^Bearer \S+$/.test(token)) return error(401, "Debe iniciar sesión.");
   const cabSb = { Authorization: token, apikey, "Content-Type": "application/json" };
 
-  const usuario = await pedir(`${urlSb}/auth/v1/user`, { headers: cabSb });
+  const senalSb = () => AbortSignal.timeout(TIEMPOS.supabase);
+  let usuario: Response;
+  try { usuario = await pedir(`${urlSb}/auth/v1/user`, { headers: cabSb, signal: senalSb() }); }
+  catch (e) { console.error("Supabase auth:", (e as Error).name); return error(503, "No se pudo comprobar la sesión. Intente nuevamente."); }
   if (!usuario.ok) return error(401, "Su sesión venció. Vuelva a iniciar sesión.");
 
   let cuerpo: unknown;
@@ -118,8 +136,10 @@ export async function atender(req: Request, env: Entorno, pedir: typeof fetch = 
   if (!datos) return error(400, `Solicitud inválida. Cada pregunta puede tener hasta ${MAX_TEXTO} caracteres.`);
 
   const limite = Number(env.get("ASISTENTE_LIMITE_DIARIO") ?? 30);
-  const uso = await pedir(`${urlSb}/rest/v1/rpc/asistente_consumir`, { method: "POST", headers: cabSb, body: JSON.stringify({ limite }) });
-  if (!uso.ok) return error(503, "El asistente no está configurado.");
+  let uso: Response;
+  try { uso = await pedir(`${urlSb}/rest/v1/rpc/asistente_consumir`, { method: "POST", headers: cabSb, body: JSON.stringify({ limite }), signal: senalSb() }); }
+  catch (e) { console.error("Supabase rpc:", (e as Error).name); return error(503, "No se pudo comprobar el límite de preguntas. Intente nuevamente."); }
+  if (!uso.ok) return error(503, "Hormi no está configurado.");
   if ((await uso.json()) === null) return error(429, `Alcanzó el límite de ${limite} preguntas diarias. Vuelva a intentarlo mañana.`);
 
   const base = (env.get("AURA_BASE") ?? "https://ligan12-aura.github.io/aura_app/").replace(/\/?$/, "/");
@@ -137,7 +157,7 @@ export async function atender(req: Request, env: Entorno, pedir: typeof fetch = 
     contents: datos.mensajes.map(m => ({ role: m.rol, parts: [{ text: m.texto }] })),
     generationConfig: { maxOutputTokens: 4096 },
   }), pedir, pausa);
-  if (respuesta.status === 429) return error(429, "Se agotó por ahora el cupo gratuito del asistente. Intente más tarde.");
+  if (respuesta.status === 429) return error(429, "Se agotó por ahora el cupo gratuito de Hormi. Intente más tarde.");
   if (respuesta.status === 503 || respuesta.status === 500) return error(503, "El servicio de IA está saturado. Intente en unos minutos.");
   if (!respuesta.ok || !respuesta.body) return error(502, "El servicio de IA no respondió. Intente más tarde.");
 
@@ -147,7 +167,17 @@ export async function atender(req: Request, env: Entorno, pedir: typeof fetch = 
     async pull(ctrl) {
       // Sigue leyendo hasta tener texto: si pull termina sin encolar nada, el flujo no vuelve a llamarlo y queda detenido
       for (let enviado = false; !enviado;) {
-        const { done, value } = await lector.read();
+        let reloj: ReturnType<typeof setTimeout> | undefined;
+        const lectura = await Promise.race([lector.read(), new Promise<null>(r => { reloj = setTimeout(() => r(null), TIEMPOS.flujo); })]);
+        clearTimeout(reloj);
+        if (lectura === null) {                  // Gemini dejó de enviar: se cierra con aviso en vez de quedar esperando
+          console.error("Gemini sin datos por", TIEMPOS.flujo, "ms");
+          lector.cancel().catch(() => {});
+          ctrl.enqueue(cod.encode("\n\n[La respuesta quedó incompleta porque el servicio de IA dejó de responder. Intente nuevamente.]"));
+          ctrl.close();
+          return;
+        }
+        const { done, value } = lectura;
         if (done) { ctrl.close(); return; }
         resto += dec.decode(value, { stream: true });
         const eventos = resto.split(/\r?\n\r?\n/);

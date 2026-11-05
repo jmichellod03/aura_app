@@ -4,7 +4,7 @@
 "use strict";
 (() => {
   if (esPaginaAcceso || !sb) return;
-  const MAX_TEXTO = 2000, MAX_MENSAJES = 12;
+  const MAX_TEXTO = 2000, MAX_MENSAJES = 12, MAX_ESPERA_MS = 120000;
   const pagina = location.pathname.split("/").pop() || "index.html";
   let conversacion = [], ocupado = false, claveHist = "";
 
@@ -64,7 +64,7 @@
     if (main) { actualizarCara(); new MutationObserver(actualizarCara).observe(main, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ["class"] }); }
     const panel = document.createElement("section");
     panel.id = "asPanel"; panel.className = "as-panel"; panel.hidden = true; panel.setAttribute("aria-label", "Hormi, asistente de AURA");
-    panel.innerHTML = `<header class="as-cab"><span class="as-cara-cab">${hormi("normal", 30)}</span><b>Hormi</b><button type="button" class="as-limpiar">Limpiar</button><button type="button" class="as-cerrar" aria-label="Cerrar asistente">×</button></header>
+    panel.innerHTML = `<header class="as-cab"><span class="as-cara-cab">${hormi("normal", 30)}</span><b>Hormi</b><button type="button" class="as-limpiar">Limpiar</button><button type="button" class="as-cerrar" aria-label="Cerrar a Hormi">×</button></header>
       <p class="as-aviso">Resuelve dudas de uso y de cálculo, pero puede equivocarse: compruebe sus respuestas. No ve los datos de su cálculo. <b>No escriba datos de clientes:</b> en el plan gratis, Google puede revisar lo que se envía y usarlo para mejorar sus productos.</p>
       <div class="as-chat" role="log" aria-live="polite"></div>
       <form class="as-form"><label class="as-oculto" for="asTexto">Su pregunta</label><textarea id="asTexto" rows="2" maxlength="${MAX_TEXTO}" placeholder="Escriba su pregunta"></textarea><button type="submit" class="as-enviar">Enviar</button></form>`;
@@ -123,11 +123,12 @@
           method: "POST",
           headers: { Authorization: `Bearer ${data.session.access_token}`, apikey: SUPABASE_KEY, "Content-Type": "application/json" },
           body: JSON.stringify({ pagina, mensajes: historial }),
+          signal: AbortSignal.timeout(MAX_ESPERA_MS),
         });
         if (!resp.ok) {
           let m = "";
           try { m = (await resp.json()).error || ""; } catch { /* sin detalle */ }
-          throw Object.assign(new Error(m || (resp.status === 404 ? "El asistente todavía no está activado." : "El asistente no respondió. Intente más tarde.")), { visible: true });
+          throw Object.assign(new Error(m || (resp.status === 404 ? "Hormi todavía no está activado." : "Hormi no pudo responder a tiempo. Intente en unos minutos.")), { visible: true });
         }
         const lector = resp.body.getReader(), dec = new TextDecoder();
         for (;;) {
@@ -139,10 +140,11 @@
             r.innerHTML = formato(acumulado); chat.scrollTop = chat.scrollHeight;
           }
         }
-        if (!acumulado.trim()) throw Object.assign(new Error("El asistente no entregó una respuesta. Intente nuevamente."), { visible: true });
+        if (!acumulado.trim()) throw Object.assign(new Error("Hormi no entregó una respuesta. Intente nuevamente."), { visible: true });
         conversacion.push({ rol: "model", texto: acumulado.slice(0, 8000) }); guardar();
       } catch (err) {
-        fallar(err.visible ? err.message : navigator.onLine ? "El asistente todavía no está activado o no responde." : "Sin conexión. El asistente requiere internet.");
+        const agotado = err.name === "TimeoutError" || err.name === "AbortError";
+        fallar(err.visible ? err.message : agotado ? "Hormi no pudo responder a tiempo. Intente en unos minutos." : navigator.onLine ? "Hormi todavía no está activado o no responde." : "Sin conexión. Hormi requiere internet.");
       } finally {
         ocupado = false; enviar.disabled = false; texto.focus();
       }
