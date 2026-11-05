@@ -111,7 +111,7 @@
   <a class="marca" href="index.html" aria-label="Inicio"><span class="logo-tile"><span class="logo"><img src="icons/logo-mmp.webp" alt="MMP"></span></span></a>
   <a class="home" href="index.html">← Inicio</a>
   <h1>Madera aserrada</h1>
-  <span>NCh 1198:2024 · tensiones admisibles · pino radiata · unidades kgf – cm</span>
+  <span>NCh 1198:2024 · tensiones admisibles · pino radiata y especies del Anexo U · unidades kgf – cm</span>
 </header>
 
 <main>
@@ -127,11 +127,16 @@
       <div id="inEnv">
       <fieldset>
         <legend>Material y sección</legend>
+        <label for="especie">Especie (NCh 1198:2024, Anexo U)</label>
+        <select id="especie"><option value="radiata" selected>Pino radiata (Tabla U.1)</option><option value="ponderosa">Pino ponderosa (Tabla U.2)</option><option value="oregon">Pino oregón (Tabla U.3)</option><option value="nitens">Eucaliptus nitens (Tabla U.4)</option><option value="rauli">Raulí (Tabla U.5)</option><option value="lenga">Lenga (Tabla U.6)</option><option value="roble">Roble (Tabla U.7)</option><option value="acacia">Acacia dealbata (Tabla U.8)</option></select>
         <div class="row2">
-          <div><label for="grado">Grado (pino radiata)</label>
-            <select id="grado"><option>GS</option><option>G1+</option><option selected>G1</option><option>G2</option><option>C24</option><option>C16</option><option>MGP10</option><option>MGP12</option></select></div>
+          <div><label for="grado">Grado estructural</label>
+            <select id="grado"><option>GS</option><option>G1+</option><option selected>G1</option><option>G2</option><option>C24</option><option>C16</option><option>MGP10</option><option>MGP12</option><option value="N1">N°1</option><option value="N2">N°2</option></select></div>
           <div><label for="H">Humedad H <span class="unit">[%]</span></label><input id="H" type="number" step="1" min="12" max="40" value="12"></div>
         </div>
+        <div id="ggFcn" class="hidden"><label for="Fcn">Compresión normal F<sub>cn</sub> (no tabulada para la especie) <span class="unit">[MPa]</span></label><input id="Fcn" type="number" step="0.1" min="0" placeholder="ingresar valor">
+          <div class="unit" id="FcnNota"></div></div>
+        <div class="unit hidden" id="EspNota" style="margin:-4px 0 8px"></div>
         <label for="esc">Escuadría (cepillada)</label>
         <select id="esc"></select>
         <div class="row2" id="gCustom">
@@ -235,11 +240,16 @@
       <div id="inTab" class="hidden">
       <fieldset>
         <legend>Material y sección</legend>
+        <label for="tEspecie">Especie (NCh 1198:2024, Anexo U)</label>
+        <select id="tEspecie"><option value="radiata" selected>Pino radiata (Tabla U.1)</option><option value="ponderosa">Pino ponderosa (Tabla U.2)</option><option value="oregon">Pino oregón (Tabla U.3)</option><option value="nitens">Eucaliptus nitens (Tabla U.4)</option><option value="rauli">Raulí (Tabla U.5)</option><option value="lenga">Lenga (Tabla U.6)</option><option value="roble">Roble (Tabla U.7)</option><option value="acacia">Acacia dealbata (Tabla U.8)</option></select>
         <div class="row2">
-          <div><label for="tGrado">Grado (pino radiata)</label>
-            <select id="tGrado"><option>GS</option><option>G1+</option><option selected>G1</option><option>G2</option><option>C24</option><option>C16</option><option>MGP10</option><option>MGP12</option></select></div>
+          <div><label for="tGrado">Grado estructural</label>
+            <select id="tGrado"><option>GS</option><option>G1+</option><option selected>G1</option><option>G2</option><option>C24</option><option>C16</option><option>MGP10</option><option>MGP12</option><option value="N1">N°1</option><option value="N2">N°2</option></select></div>
           <div><label for="tH">Humedad H <span class="unit">[%]</span></label><input id="tH" type="number" step="1" min="12" max="40" value="18"></div>
         </div>
+        <div id="tgFcn" class="hidden"><label for="tFcn">Compresión normal F<sub>cn</sub> (no tabulada para la especie) <span class="unit">[MPa]</span></label><input id="tFcn" type="number" step="0.1" min="0" placeholder="ingresar valor">
+          <div class="unit" id="tFcnNota"></div></div>
+        <div class="unit hidden" id="tEspNota" style="margin:-4px 0 8px"></div>
         <label for="tEsc">Escuadría</label>
         <select id="tEsc"></select>
         <div class="row2" id="tgCustom">
@@ -308,11 +318,16 @@
       <div id="inPil" class="hidden">
       <fieldset>
         <legend>Material y sección</legend>
+        <label for="piEspecie">Especie (NCh 1198:2024, Anexo U)</label>
+        <select id="piEspecie"><option value="radiata" selected>Pino radiata (Tabla U.1)</option><option value="ponderosa">Pino ponderosa (Tabla U.2)</option><option value="oregon">Pino oregón (Tabla U.3)</option><option value="nitens">Eucaliptus nitens (Tabla U.4)</option><option value="rauli">Raulí (Tabla U.5)</option><option value="lenga">Lenga (Tabla U.6)</option><option value="roble">Roble (Tabla U.7)</option><option value="acacia">Acacia dealbata (Tabla U.8)</option></select>
         <div class="row2">
-          <div><label for="piGrado">Grado (pino radiata)</label>
-            <select id="piGrado"><option>GS</option><option>G1+</option><option selected>G1</option><option>G2</option><option>C24</option><option>C16</option><option>MGP10</option><option>MGP12</option></select></div>
+          <div><label for="piGrado">Grado estructural</label>
+            <select id="piGrado"><option>GS</option><option>G1+</option><option selected>G1</option><option>G2</option><option>C24</option><option>C16</option><option>MGP10</option><option>MGP12</option><option value="N1">N°1</option><option value="N2">N°2</option></select></div>
           <div><label for="piH">Humedad H <span class="unit">[%]</span></label><input id="piH" type="number" step="1" min="12" max="40" value="18"></div>
         </div>
+        <div id="pigFcn" class="hidden"><label for="piFcn">Compresión normal F<sub>cn</sub> (no tabulada para la especie) <span class="unit">[MPa]</span></label><input id="piFcn" type="number" step="0.1" min="0" placeholder="ingresar valor">
+          <div class="unit" id="piFcnNota"></div></div>
+        <div class="unit hidden" id="piEspNota" style="margin:-4px 0 8px"></div>
         <label for="piEsc">Escuadría</label>
         <select id="piEsc"></select>
         <div class="row2" id="pigCustom">
@@ -386,7 +401,7 @@
       <fieldset>
         <legend>Pie derecho de borde</legend>
         <div class="row2">
-          <div><label for="mGrado">Grado (pino radiata)</label>
+          <div><label for="mGrado">Grado (pino radiata, 12.2.2 a 12.2.4)</label>
             <select id="mGrado"><option>GS</option><option>G1+</option><option selected>G1</option><option>G2</option><option>C24</option><option>C16</option><option>MGP10</option><option>MGP12</option></select></div>
           <div><label for="mH">Humedad H <span class="unit">[%]</span></label><input id="mH" type="number" step="1" min="12" max="40" value="18"></div>
         </div>
@@ -505,6 +520,144 @@ const U1 = {
   "C24": [9.3, 8.0, 4.7, 2.5, 1.1, 10200], "C16": [5.2, 7.5, 3.5, 2.5, 1.1, 7900],
   "MGP10": [8.4, 10, 4.0, 2.5, 1.3, 10000], "MGP12": [13.5, 15.5, 6.0, 2.5, 1.3, 12700],
 };
+// Tablas U.2 a U.8 — especies con tabla propia, madera seca (H = 12 %), en MPa, mismo orden que U1.
+// Esas tablas no dan F_cn: va null y lo ingresa el usuario (campo F_cn del formulario), salvo el roble,
+// que la Tabla U.10 sí incluye por su grupo de la Tabla A.1 (fcnU10: [seco ES4, verde E4]).
+// verde: grupo de la Tabla A.1 y clase estructural por grado (Tabla U.11) para H ≥ 20 % (solo especies que figuran en la Tabla A.1).
+const ESPECIES = {
+  radiata: { nom: "Pino radiata", tabla: "U.1", pag: 225, conifera: true, grados: U1 },
+  ponderosa: { nom: "Pino ponderosa", tabla: "U.2", pag: 226, conifera: true, clasif: "NCh 1207",
+    grados: { G1: [5.4, 5.8, 3.7, null, 0.26, 5056], G2: [3.4, 5.3, 2.2, null, 0.15, 5042] } },
+  oregon: { nom: "Pino oregón", tabla: "U.3", pag: 226, conifera: true, clasif: "NCh 1207",
+    grados: { GS: [14.3, 11.1, 8.5, null, 1.1, 12443], G1: [10.8, 11.1, 6.2, null, 0.8, 10229], G2: [8.2, 10.5, 4.4, null, 0.6, 8965] },
+    verde: { grupo: "E5", N1: "F8", N2: "F5" } },
+  nitens: { nom: "Eucaliptus nitens", tabla: "U.4", pag: 226, conifera: false, clasif: "NCh 1970/1",
+    grados: { N1: [24.0, 16.4, 24.9, null, 1.0, 14100], N2: [21.1, 14.8, 16.8, null, 0.8, 13426] } },
+  rauli: { nom: "Raulí", tabla: "U.5", pag: 227, conifera: false, clasif: "NCh 1970/1",
+    grados: { N1: [21.4, 12.9, 11.8, null, 1.2, 11212], N2: [14.6, 11.8, 4.5, null, 1.1, 10491] } },
+  lenga: { nom: "Lenga", tabla: "U.6", pag: 227, conifera: false, clasif: "NCh 1970/1",
+    grados: { N1: [14.7, 11.3, 8.8, null, 0.8, 11056], N2: [10.7, 9.4, 5.0, null, 0.6, 11085] } },
+  roble: { nom: "Roble", tabla: "U.7", pag: 227, conifera: false, clasif: "NCh 1970/1",
+    grados: { N1: [24.4, 16.6, 13.9, null, 1.28, 12435], N2: [15.5, 13.2, 7.1, null, 1.12, 11111] },
+    verde: { grupo: "E4", N1: "F11", N2: "F7" }, verdeSeco: "ES4", fcnU10: [5.0, 2.8] },
+  acacia: { nom: "Acacia dealbata", tabla: "U.8", pag: 228, conifera: false, clasif: "NCh 1970/1",
+    grados: { N1: [19.9, 11.0, 7.4, null, 1.1, 11515], N2: [15.9, 10.4, 6.7, null, 1.0, 10595] } },
+};
+// Tabla U.9 — clases estructurales usadas en estado verde, en MPa: Ff, Fcp, Ftp, Fcz, Ef
+const U9 = { F11: [11.0, 8.3, 6.6, 1.05, 7900], F8: [8.6, 6.6, 5.2, 0.86, 6900], F7: [6.9, 5.2, 4.1, 0.72, 6100], F5: [5.5, 4.1, 3.3, 0.62, 5500] };
+// Tabla 3 — ΔR para especies en general (todas menos el pino radiata)
+const DR_GENERAL = { Ff: 0.0205, Fcp: 0.043, Ftp: 0.0205, Fcz: 0.016, Fcn: 0, Ef: 0.0148 };
+const H_VERDE = 20;                   // 7.1.1 y Anexo U: H ≥ 20 % se trata como madera verde (especies distintas del pino radiata)
+const archG = (d) => `${d.especie === "radiata" ? "" : d.especie + "_"}${d.grado}`;
+const gradoTxt = (g) => g.replace(/^N(\d)$/, "N°$1");
+// Anexo U (pág. 217): con H ≥ 20 % o piezas de espesor mayor que 100 mm se asigna como madera verde
+const esVerde = (esp, H, b, h) => esp !== "radiata" && (H >= H_VERDE || Math.min(b, h) > 100);
+// Grados disponibles según especie y estado (en verde, los de la Tabla U.11)
+function gradosEspecie(esp, verde) {
+  const e = ESPECIES[esp];
+  if (verde && e.verde) return ["N1", "N2"];
+  return Object.keys(e.grados);
+}
+// Material de diseño: tensiones base (MPa), factores que dependen de la especie y textos para la memoria
+function material(d) {
+  const e = ESPECIES[d.especie], radiata = d.especie === "radiata";
+  const verde = esVerde(d.especie, d.H, d.b, d.h);
+  const porEspesor = verde && d.H < H_VERDE;
+  const u10 = e.fcnU10;                               // roble: F_cn de la Tabla U.10
+  let base, clase = null;
+  if (verde) {
+    clase = e.verde[d.grado];
+    const [Ff, Fcp, Ftp, Fcz, Ef] = U9[clase];
+    base = { Ff, Fcp, Ftp, Fcn: u10 ? u10[1] : d.Fcn, Fcz, Ef };
+  } else {
+    const [Ff, Fcp, Ftp, Fcn, Fcz, Ef] = e.grados[d.grado];
+    base = { Ff, Fcp, Ftp, Fcn: radiata ? Fcn : u10 ? u10[0] : d.Fcn, Fcz, Ef };
+  }
+  const mgp = radiata && d.grado.startsWith("MGP");
+  // F_cn en especies en general (Tabla 3, nota *): K_H de la Tabla 4, interpolado entre seco (12 %) y verde (20 %) según 7.1.1.
+  // Roble: interpolación entre los valores seco y verde de la Tabla U.10 (5.0 y 2.8 MPa).
+  const rFcn = u10 ? u10[1] / u10[0] : VERDE.Fcn;
+  const KHfcn = verde ? (u10 ? 1 : VERDE.Fcn) : 1 - (d.H - 12) / (H_VERDE - 12) * (1 - rFcn);
+  const KH = radiata ? (k) => factorKH(d.H, k)
+    : (k) => (k === "Fcn" ? KHfcn : verde ? 1 : 1 - (d.H - 12) * DR_GENERAL[k]);
+  // 8.2.2.3: pino radiata (90/h)^(1/5) o MGP (160/h)^…; demás especies (50/h)^(1/9)
+  const khfLim = mgp ? 160 : radiata ? 90 : 50;
+  const khfExp = mgp ? (d.grado === "MGP10" ? 1 / 3 : 1 / 2) : radiata ? 1 / 5 : 1 / 9;
+  const khfExpTex = mgp ? (d.grado === "MGP10" ? "1/3" : "1/2") : radiata ? "1/5" : "1/9";
+  const Khf = (h) => (h > khfLim ? (khfLim / h) ** khfExp : 1);
+  const khfSym = L`\left(\frac{${khfLim}}{h}\right)^{${khfExpTex}}`;
+  const khfTex = (h) => L`\left(\frac{${khfLim}}{${tn(h, 0)}}\right)^{${khfExpTex}}`;
+  // 8.2.4.2: el factor de altura en E solo se define para pino radiata
+  const KhE = (dim) => (radiata && !mgp && dim < 180 ? Math.max((dim / 180) ** 0.25, 0.67) : 1);
+  const nom = `${e.nom} ${gradoTxt(d.grado)}`;
+  const fuente = verde ? `Tablas A.1, U.11 y U.9 (grupo ${e.verde.grupo}, clase ${clase})` : `Tabla ${e.tabla}`;
+  return {
+    e, radiata, verde, porEspesor, clase, base, grado: d.grado, mgp, KH, KHfcn, rFcn, u10, fcnIng: !radiata && !u10,
+    Khf, khfLim, khfTex, KhE, khfSym, nom, fuente,
+    estado: verde ? (porEspesor ? "verde (espesor > 100 mm)" : `verde (H ≥ ${H_VERDE} %)`) : "seca (H = 12 %)",
+    cc: ["G2", "C16"].includes(d.grado) ? 0.80 : 0.85,                // Tabla 9: N°1 y N°2 con 0.85
+    kG: e.conifera ? 0.065 : 0.07,                                    // Anexo B.3, G_LT
+    DR: radiata ? DR : DR_GENERAL,
+    clasif: radiata ? (VISUALES.includes(d.grado) ? "clasificación visual según NCh 1207" : "grado estructural según NCh 1198:2024")
+      : verde ? "clasificación visual según NCh 1207 y NCh 1970" : `clasificación visual según ${e.clasif}`,
+  };
+}
+// Datos de especie de los formularios (prefijo de ids: "", "t", "pi"; el muro de corte es solo de pino radiata, 12.2.2 a 12.2.4)
+const ID_ESP = { "": ["especie", "grado", "H", "Fcn", "ggFcn"], t: ["tEspecie", "tGrado", "tH", "tFcn", "tgFcn"], pi: ["piEspecie", "piGrado", "piH", "piFcn", "pigFcn"], m: ["mEspecie", "mGrado", "mH", "mFcn", "mgFcn"] };
+const ID_ESC = { "": ["esc", "b", "h"], t: ["tEsc", "tb", "th"], pi: ["piEsc", "pib", "pih"], m: ["mEsc", "mb", "mh"] };
+function especieForm(pre) {
+  const el = $(ID_ESP[pre][0]);
+  return el && ESPECIES[el.value] ? el.value : "radiata";
+}
+function dimsForm(pre) {
+  const [ie, ib, ih] = ID_ESC[pre];
+  return $(ie).value === "custom" ? [num(ib), num(ih)] : ESCUADRIAS[$(ie).value] || [0, 0];
+}
+function leerEspecie(pre) {
+  const [, ig, , ifc] = ID_ESP[pre];
+  const especie = especieForm(pre);
+  const ingresa = especie !== "radiata" && !ESPECIES[especie].fcnU10;
+  return { especie, grado: $(ig).value, Fcn: ingresa ? num(ifc) : null, espNom: ESPECIES[especie].nom, gTxt: gradoTxt($(ig).value) };
+}
+// Muestra solo los grados de la especie (y estado) elegida, el campo F_cn cuando la norma no lo trae y los avisos de la especie
+function sincEspecie(pre) {
+  const [, ig, ih, ifc, ig2] = ID_ESP[pre];
+  const esp = especieForm(pre), e = ESPECIES[esp];
+  const H = Math.max(12, num(ih)), [b, h] = dimsForm(pre);
+  const verde = esVerde(esp, H, b, h), grueso = Math.min(b, h) > 100 && H < H_VERDE;
+  const lista = gradosEspecie(esp, verde);
+  const sel = $(ig);
+  [...sel.options].forEach(o => { o.hidden = !lista.includes(o.value); o.disabled = o.hidden; });
+  if (!lista.includes(sel.value)) sel.value = lista.includes("G1") ? "G1" : lista[0];
+  if (!$(ig2)) return;
+  $(ig2).classList.toggle("hidden", esp === "radiata" || !!e.fcnU10);
+  $(ifc + "Nota").textContent = esp === "radiata" || e.fcnU10 ? "" : verde
+    ? "Valor para madera seca (H = 12 %); en estado verde se multiplica por 0.67 (Tabla 4)."
+    : "Valor para madera seca (H = 12 %). Sobre 12 % se reduce linealmente hasta 0.67 en H = 20 % (Tablas 3 y 4, 7.1.1).";
+  const avisos = [];
+  if (verde && e.verde) {
+    avisos.push(`${grueso ? "Espesor mayor que 100 mm" : `H ≥ ${H_VERDE} %`}: se trata como madera verde, con los grados N°1 y N°2 (Tabla U.11) y la clase de la Tabla U.9 por el grupo ${e.verde.grupo} de la Tabla A.1. Es un criterio: la Tabla U.9 excluye en su título a las especies con tabla propia. Las tensiones bajan de golpe respecto de la madera seca.`);
+    if (esp === "oregon") avisos.push("Los grados GS, G1 y G2 del pino oregón son solo de madera seca (Tabla U.3).");
+  }
+  if (e.fcnU10) avisos.push(`F<sub>cn</sub> de la Tabla U.10: ${fmt(e.fcnU10[0], 1)} MPa en seco (grupo ${e.verdeSeco}) y ${fmt(e.fcnU10[1], 1)} MPa en verde (grupo ${e.verde.grupo}), interpolado entre 12 % y 20 % (7.1.1).`);
+  const nota = $((pre || "") + "EspNota");
+  nota.innerHTML = avisos.join(" ");
+  nota.classList.toggle("hidden", !avisos.length);
+}
+// Reglas propias de la especie: F_cn ingresado (obligatorio) y especies sin valores en estado verde
+function datosEspecie(pre) {
+  const [, , ih, ifc] = ID_ESP[pre];
+  const esp = especieForm(pre);
+  if (esp === "radiata") return [];
+  const e = ESPECIES[esp], H = Math.max(12, num(ih)), [b, h] = dimsForm(pre);
+  const malos = e.fcnU10 ? [] : datosInvalidos([[ifc, 0, true]]);
+  if (esVerde(esp, H, b, h) && !e.verde) {
+    const porH = H >= H_VERDE;
+    if (porH) $(ih).classList.add("invalido");
+    malos.push(`la NCh 1198:2024 da valores de ${e.nom.toLowerCase()} solo para madera seca ${porH ? `(H < ${H_VERDE} %)` : "y piezas de espesor hasta 100 mm (Anexo U)"}`);
+  }
+  return malos;
+}
 // Factor de humedad: ΔR por punto de humedad (H ≤ 18 %) y factores de madera verde de la Tabla 4 (H > 18 %) — pino radiata
 const DR = { Ff: 0.025, Fcp: 0.048, Ftp: 0.025, Fcz: 0.015, Fcn: 0, Ef: 0.017 };
 const VERDE = { Ff: 0.75, Fcp: 0.52, Ftp: 0.75, Fcz: 0.85, Fcn: 0.67, Ef: 0.83 };
@@ -592,48 +745,69 @@ class Memo {
 }
 
 // Tabla de propiedades mecánicas admisibles (Tabla U.1), en pantalla y en el .tex
-function tablaProps(m, grado, maestra) {
-  m.h("Propiedades mecánicas admisibles — Tabla U.1");
-  const [FfM, FcpM, FtpM, FcnM, FczM, EfM] = U1[grado];
+function tablaProps(m, mat, maestra) {
+  m.h(`Propiedades mecánicas admisibles — ${mat.verde ? "Tablas U.11 y U.9" : "Tabla " + mat.e.tabla}`);
+  const v = mat.base, fcnIng = mat.fcnIng;
   const props = [
-    ["Tensión admisible en flexión", "F<sub>f</sub>", L`$F_f$`, FfM],
-    ["Tensión admisible en compresión paralela", "F<sub>cp</sub>", L`$F_{cp}$`, FcpM],
-    ["Tensión admisible en tracción paralela", "F<sub>tp</sub>", L`$F_{tp}$`, FtpM],
-    ["Tensión admisible en compresión normal", "F<sub>cn</sub>", L`$F_{cn}$`, FcnM],
-    ["Tensión admisible en cizalle", "F<sub>cz</sub>", L`$F_{cz}$`, FczM],
-    ["Módulo de elasticidad en flexión", "E<sub>f</sub>", L`$E_f$`, EfM],
+    ["Tensión admisible en flexión", "F<sub>f</sub>", L`$F_f$`, v.Ff],
+    ["Tensión admisible en compresión paralela", "F<sub>cp</sub>", L`$F_{cp}$`, v.Fcp],
+    ["Tensión admisible en tracción paralela", "F<sub>tp</sub>", L`$F_{tp}$`, v.Ftp],
+    [`Tensión admisible en compresión normal${fcnIng ? " (ingresada)" : mat.u10 ? " (Tabla U.10)" : ""}`, "F<sub>cn</sub>", L`$F_{cn}$`, v.Fcn],
+    ["Tensión admisible en cizalle", "F<sub>cz</sub>", L`$F_{cz}$`, v.Fcz],
+    ["Módulo de elasticidad en flexión", "E<sub>f</sub>", L`$E_f$`, v.Ef],
   ];
-  if (maestra) props.push(["Módulo de elasticidad percentil 5 % (viga maestra)", "0.60·E<sub>f</sub>", L`$0.60\,E_f$`, 0.6 * EfM]);
-  m.out.push(`<table class="prop"><tr><th>Propiedad (pino radiata ${grado}, H = 12 %)</th><th>Símbolo</th><th>kgf/cm²</th></tr>` +
-    props.map(([n, s, , v]) => `<tr><td>${n}</td><td>${s}</td><td class="num">${fmt(v * MPA, 0)}</td></tr>`).join("") +
-    `<tr><td>Índice de aplastamiento en compresión normal</td><td>E<sub>cn,h</sub></td><td class="num">56.5 kgf/cm²/mm</td></tr></table>
-    <div class="unit" style="margin-top:4px">Valores base para madera seca (H = 12 %), convertidos de la Tabla U.1 con 1 MPa = 10 kgf/cm².</div>`);
+  if (maestra) props.push(["Módulo de elasticidad percentil 5 % (viga maestra)", "0.60·E<sub>f</sub>", L`$0.60\,E_f$`, 0.6 * v.Ef]);
+  const dec = (x) => (Number.isInteger(Math.round(x * MPA * 100) / 100) ? 0 : 1);
+  const titulo = `${mat.nom}, ${mat.verde ? `estado verde, grupo ${mat.e.verde.grupo}, clase ${mat.clase}` : "H = 12 %"}`;
+  const origen = mat.verde
+    ? `Valores de madera verde de la clase ${mat.clase} (Tabla U.9), asignada por el grupo ${mat.e.verde.grupo} de la Tabla A.1 y el grado ${gradoTxt(mat.grado)} (Tabla U.11)`
+    : `Valores base para madera seca (H = 12 %) de la Tabla ${mat.e.tabla}`;
+  const criterioVerde = mat.verde ? ` Criterio: la Tabla U.9 excluye en su título a las especies con tabla propia; la asignación por grupo de la madera verde (Anexo U, pág. 217) se aplica igual a ${mat.e.nom.toLowerCase()}${mat.porEspesor ? ", tratada como verde por tener espesor mayor que 100 mm" : ""}.` : "";
+  const notaFcn = (fcnIng ? ` La Tabla ${mat.e.tabla} no da F<sub>cn</sub>: se usa el valor ingresado para madera seca.`
+    : mat.u10 ? ` F<sub>cn</sub> de la Tabla U.10 por el grupo ${mat.verde ? mat.e.verde.grupo : mat.e.verdeSeco} de la Tabla A.1.` : "") + criterioVerde;
+  m.out.push(`<table class="prop"><tr><th>Propiedad (${titulo})</th><th>Símbolo</th><th>kgf/cm²</th></tr>` +
+    props.map(([n, s, , x]) => `<tr><td>${n}</td><td>${s}</td><td class="num">${fmt(x * MPA, dec(x))}</td></tr>`).join("") +
+    (mat.radiata ? `<tr><td>Índice de aplastamiento en compresión normal</td><td>E<sub>cn,h</sub></td><td class="num">56.5 kgf/cm²/mm</td></tr>` : "") + `</table>
+    <div class="unit" style="margin-top:4px">${origen}, convertidos con 1 MPa = 10 kgf/cm².${notaFcn}</div>`);
   m.tex.push(L`\begin{table}[H]
 \centering
-\caption{Propiedades mecánicas admisibles, pino radiata ${grado} seco ($H = 12\,\%$), Tabla U.1 de la NCh 1198:2024.}
+\caption{Propiedades mecánicas admisibles, ${mat.nom.replace(/°/g, L`$^\circ$`)} ${mat.verde ? L`en estado verde (grupo ${mat.e.verde.grupo}, clase ${mat.clase}), Tablas A.1, U.11 y U.9` : L`seco ($H = 12\,\%$), Tabla ${mat.e.tabla}`} de la NCh 1198:2024.}
 \begin{tabular}{llr}
 \toprule
 Propiedad & Símbolo & kgf/cm$^2$\\
 \midrule
-${props.map(([n, , st, v]) => `${n} & ${st} & ${tn(v * MPA, 0)}\\\\`).join("\n")}
-Índice de aplastamiento en compresión normal & $E_{cn,h}$ & 56.5 kgf/cm$^2$/mm\\
+${props.map(([n, , st, x]) => `${n} & ${st} & ${tn(x * MPA, dec(x))}\\\\`).join("\n")}
+${mat.radiata ? L`Índice de aplastamiento en compresión normal & $E_{cn,h}$ & 56.5 kgf/cm$^2$/mm\\` : ""}
 \bottomrule
 \end{tabular}
 \end{table}
-Valores de la Tabla U.1 convertidos con 1 MPa $= 10$ kgf/cm$^2$.
+${mat.verde ? L`Valores de la Tabla U.9` : L`Valores de la Tabla ${mat.e.tabla}`} convertidos con 1 MPa $= 10$ kgf/cm$^2$.${fcnIng ? L` La Tabla ${mat.e.tabla} no entrega $F_{cn}$; se usa el valor ingresado por el calculista para madera seca.` : mat.u10 ? L` $F_{cn}$ de la Tabla U.10, grupo ${mat.verde ? mat.e.verde.grupo : mat.e.verdeSeco} de la Tabla A.1.` : ""}${mat.verde ? L` Criterio: la Tabla U.9 excluye en su título a las especies con tabla propia; la asignación por grupo de la madera verde (Anexo U) se aplica igual a ${mat.e.nom.toLowerCase()}${mat.porEspesor ? ", tratada como verde por tener espesor mayor que 100\,mm" : ""}.` : ""}
 `);
 }
 
 // K_H por propiedad: ΔR de cada una (H ≤ 18 %) o factor verde de la Tabla 4 (H > 18 %)
 const NOMK = { Ff: "F_f", Fcp: "F_{cp}", Ftp: "F_{tp}", Fcz: "F_{cz}", Fcn: "F_{cn}", Ef: "E_f" };
-function bloqueKH(m, H, claves) {
-  if (H <= 18) {
-    m.p(L`\textbf{Factor de modificación por humedad} (7.1.1). ${H > 12 ? L`Dado que el contenido de humedad $H = ${tn(H, 1)}\,\%$ supera el 12\,\%, se aplican los factores de reducción de la Tabla 3 con $\Delta H = ${tn(H, 1)} - 12 = ${tn(H - 12, 1)}\,\%$` : L`La madera opera en estado seco ($H = 12\,\%$), por lo que los factores resultan unitarios`}:`, true);
-    m.p(L`Para $H \le 18\,\%$ se usa $K_H = 1 - (H - 12)\,\Delta R$, con $\Delta R$ propio de cada propiedad:`, true);
-    m.out.push({ tex: L`Factor de humedad para $H = ${tn(H, 1)}\,\%$ ($\le 18\,\%$): $K_H = 1 - (H - 12)\,\Delta R$, con $\Delta R$ propio de cada propiedad:` });
+function bloqueKH(m, mat, H, claves) {
+  if (mat.verde) {
+    m.p(L`\textbf{Factor de modificación por humedad} (7.1.1). ${mat.porEspesor ? L`La pieza tiene espesor mayor que 100\,mm, por lo que se asigna como madera verde (Anexo U)` : L`Con $H = ${tn(H, 1)}\,\% \ge ${H_VERDE}\,\%$ la madera se trata en estado verde`}: las propiedades de la clase ${mat.clase} (Tablas U.11 y U.9) ya corresponden a ese estado, por lo que $K_H = 1$; ${mat.u10 ? L`la compresión normal es el valor verde de la Tabla U.10 (grupo ${mat.e.verde.grupo}), también con $K_H = 1$` : L`a la compresión normal ingresada para madera seca se aplica el factor de la Tabla 4 (nota 1, también para especies en general)`}. Al pasar del estado seco al verde las tensiones admisibles bajan de golpe:`, true);
+    m.eq(claves.map(k => L`K_{H,${NOMK[k]}} = ${tn(mat.KH(k), 2)}`).join(L` \qquad `), "7.1.1");
+    return;
+  }
+  const lim = mat.radiata ? 18 : H_VERDE, rel = mat.radiata ? L`\le 18` : L`< ${H_VERDE}`;
+  if (H <= lim && (mat.radiata || H < lim)) {
+    const grupo = mat.radiata ? "pino radiata" : "especies en general";
+    m.p(L`\textbf{Factor de modificación por humedad} (7.1.1). ${H > 12 ? L`Dado que el contenido de humedad $H = ${tn(H, 1)}\,\%$ supera el 12\,\%, se aplican los factores de reducción de la Tabla 3 (${grupo}) con $\Delta H = ${tn(H, 1)} - 12 = ${tn(H - 12, 1)}\,\%$` : L`La madera opera en estado seco ($H = 12\,\%$), por lo que los factores resultan unitarios`}:`, true);
+    m.p(L`Para $H ${rel}\,\%$ se usa $K_H = 1 - (H - 12)\,\Delta R$, con $\Delta R$ propio de cada propiedad (${grupo}):`, true);
+    m.out.push({ tex: L`Factor de humedad para $H = ${tn(H, 1)}\,\%$ ($${rel}\,\%$): $K_H = 1 - (H - 12)\,\Delta R$, con $\Delta R$ de la Tabla 3 (${grupo}):` });
     m.eq(L`\begin{aligned}
-${claves.map(k => L`\Delta R_{${NOMK[k]}} &= ${tn(DR[k], 3)} & \quad K_{H,${NOMK[k]}} &= 1 - (${tn(H, 1)} - 12)\cdot ${tn(DR[k], 3)} = ${tn(factorKH(H, k), 3)}`).join(" \\\\\n")}
+${claves.filter(k => mat.radiata || k !== "Fcn").map(k => L`\Delta R_{${NOMK[k]}} &= ${tn(mat.DR[k], mat.radiata ? 3 : 4)} & \quad K_{H,${NOMK[k]}} &= 1 - (${tn(H, 1)} - 12)\cdot ${tn(mat.DR[k], mat.radiata ? 3 : 4)} = ${tn(mat.KH(k), 3)}`).join(" \\\\\n")}
 \end{aligned}`, "7.1.1");
+    if (!mat.radiata && claves.includes("Fcn")) {
+      m.p(mat.u10
+        ? L`Para la compresión normal del ${mat.e.nom.toLowerCase()}, la Tabla U.10 da ${tn(mat.u10[0], 1)} MPa en estado seco (grupo ${mat.e.verdeSeco}) y ${tn(mat.u10[1], 1)} MPa en estado verde (grupo ${mat.e.verde.grupo}); entre 12\,\% y ${H_VERDE}\,\% se interpola linealmente (7.1.1):`
+        : L`Para la compresión normal, la Tabla 3 remite al factor de la Tabla 4 para especies en general ($K_H = ${tn(VERDE.Fcn, 2)}$ en estado verde); entre 12\,\% y ${H_VERDE}\,\% se interpola linealmente desde 1 (7.1.1):`, true);
+      m.eq(L`K_{H,F_{cn}} = 1 - \frac{H - 12}{${H_VERDE} - 12}\,(1 - ${tn(mat.rFcn, 3)}) = 1 - \frac{${tn(H, 1)} - 12}{${H_VERDE - 12}}\cdot ${tn(1 - mat.rFcn, 3)} = ${tn(mat.KHfcn, 3)}`, "7.1.1");
+    }
   } else {
     m.p(L`Factor de humedad para $H = ${tn(H, 1)}\,\% > 18\,\%$: se usan los factores de madera verde de la Tabla 4, propios de cada propiedad:`);
     m.eq(claves.map(k => L`K_{H,${NOMK[k]}} = ${tn(VERDE[k], 2)}`).join(L` \qquad `), "7.1.1");
@@ -648,7 +822,7 @@ function leerTabique() {
   const [b, h] = esc === "custom" ? [num("tb"), num("th")] : ESCUADRIAS[esc];
   const kp = KP[$("tKp").value], tipo = +$("tKpTipo").value;
   return {
-    grado: $("tGrado").value, H: Math.max(12, num("tH")), esc, b, h, kc: $("tKc").checked,
+    ...leerEspecie("t"), H: Math.max(12, num("tH")), esc, b, h, kc: $("tKc").checked,
     L: num("tL"), s: num("tS"), Lpx: $("tLpx").value.trim() === "" ? num("tL") : num("tLpx"), Lpy: num("tLpy"),
     Kp: kp[tipo], kpTxt: `${kp[0]} (${tipo === 1 ? "teórico" : "recomendado"})`,
     la: num("tla"), apoyoLat: $("tApoyo").value,
@@ -672,7 +846,7 @@ function leerPilar() {
   const kp = KP[$("piKp").value], tipo = +$("piKpTipo").value;
   const conV = $("piV").checked, auto = (id) => ($(id).value.trim() === "" ? num("piL") : num(id));
   return {
-    pilar: true, grado: $("piGrado").value, H: Math.max(12, num("piH")), esc, b, h, kc: false,
+    pilar: true, ...leerEspecie("pi"), H: Math.max(12, num("piH")), esc, b, h, kc: false,
     L: num("piL"), s: num("piS"), Lpx: auto("piLpx"), Lpy: auto("piLpy"),
     Kp: kp[tipo], kpTxt: `${kp[0]} (${tipo === 1 ? "teórico" : "recomendado"})`,
     la: auto("pila"), apoyoLat: $("piApoyo").value,
@@ -716,10 +890,8 @@ function reglasEnv() {
 function calcularTabique(d, m) {
   const r = {}, E = textosPie(d);
   const bc = d.b / 10, hc = d.h / 10, A = bc * hc, W = bc * hc ** 2 / 6;   // cm
-  const [FfM, FcpM, , FcnM, FczM, EfM] = U1[d.grado];
-  const Ff = FfM * MPA, Fcp = FcpM * MPA, Fcn = FcnM * MPA, Fcz = FczM * MPA, Ef = EfM * MPA;
-  const mgp = d.grado.startsWith("MGP");
-  const KH = (k) => factorKH(d.H, k);
+  const mat = material(d), { mgp, KH } = mat;
+  const Ff = mat.base.Ff * MPA, Fcp = mat.base.Fcp * MPA, Fcn = mat.base.Fcn * MPA, Fcz = mat.base.Fcz * MPA, Ef = mat.base.Ef * MPA;
 
   // Cargas por pie derecho y combinaciones (Anexo G: K_D de la carga de menor duración)
   m.h("Cargas y combinaciones");
@@ -739,12 +911,12 @@ function calcularTabique(d, m) {
     m.eq(L`V_V = \frac{w\,L}{2} = \frac{${tn(w, 2)}\cdot ${tn(Lm, 3)}}{2} = ${tn(VV, 2)}\ \mathrm{kgf}`);
   }
 
-  tablaProps(m, d.grado, false);
+  tablaProps(m, mat, false);
 
   // Factores de modificación
   const Kc = d.kc ? 1.15 : 1.0;
-  const Khf = mgp ? (d.h > 160 ? (160 / d.h) ** (d.grado === "MGP10" ? 1 / 3 : 1 / 2) : 1) : (d.h > 90 ? (90 / d.h) ** 0.2 : 1);
-  const KhE = (dim) => !mgp && dim < 180 ? Math.max((dim / 180) ** 0.25, 0.67) : 1;
+  const Khf = mat.Khf(d.h);
+  const KhE = mat.KhE;
   const KhEx = KhE(d.h), KhEy = KhE(d.b);
   const Ex = Ef * KH("Ef") * KhEx, Ey = Ef * KH("Ef") * KhEy;
   m.h("Factores de modificación y propiedades de diseño");
@@ -754,13 +926,13 @@ function calcularTabique(d, m) {
   m.row("Factores por trabajo conjunto ; altura en flexión: K<sub>c</sub> ; K<sub>hf</sub>", `${fmt(Kc, 2)} ; ${fmt(Khf, 3)}`, "7.1.3 / 8.2.2.3");
   m.row("Factor de altura en E según h ; según b: K<sub>hE,x</sub> ; K<sub>hE,y</sub>", `${fmt(KhEx, 3)} ; ${fmt(KhEy, 3)}`);
   m.row("Módulos de elasticidad de diseño: E<sub>x,dis</sub> ; E<sub>y,dis</sub>", `${fmt(Ex, 0)} ; ${fmt(Ey, 0)} kgf/cm²`);
-  bloqueKH(m, d.H, ["Ff", "Fcp", "Fcz", "Fcn", "Ef"]);
+  bloqueKH(m, mat, d.H, ["Ff", "Fcp", "Fcz", "Fcn", "Ef"]);
   tablaKD(m, combos);
   m.p(L`\textbf{Factor de modificación por trabajo conjunto} (7.1.3). ${Kc > 1 ? `El pie derecho forma parte de un entramado con un distanciamiento de ${tn(d.s * 100, 0)} cm que comparte la carga, por lo que:` : "No se consideran las condiciones de elemento repetitivo, por lo que:"}`, true);
   m.eq(L`K_c = ${tn(Kc, 2)}`, "7.1.3");
-  m.p(L`\textbf{Factor de modificación por altura en flexión} (8.2.2.3). ${Khf < 1 ? `Como h = ${tn(d.h, 0)} mm supera los ${mgp ? 160 : 90} mm, se aplica:` : `Como h = ${tn(d.h, 0)} mm no supera los ${mgp ? 160 : 90} mm, el factor resultaría mayor que la unidad y normativamente no se aplica, asumiéndose:`}`, true);
-  m.eq(Khf < 1 ? L`K_{hf} = ${mgp ? L`\left(\frac{160}{${tn(d.h, 0)}}\right)^{${d.grado === "MGP10" ? "1/3" : "1/2"}}` : L`\left(\frac{90}{${tn(d.h, 0)}}\right)^{1/5}`} = ${tn(Khf, 3)}` : L`K_{hf} = 1`, "8.2.2.3");
-  m.p(L`\textbf{Ajuste del módulo de elasticidad.} ${KhEx < 1 || KhEy < 1 ? "Como las dimensiones de la sección son menores a 180 mm, se aplica el factor de modificación por altura (con mínimo 0.67) en cada dirección de pandeo:" : "La sección no requiere reducir el módulo de elasticidad por altura:"}`, true);
+  m.p(L`\textbf{Factor de modificación por altura en flexión} (8.2.2.3). ${Khf < 1 ? `Como h = ${tn(d.h, 0)} mm supera los ${mat.khfLim} mm, se aplica:` : `Como h = ${tn(d.h, 0)} mm no supera los ${mat.khfLim} mm, el factor resultaría mayor que la unidad y normativamente no se aplica, asumiéndose:`}`, true);
+  m.eq(Khf < 1 ? L`K_{hf} = ${mat.khfTex(d.h)} = ${tn(Khf, 3)}` : L`K_{hf} = 1`, "8.2.2.3");
+  m.p(L`\textbf{Ajuste del módulo de elasticidad.} ${KhEx < 1 || KhEy < 1 ? "Como las dimensiones de la sección son menores a 180 mm, se aplica el factor de modificación por altura (con mínimo 0.67) en cada dirección de pandeo:" : !mat.radiata ? `El factor de altura en el módulo de elasticidad (8.2.4.2) se define solo para pino radiata; para ${mat.e.nom.toLowerCase()} no se aplica:` : "La sección no requiere reducir el módulo de elasticidad por altura:"}`, true);
   m.eq(L`K_{hE,x} = ${KhEx < 1 ? L`\left(\frac{h}{180}\right)^{1/4} = \left(\frac{${tn(d.h, 0)}}{180}\right)^{1/4} = ` : ""}${tn(KhEx, 3)}`);
   m.eq(L`K_{hE,y} = ${KhEy < 1 ? L`\left(\frac{b}{180}\right)^{1/4} = \left(\frac{${tn(d.b, 0)}}{180}\right)^{1/4} = ` : ""}${tn(KhEy, 3)}`);
   m.p(L`Los módulos de elasticidad de diseño en cada eje resultan:`, true);
@@ -771,7 +943,7 @@ function calcularTabique(d, m) {
   const lx = d.Kp * d.Lpx / (0.289 * hc), ly = d.Kp * d.Lpy / (0.289 * bc);
   const lam = Math.max(lx, ly), ejeY = ly > lx, Ec = ejeY ? Ey : Ex;
   const FcE = 3.6 * Ec / lam ** 2;
-  const cc = ["G2", "C16"].includes(d.grado) ? 0.80 : 0.85;
+  const cc = mat.cc;
   r.lam = lam;
   for (const c of combos) {
     c.fc = c.P / A;
@@ -819,7 +991,7 @@ function calcularTabique(d, m) {
   r.flexV = ff / Fdis; r.cizV = fcz / Fczd;
   if (necesitaKlv) r.lamvV = lamv;
   // Deformación lateral por viento (8.2.4.8): flexión + corte (8.2.4.12), viga simplemente apoyada con carga uniforme w
-  const Ix = bc * hc ** 3 / 12, G = 0.065 * Ex;
+  const Ix = bc * hc ** 3 / 12, G = mat.kG * Ex;
   if (w > 0 && d.def) {
     const dVf = 5 * (w / 100) * d.L ** 4 / (384 * Ex * Ix) * 10;
     const dVq = 1.2 * MV / (G * A) * 10;
@@ -838,7 +1010,7 @@ function calcularTabique(d, m) {
     m.p(L`\textbf{Esbelteces.} ${d.pilar ? L`Las longitudes de pandeo son $L_{p,x} = ${tn(d.Lpx, 1)}$ cm en torno al eje x y $L_{p,y} = ${tn(d.Lpy, 1)}$ cm en torno al eje y.` : L`La longitud de pandeo fuera del plano del tabique es $L_{p,x} = ${tn(d.Lpx, 1)}$ cm y en el plano $L_{p,y} = ${tn(d.Lpy, 1)}$ cm (distancia entre cadenetas).`} Con la condición de apoyo ${d.kpTxt.replace(/–/g, "--")}, el coeficiente de longitud efectiva según la Tabla J.1 es $K_p = ${tn(d.Kp, 2)}$. El radio de giro de una sección rectangular es $i = 0.289$ veces la dimensión en la dirección del pandeo:`, true);
     m.eq(L`\lambda_x = \frac{K_p L_{p,x}}{0.289\,h} = \frac{${tn(d.Kp, 2)}\cdot ${tn(d.Lpx, 1)}}{0.289\cdot ${tn(hc, 1)}} = ${tn(lx, 2)} \qquad \lambda_y = \frac{K_p L_{p,y}}{0.289\,b} = \frac{${tn(d.Kp, 2)}\cdot ${tn(d.Lpy, 1)}}{0.289\cdot ${tn(bc, 1)}} = ${tn(ly, 2)}`);
     m.eq(L`\lambda = \max(\lambda_x,\ \lambda_y) = ${tn(lam, 2)} \;${lam <= 170 ? L`\le` : ">"}\; 170 \qquad F_{cE} = \frac{3.6\,E_{${ejeY ? "y" : "x"},dis}}{\lambda^2} = \frac{3.6\cdot ${tn(Ec, 0)}}{${tn(lam, 2)}^2} = ${tn(FcE, 3)}\ \mathrm{kgf/cm^2}`, "8.3");
-    m.p(L`De acuerdo con la Tabla 9 de la NCh 1198, el coeficiente de proporcionalidad para el grado ${d.grado} es $c = ${tn(cc, 2)}$.`, true);
+    m.p(L`De acuerdo con la Tabla 9 de la NCh 1198, el coeficiente de proporcionalidad para el grado ${gradoTxt(d.grado)} es $c = ${tn(cc, 2)}$.`, true);
   };
   const eqComp = (c) => {
     m.eq(L`f_{cp} = \frac{P_{${c.n}}}{b\,h} = \frac{${tn(c.P, 2)}}{${tn(bc, 1)}\cdot ${tn(hc, 1)}} = ${tn(c.fc, 3)}\ \mathrm{kgf/cm^2}`);
@@ -882,8 +1054,8 @@ function calcularTabique(d, m) {
     m.eq(chequeo("f_{cz}", fcz, "F_{cz,dis}", Fczd, UKG, 3));
   };
   const devDef = () => {
-    m.p(L`El empuje del viento produce una deformación lateral ${E.del}, suma de la componente por flexión y la componente por corte (8.2.4.12, con $G = 0.065\,E_{x,dis}$), que se compara con el límite de la Tabla 6 ${d.pilar ? L`($L/${d.def}$)` : d.def === 240 ? "para muros con enlucidos frágiles" : "para muros sin enlucidos frágiles"}:`, true);
-    m.eq(L`I_x = \frac{b\,h^3}{12} = \frac{${tn(bc, 1)}\cdot ${tn(hc, 1)}^3}{12} = ${tn(Ix, 1)}\ \mathrm{cm^4} \qquad G = 0.065\,E_{x,dis} = 0.065\cdot ${tn(Ex, 0)} = ${tn(G, 0)}\ \mathrm{kgf/cm^2}`);
+    m.p(L`El empuje del viento produce una deformación lateral ${E.del}, suma de la componente por flexión y la componente por corte (8.2.4.12, con $G = ${tn(mat.kG, 3)}\,E_{x,dis}$), que se compara con el límite de la Tabla 6 ${d.pilar ? L`($L/${d.def}$)` : d.def === 240 ? "para muros con enlucidos frágiles" : "para muros sin enlucidos frágiles"}:`, true);
+    m.eq(L`I_x = \frac{b\,h^3}{12} = \frac{${tn(bc, 1)}\cdot ${tn(hc, 1)}^3}{12} = ${tn(Ix, 1)}\ \mathrm{cm^4} \qquad G = ${tn(mat.kG, 3)}\,E_{x,dis} = ${tn(mat.kG, 3)}\cdot ${tn(Ex, 0)} = ${tn(G, 0)}\ \mathrm{kgf/cm^2}`);
     m.eq(L`\delta_{V,f} = \frac{5\,w\,L^4}{384\,E_{x,dis}\,I_x} = \frac{5\cdot ${tn(w / 100, 4)}\cdot ${tn(d.L, 1)}^4}{384\cdot ${tn(Ex, 0)}\cdot ${tn(Ix, 1)}} = ${tn(r.dVf, 3)}\ \mathrm{mm}`, "8.2.4");
     m.eq(L`\delta_{V,Q} = \frac{1.2\,M_V}{G\,b\,h} = \frac{1.2\cdot ${tn(MV, 1)}}{${tn(G, 0)}\cdot ${tn(bc, 1)}\cdot ${tn(hc, 1)}} = ${tn(r.dVq, 3)}\ \mathrm{mm}`, "8.2.4.12");
     m.eq(L`\delta_V = \delta_{V,f} + \delta_{V,Q} = ${tn(r.dVf, 3)} + ${tn(r.dVq, 3)} = ${tn(r.dV, 2)}\ \mathrm{mm} \;${cmp(r.dV, r.limV)}\; \frac{L}{${d.def}} = ${tn(r.limV, 2)}\ \mathrm{mm} \hspace{2em}\textbf{${r.dV <= r.limV ? "¡CUMPLE!" : "¡NO CUMPLE!"}}`, "Tabla 6");
@@ -995,7 +1167,7 @@ function leer() {
   const esc = $("esc").value;
   const [b, h] = esc === "custom" ? [num("b"), num("h")] : ESCUADRIAS[esc];
   return {
-    grado: $("grado").value, H: Math.max(12, num("H")), esc, b, h,
+    ...leerEspecie(""), H: Math.max(12, num("H")), esc, b, h,
     maestra: $("tipoViga").value === "maestra", kc: $("kc").checked,
     Lm: num("L"), la: num("la"), apoyoLat: $("apoyoLat").value,
     modoCarga: $("modoCarga").value, Dm2: num("Dm2"), Lm2: num("Lm2"), di: num("di"), rho: num("rho"), qExtra: num("qExtra"),
@@ -1012,9 +1184,8 @@ function calcular(d, m) {
   const r = {};
   const bc = d.b / 10, hc = d.h / 10, Lc = d.Lm * 100;          // cm
   const A = bc * hc, I = bc * hc ** 3 / 12, W = bc * hc ** 2 / 6;
-  const [FfM, , , FcnM, FczM, EfM] = U1[d.grado];
-  const Ff = FfM * MPA, Fcn = FcnM * MPA, Fcz = FczM * MPA, Ef0 = EfM * MPA * (d.maestra ? 0.6 : 1);
-  const mgp = d.grado.startsWith("MGP");
+  const mat = material(d), { mgp } = mat;
+  const Ff = mat.base.Ff * MPA, Fcn = mat.base.Fcn * MPA, Fcz = mat.base.Fcz * MPA, Ef0 = mat.base.Ef * MPA * (d.maestra ? 0.6 : 1);
 
   // Cargas
   let qPP, qSC, pp = 0;
@@ -1045,27 +1216,27 @@ function calcular(d, m) {
   m.eq(L`V = \frac{(q_{PP} + q_{SC})\,L}{2}${d.P ? L` + \frac{P}{2}` : ""} = \frac{(${tn(qPP, 3)} + ${tn(qSC, 2)})\cdot ${tn(d.Lm)}}{2}${d.P ? L` + \frac{${tn(d.P, 1)}}{2}` : ""} = ${tn(V, 3)}\ \mathrm{kgf}`);
 
   // Factores de modificación
-  const KH = (k) => factorKH(d.H, k);
+  const KH = mat.KH;
   const KD = d.KD;                               // Anexo G (G.3), valores tabulados
   const Kc = d.kc && !d.maestra ? 1.15 : 1.0;   // la viga maestra no es un elemento repetitivo
-  const Khf = mgp ? (d.h > 160 ? (160 / d.h) ** (d.grado === "MGP10" ? 1 / 3 : 1 / 2) : 1) : (d.h > 90 ? (90 / d.h) ** 0.2 : 1);
-  const KhE = !mgp && d.h < 180 ? Math.max((d.h / 180) ** 0.25, 0.67) : 1;
+  const Khf = mat.Khf(d.h);
+  const KhE = mat.KhE(d.h);
   const Edis = Ef0 * KH("Ef") * KhE;
-  tablaProps(m, d.grado, d.maestra);
+  tablaProps(m, mat, d.maestra);
 
   m.h("Factores de modificación y propiedades de diseño");
   m.row("Factor de modificación por humedad (flexión ; cizalle ; c. normal ; E): K<sub>H</sub>", `${fmt(KH("Ff"), 3)} ; ${fmt(KH("Fcz"), 3)} ; ${fmt(KH("Fcn"), 3)} ; ${fmt(KH("Ef"), 3)}`, "7.1.1");
   m.row(`Factor de modificación por duración de la carga (${d.kdTxt}): K<sub>D</sub>`, fmt(KD, 3), "7.1.2");
   m.row("Factores por trabajo conjunto ; altura en flexión ; altura en E: K<sub>c</sub> ; K<sub>hf</sub> ; K<sub>hE</sub>", `${fmt(Kc, 2)} ; ${fmt(Khf, 3)} ; ${fmt(KhE, 3)}`, "7.1.3 / 8.2.2.3");
   m.row("Módulo de elasticidad de diseño: E<sub>f,dis</sub>", `${fmt(Edis, 0)} kgf/cm²`);
-  bloqueKH(m, d.H, ["Ff", "Fcz", "Fcn", "Ef"]);
+  bloqueKH(m, mat, d.H, ["Ff", "Fcz", "Fcn", "Ef"]);
   m.p(L`\textbf{Factor de modificación por duración de la carga} (7.1.2). Se adopta el factor tabulado en el Anexo G (G.3) para la carga de menor duración de la combinación (${d.kdTxt.split(" — ").slice(0, -1).join(" --- ")}):`, true);
   m.eq(L`K_D = ${tn(KD, 2)}`, "Anexo G, G.3");
   m.p(L`\textbf{Factor de modificación por trabajo conjunto} (7.1.3). ${Kc > 1 ? "El envigado conforma un sistema de tres o más elementos paralelos distanciados a no más de 610 mm que comparten la carga aplicada, por lo que:" : d.maestra ? "La viga maestra actúa como un elemento principal aislado que no cumple los criterios de redundancia y proximidad, por lo que su capacidad no se mayora:" : "No se cumplen las condiciones de elemento repetitivo, por lo que:"}`, true);
   m.eq(L`K_c = ${tn(Kc, 2)}`, "7.1.3");
-  m.p(L`\textbf{Factor de modificación por altura} (8.2.2.3). ${Khf < 1 ? `Como la altura de la sección (${tn(d.h, 0)} mm) supera los ${mgp ? 160 : 90} mm, se aplica:` : `Como la altura de la sección (${tn(d.h, 0)} mm) no supera los ${mgp ? 160 : 90} mm, el factor no reduce la tensión:`}`, true);
-  m.eq(Khf < 1 ? L`K_{hf} = ${mgp ? L`\left(\frac{160}{h}\right)^{${d.grado === "MGP10" ? "1/3" : "1/2"}}` : L`\left(\frac{90}{h}\right)^{1/5}`} = ${mgp ? L`\left(\frac{160}{${tn(d.h, 0)}}\right)^{${d.grado === "MGP10" ? "1/3" : "1/2"}}` : L`\left(\frac{90}{${tn(d.h, 0)}}\right)^{1/5}`} = ${tn(Khf, 3)}` : L`K_{hf} = 1`, "8.2.2.3");
-  m.p(L`\textbf{Módulo de elasticidad de diseño.} ${KhE < 1 ? `Según la Tabla U.1, como la altura de la sección es menor a 180 mm (h = ${tn(d.h, 0)} mm) se aplica el factor de altura ${L`$K_{hE}$`} (con mínimo 0.67):` : "La altura de la sección no requiere reducir el módulo por altura:"}`, true);
+  m.p(L`\textbf{Factor de modificación por altura} (8.2.2.3). ${Khf < 1 ? `Como la altura de la sección (${tn(d.h, 0)} mm) supera los ${mat.khfLim} mm, se aplica:` : `Como la altura de la sección (${tn(d.h, 0)} mm) no supera los ${mat.khfLim} mm, el factor no reduce la tensión:`}`, true);
+  m.eq(Khf < 1 ? L`K_{hf} = ${mat.khfSym} = ${mat.khfTex(d.h)} = ${tn(Khf, 3)}` : L`K_{hf} = 1`, "8.2.2.3");
+  m.p(L`\textbf{Módulo de elasticidad de diseño.} ${KhE < 1 ? `Según la Tabla U.1, como la altura de la sección es menor a 180 mm (h = ${tn(d.h, 0)} mm) se aplica el factor de altura ${L`$K_{hE}$`} (con mínimo 0.67):` : !mat.radiata ? L`El factor de altura en el módulo de elasticidad (8.2.4.2) se define solo para pino radiata, por lo que para ${mat.e.nom.toLowerCase()} no se aplica:` : "La altura de la sección no requiere reducir el módulo por altura:"}`, true);
   m.eq(KhE < 1 ? L`K_{hE} = \left(\frac{h}{180}\right)^{1/4} = \left(\frac{${tn(d.h, 0)}}{180}\right)^{1/4} = ${tn(KhE, 3)}` : L`K_{hE} = 1`);
   m.eq(L`E_{f,dis} = E_f\,K_H\,K_{hE} = ${tn(Ef0, 0)}\cdot ${tn(KH("Ef"), 3)}\cdot ${tn(KhE, 3)} = ${tn(Edis, 0)}\ \mathrm{kgf/cm^2}`);
 
@@ -1207,7 +1378,7 @@ function calcular(d, m) {
   const kdel = d.H < 15 ? 1.5 - g_q : 5 / 3 - 4 / 3 * g_q;
   const creep = g_q > 0.5;
   const rho = creep ? Math.max(0, 1 / kdel - 1) : 0;
-  const G = 0.065 * Edis;
+  const G = mat.kG * Edis;
   const corte = Lc / hc < 20;
   const fQ = (MM) => corte ? 1.2 * MM * 100 / (G * A) * 10 : 0;     // mm
   const dT = fl(q, d.P) * (1 + rho * g_q) + fQ(M) * (1 + 2 * rho * g_q);
@@ -1234,7 +1405,7 @@ function calcular(d, m) {
   m.eq(L`\frac{L}{h} = \frac{${tn(Lc, 0)}}{${tn(hc, 1)}} = ${tn(Lc / hc, 2)}`);
   if (corte) {
     m.p(L`Dado que $L/h < 20$, se debe considerar la deformación por corte. Para especies coníferas el módulo de corte se estima a partir del módulo de elasticidad de diseño:`, true);
-    m.eq(L`G = 0.065\,E_{f,dis} = 0.065\cdot ${tn(Edis, 0)} = ${tn(G, 0)}\ \mathrm{kgf/cm^2}`);
+    m.eq(L`G = ${tn(mat.kG, 3)}\,E_{f,dis} = ${tn(mat.kG, 3)}\cdot ${tn(Edis, 0)} = ${tn(G, 0)}\ \mathrm{kgf/cm^2}`);
     m.eq(L`\Delta_q = \frac{1.2\,M}{G\,b\,h} = \frac{1.2\cdot ${tn(M * 100, 1)}}{${tn(G, 0)}\cdot ${tn(bc, 1)}\cdot ${tn(hc, 1)}} = ${tn(dq, 3)}\ \mathrm{mm}`);
     m.eq(L`\Delta_{q,SC} = \frac{1.2\,M_{SC}}{G\,b\,h} = \frac{1.2\cdot ${tn(MSC * 100, 1)}}{${tn(G, 0)}\cdot ${tn(bc, 1)}\cdot ${tn(hc, 1)}} = ${tn(dqSC, 3)}\ \mathrm{mm}`);
   } else {
@@ -1292,7 +1463,7 @@ function leerMuro() {
   const [b, h] = esc === "custom" ? [num("mb"), num("mh")] : ESCUADRIAS[esc];
   const kp = KP[$("mKp").value], tipo = +$("mKpTipo").value;
   return {
-    grado: $("mGrado").value, H: Math.max(12, num("mH")), esc, b, h, n: Math.max(1, Math.round(num("mn"))), B: num("mB"),
+    ...leerEspecie("m"), H: Math.max(12, num("mH")), esc, b, h, n: Math.max(1, Math.round(num("mn"))), B: num("mB"),
     pisos: +$("mPisos").value, hm: num("mhm"), bm: num("mbm"), L: num("mL"),
     Lpx: $("mLpx").value.trim() === "" ? num("mL") * 100 : num("mLpx"), Lpy: num("mLpy"),
     Kp: kp[tipo], kpTxt: `${kp[0]} (${tipo === 1 ? "teórico" : "recomendado"})`,
@@ -1314,10 +1485,9 @@ function reglasMuro() {
 function calcularMuro(d, m) {
   const r = { avisos: [] };
   const bc = d.b / 10, hc = d.h / 10, A1 = bc * hc, An = d.n * A1;          // cm, cm²
-  const [FfM, FcpM, FtpM, FcnM] = U1[d.grado];
-  const Fcp = FcpM * MPA, Ftp = FtpM * MPA, Fcn = FcnM * MPA, Ef = U1[d.grado][5] * MPA;
-  const mgp = d.grado.startsWith("MGP");
-  const KH = (k) => factorKH(d.H, k);
+  const mat = material(d), { mgp } = mat;
+  const Fcp = mat.base.Fcp * MPA, Ftp = mat.base.Ftp * MPA, Fcn = mat.base.Fcn * MPA, Ef = mat.base.Ef * MPA;
+  const KH = mat.KH;
   const sa = Math.sin(d.alfa * Math.PI / 180), ca = Math.cos(d.alfa * Math.PI / 180);
 
   // ---- Cargas y solicitaciones ----
@@ -1361,11 +1531,11 @@ function calcularMuro(d, m) {
   m.eq(L`P_c = C + (q_{PP} + q_{SC,piso} + q_{SC,techo})\,B = ${tn(C, 2)} + ${tn(q, 3)}\cdot ${tn(d.B, 2)} = ${tn(Pc, 2)}\ \mathrm{kgf}`);
   m.eq(L`T_t = T - q_{PP}\,B = ${tn(T, 2)} - ${tn(d.qPP, 3)}\cdot ${tn(d.B, 2)} = ${tn(T - Ppp, 2)}\ \mathrm{kgf}${T - Ppp < 0 ? L` \;\Rightarrow\; T_t = 0` : ""}`);
 
-  tablaProps(m, d.grado, false);
+  tablaProps(m, mat, false);
 
   // ---- Factores de modificación ----
-  const Khf = mgp ? (d.h > 160 ? (160 / d.h) ** (d.grado === "MGP10" ? 1 / 3 : 1 / 2) : 1) : (d.h > 90 ? (90 / d.h) ** 0.2 : 1);
-  const KhE = (dim) => !mgp && dim < 180 ? Math.max((dim / 180) ** 0.25, 0.67) : 1;
+  const Khf = mat.Khf(d.h);
+  const KhE = mat.KhE;
   const KhEx = KhE(d.h), KhEy = KhE(d.b);
   const Ex = Ef * KH("Ef") * KhEx, Ey = Ef * KH("Ef") * KhEy;
   const [kctTxt, Kct] = KCT[d.kct];
@@ -1374,14 +1544,14 @@ function calcularMuro(d, m) {
   m.row("Factor de duración de la carga (viento): K<sub>D</sub>", fmt(d.KDv, 2), "Anexo G");
   m.row("Factor de altura ; concentración de tensiones: K<sub>hf</sub> ; K<sub>ct</sub>", `${fmt(Khf, 3)} ; ${fmt(Kct, 2)}`, "8.2.2.3 / Tabla 11");
   m.row("Módulos de elasticidad de diseño: E<sub>x,dis</sub> ; E<sub>y,dis</sub>", `${fmt(Ex, 0)} ; ${fmt(Ey, 0)} kgf/cm²`);
-  bloqueKH(m, d.H, ["Fcp", "Ftp", "Fcn", "Ef"]);
+  bloqueKH(m, mat, d.H, ["Fcp", "Ftp", "Fcn", "Ef"]);
   m.p(L`\textbf{Factor de modificación por duración de la carga} (Anexo G). Las solicitaciones en los pies de borde y en el muro provienen del viento, la carga de menor duración de la combinación $PP + SC_{piso} + SC_{techo} + V$, por lo que en todas las verificaciones se usa:`);
   m.eq(L`K_D = ${tn(d.KDv, 2)}`, "Anexo G");
-  m.p(L`\textbf{Factor de modificación por altura} (8.2.2.3), aplicado a la tracción paralela (8.4.2). ${Khf < 1 ? `Como $h_{pd} = ${tn(d.h, 0)}$ mm supera los ${mgp ? 160 : 90} mm:` : `Como $h_{pd} = ${tn(d.h, 0)}$ mm no supera los ${mgp ? 160 : 90} mm:`}`);
-  m.eq(Khf < 1 ? L`K_{hf} = ${mgp ? L`\left(\frac{160}{${tn(d.h, 0)}}\right)^{${d.grado === "MGP10" ? "1/3" : "1/2"}}` : L`\left(\frac{90}{${tn(d.h, 0)}}\right)^{1/5}`} = ${tn(Khf, 3)}` : L`K_{hf} = 1`, "8.2.2.3");
+  m.p(L`\textbf{Factor de modificación por altura} (8.2.2.3), aplicado a la tracción paralela (8.4.2). ${Khf < 1 ? `Como $h_{pd} = ${tn(d.h, 0)}$ mm supera los ${mat.khfLim} mm:` : `Como $h_{pd} = ${tn(d.h, 0)}$ mm no supera los ${mat.khfLim} mm:`}`);
+  m.eq(Khf < 1 ? L`K_{hf} = ${mat.khfTex(d.h)} = ${tn(Khf, 3)}` : L`K_{hf} = 1`, "8.2.2.3");
   m.p(L`\textbf{Factor por concentración de tensiones} (8.4.3, Tabla 11), para ${kctTxt.toLowerCase().replace(/≤/g, L`$\le$`)}:`);
   m.eq(L`K_{ct} = ${tn(Kct, 2)}`, "Tabla 11");
-  m.p(L`\textbf{Ajuste del módulo de elasticidad.} ${KhEx < 1 || KhEy < 1 ? "Como las dimensiones de la pieza son menores a 180 mm, se aplica el factor de modificación por altura (con mínimo 0.67) en cada dirección:" : "La sección no requiere reducir el módulo de elasticidad por altura:"}`);
+  m.p(L`\textbf{Ajuste del módulo de elasticidad.} ${KhEx < 1 || KhEy < 1 ? "Como las dimensiones de la pieza son menores a 180 mm, se aplica el factor de modificación por altura (con mínimo 0.67) en cada dirección:" : !mat.radiata ? `El factor de altura en el módulo de elasticidad (8.2.4.2) se define solo para pino radiata; para ${mat.e.nom.toLowerCase()} no se aplica:` : "La sección no requiere reducir el módulo de elasticidad por altura:"}`);
   m.eq(L`E_{x,dis} = E_f\,K_H\,K_{hE,x} = ${tn(Ef, 0)}\cdot ${tn(KH("Ef"), 3)}\cdot ${tn(KhEx, 3)} = ${tn(Ex, 0)} \qquad E_{y,dis} = E_f\,K_H\,K_{hE,y} = ${tn(Ef, 0)}\cdot ${tn(KH("Ef"), 3)}\cdot ${tn(KhEy, 3)} = ${tn(Ey, 0)}\ \mathrm{kgf/cm^2}`);
 
   // ---- Compresión paralela en el pie de borde (12.4.1 → 8.3) ----
@@ -1389,7 +1559,7 @@ function calcularMuro(d, m) {
   const lx = d.Kp * d.Lpx / (0.289 * hc), ly = d.Kp * d.Lpy / (0.289 * bc);
   const lam = Math.max(lx, ly), ejeY = ly > lx, Ec = ejeY ? Ey : Ex;
   const FcE = 3.6 * Ec / lam ** 2;
-  const cc = ["G2", "C16"].includes(d.grado) ? 0.80 : 0.85;
+  const cc = mat.cc;
   const fcp = Pc / An;
   const Fcpd = Fcp * KH("Fcp") * d.KDv;
   let Ac = null, Bc = null, Kl = 1;
@@ -1445,7 +1615,7 @@ function calcularMuro(d, m) {
   m.row("<b>Corte en el plano: v<sub>c</sub> / V<sub>c,dis</sub></b>", `<b>${fmt(vc, 1)} / ${fmt(Vcd, 1)} kgf/m = ${Number.isFinite(r.corte) ? fmt(r.corte, 3) : "∞"}</b> ${okTxt(r.corte <= 1)}`, "12.4.8");
   m.p(L`El corte total en la base se reparte uniformemente en el largo del muro:`);
   m.eq(L`v_c = \frac{|V|}{b} = \frac{${tn(Math.abs(V), 2)}}{${tn(d.bm, 2)}} = ${tn(vc, 2)}\ \mathrm{kgf/m}`);
-  m.p(L`\textbf{Capacidad admisible.} De la ${tab.txt.replace(/≤/g, L`$\le$`).replace(/</g, L`$<$`)} con espaciamiento perimetral $S_{ct} = ${d.Sct}$ mm se obtiene $V_c = ${tn(VcN, 1)}$ N/mm (12.4.7), que se expresa en kgf/m con la conversión 1 N $= 0.1$ kgf, coherente con 1 MPa $= 10$ kgf/cm$^2$. El factor por razón de aspecto (12.4.9) y el factor por caras arriostradas (12.4.10, ${Kn === 2 ? "tablero en ambas caras" : "tablero en una cara"}) son:`);
+  m.p(L`\textbf{Capacidad admisible.} De la ${tab.txt.replace(/≤/g, L`$\le$`).replace(/≥/g, L`$\ge$`).replace(/</g, L`$<$`)} con espaciamiento perimetral $S_{ct} = ${d.Sct}$ mm se obtiene $V_c = ${tn(VcN, 1)}$ N/mm (12.4.7), que se expresa en kgf/m con la conversión 1 N $= 0.1$ kgf, coherente con 1 MPa $= 10$ kgf/cm$^2$. El factor por razón de aspecto (12.4.9) y el factor por caras arriostradas (12.4.10, ${Kn === 2 ? "tablero en ambas caras" : "tablero en una cara"}) son:`);
   m.eq(L`V_c = ${tn(VcN, 1)}\ \mathrm{N/mm} = ${tn(VcN, 1)}\cdot 1000\cdot 0.1 = ${tn(Vc, 1)}\ \mathrm{kgf/m}`, "12.4.7");
   m.eq(L`\frac{h}{b} = \frac{${tn(d.hm * 1000, 0)}}{${tn(d.bm * 1000, 0)}} = ${tn(hb, 3)} \qquad K_{FRA} = ${hb <= 2 ? L`1.0\;\;(h/b \le 2.0)` : KFRA ? L`1.25 - 0.125\,\frac{h}{b} = ${tn(KFRA, 3)}` : L`\text{no aplica}`} \qquad K_n = ${tn(Kn, 2)}`, "12.4.9");
   m.eq(L`V_{c,dis} = V_c\,K_{FRA}\,K_n = ${tn(Vc, 1)}\cdot ${tn(KFRA, 3)}\cdot ${tn(Kn, 2)} = ${tn(Vcd, 1)}\ \mathrm{kgf/m}`, "12.4.8");
@@ -1552,8 +1722,9 @@ ${s}\end{tikzpicture}
 
 function actualizarMuro() {
   $("mgCustom").classList.toggle("hidden", $("mEsc").value !== "custom");
+  sincEspecie("m");
   limpiarInvalidos($("inputs"));
-  const malos = datosInvalidos(reglasMuro());
+  const malos = [...datosInvalidos(reglasMuro()), ...datosEspecie("m")];
   if (!malos.length) malos.push(...datosSobreMaximo([["mKcn", 1.8, "K<sub>cn</sub> no puede superar 1.8 (8.5.3)"], ["mL", num("mhm"), "La altura del pie derecho no puede superar la altura del muro"]]));
   if (malos.length) return sinCalculo(malos);
   const d = leerMuro();
@@ -1577,7 +1748,7 @@ function actualizarMuro() {
   $("figMuro").innerHTML = muroSVG(d, r);
   $("memo").innerHTML = m.html();
   const datos = [
-    L`Especie y grado estructural & Pino radiata ${d.grado}`,
+    L`Especie y grado estructural & ${d.espNom} ${d.gTxt.replace(/°/g, L`$^\circ$`)}`,
     L`Contenido de humedad $H$ & ${tn(d.H, 0)}\,\%`,
     L`Escuadría del pie derecho de borde (cada pieza) $b_{pd} \times h_{pd}$ & ${tn(d.b, 0)} $\times$ ${tn(d.h, 0)} mm`,
     L`Piezas en el pie derecho de borde $n$ & ${d.n}`,
@@ -1619,9 +1790,9 @@ $PP + SC_{piso} + SC_{techo} + V$ & Gravitacionales y viento (fachada${d.pisos =
 \end{tabular}
 \end{table}
 `;
-  ultimoTex = documentoTex("Muro de corte", `Marco plataforma de pino radiata ${d.grado}, muro de ${tn(d.bm, 2)} $\\times$ ${tn(d.hm, 2)} m, ${d.pisos === 2 ? "2 pisos" : "1 piso"}`,
+  ultimoTex = documentoTex("Muro de corte", `Marco plataforma de ${d.espNom.toLowerCase()} ${d.gTxt.replace(/°/g, L`$^\circ$`)}, muro de ${tn(d.bm, 2)} $\\times$ ${tn(d.hm, 2)} m, ${d.pisos === 2 ? "2 pisos" : "1 piso"}`,
     datos, m.texto(), items, dc, ok, "el muro de corte", { cargas, combos, figura: muroTikz(d, r) });
-  ultimoNombre = `memoria_muro_corte_${d.grado}_${d.n}x${d.b}x${d.h}.tex`;
+  ultimoNombre = `memoria_muro_corte_${archG(d)}_${d.n}x${d.b}x${d.h}.tex`;
 }
 
 // ---------------------------------------------------------------------------
@@ -1886,13 +2057,13 @@ function mostrarPie(d) {
   ultimoMadera = { modo: d.pilar ? "pil" : "tab", d, r, dc, ok };
   const nombre = d.esc === "custom" ? `${d.b}×${d.h} mm` : `${d.esc} (${d.b}×${d.h} mm)`;
   const notaComb = `Combinación analizada: ${s.n} (${s.txt})${s === r.crit ? " — es la combinación crítica" : ` · combinación crítica: ${r.crit.n} (${r.crit.txt}), razón máxima ${Number.isFinite(r.crit.max) ? fmt(r.crit.max, 3) : "∞"}`}`;
-  $("resTitle").textContent = `Resultados — ${E.nom} ${nombre} · ${d.grado} · L = ${fmt(d.L, 1)} cm`;
+  $("resTitle").textContent = `Resultados — ${E.nom} ${nombre} · ${d.espNom} ${d.gTxt} · L = ${fmt(d.L, 1)} cm`;
   $("verdict").innerHTML = `<div class="verdict ${ok ? "ok" : "bad"}">${ok ? `✔ ${E.El} CUMPLE` : `✘ ${E.El} NO CUMPLE`} — razón máxima = ${Number.isFinite(dc) ? fmt(dc, 3) : "∞"}<div style="font-weight:400;font-size:13px;margin-top:4px">${notaComb}</div></div>`;
   $("figMuro").innerHTML = d.pilar ? pilarSVG(d, r) : tabiqueSVG(d);
   $("memo").innerHTML = m.html();
   // Datos de diseño: un parámetro por fila
   const datos = [
-    L`Especie y grado estructural & Pino radiata ${d.grado}`,
+    L`Especie y grado estructural & ${d.espNom} ${d.gTxt.replace(/°/g, L`$^\circ$`)}`,
     L`Contenido de humedad $H$ & ${tn(d.H, 0)}\,\%`,
     L`Escuadría $b \times h$ & ${tn(d.b, 0)} $\times$ ${tn(d.h, 0)} mm`,
     L`Altura ${E.del} $L$ & ${tn(d.L, 1)} cm`,
@@ -1928,16 +2099,17 @@ function mostrarPie(d) {
   if (r.lamvV !== undefined && r.cT.some(c => c.viento)) itemsTex.push(["Volcamiento λ<sub>v</sub>/50", r.lamvV / 50, `λ<sub>v</sub> = ${fmt(r.lamvV, 1)}`]);
   const dcT = Math.max(...itemsTex.map(i => i[1]));
   const simT = { ftex: "f_{cp}", Ftex: L`F_{cp,\lambda,dis}` };
-  ultimoTex = documentoTex(d.pilar ? "Pilar de madera aserrada" : "Pie derecho de tabique", `Pino radiata ${d.grado}, escuadría ${nombre.replace(/×/g, L`$\times$`)}, altura $L = ${tn(d.L, 1)}$ cm`,
+  ultimoTex = documentoTex(d.pilar ? "Pilar de madera aserrada" : "Pie derecho de tabique", `${d.espNom} ${d.gTxt.replace(/°/g, L`$^\circ$`)}, escuadría ${nombre.replace(/×/g, L`$\times$`)}, altura $L = ${tn(d.L, 1)}$ cm`,
     datos, m.texto(), itemsTex, dcT, dcT <= 1, E.el,
     { cargas, combos: tablaCombinacionesDefTex(r.cT), figura: d.pilar ? pilarTikz(d, r) : tabiqueTikz(d), resumen: tablaCombinacionesTex(r.cT, r.crit, E.del, simT) });
-  ultimoNombre = `memoria_${d.pilar ? "pilar" : "tabique"}_${d.grado}_${d.b}x${d.h}.tex`;
+  ultimoNombre = `memoria_${d.pilar ? "pilar" : "tabique"}_${archG(d)}_${d.b}x${d.h}.tex`;
 }
 
 function actualizarTab() {
   $("tgCustom").classList.toggle("hidden", $("tEsc").value !== "custom");
+  sincEspecie("t");
   limpiarInvalidos($("inputs"));
-  const malos = datosInvalidos(reglasTabique());
+  const malos = [...datosInvalidos(reglasTabique()), ...datosEspecie("t")];
   if (!malos.length) malos.push(...datosSobreMaximo([["tKcn", 1.8, "K<sub>cn</sub> no puede superar 1.8 (8.5.3)"], ["tla", num("tL"), "l<sub>a</sub> no puede superar la altura L"]]));
   if (malos.length) return sinCalculo(malos);
   opcionesCombinacion($("tComb"), num("tqv") * num("tS") > 0);
@@ -1948,8 +2120,9 @@ function actualizarPilar() {
   const conV = $("piV").checked;
   $("pigCustom").classList.toggle("hidden", $("piEsc").value !== "custom");
   $("pigViento").classList.toggle("hidden", !conV);
+  sincEspecie("pi");
   limpiarInvalidos($("inputs"));
-  const malos = datosInvalidos(reglasPilar());
+  const malos = [...datosInvalidos(reglasPilar()), ...datosEspecie("pi")];
   if (!malos.length) malos.push(...datosSobreMaximo([["piKcn", 1.8, "K<sub>cn</sub> no puede superar 1.8 (8.5.3)"], ["pila", num("piL"), "l<sub>a</sub> no puede superar la altura L"]]));
   if (malos.length) return sinCalculo(malos);
   opcionesCombinacion($("piComb"), conV && num("piqv") * num("piS") > 0);
@@ -1965,8 +2138,9 @@ function actualizarEnv() {
   // En cargas por m² la separación para vibraciones es la misma "di" de las cargas
   $("dlong").parentElement.classList.toggle("hidden", $("modoCarga").value === "area");
   $("kc").disabled = $("tipoViga").value === "maestra";
+  sincEspecie("");
   limpiarInvalidos($("inputs"));
-  const malos = datosInvalidos(reglasEnv());
+  const malos = [...datosInvalidos(reglasEnv()), ...datosEspecie("")];
   if (!malos.length) malos.push(...datosSobreMaximo([["Kcn", 1.8, "K<sub>cn</sub> no puede superar 1.8 (8.5.3)"], ["la", num("L") * 100, "l<sub>a</sub> no puede superar la luz L"]]));
   const hSec = $("esc").value === "custom" ? num("h") : ESCUADRIAS[$("esc").value][1];
   if (!malos.length && $("rebaje").checked && num("hr") >= hSec) { $("hr").classList.add("invalido"); malos.push(`h_r debe ser menor que h = ${hSec} mm`); }
@@ -1995,7 +2169,7 @@ function actualizarEnv() {
   const ok = dc <= 1;
   ultimoMadera = { modo: "env", d, r, dc, ok };
   const nombre = d.esc === "custom" ? `${d.b}×${d.h} mm` : `${d.esc} (${d.b}×${d.h} mm)`;
-  $("resTitle").textContent = `Resultados — ${nombre} · ${d.grado} · L = ${fmt(d.Lm, 2)} m`;
+  $("resTitle").textContent = `Resultados — ${nombre} · ${d.espNom} ${d.gTxt} · L = ${fmt(d.Lm, 2)} m`;
   $("verdict").innerHTML = `<div class="verdict ${ok ? "ok" : "bad"}">${ok ? "✔ La viga CUMPLE" : "✘ La viga NO CUMPLE"} — razón máxima = ${Number.isFinite(dc) ? fmt(dc, 3) : "∞"}</div>`;
   $("memo").innerHTML = m.html();
 
@@ -2022,7 +2196,7 @@ ${TEX_ESTILO}
 \begin{document}
 \begin{center}
 {\Large\bfseries Memoria de Cálculo --- Envigado}\\[3pt]
-Pino radiata ${d.grado}, escuadría ${nombre.replace(/×/g, L`$\times$`)}, luz $L = ${tn(d.Lm)}$ m --- NCh 1198:2024\\[2pt]
+${d.espNom} ${d.gTxt.replace(/°/g, L`$^\circ$`)}, escuadría ${nombre.replace(/×/g, L`$\times$`)}, luz $L = ${tn(d.Lm)}$ m --- NCh 1198:2024\\[2pt]
 {\small ${fecha}}
 \end{center}
 
@@ -2033,7 +2207,7 @@ Pino radiata ${d.grado}, escuadría ${nombre.replace(/×/g, L`$\times$`)}, luz $
 \toprule
 Parámetro & Valor\\
 \midrule
-Grado ; humedad $H$ & ${d.grado} ; ${tn(d.H, 0)}\,\%\\
+Especie ; grado ; humedad $H$ & ${d.espNom} ; ${d.gTxt.replace(/°/g, L`$^\circ$`)} ; ${tn(d.H, 0)}\,\%\\
 Sección $b\times h$ & ${tn(d.b, 0)} $\times$ ${tn(d.h, 0)} mm\\
 Tipo de viga & ${d.maestra ? "maestra" : "del envigado"}${d.kc && !d.maestra ? ", trabajo conjunto" : ""}\\
 Luz $L$ ; $l_a$ & ${tn(d.Lm)} m ; ${tn(d.la, 0)} cm (${d.apoyoLat === "ac" ? "apoyo lateral continuo" : "apoyo lateral discontinuo"})\\
@@ -2059,7 +2233,7 @@ ${filas}
 Con una razón máxima de ${tnT(dc, 3)}, la viga \textbf{${ok ? "cumple" : "no cumple"}} con las verificaciones de la NCh 1198:2024.
 \end{document}
 `;
-  ultimoNombre = `memoria_envigado_${d.grado}_${d.b}x${d.h}.tex`;
+  ultimoNombre = `memoria_envigado_${archG(d)}_${d.b}x${d.h}.tex`;
 }
 
 // ---------------------------------------------------------------------------
@@ -2069,7 +2243,7 @@ const VISUALES = ["GS", "G1+", "G1", "G2"];
 function notasMadera(d, extra) {
   return [
     "Cotas en mm salvo indicación. No medir sobre el plano. Escuadrías reales (cepilladas) b x h en mm.",
-    `Madera de pino radiata grado ${d.grado} (${VISUALES.includes(d.grado) ? "clasificación visual según NCh 1207" : "grado estructural según NCh 1198:2024"}), contenido de humedad de servicio ${fmt(d.H, 0)} %.`,
+    `Madera de ${d.espNom.toLowerCase()} grado ${d.gTxt} (${material(d).clasif}), contenido de humedad de servicio ${fmt(d.H, 0)} %.`,
     "Diseño por tensiones admisibles según NCh 1198:2024. Cargas permanentes y de uso según NCh 1537; viento según NCh 432.",
     ...extra,
     "Madera preservada (impregnada) según NCh 819, con la retención que corresponda al riesgo de servicio. Los cortes en obra se repintan con preservante.",
@@ -2102,7 +2276,7 @@ function descargarDXF() {
 
   if (el === "env") {
     const L = d.Lm * 1000;
-    pl = new PlanoDXF({ titulo: `${d.maestra ? "VIGA MAESTRA" : "ENVIGADO"} PINO RADIATA ${d.grado} ${esc}`, contenido: "elevación, planta y sección" });
+    pl = new PlanoDXF({ titulo: `${d.maestra ? "VIGA MAESTRA" : "ENVIGADO"} ${d.espNom.toUpperCase()} ${d.gTxt} ${esc}`, contenido: "elevación, planta y sección" });
     pl.vista({
       titulo: `Elevación viga ${esc} mm`, bbox: [0, 0, L, h], objetivo: [190, 80], margen: [16, 20, 16, 22],
       dibujar: (v) => {
@@ -2110,7 +2284,7 @@ function descargarDXF() {
         apoyoTri(v, 0, 0); apoyoTri(v, L, 0);
         v.cotaH(0, L, 0, -12, `L = ${fmtCota(L)}`); v.cotaV(0, h, L, 7);
         v.text("TEXTOS", L / 2, h + v.pp(6), 2.2, `q PP = ${fmt(r.qPP, 1)} kgf/m   q SC = ${fmt(r.qSC, 1)} kgf/m${d.P ? `   P = ${fmt(d.P, 0)} kgf` : ""}`, 1, 0);
-        v.text("TEXTOS", L / 2, h / 2, 2.2, `${d.esc === "custom" ? "" : d.esc + " "}${esc} - ${d.grado}`, 1, 2);
+        v.text("TEXTOS", L / 2, h / 2, 2.2, `${d.esc === "custom" ? "" : d.esc + " "}${esc} - ${d.gTxt}`, 1, 2);
         if (d.rebaje) v.text("TEXTOS", d.xReb || 0, -v.pp(5), 2, `Rebaje: altura remanente hr = ${fmt(d.hr, 0)} mm a x = ${fmt(d.xReb, 0)} mm (ver detalle del apoyo)`);
       },
     });
@@ -2131,12 +2305,12 @@ function descargarDXF() {
       `${d.maestra ? "Viga maestra" : "Vigas del envigado"} ${esc} mm, luz L = ${fmt(d.Lm, 2)} m${!d.maestra && d.s ? `, separación entre ejes ${fmt(d.s * 100, 0)} cm` : ""}. Apoyo lateral ${d.apoyoLat === "ac" ? "continuo" : `cada ${fmt(d.la, 0)} cm`}.`,
       `Longitud de apoyo mínima ${fmt(d.Lap, 0)} mm en cada extremo. ${res}`,
     ];
-    archivo = `plano_envigado_${d.grado}_${b}x${h}.dxf`;
+    archivo = `plano_envigado_${archG(d)}_${b}x${h}.dxf`;
   } else if (el === "tab" || el === "pil") {
     const L = d.L * 10;
     if (el === "tab") {
       const s = d.s * 1000, W = 2 * s + b, frac = fraccionesCadenetas(d);
-      pl = new PlanoDXF({ titulo: `TABIQUE PINO RADIATA ${d.grado} - PIES DERECHOS ${esc}`, contenido: "elevación tipo y sección" });
+      pl = new PlanoDXF({ titulo: `TABIQUE ${d.espNom.toUpperCase()} ${d.gTxt} - PIES DERECHOS ${esc}`, contenido: "elevación tipo y sección" });
       pl.vista({
         titulo: "Elevación tabique (tramo tipo)", bbox: [-b, -b, W + b, L + b], objetivo: [150, 200], margen: [20, 12, 40, 14],
         dibujar: (v) => {
@@ -2154,7 +2328,7 @@ function descargarDXF() {
       });
     } else {
       const Pmax = Math.max(...r.cT.map(c => c.P));
-      pl = new PlanoDXF({ titulo: `PILAR PINO RADIATA ${d.grado} ${esc}`, contenido: "elevación y sección" });
+      pl = new PlanoDXF({ titulo: `PILAR ${d.espNom.toUpperCase()} ${d.gTxt} ${esc}`, contenido: "elevación y sección" });
       pl.vista({
         titulo: `Elevación pilar ${esc} mm`, bbox: [-b / 2, 0, b / 2, L], objetivo: [100, 200], margen: [22, 14, 60, 18],
         dibujar: (v) => {
@@ -2176,10 +2350,10 @@ function descargarDXF() {
         : `Pilar ${esc} mm de ${fmt(d.L, 1)} cm de alto; ${d.kpTxt.replace(/–/g, "-")}, Kp = ${fmt(d.Kp, 2)}. Fijar la base con anclaje metálico galvanizado separado del suelo (sin contacto directo con la humedad).`,
       res,
     ];
-    archivo = `plano_${el === "tab" ? "tabique" : "pilar"}_${d.grado}_${b}x${h}.dxf`;
+    archivo = `plano_${el === "tab" ? "tabique" : "pilar"}_${archG(d)}_${b}x${h}.dxf`;
   } else {
     const W = d.bm * 1000, Hm = d.hm * 1000, H = Hm * d.pisos, bb = d.n * b;
-    pl = new PlanoDXF({ titulo: `MURO DE CORTE PINO RADIATA ${d.grado} ${fmt(d.bm, 2)} x ${fmt(d.hm, 2)} m`, contenido: "elevación y pie derecho de borde" });
+    pl = new PlanoDXF({ titulo: `MURO DE CORTE ${d.espNom.toUpperCase()} ${d.gTxt} ${fmt(d.bm, 2)} x ${fmt(d.hm, 2)} m`, contenido: "elevación y pie derecho de borde" });
     pl.vista({
       titulo: `Elevación muro de corte (${d.pisos} piso${d.pisos > 1 ? "s" : ""})`, bbox: [0, 0, W, H], objetivo: [190, 170], margen: [22, 16, 50, 14],
       dibujar: (v) => {
@@ -2208,7 +2382,7 @@ function descargarDXF() {
       `Tablero ${d.tabla === "42" ? "OSB 9.5 mm (NCh 1198:2024 Tabla 42)" : "OSB 11.1 mm (NCh 1198:2024 Tabla 43)"} en ${d.caras} cara${d.caras > 1 ? "s" : ""}, clavado perimetral @ ${d.Sct} mm. Juntas de tableros sobre pies derechos o cadenetas.`,
       res,
     ];
-    archivo = `plano_muro_corte_${d.grado}_${d.n}x${b}x${h}.dxf`;
+    archivo = `plano_muro_corte_${archG(d)}_${d.n}x${b}x${h}.dxf`;
   }
   pl.notas(notasMadera(d, extra));
   descargarPlano(pl, archivo);
