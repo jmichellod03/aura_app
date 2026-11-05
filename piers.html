@@ -143,13 +143,15 @@
         <input type="file" id="archivoPier" multiple accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
         <div class="unit" id="infoArchivo" style="margin-top:6px">Seleccione los Excel exportados con las tablas Pier Forces y Pier Section Properties. Pueden ser uno o dos archivos.</div>
         <div id="boxCaso" class="hidden">
-          <label for="caso">Caso o combinación</label>
+          <label for="caso">Combinación para el cálculo</label>
           <select id="caso"></select>
         </div>
         <textarea id="datosPier" hidden aria-hidden="true"></textarea>
         <textarea id="geomPier" hidden aria-hidden="true"></textarea>
         <input type="hidden" id="nombrePier">
         <input type="hidden" id="nombreGeom">
+        <input type="hidden" id="geomVieja">
+        <input type="hidden" id="geomTrasFuerzas">
         <textarea id="piersVariables" hidden aria-hidden="true"></textarea>
         <textarea id="pisosPier" hidden aria-hidden="true"></textarea>
       </fieldset>
@@ -322,15 +324,30 @@ function filasHoja(doc, compartidas) {
 // Factores a kgf y a m según la unidad que indica ETABS bajo cada encabezado
 const FACTOR_FUERZA = { kgf: 1, kg: 1, tonf: 1000, tf: 1000, ton: 1000, n: 0.101972, kn: 101.972, kip: 453.592, kips: 453.592, lb: 0.453592 };
 const FACTOR_LARGO = { m: 1, cm: 0.01, mm: 0.001, in: 0.0254, ft: 0.3048 };
+const factorDe = (tabla, unidad) => (Object.hasOwn(tabla, unidad) ? tabla[unidad] : 0);
 const clave = (t) => String(t ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
-// Ubica el encabezado de una tabla y devuelve sus columnas por nombre normalizado, sus unidades y sus filas de datos
+const vacia = (t) => String(t ?? "").trim() === "";
+// Número estricto: la celda completa debe ser un número. parseFloat leería "120.000,0" como 120
+const numero = (t) => {
+  const s = String(t ?? "").trim();
+  return /^[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?$/.test(s) ? Number(s) : NaN;
+};
+// Ubica el encabezado de una tabla y devuelve sus columnas por nombre normalizado, sus unidades y sus filas de datos.
+// La tabla termina donde empieza otra de la misma hoja (título "TABLE:" o el mismo encabezado), con sus propias unidades
 function tablaEtabs(filas, requeridas) {
+  const esEncabezado = (f) => { const v = Object.values(f).map(clave); return requeridas.every(alt => alt.some(a => v.includes(a))); };
   for (let i = 0; i < filas.length; i++) {
+    if (!esEncabezado(filas[i])) continue;
     const col = {};
     for (const [c, t] of Object.entries(filas[i])) col[clave(t)] = c;
-    if (!requeridas.every(alt => alt.some(a => a in col))) continue;
     const pick = (...alt) => col[alt.find(a => a in col)];
-    return { pick, unidad: (c) => clave(filas[i + 1]?.[c]), datos: filas.slice(i + 2) };
+    const datos = [];
+    let otraTabla = false;
+    for (const f of filas.slice(i + 2)) {
+      if (esEncabezado(f) || Object.values(f).some(x => /^\s*TABLE:/i.test(String(x)))) { otraTabla = true; break; }
+      datos.push(f);
+    }
+    return { pick, unidad: (c) => clave(filas[i + 1]?.[c]), datos, otraTabla };
   }
   return null;
 }
@@ -338,47 +355,56 @@ const ANCHO = ["widthbottom", "widthbot"], ESPESOR = ["thicknessbottom", "thickb
 function extraerFuerzas(filas) {
   const t = tablaEtabs(filas, [["story"], ["pier"], ["v2"]]);
   if (!t) return null;
-  const cP = t.pick("pier"), cS = t.pick("story"), cV = t.pick("v2"), cC = t.pick("outputcase"), cU = t.pick("location"), cT = t.pick("steptype");
-  const factor = FACTOR_FUERZA[t.unidad(cV)];
+  const cP = t.pick("pier"), cS = t.pick("story"), cV = t.pick("v2"), cU = t.pick("location"), cT = t.pick("steptype");
+  const cC = t.pick("outputcase", "loadcasecombo", "loadcombo", "loadcase", "combo", "case");
+  if (!cC) throw new Error("la tabla Pier Forces no tiene la columna de la combinación (Output Case)");
+  const factor = factorDe(FACTOR_FUERZA, t.unidad(cV));
   if (!factor) throw new Error(`no se reconoce la unidad de V2 ("${t.unidad(cV) || "sin unidad"}"); exporte la tabla en kgf, tonf, kN o kip`);
   const salida = [];
   let omitidas = 0;
   for (const f of t.datos) {
     if (!f[cP] && !f[cS]) continue;
-    const v = parseFloat(f[cV]);
-    if (!f[cP] || !Number.isFinite(v)) { omitidas++; continue; }
-    salida.push([f[cS] ?? "", f[cP], f[cC] ?? "", f[cU] ?? "", f[cT] ?? "", +(v * factor).toFixed(3)]);
+    if (!f[cP] || vacia(f[cV])) { omitidas++; continue; }
+    const v = numero(f[cV]);
+    // Un texto en V2 (formato regional, #N/A) no se descarta en silencio: podría ser la fila más exigida
+    if (!Number.isFinite(v)) throw new Error(`V2 no es un número en ${f[cS] ?? ""} ${f[cP]} ("${f[cV]}"); revise el formato de la columna`);
+    salida.push([f[cS] ?? "", f[cP], vacia(f[cC]) ? "(sin nombre)" : String(f[cC]), f[cU] ?? "", f[cT] ?? "", +(v * factor).toFixed(3)]);
   }
   if (!salida.length) throw new Error("la tabla Pier Forces no tiene filas con datos");
-  return { filas: salida, omitidas };
+  return { filas: salida, omitidas, otraTabla: t.otraTabla };
 }
 function extraerSecciones(filas) {
   const t = tablaEtabs(filas, [["story"], ["pier"], ANCHO, ESPESOR]);
   if (!t) return null;
   const cS = t.pick("story"), cP = t.pick("pier"), cA = t.pick(...ANCHO), cE = t.pick(...ESPESOR), cAt = t.pick("widthtop"), cEt = t.pick("thicknesstop", "thicktop"), cZb = t.pick("cgbottomz", "cgbotz"), cZt = t.pick("cgtopz");
-  const fac = (c) => FACTOR_LARGO[t.unidad(c)];
+  const fac = (c) => factorDe(FACTOR_LARGO, t.unidad(c));
   if (!fac(cA) || !fac(cE)) throw new Error(`no se reconoce la unidad de la sección ("${t.unidad(cA) || "sin unidad"}"); exporte la tabla en m, cm, mm, in o ft`);
-  const piers = {}, variables = new Set(), pisos = {};
+  const piers = Object.create(null), rangos = Object.create(null), pisos = Object.create(null);
   let zMin = Infinity, zMax = -Infinity;
   for (const f of t.datos) {
-    const Lw = parseFloat(f[cA]) * fac(cA), e = parseFloat(f[cE]) * fac(cE);
-    if (!f[cP] || !(Lw > 0) || !(e > 0)) continue;
+    if (!f[cP]) continue;
+    for (const c of [cA, cE]) if (!vacia(f[c]) && !Number.isFinite(numero(f[c]))) throw new Error(`la sección no es un número en ${f[cS] ?? ""} ${f[cP]} ("${f[c]}"); revise el formato de la columna`);
+    const Lw = numero(f[cA]) * fac(cA), e = numero(f[cE]) * fac(cE);
+    if (!(Lw > 0) || !(e > 0)) continue;
     // Como la planilla: un valor por pier, el de su primera fila
-    if (!piers[f[cP]]) piers[f[cP]] = { L: String(+Lw.toFixed(4)), e: String(+e.toFixed(4)) };
-    const iguales = (a, b) => Math.abs(a - b) < 1e-6;
-    const Lt = cAt ? parseFloat(f[cAt]) * fac(cAt) : Lw, et = cEt ? parseFloat(f[cEt]) * fac(cEt) : e;
-    if (!iguales(+piers[f[cP]].L, Lw) || !iguales(+piers[f[cP]].e, e) || !iguales(Lt, Lw) || !iguales(et, e)) variables.add(f[cP]);
+    if (!piers[f[cP]]) { piers[f[cP]] = { L: String(+Lw.toFixed(4)), e: String(+e.toFixed(4)) }; rangos[f[cP]] = { L0: Lw, e0: e, L: Lw, e, varia: false }; }
+    const r = rangos[f[cP]], Lt = cAt && numero(f[cAt]) > 0 ? numero(f[cAt]) * fac(cAt) : Lw, et = cEt && numero(f[cEt]) > 0 ? numero(f[cEt]) * fac(cEt) : e;
+    for (const [v, ini] of [[Lw, r.L0], [Lt, r.L0], [e, r.e0], [et, r.e0]]) if (Math.abs(v - ini) > 1e-6) r.varia = true;
+    r.L = Math.min(r.L, Lw, Lt); r.e = Math.min(r.e, e, et);
     if (cZb && cZt && fac(cZb) && fac(cZt)) {
-      const zb = parseFloat(f[cZb]) * fac(cZb), zt = parseFloat(f[cZt]) * fac(cZt);
+      const zb = numero(f[cZb]) * fac(cZb), zt = numero(f[cZt]) * fac(cZt);
       if (zb < zMin) zMin = zb;
       if (zt > zMax) zMax = zt;
       if (f[cS] && !pisos[f[cS]] && zt > zb) pisos[f[cS]] = [+zb.toFixed(4), +zt.toFixed(4)];
     }
   }
   if (!Object.keys(piers).length) throw new Error("la tabla Pier Section Properties no tiene filas con datos");
-  return { piers, variables: [...variables], pisos, Hw: zMax > zMin ? +(zMax - zMin).toFixed(4) : null };
+  // Sección menor de cada pier que cambia en altura, para avisar cuánto cambia la razón
+  const variables = {};
+  for (const [p, r] of Object.entries(rangos)) if (r.varia) variables[p] = { L: +r.L.toFixed(4), e: +r.e.toFixed(4) };
+  return { piers, variables, pisos: { ...pisos }, Hw: zMax > zMin ? +(zMax - zMin).toFixed(4) : null, otraTabla: t.otraTabla };
 }
-// Revisa todas las hojas: un mismo archivo puede traer una o las dos tablas
+// Revisa todas las hojas y devuelve todas las tablas que encuentra: elegir una en silencio podría tomar la de otro modelo
 async function leerTablasEtabs(buf) {
   const leer = entradasZip(buf);
   const textoLibro = await leer("xl/workbook.xml"), textoRels = await leer("xl/_rels/workbook.xml.rels");
@@ -387,45 +413,56 @@ async function leerTablasEtabs(buf) {
   const compartidas = ss ? nodos(xml(ss), "si").map(si => nodos(si, "t").map(t => t.textContent).join("")) : [];
   const rels = {};
   for (const r of nodos(xml(textoRels), "Relationship")) rels[r.getAttribute("Id")] = r.getAttribute("Target");
-  const res = { fuerzas: null, secciones: null };
+  const res = { fuerzas: [], secciones: [] };
   for (const h of nodos(xml(textoLibro), "sheet")) {
     const rid = [...h.attributes].find(a => a.localName === "id")?.value, destino = rels[rid];
     if (!destino) continue;
     const texto = await leer(destino.startsWith("/") ? destino.slice(1) : "xl/" + destino.replace(/^\.\//, ""));
     if (!texto) continue;
-    const filas = filasHoja(xml(texto), compartidas);
-    res.fuerzas ||= extraerFuerzas(filas);
-    res.secciones ||= extraerSecciones(filas);
+    const filas = filasHoja(xml(texto), compartidas), hoja = h.getAttribute("name") || "hoja";
+    const fz = extraerFuerzas(filas), sc = extraerSecciones(filas);
+    if (fz) res.fuerzas.push({ ...fz, hoja });
+    if (sc) res.secciones.push({ ...sc, hoja });
   }
-  if (!res.fuerzas && !res.secciones) throw new Error("no contiene las tablas Pier Forces ni Pier Section Properties");
+  if (!res.fuerzas.length && !res.secciones.length) throw new Error("no contiene las tablas Pier Forces ni Pier Section Properties");
   return res;
 }
 
 // ---------------------------------------------------------------------------
 // Datos importados y geometría (se guardan en campos ocultos para los proyectos)
+// Lo que se lee de ellos se valida: pueden venir de un proyecto guardado o dañado
 // ---------------------------------------------------------------------------
 const json = (id, def) => { try { return JSON.parse($(id).value) ?? def; } catch { return def; } };
-const filasPier = () => json("datosPier", []);
-const geometria = () => json("geomPier", {});
+const filaValida = (f) => Array.isArray(f) && typeof f[1] === "string" && f[1] !== "" && typeof f[2] === "string" && Number.isFinite(f[5]);
+const filasCrudas = () => { const f = json("datosPier", []); return Array.isArray(f) ? f : null; };
+const datosDanados = () => { const f = filasCrudas(); return !f || f.some(x => !filaValida(x)); };
+const filasPier = () => (filasCrudas() || []).filter(filaValida);
+const objeto = (id) => { const o = json(id, {}); return o && typeof o === "object" && !Array.isArray(o) ? o : {}; };
+const geometria = () => objeto("geomPier");
+const pisosValidos = () => Object.fromEntries(Object.entries(objeto("pisosPier")).filter(([, v]) => Array.isArray(v) && Number.isFinite(v[0]) && Number.isFinite(v[1]) && v[1] > v[0]));
 const listaPiers = (filas) => [...new Set(filas.map(f => f[1]))];
+const LIM = { L: 100, e: 1.5 };                // m, para detectar datos en otra unidad
+const cuenta = (n, uno, varios) => `${fmt(n, 0)} ${n === 1 ? uno : varios}`;
 
 function pintarSelectores(casoV, pierV) {
   const filas = filasPier();
   const casos = [...new Set(filas.map(f => f[2]))];
-  $("caso").innerHTML = casos.map(c => `<option value="${escH(c)}">${escH(c || "(sin nombre)")}</option>`).join("");
-  if (casoV !== undefined && casos.includes(casoV)) $("caso").value = casoV;
-  $("boxCaso").classList.toggle("hidden", casos.length < 2);
+  // Con varias combinaciones no se elige ninguna por defecto: la primera del archivo podría ser una de servicio
+  $("caso").innerHTML = (casos.length > 1 ? `<option value="">Seleccione la combinación…</option>` : "") + casos.map(c => `<option value="${escH(c)}">${escH(c)}</option>`).join("");
+  $("caso").value = casos.includes(casoV) ? casoV : casos.length === 1 ? casos[0] : "";
+  $("boxCaso").classList.toggle("hidden", !casos.length);
   const piers = listaPiers(filas);
   $("pierSel").innerHTML = `<option value="">Pier crítico</option>` + piers.map(p => `<option value="${escH(p)}">${escH(p)}</option>`).join("");
   if (pierV && piers.includes(pierV)) $("pierSel").value = pierV;
 }
 function pintarGeometria() {
   const piers = listaPiers(filasPier()), g = geometria();
+  const de = (p, k) => (Object.hasOwn(g, p) ? g[p]?.[k] ?? "" : "");
   $("boxGeom").classList.toggle("hidden", !piers.length);
   // Sin id: estos campos se guardan juntos en el campo oculto geomPier
   $("tablaGeom").innerHTML = piers.map(p => `<tr data-pier="${escH(p)}"><td>${escH(p)}</td>
-    <td><input type="number" step="0.01" min="0" data-k="L" aria-label="Largo del pier ${escH(p)} en metros" value="${escH(g[p]?.L ?? "")}"></td>
-    <td><input type="number" step="0.01" min="0" data-k="e" aria-label="Espesor del pier ${escH(p)} en metros" value="${escH(g[p]?.e ?? "")}"></td></tr>`).join("");
+    <td><input type="number" step="0.01" min="0" data-k="L" aria-label="Largo del pier ${escH(p)} en metros" value="${escH(de(p, "L"))}"></td>
+    <td><input type="number" step="0.01" min="0" data-k="e" aria-label="Espesor del pier ${escH(p)} en metros" value="${escH(de(p, "e"))}"></td></tr>`).join("");
 }
 function guardarGeometria() {
   const g = geometria();     // conserva piers de otros modelos: permiten reimportar sin volver a ingresar
@@ -436,57 +473,82 @@ function guardarGeometria() {
 }
 function infoArchivo(extra = "") {
   const filas = filasPier(), partes = [];
-  if (filas.length) partes.push(`Fuerzas: ${$("nombrePier").value || "archivo"}, ${fmt(filas.length, 0)} filas, ${listaPiers(filas).length} piers.`);
+  if (filas.length) partes.push(`Fuerzas: ${$("nombrePier").value || "archivo"}, ${cuenta(filas.length, "fila", "filas")}, ${cuenta(listaPiers(filas).length, "pier", "piers")}.`);
   if ($("nombreGeom").value) partes.push(`Geometría: ${$("nombreGeom").value}.`);
   if (partes.length || extra) $("infoArchivo").textContent = [...partes, extra].filter(Boolean).join(" ");
 }
-// Pegado desde Excel: columnas [pier] L [e]; con nombre se asigna por pier y sin nombre, desde la fila actual hacia abajo
+// Pegado desde Excel: columnas [pier] L [e]. Con nombre se asigna a ese pier y sin nombre, desde la fila actual hacia abajo.
+// Se respeta la posición de cada columna; un encabezado no ocupa fila y una línea que no se entiende no se aplica
 const decimal = (t) => t.trim().replace(",", ".");
 function pegarGeometria(ev) {
   const celda = ev.target.closest("input"), texto = ev.clipboardData.getData("text");
   if (!celda || !/[\t\n]/.test(texto.trim())) return;
   ev.preventDefault();
   const filasT = [...$("tablaGeom").querySelectorAll("tr")], porNombre = new Map(filasT.map(tr => [tr.dataset.pier, tr]));
-  const k0 = celda.dataset.k;
-  let i = filasT.indexOf(celda.closest("tr"));
+  const k0 = celda.dataset.k, omitidas = [];
+  let i = filasT.indexOf(celda.closest("tr")), sobran = 0;
   for (const linea of texto.split(/\r?\n/)) {
-    if (!linea.trim()) continue;
     const cols = linea.split("\t").map(c => c.trim());
-    const nombre = cols.findIndex(c => porNombre.has(c));
-    const tr = nombre >= 0 ? porNombre.get(cols[nombre]) : filasT[i++];
-    if (!tr) break;
-    const valores = (nombre >= 0 ? cols.slice(nombre + 1) : cols).map(decimal).filter(c => Number.isFinite(parseFloat(c)));
-    const claves = nombre >= 0 || k0 === "L" ? ["L", "e"] : ["e"];
-    claves.forEach((k, j) => { if (valores[j] !== undefined) tr.querySelector(`[data-k="${k}"]`).value = valores[j]; });
+    if (!cols.some(Boolean)) continue;
+    const nom = cols.findIndex(c => porNombre.has(c));
+    const valores = (nom >= 0 ? cols.slice(nom + 1) : cols).map(c => (c === "" ? null : numero(decimal(c))));
+    if (nom < 0) {
+      if (valores.every(v => v === null || Number.isNaN(v))) continue;       // encabezado
+      if (valores.some(Number.isNaN)) { omitidas.push(cols.find(Boolean)); continue; }
+    }
+    const tr = nom >= 0 ? porNombre.get(cols[nom]) : filasT[i++];
+    if (!tr) { sobran++; continue; }
+    const claves = nom >= 0 || k0 === "L" ? ["L", "e"] : ["e"];
+    claves.forEach((k, j) => { if (Number.isFinite(valores[j])) tr.querySelector(`[data-k="${k}"]`).value = String(valores[j]); });
   }
-  guardarGeometria(); calcular();
+  guardarGeometria();
+  infoArchivo([omitidas.length ? `No se aplicaron ${omitidas.length} líneas pegadas: ${omitidas.slice(0, 5).join(", ")}.` : "", sobran ? `Sobraron ${sobran} líneas pegadas: no hay más piers.` : ""].filter(Boolean).join(" "));
+  calcular();
 }
 async function importar(ev) {
   const archivos = [...ev.target.files];
   if (!archivos.length) return;
-  const mensajes = [];
+  const mensajes = [], fuerzas = [], secciones = [];
   guardarGeometria();
   for (const archivo of archivos) {
     try {
       if (archivo.size > MAX_XLSX) throw new Error("supera los 50 MB");
-      const { fuerzas, secciones } = await leerTablasEtabs(await archivo.arrayBuffer());
-      if (fuerzas) {
-        $("datosPier").value = JSON.stringify(fuerzas.filas);
-        $("nombrePier").value = archivo.name;
-        if (fuerzas.omitidas) mensajes.push(`Se omitieron ${fuerzas.omitidas} filas sin V2 numérico.`);
-      }
-      if (secciones) {
-        $("geomPier").value = JSON.stringify({ ...geometria(), ...secciones.piers });
-        $("piersVariables").value = JSON.stringify(secciones.variables);
-        $("pisosPier").value = JSON.stringify(secciones.pisos);
-        $("nombreGeom").value = archivo.name;
-        if (secciones.Hw) $("Hw").value = secciones.Hw;
-      }
+      const t = await leerTablasEtabs(await archivo.arrayBuffer());
+      t.fuerzas.forEach(x => fuerzas.push({ ...x, archivo: archivo.name }));
+      t.secciones.forEach(x => secciones.push({ ...x, archivo: archivo.name }));
     } catch (e) {
       mensajes.push(`No se pudo leer ${archivo.name}: ${e.message.replace(/\.$/, "")}.`);
     }
   }
   ev.target.value = "";
+  // Dos tablas del mismo tipo podrían ser de modelos distintos: no se elige una en silencio
+  const origen = (l) => l.map(x => `${x.archivo} (${x.hoja})`).join(", ");
+  if (fuerzas.length > 1) mensajes.push(`No se importó Pier Forces porque hay ${fuerzas.length} tablas: ${origen(fuerzas)}. Deje una sola.`);
+  if (secciones.length > 1) mensajes.push(`No se importó Pier Section Properties porque hay ${secciones.length} tablas: ${origen(secciones)}. Deje una sola.`);
+  const tF = fuerzas.length === 1 ? fuerzas[0] : null, tS = secciones.length === 1 ? secciones[0] : null;
+  if (tF) {
+    const previas = filasPier(), nuevas = JSON.stringify(tF.filas), hayGeom = Object.values(geometria()).some(g => g?.L);
+    // Fuerzas nuevas sin una geometría importada después de las anteriores: puede ser la de otro modelo
+    if ($("datosPier").value !== nuevas) $("geomVieja").value = previas.length && hayGeom && !tS && $("geomTrasFuerzas").value !== "1" ? "1" : "";
+    $("geomTrasFuerzas").value = "";
+    $("datosPier").value = nuevas;
+    $("nombrePier").value = tF.archivo;
+    if (tF.omitidas) mensajes.push(`Se omitieron ${tF.omitidas} filas sin V2.`);
+    if (tF.otraTabla) mensajes.push(`La hoja ${tF.hoja} trae otra tabla a continuación de Pier Forces: no se leyó.`);
+  }
+  if (tS) {
+    const g = geometria();
+    const cambian = Object.entries(tS.piers).filter(([p, n]) => Object.hasOwn(g, p) && ((g[p]?.L && numero(g[p].L) !== numero(n.L)) || (g[p]?.e && numero(g[p].e) !== numero(n.e)))).length;
+    if (cambian) mensajes.push(`La tabla reemplazó la geometría anterior de ${cambian} piers, incluidas las correcciones a mano.`);
+    $("geomPier").value = JSON.stringify({ ...g, ...tS.piers });
+    $("piersVariables").value = JSON.stringify(tS.variables);
+    $("pisosPier").value = JSON.stringify(tS.pisos);
+    $("nombreGeom").value = tS.archivo;
+    // Si llegó sin fuerzas, sirve para las próximas que se importen (mismo modelo, en dos pasos)
+    $("geomVieja").value = ""; $("geomTrasFuerzas").value = tF ? "" : "1";
+    if (tS.Hw) $("Hw").value = tS.Hw;
+    if (tS.otraTabla) mensajes.push(`La hoja ${tS.hoja} trae otra tabla a continuación de Pier Section Properties: no se leyó.`);
+  }
   pintarSelectores($("caso").value, $("pierSel").value); pintarGeometria(); infoArchivo(mensajes.join(" "));
   calcular();
 }
@@ -495,23 +557,29 @@ async function importar(ev) {
 // Verificación de todos los piers
 // ---------------------------------------------------------------------------
 function analizar(c) {
-  const g = geometria(), todas = filasPier();
-  const filas = todas.filter(f => f[2] === $("caso").value);
-  const res = [], faltan = [];
+  const g = geometria(), filas = filasPier().filter(f => f[2] === $("caso").value);
+  const vars = objeto("piersVariables");
+  const res = [], faltan = [], fuera = [], porDefecto = [];
+  const revisar = (Vu, Lw, e, f) => { const r = { ...corteFila(Math.abs(Vu), Lw, e, c), piso: f[0], ubic: f[3], paso: f[4] }; if (!Number.isFinite(r.dc)) r.dc = Infinity; return r; };
   for (const p of listaPiers(filas)) {
-    const Lw = parseFloat(g[p]?.L), eTxt = g[p]?.e, e = eTxt === undefined || eTxt === "" ? c.eDef : parseFloat(eTxt);
+    const gp = Object.hasOwn(g, p) ? g[p] : null, eVacio = vacia(gp?.e);
+    const Lw = numero(gp?.L), e = eVacio ? c.eDef : numero(gp.e);
     if (!(Lw > 0) || !(e > 0)) { faltan.push(p); continue; }
-    let crit = null, gob = null;
+    if (Lw > LIM.L || e > LIM.e || e > Lw) { fuera.push(p); continue; }
+    if (eVacio) porDefecto.push(p);
+    let crit = null, gob = null, dcMenor = 0;
+    const menor = Object.hasOwn(vars, p) && vars[p]?.L > 0 && vars[p]?.e > 0 ? vars[p] : null;
     for (const f of filas) {
       if (f[1] !== p) continue;
-      const r = { ...corteFila(Math.abs(f[5]), Lw, e, c), piso: f[0], ubic: f[3], paso: f[4] };
+      const r = revisar(f[5], Lw, e, f);
       if (!crit || r.dc > crit.dc) crit = r;
       if (!gob || r.Vu > gob.Vu) gob = r;
+      if (menor) dcMenor = Math.max(dcMenor, revisar(f[5], menor.L, menor.e, f).dc);
     }
-    res.push({ p, Lw, e, crit, gob, dc: crit.dc, svMax: Math.min(Lw * 100 / 3, 3 * e * 100, 45) });
+    res.push({ p, Lw, e, crit, gob, dc: crit.dc, svMax: Math.min(Lw * 100 / 3, 3 * e * 100, 45), menor: menor ? { ...menor, dc: dcMenor } : null });
   }
   res.sort((a, b) => b.dc - a.dc);
-  return { res, faltan, n: filas.length };
+  return { res, faltan, fuera, porDefecto, n: filas.length };
 }
 
 // ---------------------------------------------------------------------------
@@ -523,7 +591,7 @@ const SIN_VERTICAL = "Armadura vertical no calculada; recubrimiento referencial.
 // Con barras muy juntas para la escala, se dibuja una de cada N
 const pasoBarras = (sM, k, min) => Math.max(1, Math.ceil(min / (sM * k)));
 function svgPier(r, c) {
-  const { p, Lw, e, crit: f, gob } = r, s = gob.s, sM = s / 100, pisos = json("pisosPier", {});
+  const { p, Lw, e, crit: f, gob } = r, s = gob.s, sM = s / 100, pisos = pisosValidos();
   const k = Math.min(380 / Lw, 320 / c.Hw), w = Lw * k, h = c.Hw * k, X0 = 112, Y0 = 44;
   const tin = "#3d4450", arm = "#c62828", cota = "#8a93a0", nar = "#bf4b00";
   const t = (x, y, txt, a = "start", fs = 10.5, col = tin) => `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" font-size="${fs}" fill="${col}" text-anchor="${a}">${txt}</text>`;
@@ -649,7 +717,7 @@ function documentoTex(c, A, cuerpo) {
   const fecha = new Date().toLocaleDateString("es-CL", { day: "numeric", month: "long", year: "numeric" });
   const dcMax = A.res[0].dc;
   const filas = A.res.map(r => `${escTex(r.p)} & ${tn(r.Lw, 2)} & ${tn(r.e, 2)} & ${escTex(r.crit.piso)} & ${tn(r.crit.Vu, 0)} & ${tn(r.crit.phiVn, 0)} & ${tn(r.crit.limite, 0)} & ${tn(r.dc, 3)} & ${tn(r.gob.As, 2)} & $\\phi$${c.db} @ ${r.gob.s} & ${estado(r.dc)}\\\\`).join("\n");
-  const concl = dcMax <= 1 + 1e-9 && !A.faltan.length ? "cumplen" : "no cumplen en su totalidad";
+  const concl = dcMax <= 1 + 1e-9 && !A.faltan.length && !A.fuera.length ? "cumplen" : "no cumplen en su totalidad";
   return L`\documentclass[11pt,letterpaper]{article}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
@@ -689,8 +757,8 @@ ${TEX_ESTILO}
 \toprule
 Parámetro & Valor\\
 \midrule
-Solicitaciones & Tabla Pier Forces de ETABS, ${escTex($("caso").value || "sin nombre")}\\
-Filas y piers verificados & ${A.n} filas, ${A.res.length} piers\\
+Solicitaciones & Tabla Pier Forces de ETABS, ${escTex(A.caso)}\\
+Filas y piers verificados & ${cuenta(A.n, "fila", "filas")}, ${cuenta(A.res.length, "pier", "piers")}\\
 Hormigón $f'_c$ ; acero $f_y$ & ${tn(c.fc, 0)} ; ${tn(c.fy, 0)} kgf/cm$^2$\\
 Altura del muro $H_w$ & ${tn(c.Hw, 2)} m\\
 Barra horizontal & $\phi$${c.db} en dos capas\\
@@ -712,6 +780,7 @@ ${cuerpo}
 \item Criterios de la planilla: $\phi V_n$ se calcula con 0.53 en lugar de $\alpha_c$ y con $\rho_{m\acute{i}n}$ en lugar de la cuantía dispuesta; el límite de resistencia se toma como $0.75\,V_{s,m\acute{a}x}$; y $S_{v,m\acute{a}x}$ usa $L_w/3$.
 \item El espaciamiento propuesto no se limita automáticamente a $S_{v,m\acute{a}x}$.
 ${A.faltan.length ? L`\item Quedaron sin verificar ${A.faltan.length} piers sin geometría: ${A.faltan.map(escTex).join(", ")}.` : ""}
+${A.avisosTex.map(t => `\\item ${t}`).join("\n")}
 \end{itemize}
 
 \section{Resumen de resultados}
@@ -744,20 +813,33 @@ function limpiar(html) {
   ultimoTex = ""; ultimoR = null;
 }
 function calcular() {
+  ultimoTex = ""; ultimoR = null;
   limpiarInvalidos($("inputs"));
-  if (!filasPier().length) { limpiar(`<div class="note">Importe los archivos .xlsx con las tablas Pier Forces y Pier Section Properties de ETABS para comenzar.</div>`); return; }
-  const malos = datosInvalidos([["fc", 0, true], ["fy", 0, true], ["Hw", 0, true], ["eDef", 0, true]]);
+  if (datosDanados()) { limpiar(`<div class="verdict bad">✘ Los datos importados de este cálculo están dañados. Vuelva a importar las tablas de ETABS.</div>`); return; }
+  const todas = filasPier();
+  if (!todas.length) { limpiar(`<div class="note">Importe los archivos .xlsx con las tablas Pier Forces y Pier Section Properties de ETABS para comenzar.</div>`); return; }
+  const caso = $("caso").value;
+  if (!caso) {
+    $("caso").classList.add("invalido");
+    limpiar(`<div class="note">El archivo trae ${[...new Set(todas.map(f => f[2]))].length} combinaciones. Seleccione en los datos de entrada cuál usar para el cálculo.</div>`);
+    return;
+  }
+  let malos = datosInvalidos([["fc", 50], ["fy", 1000], ["Hw", 0, true], ["eDef", 0, true], ["db", 0, true]]);
+  if (!malos.length) malos = datosSobreMaximo([["fc", 1000, "f'c parece estar en otra unidad: debe ir en kgf/cm²"], ["fy", 10000, "f<sub>y</sub> parece estar en otra unidad: debe ir en kgf/cm²"], ["Hw", 500, "H<sub>w</sub> parece estar en otra unidad: debe ir en m"], ["eDef", LIM.e, "El espesor por defecto parece estar en otra unidad: debe ir en m"]]);
   if (malos.length) { limpiar(avisoInvalidos(malos)); return; }
   const c = { fc: num("fc"), fy: num("fy"), Hw: num("Hw"), db: parseInt($("db").value, 10), eDef: num("eDef") };
-  const A = analizar(c);
+  const A = analizar(c), sinCalc = A.faltan.length + A.fuera.length;
   $("tablaGeom").querySelectorAll("tr").forEach(tr => {
-    const faltaL = !(parseFloat(tr.querySelector('[data-k="L"]').value) > 0), ee = tr.querySelector('[data-k="e"]');
-    tr.querySelector('[data-k="L"]').classList.toggle("invalido", faltaL);
-    ee.classList.toggle("invalido", ee.value !== "" && !(parseFloat(ee.value) > 0));
+    const inL = tr.querySelector('[data-k="L"]'), inE = tr.querySelector('[data-k="e"]'), fuera = A.fuera.includes(tr.dataset.pier);
+    inL.classList.toggle("invalido", !(numero(inL.value) > 0) || fuera);
+    inE.classList.toggle("invalido", (inE.value !== "" && !(numero(inE.value) > 0)) || fuera);
   });
-  if (!A.res.length) { limpiar(`<div class="note">Ingrese el largo L<sub>w</sub> de los piers para calcular (faltan ${A.faltan.length}).</div>`); return; }
+  if (!A.res.length) {
+    limpiar(`<div class="note">${A.fuera.length ? `Geometría fuera de rango en ${cuenta(A.fuera.length, "pier", "piers")}: revise que L<sub>w</sub> y e estén en metros y que e no supere L<sub>w</sub>. ` : ""}${A.faltan.length ? `Ingrese el largo L<sub>w</sub> y el espesor de ${cuenta(A.faltan.length, "pier", "piers")} para calcular.` : ""}</div>`);
+    return;
+  }
 
-  const crit = A.res[0], fallan = A.res.filter(r => r.dc > 1 + 1e-9), excedenS = A.res.filter(r => r.gob.s > r.svMax);
+  const crit = A.res[0], fallan = A.res.filter(r => !(r.dc <= 1 + 1e-9)), excedenS = A.res.filter(r => r.gob.s > r.svMax), variables = A.res.filter(r => r.menor);
   const maxV = A.res.reduce((a, r) => (r.gob.Vu > a.gob.Vu ? r : a), A.res[0]);
   const maxAs = A.res.reduce((a, r) => (r.gob.As > a.gob.As ? r : a), A.res[0]);
   const rm = Number.isFinite(crit.dc) ? fmt(crit.dc, 3) : "∞";
@@ -766,23 +848,40 @@ function calcular() {
     <div class="card"><div class="t">Pier crítico</div><div class="v">${escH(crit.p)}</div><div class="bar ${crit.dc > 1 + 1e-9 ? "bad" : ""}"><i style="width:${w}%"></i></div><div class="s">D/C = ${rm} en ${escH(crit.crit.piso)}</div></div>
     <div class="card"><div class="t">Mayor corte</div><div class="v">${fmt(maxV.gob.Vu / 1000, 1)} tf</div><div class="s">${escH(maxV.p)}, ${escH(maxV.gob.piso)}</div></div>
     <div class="card"><div class="t">Mayor armadura horizontal</div><div class="v">${fmt(maxAs.gob.As, 2)} cm²/m</div><div class="s">${escH(maxAs.p)}: ${barra(c.db, maxAs.gob.s)} por cara</div></div>
-    <div class="card"><div class="t">Piers verificados</div><div class="v">${A.res.length} de ${A.res.length + A.faltan.length}</div><div class="s">${A.faltan.length ? `faltan ${A.faltan.length} por geometría` : `${fmt(A.n, 0)} filas revisadas`}</div></div>`;
+    <div class="card"><div class="t">Piers verificados</div><div class="v">${A.res.length} de ${A.res.length + sinCalc}</div><div class="s">${sinCalc ? `${sinCalc === 1 ? "falta 1" : `faltan ${sinCalc}`} por geometría` : `${fmt(A.n, 0)} filas revisadas`}</div></div>`;
 
-  $("resTitle").textContent = `Resultados — Corte en ${A.res.length} piers`;
-  const lista = (a) => a.slice(0, 6).map(r => escH(r.p ?? r)).join(", ") + (a.length > 6 ? ` y ${a.length - 6} más` : "");
+  $("resTitle").textContent = `Resultados — Corte en ${cuenta(A.res.length, "pier", "piers")} · ${caso}`;
+  const nombres = (a) => a.map(r => r.p ?? r);
+  const lista = (a) => nombres(a).slice(0, 6).map(escH).join(", ") + (a.length > 6 ? ` y ${a.length - 6} más` : "");
+  const listaTex = (a) => nombres(a).map(escTex).join(", ");
+  // Avisos: se muestran en pantalla y, si tienen texto LaTeX, también van en la memoria
+  const avisos = [], aviso = (h, t) => avisos.push({ h, t });
+  if (fallan.length) aviso(`No cumplen al corte: ${lista(fallan)}.`, L`No cumplen al corte: ${listaTex(fallan)}.`);
+  if (fallan.length) aviso(`La flexocompresión y los elementos de borde quedan sin verificar.`);
+  const otras = [...new Set(todas.map(f => f[2]))].filter(x => x !== caso);
+  if (otras.length) aviso(`Se verificó solo ${escH(caso)}. Sin verificar: ${otras.slice(0, 6).map(escH).join(", ")}${otras.length > 6 ? ` y ${otras.length - 6} más` : ""}.`, L`Se verificó solo la combinación ${escTex(caso)}. El archivo también trae, sin verificar: ${otras.map(escTex).join(", ")}.`);
+  if (/ASD|SERV/i.test(caso)) aviso(`La combinación ${escH(caso)} parece ser de servicio. Esta verificación usa cargas mayoradas.`, L`La combinación ${escTex(caso)} parece ser de servicio, y esta verificación usa cargas mayoradas.`);
+  if ($("geomVieja").value === "1") aviso(`La geometría puede ser de otro modelo: se importaron fuerzas nuevas sin Pier Section Properties. Importe esa tabla del mismo modelo o confirme los datos. <button type="button" class="btn sec" id="confirmarGeom">La geometría es correcta</button>`, L`La geometría no se importó junto con estas fuerzas y puede corresponder a otro modelo; debe confirmarse.`);
+  if (A.faltan.length) aviso(`Faltan los datos de geometría de: ${lista(A.faltan)}.`);
+  if (A.fuera.length) aviso(`Geometría fuera de rango, sin calcular (revise que esté en metros y que e no supere L<sub>w</sub>): ${lista(A.fuera)}.`, L`Quedaron sin verificar por tener la geometría fuera de rango: ${listaTex(A.fuera)}.`);
+  if (A.porDefecto.length) aviso(`Usan el espesor por defecto de ${fmt(c.eDef, 2)} m: ${lista(A.porDefecto)}.`, L`Usan el espesor por defecto de ${tn(c.eDef, 2)} m: ${listaTex(A.porDefecto)}.`);
+  if (variables.length) {
+    const inseguros = variables.filter(r => !(r.menor.dc <= 1 + 1e-9));
+    const detalleH = variables.slice(0, 6).map(r => `${escH(r.p)} (${fmt(r.dc, 3)} → ${Number.isFinite(r.menor.dc) ? fmt(r.menor.dc, 3) : "∞"})`).join(", ") + (variables.length > 6 ? ` y ${variables.length - 6} más` : "");
+    aviso(`La sección cambia en altura y se usa la de su primera fila, como la planilla. D/C con esa sección → con la sección menor: ${detalleH}.${inseguros.length ? ` <b>Con la sección menor, ${inseguros.length} no cumplen: revise estos piers.</b>` : ""}`,
+      L`La sección de estos piers cambia en altura y se usa la de su primera fila, como la planilla. Entre paréntesis, $D/C$ con esa sección y con la sección menor: ${variables.map(r => L`${escTex(r.p)} (${tn(r.dc, 3)} ; ${tn(r.menor.dc, 3)})`).join(", ")}.`);
+  }
+  if (excedenS.length) aviso(`En ${cuenta(excedenS.length, "pier", "piers")} el espaciamiento propuesto es mayor que S<sub>v,máx</sub>: ${lista(excedenS)}.`, L`En estos piers el espaciamiento propuesto es mayor que $S_{v,m\acute{a}x}$: ${listaTex(excedenS)}.`);
+  if (c.fy > 4200) aviso(`f<sub>y</sub> supera 4 200 kgf/cm², el máximo para armadura de corte (ACI 318-08 11.4.2).`, L`$f_y$ supera 4\,200 kgf/cm$^2$, el máximo para armadura de corte (ACI 318-08 11.4.2).`);
+  // El veredicto no incluye nombres que vienen del archivo: proyectos.js y tablero.js leen su texto
+  const incompleto = sinCalc ? ` · ${cuenta(sinCalc, "pier", "piers")} sin geometría válida` : "";
   const sinVerificar = "flexocompresión y elementos de borde SIN VERIFICAR";
-  const incompleto = A.faltan.length ? ` · ${A.faltan.length} piers sin geometría` : "";
-  const avisos = [];
-  if (fallan.length) avisos.push(`La flexocompresión y los elementos de borde quedan sin verificar.`);
-  if (A.faltan.length) avisos.push(`Faltan los datos de geometría de: ${lista(A.faltan)}.`);
-  if (/ASD|SERV/i.test($("caso").value)) avisos.push(`El caso ${escH($("caso").value)} parece ser de servicio. Esta verificación usa cargas mayoradas.`);
-  const variables = json("piersVariables", []).filter(p => A.res.some(r => r.p === p));
-  if (variables.length) avisos.push(`La sección cambia en altura en: ${lista(variables)}. Se usa la de su primera fila en la tabla.`);
-  if (excedenS.length) avisos.push(`En ${excedenS.length} piers el espaciamiento propuesto es mayor que S<sub>v,máx</sub>: ${lista(excedenS)}.`);
   $("verdict").innerHTML = (fallan.length
-    ? `<div class="verdict bad">✘ NO CUMPLE al corte en ${fallan.length} ${fallan.length === 1 ? "pier" : "piers"} (${lista(fallan)}) — razón máxima = ${rm}${incompleto}</div>`
-    : `<div class="verdict ok">✔ ${A.faltan.length ? "Los piers ingresados cumplen" : "Todos los piers cumplen"} al corte — razón máxima = ${rm}${incompleto} · ${sinVerificar}</div>`)
-    + avisos.map(t => `<div class="note">⚠ ${t}</div>`).join("");
+    ? `<div class="verdict bad">✘ NO CUMPLE al corte en ${fallan.length} ${fallan.length === 1 ? "pier" : "piers"} — razón máxima = ${rm}${incompleto}</div>`
+    : `<div class="verdict ok">✔ ${sinCalc ? "Los piers ingresados cumplen" : "Todos los piers cumplen"} al corte — razón máxima = ${rm}${incompleto} · ${sinVerificar}</div>`)
+    + avisos.map(a => `<div class="note">⚠ ${a.h}</div>`).join("");
+  A.avisosTex = avisos.map(a => a.t).filter(Boolean);
+  A.caso = caso;
 
   const m = new Memo();
   const sel = A.res.find(r => r.p === $("pierSel").value);
@@ -801,6 +900,7 @@ function calcular() {
   ultimoNombre = `memoria_corte_muros_${A.res.length}_piers.tex`;
 }
 
+$("verdict").addEventListener("click", (ev) => { if (ev.target.id === "confirmarGeom") { $("geomVieja").value = ""; calcular(); } });
 $("archivoPier").addEventListener("change", importar);
 $("tablaGeom").addEventListener("paste", pegarGeometria);
 $("tablaGeom").addEventListener("input", () => { guardarGeometria(); calcular(); });
