@@ -126,14 +126,14 @@
   }
 </style>
 <link rel="stylesheet" href="aura.css?v=11">
-<script src="lateral.js?v=6"></script>
+<script src="lateral.js?v=7"></script>
 <script src="asistente.js?v=1" defer></script>
 </head>
 <body>
 <header>
   <a class="marca" href="index.html" aria-label="Inicio"><span class="logo-tile"><span class="logo"><img src="icons/logo-mmp.webp" alt="MMP"></span></span></a>
   <a class="home" href="index.html">← Inicio</a>
-  <h1>Verificación de vigas y columnas de acero</h1>
+  <h1 id="tituloEl">Vigas de acero</h1>
   <span>AISC 360-16 · LRFD · Perfiles laminados catálogo Cintac (HEA, HEB, IPE, IPN) · Unidades kgf – cm</span>
 </header>
 
@@ -142,11 +142,6 @@
   <section class="panel" id="inputs">
     <h2>Datos de entrada</h2>
     <div class="body">
-      <div class="tabs">
-        <button id="tabViga" class="on" type="button">Viga</button>
-        <button id="tabCol" type="button">Columna</button>
-      </div>
-
       <div class="row2">
         <div>
           <label for="serie">Serie</label>
@@ -1252,8 +1247,12 @@ function llenarPerfiles() {
 
 function setModo(m) {
   modo = m;
-  $("tabViga").classList.toggle("on", m === "viga");
-  $("tabCol").classList.toggle("on", m === "columna");
+  const titulo = m === "viga" ? "Vigas de acero" : "Columnas de acero";
+  $("tituloEl").textContent = titulo;
+  document.title = titulo;
+  // Conserva los demás parámetros (proyecto y elemento abiertos desde el panel de proyectos)
+  const q = new URLSearchParams(location.search); q.set("elemento", m);
+  history.replaceState(null, "", `?${q}`);
   $("fsViga").classList.toggle("hidden", m !== "viga");
   $("fsCol").classList.toggle("hidden", m !== "columna");
   // Valores por defecto de los ejemplos del informe (HEB 140 viga / HEB 240 columna), solo en la
@@ -1285,8 +1284,6 @@ function init() {
     });
     actualizarUnidades(); calcular();
   });
-  $("tabViga").addEventListener("click", () => setModo("viga"));
-  $("tabCol").addEventListener("click", () => setModo("columna"));
   $("cB1").addEventListener("change", () => $("b1Box").classList.toggle("hidden", !$("cB1").checked));
   $("inputs").addEventListener("input", (e) => { if (e.target.tagName === "INPUT" && !e.target.closest("details")) calcular(); });
   $("inputs").addEventListener("change", (e) => { if (e.target.tagName === "SELECT" && !e.target.closest("details")) calcular(); });
@@ -1304,7 +1301,7 @@ function init() {
     $(btn.dataset.k).value = kCalc().toFixed(3); calcular();
   }));
 
-  // Elemento elegido en la página de inicio (acero.html?elemento=columna)
+  // Una sola página con dos programas, que el inicio y la barra lateral presentan por separado (?elemento=viga o columna)
   setModo(new URLSearchParams(location.search).get("elemento") === "columna" ? "columna" : "viga");
 }
 // ---------------------------------------------------------------------------

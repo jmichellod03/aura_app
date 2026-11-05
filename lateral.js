@@ -23,6 +23,7 @@
     proyectos: svg('<path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>'),
     activo: svg('<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h6"/>'),
     acero: svg('<path d="M5 4h14M5 20h14M12 4v16"/>'),
+    columna: svg('<path d="M8 3h8M8 18h8M12 3v15M5 21h14"/>'),
     reticulada: svg('<path d="M2 8h20M2 17h20M2 17l5-9 5 9 5-9 5 9"/>'),
     placa: svg('<path d="M2 9h20"/><path d="M2 15l2.5-4h3l2.5 4h3l2.5-4h3l2.5 4"/>'),
     hormigon: svg('<rect x="5" y="3" width="14" height="18" rx="1"/><circle cx="9" cy="17" r="1" fill="currentColor"/><circle cx="12" cy="17" r="1" fill="currentColor"/><circle cx="15" cy="17" r="1" fill="currentColor"/>'),
@@ -54,7 +55,8 @@
   const FIJOS = [E("index.html", "Inicio", "inicio"), E("index.html#misProyectos", "Mis proyectos", "proyectos")];
   const SECCIONES = [
     R("acero", "Acero", "secAcero", [
-      E("acero.html", "Vigas y columnas", "acero"),
+      E("acero.html?elemento=viga", "Vigas", "acero"),
+      E("acero.html?elemento=columna", "Columnas", "columna"),
       E("reticulada.html", "Vigas reticuladas", "reticulada"),
       E("placa.html", "Placa colaborante", "placa"),
     ]),
@@ -132,7 +134,7 @@
       if (paginaDe(href) !== pagina || (enInicio && href.includes("#"))) return false;
       if (vista?.tab) return !!document.getElementById(vista.tab)?.classList.contains("on");
       if (vista?.sel) return document.getElementById(vista.sel)?.value === vista.val;
-      // hormigon.html tiene dos programas por ?elemento; sin él abre el primero
+      // hormigon.html y acero.html tienen dos programas por ?elemento; sin él abren la viga
       const elItem = new URLSearchParams(href.split("?")[1]).get("elemento"), elPagina = new URLSearchParams(location.search).get("elemento");
       return !elItem || elItem === elPagina || (!elPagina && elItem === "viga");
     };

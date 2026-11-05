@@ -128,7 +128,7 @@
   dialog .dlg-acc { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
 </style>
 <link rel="stylesheet" href="aura.css?v=11">
-<script src="lateral.js?v=6"></script>
+<script src="lateral.js?v=7"></script>
 <script src="asistente.js?v=1" defer></script>
 </head>
 <body>
@@ -158,9 +158,13 @@
 
     <div class="herr">
       <div class="grid" id="gridHerr">
-        <a class="tool" href="acero.html" data-cat="acero" data-q="perfiles laminados hea heb ipe ipn columna flexion corte compresion">
+        <a class="tool" href="acero.html?elemento=viga" data-cat="acero" data-q="perfiles laminados hea heb ipe ipn flexion corte">
           <span class="ico"><svg viewBox="0 0 32 32" fill="none" stroke="#00008B" stroke-width="2.4" stroke-linecap="square"><path d="M7 6h18M7 26h18M16 6v20"/></svg></span>
-          <span class="tx"><b>Vigas y columnas de acero</b><small>Perfiles laminados HEA, HEB, IPE e IPN</small><span class="norma">AISC 360-16</span></span>
+          <span class="tx"><b>Vigas de acero</b><small>Perfiles laminados HEA, HEB, IPE e IPN · flexión y corte</small><span class="norma">AISC 360-16</span></span>
+        </a>
+        <a class="tool" href="acero.html?elemento=columna" data-cat="acero" data-q="perfiles laminados hea heb ipe ipn pilar compresion flexocompresion pandeo">
+          <span class="ico"><svg viewBox="0 0 32 32" fill="none" stroke="#00008B" stroke-width="2.4" stroke-linecap="square"><path d="M10 4h12M10 24h12M16 4v20M6 28h20"/></svg></span>
+          <span class="tx"><b>Columnas de acero</b><small>Perfiles laminados HEA, HEB, IPE e IPN · compresión y flexocompresión</small><span class="norma">AISC 360-16</span></span>
         </a>
         <a class="tool" href="reticulada.html" data-cat="acero" data-q="cordones diagonales montantes dxf sap2000 cercha armadura">
           <span class="ico"><svg viewBox="0 0 32 32" fill="none" stroke="#00008B" stroke-width="2" stroke-linejoin="round"><path d="M3 10h26M3 23h26M3 23l6-13 6 13 6-13 6 13M9 10v13M21 10v13"/></svg></span>

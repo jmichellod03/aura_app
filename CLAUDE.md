@@ -30,7 +30,7 @@ Todo el texto de la interfaz, las memorias y los commits va en **español (Chile
   - Designaciones chilenas en las notas: acero NCh 203 (A42-27ES), barras NCh 204 (A630-420H), hormigón por grado G (NCh 170), madera NCh 1207 / NCh 1198:2024, MLE NCh 2165, preservación NCh 819, ejecución de acero NCh 428. ø se escribe como `%%c` en el DXF.
   - Cada página guarda los resultados de su último cálculo (`ultimoViga`, `ultimoLosa`, `ultimoMadera`, `ultimoMLE`, `ultimoR`) o los recalcula sin memoria (acero, espectros); el plano no repite ni cambia el cálculo.
 - Páginas de cálculo, cada una autónoma (HTML + CSS + JS en el mismo archivo):
-  - `acero.html`: vigas y columnas laminadas, AISC 360-16 LRFD.
+  - `acero.html`: vigas y columnas laminadas, AISC 360-16 LRFD. Una sola página con dos programas, que el inicio y la barra lateral presentan por separado: vigas (`?elemento=viga`, por defecto) y columnas (`?elemento=columna`).
   - `reticulada.html`: vigas reticuladas (cordones, diagonales y montantes), AISC 360-16 LRFD.
     - Formulario en pasos: 1 geometría y acero, 2 cargas, 3 perfiles y longitudes, 4 origen de las solicitaciones.
     - Solicitaciones (`fuente`): por defecto las calcula AURA con `analizar()` (rigidez directa, pórtico plano, misma idealización que el `.s2k`, peso propio en D) y `solicitacionesAura()` (envolventes NCh 3171 por grupo con D, L, Lr, S y W —sin las combinaciones sísmicas, que se declaran en el alcance—, pares (P, M) por barra y combinación para los cordones, flecha en valor absoluto con D + L, D + Lr, D + S y D + W). Alternativa: ingresarlas desde un modelo externo. El `.s2k` sirve para comprobar en SAP2000.
