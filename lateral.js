@@ -35,19 +35,65 @@
     vial: svg('<path d="M2 6h20M2 11h20M2 16h20"/><path d="M6 8.5h3M12 8.5h3M18 8.5h2"/>'),
     zapata: svg('<path d="M10 3h4v10h-4z"/><path d="M3 13h18v6H3z"/>'),
     rigido: svg('<rect x="2" y="8" width="20" height="8" rx="1"/><path d="M9 8v8M15 8v8"/>'),
+    secAcero: svg('<path d="M5 4h14v3h-5v10h5v3H5v-3h5V7H5z"/>'),
+    secHormigon: svg('<path d="M3 8l9-5 9 5v8l-9 5-9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/>'),
+    secMadera: svg('<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/>'),
+    secSismico: svg('<path d="M2 12h4l2-6 3 13 3-16 3 12 1.5-3H22"/>'),
+    secVial: svg('<path d="M8 3L4 21M16 3l4 18M12 4v3M12 11v3M12 18v3"/>'),
+    fundaciones: svg('<path d="M2 9h20"/><path d="M10 9v5H5v6h14v-6h-5V9"/>'),
+    chevron: svg('<path d="M9 6l6 6-6 6"/>'),
     plegar: svg('<path d="M15 6l-6 6 6 6"/>'),
     menu: svg('<path d="M4 6h16M4 12h16M4 18h16"/>'),
     cerrar: svg('<path d="M6 6l12 12M18 6L6 18"/>'),
   };
-  const GRUPOS = [
-    ["", [["index.html", "Inicio", "inicio"], ["index.html#misProyectos", "Mis proyectos", "proyectos"]]],
-    ["Acero", [["acero.html", "Vigas y columnas", "acero"], ["reticulada.html", "Vigas reticuladas", "reticulada"], ["placa.html", "Placa colaborante", "placa"]]],
-    ["Hormigón", [["hormigon.html?elemento=viga", "Vigas", "hormigon"], ["hormigon.html?elemento=losa", "Losas", "losa"], ["piers.html", "Muros de corte", "pier"], ["muro.html", "Muros de contención", "muro"]]],
-    ["Fundaciones", [["zapata.html", "Zapata aislada", "zapata"]]],
-    ["Madera", [["madera.html", "Madera aserrada", "madera"], ["mle.html", "Madera laminada MLE", "mle"]]],
-    ["Sísmico", [["espectros.html", "Espectros de diseño", "espectros"]]],
-    ["Vial", [["vial.html", "Pavimento flexible", "vial"], ["rigido.html", "Pavimento rígido", "rigido"]]],
+  // Árbol del menú. E: enlace; R: rama desplegable. `vista` es un programa dentro de una misma página:
+  // su pestaña (tab) o el valor de su lista (sel, val). Se cambia sin recargar, para no perder los datos escritos.
+  const E = (href, texto, ico, vista) => ({ href, texto, ico, vista });
+  const R = (id, texto, ico, hijos) => ({ id, texto, ico, hijos });
+  const norma = (val, texto) => E(`espectros.html?norma=${val}`, texto, null, { sel: "norma", val });
+  const FIJOS = [E("index.html", "Inicio", "inicio"), E("index.html#misProyectos", "Mis proyectos", "proyectos")];
+  const SECCIONES = [
+    R("acero", "Acero", "secAcero", [
+      E("acero.html", "Vigas y columnas", "acero"),
+      E("reticulada.html", "Vigas reticuladas", "reticulada"),
+      E("placa.html", "Placa colaborante", "placa"),
+    ]),
+    R("hormigon", "Hormigón", "secHormigon", [
+      E("hormigon.html?elemento=viga", "Vigas", "hormigon"),
+      E("hormigon.html?elemento=losa", "Losas", "losa"),
+      E("piers.html", "Muros de corte", "pier"),
+      E("muro.html", "Muros de contención", "muro"),
+      R("fundaciones", "Fundaciones", "fundaciones", [E("zapata.html", "Zapata aislada", "zapata")]),
+    ]),
+    R("madera", "Madera", "secMadera", [
+      R("aserrada", "Madera aserrada", "madera", [
+        E("madera.html?elemento=envigado", "Envigado", null, { tab: "tabEnv" }),
+        E("madera.html?elemento=tabique", "Pie derecho (tabique)", null, { tab: "tabTab" }),
+        E("madera.html?elemento=pilar", "Pilar", null, { tab: "tabPil" }),
+        E("madera.html?elemento=muro", "Muro de corte", null, { tab: "tabMuro" }),
+      ]),
+      R("mle", "Laminada MLE", "mle", [
+        E("mle.html?elemento=viga", "Viga", null, { tab: "tabViga" }),
+        E("mle.html?elemento=columna", "Columna", null, { tab: "tabCol" }),
+      ]),
+    ]),
+    R("sismico", "Sísmico", "secSismico", [
+      R("espectros", "Espectros de diseño", "espectros", [
+        norma("433-1996", "NCh 433 Of.1996"),
+        norma("ds117", "DS 117 (2011)"),
+        norma("433-2026", "NCh 433:2026"),
+        norma("2369-2025", "NCh 2369:2025"),
+      ]),
+    ]),
+    R("vial", "Vial", "secVial", [
+      E("vial.html", "Pavimento flexible", "vial"),
+      E("rigido.html", "Pavimento rígido", "rigido"),
+    ]),
   ];
+  const CLAVE_RAMAS = "auraLateralRamas";   // ramas abiertas, para que el menú no salte al cambiar de página
+  let ramasAbiertas = new Set();
+  try { ramasAbiertas = new Set(JSON.parse(localStorage.getItem(CLAVE_RAMAS)) || []); } catch { /* sin almacenamiento */ }
+  const guardarRamas = () => { try { localStorage.setItem(CLAVE_RAMAS, JSON.stringify([...ramasAbiertas])); } catch { /* sin almacenamiento */ } };
 
   function el(tag, attrs = {}, hijos = []) {
     const e = document.createElement(tag);
@@ -80,22 +126,87 @@
     lat.append(cab);
 
     const nav = el("nav", { class: "lat-nav", "aria-label": "Herramientas" });
-    for (const [grupo, items] of GRUPOS) {
-      if (grupo) nav.append(el("p", { class: "lat-grupo", text: grupo }));
-      const ul = el("ul");
-      for (const [href, texto, ico] of items) {
-        const a = el("a", { href, title: texto, html: `${ICO[ico]}<span class="lat-tx"></span>` });
-        a.querySelector(".lat-tx").textContent = texto;
-        // Una página con varios programas (hormigon.html) se distingue por ?elemento; sin él abre el primero
-        const [destino, consulta] = href.split("#")[0].split("?");
-        const elItem = new URLSearchParams(consulta).get("elemento"), elPagina = new URLSearchParams(location.search).get("elemento");
-        const mismoEl = !elItem || elItem === elPagina || (!elPagina && elItem === "viga");
-        if (destino === pagina && mismoEl && !(enInicio && href.includes("#"))) a.setAttribute("aria-current", "page");
-        ul.append(el("li", {}, [a]));
-      }
-      nav.append(ul);
-    }
+    const paginaDe = (href) => href.split("#")[0].split("?")[0];
+    // ¿Este enlace es lo que se ve ahora? Las vistas se leen de la página; lo demás, de la dirección.
+    const esActual = ({ href, vista }) => {
+      if (paginaDe(href) !== pagina || (enInicio && href.includes("#"))) return false;
+      if (vista?.tab) return !!document.getElementById(vista.tab)?.classList.contains("on");
+      if (vista?.sel) return document.getElementById(vista.sel)?.value === vista.val;
+      // hormigon.html tiene dos programas por ?elemento; sin él abre el primero
+      const elItem = new URLSearchParams(href.split("?")[1]).get("elemento"), elPagina = new URLSearchParams(location.search).get("elemento");
+      return !elItem || elItem === elPagina || (!elPagina && elItem === "viga");
+    };
+
+    const enlaces = [];     // { a, nodo, ramas: botones de las ramas que lo contienen }
+    const ponerRama = (btn, ul, si) => {
+      ul.hidden = !si;
+      btn.setAttribute("aria-expanded", si);
+      if (si) ramasAbiertas.add(btn.dataset.rama); else ramasAbiertas.delete(btn.dataset.rama);
+    };
+    const hacerEnlace = (nodo, ramas) => {
+      const a = el("a", { href: nodo.href, title: nodo.texto, html: `${nodo.ico ? ICO[nodo.ico] : ""}<span class="lat-tx"></span>` });
+      a.querySelector(".lat-tx").textContent = nodo.texto;
+      enlaces.push({ a, nodo, ramas });
+      return el("li", {}, [a]);
+    };
+    const hacerRama = (nodo, ramas, prefijo = "") => {
+      const id = prefijo + nodo.id;
+      const ulId = "latRama-" + id.replace("/", "-");
+      const btn = el("button", { type: "button", class: "lat-rama", title: nodo.texto, "aria-controls": ulId, "data-rama": id,
+        html: `${ICO[nodo.ico]}<span class="lat-tx"></span>${ICO.chevron.replace("<svg ", '<svg class="lat-chev" ')}` });
+      btn.querySelector(".lat-tx").textContent = nodo.texto;
+      const ul = el("ul", { id: ulId });
+      const dentro = [...ramas, btn];
+      for (const h of nodo.hijos) ul.append(h.hijos ? hacerRama(h, dentro, id + "/") : hacerEnlace(h, dentro));
+      ponerRama(btn, ul, ramasAbiertas.has(id));
+      btn.addEventListener("click", () => {
+        // Contraída no se ven las listas: se expande la barra (sin guardar la preferencia) y se abre la sección
+        if (html.classList.contains("lat-corta") && !movil.matches) {
+          if (angosta.matches) cortaTemporal = false;
+          html.classList.remove("lat-corta"); rotular();
+          ponerRama(btn, ul, true);
+        } else ponerRama(btn, ul, ul.hidden);
+        guardarRamas();
+      });
+      return el("li", { class: "lat-seccion" }, [btn, ul]);
+    };
+    nav.append(el("ul", {}, FIJOS.map(n => hacerEnlace(n, []))));
+    nav.append(el("ul", {}, SECCIONES.map(n => hacerRama(n, []))));
     lat.append(nav);
+
+    // Marca el programa actual y deja a la vista su rama (también si cambia de pestaña o de norma dentro de la página)
+    let actualPrevio = null;
+    const marcarActual = () => {
+      const actual = enlaces.find(({ nodo }) => esActual(nodo)) || null;
+      for (const btn of nav.querySelectorAll(".lat-rama")) btn.classList.remove("tiene-actual");
+      for (const { a } of enlaces) a.removeAttribute("aria-current");
+      if (!actual) { actualPrevio = null; return; }
+      actual.a.setAttribute("aria-current", "page");
+      for (const btn of actual.ramas) {
+        btn.classList.add("tiene-actual");
+        if (actual !== actualPrevio) ponerRama(btn, btn.nextElementSibling, true);
+      }
+      actualPrevio = actual;
+    };
+    marcarActual();
+    for (const { nodo } of enlaces) {
+      const t = nodo.vista?.tab && document.getElementById(nodo.vista.tab);
+      if (t) new MutationObserver(marcarActual).observe(t, { attributes: true, attributeFilter: ["class"] });
+    }
+    document.getElementById("norma")?.addEventListener("change", marcarActual);
+
+    // Una vista de la página abierta se cambia ahí mismo; Ctrl o Mayús + clic siguen abriendo otra pestaña o ventana
+    nav.addEventListener("click", (e) => {
+      const a = e.target.closest("a");
+      if (!a || e.ctrlKey || e.metaKey || e.shiftKey || e.button) return;
+      const { nodo } = enlaces.find(x => x.a === a);
+      if (!nodo.vista || paginaDe(nodo.href) !== pagina) return;
+      const control = document.getElementById(nodo.vista.tab || nodo.vista.sel);
+      if (!control) return;
+      e.preventDefault();
+      if (nodo.vista.tab) control.click();
+      else if (control.value !== nodo.vista.val) { control.value = nodo.vista.val; control.dispatchEvent(new Event("change", { bubbles: true })); }
+    });
 
     // Proyecto activo: abre el panel de proyectos.js cuando la página lo tiene
     const proy = el("button", { type: "button", class: "lat-proy", hidden: "", title: "Panel del proyecto", "aria-controls": "auraPanel",
@@ -126,7 +237,10 @@
       if (modal) { lat.setAttribute("role", "dialog"); lat.setAttribute("aria-modal", "true"); lat.setAttribute("aria-label", "Menú"); }
       else { lat.removeAttribute("role"); lat.removeAttribute("aria-modal"); lat.removeAttribute("aria-label"); }
       for (const n of fondo()) { if (modal) n.setAttribute("inert", ""); else n.removeAttribute("inert"); }
-      if (si) (lat.querySelector('[aria-current="page"]') || lat.querySelector("a")).focus();
+      if (si) {
+        const actual = lat.querySelector('[aria-current="page"]');
+        (actual && actual.offsetParent ? actual : lat.querySelector("a")).focus();
+      }
       else if (movil.matches && (lat.contains(document.activeElement) || document.activeElement === document.body)) abrir.focus();
     };
     abrir.addEventListener("click", () => ponerAbierta(true));

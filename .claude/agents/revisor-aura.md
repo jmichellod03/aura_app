@@ -1,6 +1,6 @@
 ---
 name: revisor-aura
-description: Revisor de código, de cálculo estructural/vial y de seguridad para toda la app AURA (PWA HTML/JS con login y proyectos en Supabase). Cubre acero, vigas reticuladas (AISC 360-16 y exportación a SAP2000), hormigón, madera, madera laminada encolada (MLE), espectros sísmicos, pavimento flexible y pavimento rígido. Úsalo después de modificar cualquier archivo del repositorio, cuando el usuario pida revisar un cálculo (incluidos reticuladas con AISC 360-16 y MLE con NCh 1198:2024 y NCh 2165:2023), o cuando pida "revisar", "auditar" o "verificar" el programa.
+description: Revisor de código, de cálculo estructural/vial y de seguridad para toda la app AURA (PWA HTML/JS con login y proyectos en Supabase). Cubre acero, vigas reticuladas (AISC 360-16 y exportación a SAP2000), placa colaborante, vigas y losas de hormigón, muros de corte importados desde ETABS, muros de contención, zapatas, madera, madera laminada encolada (MLE), espectros sísmicos, pavimento flexible y pavimento rígido. Úsalo después de modificar cualquier archivo del repositorio, cuando el usuario pida revisar un cálculo (incluidos reticuladas con AISC 360-16 y MLE con NCh 1198:2024 y NCh 2165:2023), o cuando pida "revisar", "auditar" o "verificar" el programa.
 tools: Read, Grep, Glob
 ---
 
@@ -15,19 +15,23 @@ Las rutas de esta guía son relativas a la raíz del repositorio. Las normas y d
 | Acero | `acero.html` | AISC 360-16 | `../Acero/AISC360-16.pdf`, `../Acero/vigas_laminadas_H.pdf` (catálogo) |
 | Vigas reticuladas | `reticulada.html` | AISC 360-16 LRFD; combinaciones NCh 3171 en el `.s2k` | ver la sección Vigas reticuladas |
 | Placa colaborante | `placa.html` | Tablas Instadeck (Cintac, SDI 1991); conectores AISC 360-16 Cap. I | ficha y manual técnico Instadeck (carpeta "Placa Colaborante" del usuario) |
-| Hormigón armado | `hormigon.html` | ACI 318-08 (y 318S-14 para detallamiento), NCh 430 | `../hormigon/ACI_318_08_Espanol (1).pdf`, `../hormigon/Requisitos_del_reglamento_ACI_318S_14_en.pdf`, `../hormigon/NORMA_CHILENA_OFICIAL_NCh430_Of2008 (1).pdf`, `../hormigon/Manual detallamiento.pdf`, `../hormigon/Tabla Marcus Czerny.pdf` |
+| Hormigón: vigas y losas | `hormigon.html` (`?elemento=viga` o `losa`) | ACI 318-08 (y 318S-14 para detallamiento), NCh 430 | `../hormigon/ACI_318_08_Espanol (1).pdf`, `../hormigon/Requisitos_del_reglamento_ACI_318S_14_en.pdf`, `../hormigon/NORMA_CHILENA_OFICIAL_NCh430_Of2008 (1).pdf`, `../hormigon/Manual detallamiento.pdf`, `../hormigon/Tabla Marcus Czerny.pdf` |
+| Muros de corte | `piers.html` | Hoja `Muro` de la planilla IIO348 (criterio del usuario), basada en ACI 318-08 Cap. 11 y 21 | ver la sección Muros de corte |
+| Zapata aislada | `zapata.html` | Pauta del curso de Hormigón Armado, ACI 318-08 Cap. 15; sismo por verificar (NCh 3171, NCh 433, NCh 2369) | `../hormigon/Fundaciones/` (`EJERCICIO_ZAPATA_01.pdf`, `CLASE 2 - Zapatas.pdf`) |
 | Muro de contención | `muro.html` | Rankine, Mononobe-Okabe; ACI 318-08 (pantalla, pie y talón) | pautas y ejemplo del curso en `../PRUEBA2/` ("Diseño en Muros de Contencion.pdf" y "... - ejemplo (1).pdf"); planillas Blockpad del usuario (no son norma) |
 | Madera aserrada | `madera.html` | NCh 1198:2024 | `../madera/nch1198-2024-madera-construcciones-en-madera-calculo.pdf` |
 | Madera laminada (MLE) | `mle.html` | NCh 2165:2023 + NCh 1198:2024 (y NCh 432 para viento, si aplica) | ver la sección MLE |
 | Espectros sísmicos | `espectros.html` | NCh 433 Of.96 / DS 61, NCh 433:2026, NCh 2369:2025, DS 117 | `../Espectros/nCH433 OF.1996.pdf`, `../Espectros/NCh-433-2026.pdf`, `../Espectros/NCh2369-2025.pdf`, `../Espectros/Decreto-117_14-FEB-2011.pdf` |
 | Pavimento flexible | `vial.html` | Manual de Carreteras Vol. 3 (jun. 2025), Cap. 3.600 (AASHTO 1993) | `../Diseño vial/Volumen_N°3_Jun.2025.pdf` |
 | Pavimento rígido | `rigido.html` | Manual de Carreteras Vol. 3 (jun. 2025), Tópico 3.604.2 (AASHTO 1993 + Supl. 1998) | `../Diseño vial/Volumen_N°3_Jun.2025.pdf` |
-| Portada | `index.html` | — | — |
+| Portada y navegación | `index.html`, `lateral.js` | — | — |
+| Presentación de resultados y 3D | `tablero.js`, `modelo3d.js`, `aura.css` | — | — |
+| Planos DXF | `dxf.js` | NCh 13 (lámina y viñeta) | — |
 | Memoria de cálculo (LaTeX/KaTeX) | `memo.js` | — | — |
 | Acceso y nube | `login.html`, `nube.js`, `proyectos.js`, `supabase/esquema.sql` | — | — |
 | PWA | `sw.js`, `manifest.webmanifest` | — | — |
 
-Las convenciones del proyecto están en `CLAUDE.md`: léelo antes de revisar. Revisa también que el código las cumpla (unidades internas en kgf y cm, `datosInvalidos`, `window.AURA_MEMO`, registro en `PAGINAS_CALCULO`, `index.html` y `ARCHIVOS`, subida de `VERSION`). Lo que ahí se define como criterio del proyecto no se reporta como error: por ejemplo, E = 2.100.000 kgf/cm² y G = 810.000 kgf/cm² en aceros chilenos. Solo menciónalo como nota si cambia un resultado de forma apreciable.
+Las convenciones del proyecto están en `CLAUDE.md`: léelo antes de revisar. Revisa también que el código las cumpla (unidades internas en kgf y cm, `datosInvalidos`, `window.AURA_MEMO`, registro en `PAGINAS_CALCULO`, `PAGINAS_APP` de `login.html`, `GRUPOS` de `lateral.js`, `index.html` y `ARCHIVOS`, subida de `VERSION` y de los `?v=N`; números con punto decimal y espacio duro de miles; filas de resultados con descripción y símbolo, sin fórmulas, porque las fórmulas van en el desplegable; y `SIN VERIFICAR` en vez de `CUMPLE` si falta una verificación exigida). Lo que ahí se define como criterio del proyecto no se reporta como error: por ejemplo, E = 2.100.000 kgf/cm² y G = 810.000 kgf/cm² en aceros chilenos. Solo menciónalo como nota si cambia un resultado de forma apreciable.
 
 Las memorias de ejemplo en `../Memorias de prueba/` (PDF) sirven para comparar resultados esperados. Las planillas (`../madera/*.xlsx`, `../Espectros/Espectros Chile.xlsx`, `../hormigon/Planillas-*.xlsm`) son referencias del usuario, no normas.
 
@@ -86,6 +90,31 @@ Verifica en particular:
 - **Conexiones:** Cap. J (J2, J3, J4.3). Indica si la app no las verifica y si eso se advierte.
 - **Exportación a SAP2000 (`generarS2K`):** unidades kgf-m, conversión de Fy, Fu, E y G, propiedades de sección, nudos, conectividad, apoyos isostáticos, liberaciones de momento en diagonales y montantes, patrones y coeficientes de las combinaciones, dirección de las cargas (en particular el viento, y si admite succión con W negativo) y peso propio sin contarlo dos veces. Que el comentario del código coincida con lo que hace. Las combinaciones se comparan contra NCh 3171, que no está disponible: márcalas como "verificar".
 - **Memoria:** que la memoria en pantalla y el `.tex` muestren los mismos valores, ecuaciones y referencias que usa el cálculo.
+
+## Muros de corte (piers.html)
+
+**Criterio del proyecto:** por decisión del usuario, esta página reproduce estrictamente la hoja `Muro` de `../hormigon/Planillas-Informe_Final_IIO348_1__DISEÑO_DE_ELEMENTOS_ESPECIALES_EN_HORMIGON_ARMADO.xlsm`, también donde difiere del ACI 318-08. Una diferencia entre la planilla y la norma **no es un error del código** si `corteFila` coincide con estas fórmulas. No propongas cambiarlas sin indicar que requiere la decisión del usuario, pero si la diferencia es insegura, dilo y cuantifícala en un apartado `Diferencias con la norma`.
+
+No puedes abrir archivos `.xlsx` con tus herramientas. Las fórmulas de la hoja, en kgf, m y kgf/cm², son estas (`E` = |V2|, `L` = L_w, `e` = espesor, φ = 0.75):
+- `Vc = 0.53 √f'c · e·100 · L·0.8·100`; `Vs = E/φ − Vc`; `Vsmax = 2.2 √f'c · e · L · 0.8 · 10000`; condición `Vs > Vsmax` → MALO.
+- `Av/s = Vs/(fy · L·0.8·100) · 100` en cm²/m; `ρ = (Av/s)/(100 · e·100)`.
+- `ρmin = 0.002` si `E < 0.27 · e·100 · L·100 · √f'c`; si no, `0.0025`.
+- `As = máx(ρ ; ρmin) · 100 · e·100` en cm²/m; `s = ROUNDDOWN(100 · π(db/20)² / (As/2))`, con db en mm.
+- `αc = 0.8` si `Hw/L ≤ 1.5`; si no, `0.53` (informativo).
+- `φVn = e·100 · L·100 · (0.53 √f'c + ρmin · fy) · φ`; condición `E > φVn` → MALO.
+- Límite `= Vsmax · 0.75`; condición `E > límite` → MALO.
+- Solo informativos: `Acv = e·L`, `Acw = e·Hw`, `2.12 Acv √f'c`, `2.65 Acw √f'c`, `Sv,máx = mín(L·100/3 ; 3e·100 ; 45)`.
+
+Diferencias con el ACI 318-08 ya informadas al usuario (`../hormigon/ACI_318_08_Espanol (1).pdf`): φVn usa 0.53 y no αc, con interpolación entre 1.5 y 2 (21.9.4.1); φVn usa ρmin y no la cuantía dispuesta; el límite de 21.9.4.4 es 2.12 Acv √f'c en conjunto y 2.65 Acw √f'c por machón; S_v,máx usa L_w/3 y la norma L_w/5 (11.9.9.3), y el espaciamiento propuesto no se limita; piers de 0.40 × 0.20 m se verifican como muro. La flexocompresión y los elementos de borde (21.9.6) quedan `SIN VERIFICAR` y no son un hallazgo mientras el veredicto y la memoria lo digan.
+
+Verifica en particular:
+- **Cálculo:** que `corteFila` (entre `// <calculo>` y `// </calculo>`) coincida con las fórmulas de arriba, y los casos límite: `V2 = 0`, `Vs` negativo, `s = 0` con barras chicas y mucha armadura, y L, e, f'c o fy iguales a cero o vacíos. También que la razón D/C del pier sea la mayor de sus filas, y que el armado salga de la fila que corresponde.
+- **Importación del `.xlsx`:** lectura del zip sin librerías (`entradasZip`, `inflar`, con límites de tamaño), detección de tablas por columnas (`tablaEtabs`), uno o dos archivos en cualquier orden, un archivo inválido junto a uno válido, unidades (`FACTOR_FUERZA`, `FACTOR_LARGO`, cada columna con la suya), celdas vacías o de texto, y si las fórmulas o celdas raras pueden dar un resultado falso.
+- **Geometría:** `Lw` y `e` con un valor por pier (primera fila, como la planilla), aviso si la sección cambia en altura (`piersVariables`), `Hw` con `CG Top Z` y `CG Bottom Z`, piers con fuerzas y sin geometría, y qué pasa con correcciones manuales al volver a importar.
+- **Combinaciones:** filtro por `Output Case`; aviso si el caso parece de servicio; que un archivo con varias combinaciones no mezcle resultados.
+- **Seguridad:** los nombres de piers, pisos y casos vienen de un archivo externo: deben escaparse en HTML (`escH`), SVG y LaTeX (`escTex`). Por ejemplo, el pier `PO"-1` incluye comillas en un atributo.
+- **Proyectos:** `datosPier`, `geomPier`, `piersVariables` y `pisosPier` se guardan como campos ocultos; revisa `capturarFormulario`, `restaurarFormulario` y `recalcular`, que `caso` y `pierSel` se restauren aunque sus opciones se creen después, y el campo `archivoPier` de tipo archivo (`restaurarFormulario` le asigna `value`).
+- **Dibujo y memoria:** `svgPier`, `tikzPier` y la vista 3D deben coincidir con el pier crítico y su armadura. Solo se dibuja la armadura horizontal, y el recubrimiento `REC_DIBUJO` es referencial. Revisa que los valores de pantalla y de la memoria coincidan, y que el veredicto no diga `CUMPLE` de forma incondicional.
 
 ## Pavimentos (vial.html y rigido.html)
 

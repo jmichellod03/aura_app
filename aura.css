@@ -17,7 +17,7 @@
   --linea-suave: #e8ebef;
   --r-s: 4px; --r-m: 6px; --r-l: 8px;
   --sombra: 0 1px 2px rgba(10,16,48,.05);
-  --ancho-lat: 244px;
+  --ancho-lat: 256px;
   --cab: 60px;              /* alto de la cabecera fija (tablero.js lo mide) */
 }
 html.lat-corta { --ancho-lat: 64px; }
@@ -43,10 +43,17 @@ html.lat-corta { --ancho-lat: 64px; }
   .lat-cerrar { display: none; margin-left: auto; }
   .lat-nav { flex: 1; overflow-y: auto; padding: 6px 8px 10px; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.25) transparent; }
   .lat-nav ul { list-style: none; margin: 0; padding: 0; }
-  .lat-grupo { margin: 14px 10px 4px; font-size: 10.5px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #9ea3dc; white-space: nowrap; }
-  .lat-nav a, .lat-proy, .lat-corta-btn, .lat-cerrar { display: flex; align-items: center; gap: 11px; width: 100%; box-sizing: border-box; padding: 7px 10px; margin: 1px 0;
+  .lat-nav > ul + ul { border-top: 1px solid rgba(255,255,255,.12); margin-top: 6px; padding-top: 6px; }
+  .lat-seccion > ul { margin-left: 17px; padding-left: 6px; border-left: 1px solid rgba(255,255,255,.18); }
+  .lat-seccion > ul[hidden] { display: none; }
+  .lat-nav > ul > .lat-seccion > .lat-rama { color: #fff; font-weight: 600; }
+  .lat-rama.tiene-actual { color: #fff; }
+  .lat-rama.tiene-actual[aria-expanded="false"] { background: rgba(255,255,255,.16); font-weight: 600; }
+  .lateral .lat-chev { flex: 0 0 14px; width: 14px; height: 14px; margin-left: auto; opacity: .75; transition: transform .15s; }
+  .lat-rama[aria-expanded="true"] .lat-chev { transform: rotate(90deg); }
+  .lat-nav a, .lat-rama, .lat-proy, .lat-corta-btn, .lat-cerrar { display: flex; align-items: center; gap: 11px; width: 100%; box-sizing: border-box; padding: 7px 10px; margin: 1px 0;
              border: 0; border-radius: var(--r-m); background: transparent; color: inherit; font: inherit; text-align: left; text-decoration: none; cursor: pointer; position: relative; }
-  .lat-nav a:hover, .lat-proy:hover, .lat-corta-btn:hover, .lat-cerrar:hover { background: rgba(255,255,255,.09); color: #fff; }
+  .lat-nav a:hover, .lat-rama:hover, .lat-proy:hover, .lat-corta-btn:hover, .lat-cerrar:hover { background: rgba(255,255,255,.09); color: #fff; }
   .lat-nav a[aria-current="page"] { background: rgba(255,255,255,.16); color: #fff; font-weight: 600; }
   .lat-nav a[aria-current="page"]::before { content: ""; position: absolute; left: -8px; top: 6px; bottom: 6px; width: 3px; border-radius: 0 2px 2px 0; background: #fff; }
   .lateral svg { flex: 0 0 20px; width: 20px; height: 20px; }
@@ -71,9 +78,8 @@ html.lat-corta { --ancho-lat: 64px; }
   main:focus { outline: none; }
 
   /* Barra contraída: solo íconos */
-  html.lat-corta .lat-tx, html.lat-corta .lat-grupo { display: none; }
-  html.lat-corta .lat-nav ul + ul, html.lat-corta .lat-grupo + ul { border-top: 1px solid rgba(255,255,255,.12); margin-top: 6px; padding-top: 6px; }
-  html.lat-corta .lat-nav a, html.lat-corta .lat-proy, html.lat-corta .lat-corta-btn { justify-content: center; padding: 9px 0; }
+  html.lat-corta .lat-tx { display: none; }
+  html.lat-corta .lat-nav a, html.lat-corta .lat-rama, html.lat-corta .lat-proy, html.lat-corta .lat-corta-btn { justify-content: center; padding: 9px 0; }
   html.lat-corta .lat-proy { margin: 0 8px 8px; }
   html.lat-corta .lat-corta-btn svg { transform: rotate(180deg); }
   html.lat-corta .lat-cab { padding: 14px 8px 12px; justify-content: center; }
@@ -87,13 +93,16 @@ html.lat-corta { --ancho-lat: 64px; }
     html.con-lateral body { padding-left: var(--ancho-lat); }
     html.con-lateral body > header .marca, html.con-lateral body > header a.home { display: none; }
     html.con-lateral body > header.solo-movil { display: none !important; }
+    /* Contraída: solo las secciones principales; la actual queda marcada */
+    html.lat-corta .lat-seccion > ul, html.lat-corta .lat-chev { display: none; }
+    html.lat-corta .lat-rama.tiene-actual { background: rgba(255,255,255,.16); }
   }
   @media (max-width: 900px) {
     html.con-lateral { --ancho-lat: 272px; }
     .lateral { transform: translateX(-100%); transition: transform .22s ease, visibility 0s linear .22s; visibility: hidden; box-shadow: 4px 0 24px rgba(0,0,40,.25); }
     html.lat-abierta .lateral { transform: none; visibility: visible; transition-delay: 0s; }
-    html.lat-corta .lat-tx, html.lat-corta .lat-grupo { display: revert; }
-    html.lat-corta .lat-nav a, html.lat-corta .lat-proy { justify-content: flex-start; padding: 7px 10px; }
+    html.lat-corta .lat-tx { display: revert; }
+    html.lat-corta .lat-nav a, html.lat-corta .lat-rama, html.lat-corta .lat-proy { justify-content: flex-start; padding: 7px 10px; }
     html.lat-corta .lat-marca .logo { height: 30px; }
     html.lat-corta .lat-cab { padding: 14px 14px 12px; justify-content: flex-start; }
     html.lat-corta .lat-marca .logo-tile { padding: 5px 9px; }
