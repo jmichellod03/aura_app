@@ -34,6 +34,7 @@
     mle: svg('<rect x="7" y="2" width="10" height="20" rx="1"/><path d="M7 6.5h10M7 11h10M7 15.5h10"/>'),
     espectros: svg('<path d="M3 3v18h18"/><path d="M3 16c2-8 4-10 6-9s5 8 12 10"/>'),
     vial: svg('<path d="M2 6h20M2 11h20M2 16h20"/><path d="M6 8.5h3M12 8.5h3M18 8.5h2"/>'),
+    base: svg('<path d="M10 3h4v12h-4z"/><path d="M5 15h14v2H5z"/><path d="M3 17h18v4H3z"/><path d="M7 15v6M17 15v6"/>'),
     zapata: svg('<path d="M10 3h4v10h-4z"/><path d="M3 13h18v6H3z"/>'),
     rigido: svg('<rect x="2" y="8" width="20" height="8" rx="1"/><path d="M9 8v8M15 8v8"/>'),
     secAcero: svg('<path d="M5 4h14v3h-5v10h5v3H5v-3h5V7H5z"/>'),
@@ -59,6 +60,7 @@
       E("acero.html?elemento=columna", "Columnas", "columna"),
       E("reticulada.html", "Vigas reticuladas", "reticulada"),
       E("placa.html", "Placa colaborante", "placa"),
+      E("base.html", "Placa base (prueba)", "base"),
     ]),
     R("hormigon", "Hormigón", "secHormigon", [
       E("hormigon.html?elemento=viga", "Vigas", "hormigon"),

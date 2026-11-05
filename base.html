@@ -1,0 +1,1026 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#00008B">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="AURA">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js" integrity="sha384-K0oxqktRvaThvYgGL4G+OK2Ih6VS6Uyu7j3+7WJgp/uWM0Yv6Xi4YEiw0BB+mPfi" crossorigin="anonymous"></script>
+<script src="nube.js?v=28"></script>
+<style>
+  /* PWA: sin zoom automático de iOS al enfocar campos y texto estable al rotar */
+  html { -webkit-text-size-adjust: 100%; }
+  @media (max-width: 900px) { input, select, textarea { font-size: 16px !important; } }
+  main > *, .row2 > *, .row3 > *, fieldset { min-width: 0; }
+  input, select { min-width: 0; max-width: 100%; }
+  .memo, .tablaWrap { overflow-x: auto; }
+  svg { max-width: 100%; }
+</style>
+<title>Placa Base</title>
+<style>
+  :root {
+    --bg: #e3e6ea;
+    --panel: #fffafa;
+    --ink: #1d2330;
+    --muted: #5f6b7a;
+    --line: #dde1e7;
+    --accent: #5b7c99;
+    --accent-ink: #ffffff;
+    --head: #00008B;
+    --ok: #1f8a4c;
+    --ok-bg: #e6f4ec;
+    --bad: #c62828;
+    --bad-bg: #fbe9e9;
+    --warn: #9a6400;
+    --warn-bg: #fff4dc;
+    --mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 "Segoe UI", system-ui, -apple-system, sans-serif; }
+  header { background: var(--head); color: #fff; padding: 10px 24px; display: flex; align-items: center; gap: 8px 16px; flex-wrap: wrap; }
+  header h1 { margin: 0; font-size: 19px; font-weight: 600; }
+  header a.home { color: #fff; text-decoration: none; font-size: 13px; border: 1px solid rgba(255,255,255,.35); border-radius: 4px; padding: 3px 9px; }
+  header span { color: #c8cbe8; font-size: 13px; }
+  header .chipPrueba { display: inline-block; vertical-align: middle; margin-left: 6px; background: var(--warn-bg); color: var(--warn); font-size: 11.5px; font-weight: 700; border-radius: 10px; padding: 1px 9px; letter-spacing: .03em; }
+  .prueba { max-width: 1400px; margin: 14px auto 0; padding: 0 24px; }
+  .prueba > div { padding: 10px 14px; border-radius: 6px; background: var(--warn-bg); color: var(--warn); border: 1px solid #f0d9a6; font-size: 13px; }
+  main { display: grid; grid-template-columns: 380px 1fr; gap: 20px; padding: 20px 24px; max-width: 1400px; margin: 0 auto; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; padding: 16px; } .prueba { padding: 0 16px; } }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+  .panel > h2 { margin: 0; padding: 10px 16px; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); border-bottom: 1px solid var(--line); }
+  .body { padding: 14px 16px; }
+  label { display: block; font-size: 12px; color: var(--muted); margin: 10px 0 4px; }
+  select, input[type=number] { width: 100%; padding: 7px 9px; border: 1px solid var(--line); border-radius: 5px; font: inherit; background: #fff; color: var(--ink); }
+  select:focus, input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .unit { color: var(--muted); font-size: 11px; }
+  fieldset { border: 1px solid var(--line); border-radius: 6px; margin: 14px 0 0; padding: 4px 12px 12px; }
+  legend { font-size: 12px; font-weight: 600; color: var(--head); padding: 0 4px; }
+  .chk { display: flex; gap: 8px; align-items: center; margin-top: 12px; font-size: 13px; color: var(--ink); }
+  .hidden { display: none !important; }
+  .invalido { border-color: var(--bad) !important; background: var(--bad-bg) !important; }
+
+  .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; padding: 14px 16px; }
+  .card { border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; }
+  .card .t { font-size: 12px; color: var(--muted); }
+  .card .v { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .card .s { font-size: 12px; color: var(--muted); }
+  .bar { height: 6px; background: #eceef1; border-radius: 3px; margin-top: 6px; overflow: hidden; }
+  .bar > i { display: block; height: 100%; background: var(--ok); }
+  .bar.bad > i { background: var(--bad); }
+  .verdict { margin: 0 16px 14px; padding: 12px 14px; border-radius: 6px; font-weight: 600; font-size: 15px; }
+  .verdict.ok { background: var(--ok-bg); color: var(--ok); }
+  .verdict.bad { background: var(--bad-bg); color: var(--bad); }
+  .note { margin: 8px 0; padding: 8px 10px; border-radius: 5px; background: var(--warn-bg); color: var(--warn); font-size: 12.5px; }
+  #verdict .note { margin: -6px 16px 14px; }
+
+  .memo { padding: 4px 16px 16px; }
+  .memo h3 { font-size: 14px; margin: 18px 0 6px; padding-bottom: 4px; border-bottom: 2px solid var(--accent); color: var(--head); }
+  .memo h4 { font-size: 13px; margin: 12px 0 4px; color: var(--head); }
+  table.calc { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.calc td { padding: 4px 8px; border-bottom: 1px solid #eef0f3; vertical-align: top; }
+  table.calc td.k { color: var(--ink); }
+  table.calc td.v { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; font-weight: 600; }
+  .ref { display: inline-block; font-size: 10.5px; color: var(--accent); border: 1px solid #c3d0dc; border-radius: 3px; padding: 0 4px; margin-left: 6px; font-weight: 500; }
+  .tag { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 11.5px; font-weight: 600; }
+  .tag.ok { background: var(--ok-bg); color: var(--ok); }
+  .tag.bad { background: var(--bad-bg); color: var(--bad); }
+  .tag.warn { background: var(--warn-bg); color: var(--warn); }
+  .esquema { display: block; width: 100%; max-width: 330px; margin: 8px auto 4px; }
+  .dibujo { display: flex; justify-content: center; padding: 6px 16px 4px; }
+  .dibujo svg { width: 760px; }
+  .toolbar { display: flex; justify-content: flex-end; padding: 10px 16px 0; gap: 8px; flex-wrap: wrap; }
+  .btn { padding: 7px 14px; border-radius: 5px; border: 1px solid var(--head); background: var(--head); color: #fff; font: inherit; font-size: 13px; cursor: pointer; }
+  .btn.sec { background: #fff; color: var(--head); }
+  footer { text-align: center; color: var(--muted); font-size: 12px; padding: 10px 0 24px; }
+
+  @media print {
+    body { background: #fff; }
+    header { background: #fff; color: #000; border-bottom: 2px solid #000; }
+    header span { color: #333; }
+    header a.home { display: none; }
+    main { display: block; padding: 0; }
+    #inputs, .toolbar, footer { display: none; }
+    .panel { border: 0; }
+    .memo h3 { break-after: avoid; }
+    table.calc tr { break-inside: avoid; }
+  }
+</style>
+<link rel="stylesheet" href="aura.css?v=12">
+<script src="lateral.js?v=8"></script>
+<script src="asistente.js?v=3" defer></script>
+</head>
+<body>
+<header>
+  <a class="marca" href="index.html" aria-label="Inicio"><span class="logo-tile"><span class="logo"><img src="icons/logo-mmp.webp" alt="MMP"></span></span></a>
+  <a class="home" href="index.html">← Inicio</a>
+  <h1>Placa base articulada <span class="chipPrueba">VERSIÓN DE PRUEBA</span></h1>
+  <span>Columna de acero sobre pedestal · Aplastamiento, espesor, corte, pernos de anclaje y soldadura · AISC 360-16, Design Guide 1 y ACI 318-08 Apéndice D</span>
+</header>
+<div class="prueba"><div>⚠ <b>Versión de prueba.</b> Esta herramienta está en desarrollo y sus resultados aún no se han validado contra ejemplos publicados. Úsela como apoyo y compruebe el cálculo a mano. Solo cubre bases articuladas comprimidas: no verifica tracción en los pernos (levantamiento), momento en la base ni la llave de corte.</div></div>
+
+<main>
+  <!-- ===================== ENTRADAS ===================== -->
+  <section class="panel" id="inputs">
+    <h2>Datos de entrada</h2>
+    <div class="body">
+      <svg class="esquema" viewBox="0 0 330 200" aria-label="Esquema de la placa base">
+        <rect x="20" y="20" width="150" height="150" fill="#e3e8ee" stroke="#8a93a0" stroke-dasharray="4 3"/>
+        <rect x="45" y="40" width="100" height="110" fill="#c3c9d1" stroke="#3d4450" stroke-width="1.4"/>
+        <path d="M60 55h70v8h-31v64h31v8H60v-8h31V63H60z" fill="#7d8796" stroke="#3d4450"/>
+        <g fill="#fff" stroke="#3d4450"><circle cx="75" cy="80" r="4"/><circle cx="115" cy="80" r="4"/><circle cx="75" cy="110" r="4"/><circle cx="115" cy="110" r="4"/></g>
+        <g font-size="10" fill="#3d4450">
+          <line x1="45" y1="160" x2="145" y2="160" stroke="#5f6b7a"/><text x="92" y="158">B</text>
+          <line x1="152" y1="40" x2="152" y2="150" stroke="#5f6b7a"/><text x="155" y="98">N</text>
+          <line x1="75" y1="34" x2="115" y2="34" stroke="#5b7c99"/><text x="88" y="32">s<tspan font-size="7" dy="2">2</tspan></text>
+          <line x1="38" y1="80" x2="38" y2="110" stroke="#5b7c99"/><text x="26" y="98">s<tspan font-size="7" dy="2">1</tspan></text>
+          <text x="22" y="186" fill="#5f6b7a">pedestal N<tspan font-size="7" dy="2">p</tspan><tspan dy="-2"> × B</tspan><tspan font-size="7" dy="2">p</tspan></text>
+          <path d="M10 110 L10 80" stroke="#c0392b" stroke-width="1.4"/><path d="M7 84 L10 78 L13 84" fill="#c0392b" stroke="none"/><text x="4" y="124" fill="#c0392b">V</text>
+        </g>
+        <rect x="200" y="120" width="120" height="70" fill="#e3e8ee" stroke="#3d4450"/>
+        <rect x="215" y="112" width="90" height="8" fill="#d9d2c3" stroke="#3d4450"/>
+        <rect x="210" y="104" width="100" height="8" fill="#7d8796" stroke="#3d4450"/>
+        <rect x="250" y="30" width="20" height="74" fill="#c3c9d1" stroke="#3d4450"/>
+        <g stroke="#3d4450" stroke-dasharray="3 2"><line x1="232" y1="98" x2="232" y2="175"/><line x1="288" y1="98" x2="288" y2="175"/></g>
+        <g font-size="10" fill="#3d4450">
+          <path d="M260 8 L260 26" stroke="#c0392b" stroke-width="1.4"/><text x="264" y="18" fill="#c0392b">P</text>
+          <text x="314" y="111">t<tspan font-size="7" dy="2">p</tspan></text><text x="208" y="119" text-anchor="end">grout</text>
+          <text x="240" y="170">h<tspan font-size="7" dy="2">ef</tspan></text>
+        </g>
+      </svg>
+      <div class="unit" style="text-align:center">Planta (N según el alto d del perfil, B según el ala) y elevación · 4 pernos en (±s<sub>1</sub>/2, ±s<sub>2</sub>/2)</div>
+
+      <fieldset>
+        <legend>1. Columna</legend>
+        <div class="row2">
+          <div><label for="serie">Serie</label><select id="serie"><option>HEA</option><option>HEB</option><option>IPE</option><option>IPN</option><option value="otro" selected>Otro (soldado, ingresar)</option></select></div>
+          <div><label for="perfil">Perfil</label><select id="perfil"></select></div>
+        </div>
+        <div class="row2" id="otroBox">
+          <div><label for="pd">Alto d <span class="unit">[mm]</span></label><input id="pd" type="number" step="1" value="250"></div>
+          <div><label for="pbf">Ancho de ala b<sub>f</sub> <span class="unit">[mm]</span></label><input id="pbf" type="number" step="1" value="200"></div>
+          <div><label for="ptf">Espesor de ala t<sub>f</sub> <span class="unit">[mm]</span></label><input id="ptf" type="number" step="0.5" value="14"></div>
+          <div><label for="ptw">Espesor de alma t<sub>w</sub> <span class="unit">[mm]</span></label><input id="ptw" type="number" step="0.5" value="6"></div>
+        </div>
+        <div class="unit" style="margin-top:4px">Por defecto, el perfil H 250×200×54.4 del Manual ICHA (Cap. 2).</div>
+        <label for="acero">Acero de la placa y del perfil</label>
+        <select id="acero"><option value="A36" selected>ASTM A36 (F<sub>y</sub> = 2 530 kgf/cm²)</option><option>A37-24ES</option><option>A42-27ES</option><option>A52-34ES</option></select>
+      </fieldset>
+
+      <fieldset>
+        <legend>2. Placa y pedestal</legend>
+        <div class="row3">
+          <div><label for="N">Largo N <span class="unit">[mm]</span></label><input id="N" type="number" step="10" value="350"></div>
+          <div><label for="B">Ancho B <span class="unit">[mm]</span></label><input id="B" type="number" step="10" value="300"></div>
+          <div><label for="tp">Espesor t<sub>p</sub> <span class="unit">[mm]</span></label><input id="tp" type="number" step="1" value="20"></div>
+          <div><label for="Np">Pedestal N<sub>p</sub> <span class="unit">[mm]</span></label><input id="Np" type="number" step="10" value="500"></div>
+          <div><label for="Bp">Pedestal B<sub>p</sub> <span class="unit">[mm]</span></label><input id="Bp" type="number" step="10" value="500"></div>
+          <div><label for="ha">Alto pedestal h<sub>a</sub> <span class="unit">[mm]</span></label><input id="ha" type="number" step="50" value="1000"></div>
+          <div><label for="fc">Hormigón f'<sub>c</sub> <span class="unit">[kgf/cm²]</span></label><input id="fc" type="number" step="5" value="250"></div>
+          <div><label for="eg">Grout <span class="unit">[mm]</span></label><input id="eg" type="number" step="5" value="30"></div>
+          <div><label for="phic">φ<sub>c</sub> aplastamiento</label><select id="phic"><option value="0.65" selected>0.65 (AISC J8)</option><option value="0.60">0.60 (ICHA 13.9)</option></select></div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>3. Cargas mayoradas</legend>
+        <div class="row3">
+          <div><label for="Pu">Compresión P<sub>u</sub> <span class="unit">[tf]</span></label><input id="Pu" type="number" step="1" value="80"></div>
+          <div><label for="Pmin">P<sub>u,mín</sub> con el corte <span class="unit">[tf]</span></label><input id="Pmin" type="number" step="0.5" value="15"></div>
+          <div><label for="Vu">Corte V<sub>u</sub> <span class="unit">[tf]</span></label><input id="Vu" type="number" step="0.5" value="4"></div>
+        </div>
+        <div class="unit" style="margin-top:4px">El corte actúa según el alto d del perfil (paralelo al alma). P<sub>u,mín</sub> es la menor compresión que acompaña al corte; debe ser ≥ 0 (con levantamiento la base no es aplicable).</div>
+        <label for="modoV">Transferencia del corte</label>
+        <select id="modoV">
+          <option value="pernos" selected>Por los pernos de anclaje (ACI 318-08 Apéndice D)</option>
+          <option value="roce">Por roce placa–grout (solo con compresión)</option>
+          <option value="llave">Por llave de corte (no se calcula: SIN VERIFICAR)</option>
+        </select>
+        <div class="row2" id="roceBox">
+          <div><label for="mu">Coeficiente de roce μ</label><input id="mu" type="number" step="0.05" value="0.55"></div>
+          <div><label for="phiR">φ roce</label><input id="phiR" type="number" step="0.05" value="0.75"></div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>4. Pernos de anclaje (4 pernos)</legend>
+        <div class="row3">
+          <div><label for="db">Diámetro <span class="unit">[mm]</span></label><select id="db"><option>16</option><option selected>20</option><option>22</option><option>24</option><option>27</option><option>30</option><option>36</option></select></div>
+          <div><label for="aceroP">Acero</label><select id="aceroP"><option value="A36" selected>A36 / F1554 Gr. 36</option><option value="F55">F1554 Gr. 55</option><option value="A37">A37-24ES</option></select></div>
+          <div><label for="hef">Empotramiento h<sub>ef</sub> <span class="unit">[mm]</span></label><input id="hef" type="number" step="10" value="300"></div>
+          <div><label for="s1">s<sub>1</sub> (según d) <span class="unit">[mm]</span></label><input id="s1" type="number" step="10" value="150"></div>
+          <div><label for="s2">s<sub>2</sub> (según b<sub>f</sub>) <span class="unit">[mm]</span></label><input id="s2" type="number" step="10" value="200"></div>
+          <div><label for="fis">Hormigón</label><select id="fis"><option value="1" selected>Fisurado</option><option value="0">No fisurado</option></select></div>
+        </div>
+        <label class="chk"><input id="grout" type="checkbox" checked> Placa sobre grout (reduce el corte del acero, D.6.1.3)</label>
+        <div class="unit" style="margin-top:4px">Perforación en la placa según la Tabla 4-46 del Manual ICHA. Sin armadura de anclaje en el pedestal.</div>
+      </fieldset>
+
+      <fieldset>
+        <legend>5. Soldadura columna–placa</legend>
+        <div class="row2">
+          <div><label for="w">Filete w <span class="unit">[mm]</span></label><input id="w" type="number" step="1" value="6"></div>
+          <div><label for="fexx">Electrodo</label><select id="fexx"><option value="4920" selected>E70 (F<sub>EXX</sub> = 4 920 kgf/cm²)</option><option value="4220">E60 (F<sub>EXX</sub> = 4 220 kgf/cm²)</option></select></div>
+        </div>
+        <label class="chk"><input id="contacto" type="checkbox" checked> Contacto pleno columna–placa (extremo cepillado)</label>
+        <div class="unit" style="margin-top:4px">Con contacto pleno la compresión pasa por apoyo directo (Espec. ICHA 13.1.4; holgura ≤ 2 mm, 16.4.4) y la soldadura toma el corte. Sin contacto, toma también P<sub>u</sub>.</div>
+      </fieldset>
+    </div>
+  </section>
+
+  <!-- ===================== RESULTADOS ===================== -->
+  <section>
+    <div class="panel">
+      <h2 id="resTitle">Resultados</h2>
+      <div class="summary" id="summary"></div>
+      <div id="verdict"></div>
+      <div class="dibujo" id="dibujo"></div>
+      <div class="toolbar">
+        <button class="btn sec" type="button" onclick="window.print()">Imprimir</button>
+        <button class="btn sec" type="button" onclick="descargarDXF()" title="Plano DXF en lámina con viñeta (dxf.js), en milímetros y por capas">Descargar plano (.dxf)</button>
+        <button class="btn" type="button" onclick="descargarZipMemoria(ultimoTex, ultimoNombre, document.body)">Descargar memoria (.zip)</button>
+      </div>
+      <div class="memo" id="memo"></div>
+    </div>
+  </section>
+</main>
+<footer>Versión de prueba. Herramienta de apoyo para bases articuladas de columnas de acero (AISC 360-16, AISC Design Guide 1 y ACI 318-08). No reemplaza la memoria de cálculo del ingeniero del proyecto. Verifique siempre los resultados.</footer>
+
+<script src="memo.js?v=38"></script>
+<script src="tablero.js?v=3"></script>
+<script src="dxf.js?v=2"></script>
+<script src="modelo3d.js?v=6"></script>
+<script>
+"use strict";
+// ---------------------------------------------------------------------------
+// Placa base articulada (VERSIÓN DE PRUEBA): columna de acero de sección I con compresión y corte sobre un pedestal.
+// Unidades internas: kgf y cm. Las entradas de geometría vienen en mm y las cargas en tf.
+// Ejes: x según N (alto d del perfil), z según B (ancho del ala), origen en el centro de la placa.
+// Las expresiones del ACI 318-08 Apéndice D son dimensionales en N, mm y MPa: se evalúan en esas unidades y el
+// resultado se convierte a kgf (función aciV).
+// ---------------------------------------------------------------------------
+const PHI_T = 0.90;              // flexión de la placa (AISC Design Guide 1)
+const PHI_W = 0.75;              // soldadura de filete (AISC 360-16 J2.4)
+const PHI_SV = 0.65, PHI_CV = 0.70;  // ACI 318-08 D.4.4: acero dúctil a corte y hormigón, condición B
+const MPA = 0.0980665;           // kgf/cm² → MPa
+const KGF = 1 / 9.80665;         // N → kgf
+const N_PERNOS = 4;
+
+// Aceros de la placa y del perfil [kgf/cm²]
+const ACEROS = {
+  "A36": { Fy: 2530, Fu: 4080, nombre: "ASTM A36" },
+  "A37-24ES": { Fy: 2400, Fu: 3700, nombre: "A37-24ES" },
+  "A42-27ES": { Fy: 2700, Fu: 4200, nombre: "A42-27ES" },
+  "A52-34ES": { Fy: 3400, Fu: 5200, nombre: "A52-34ES" },
+};
+// Pernos de anclaje [kgf/cm²] (Tabla 4-45 del Manual ICHA y ASTM F1554)
+const ACEROS_PERNO = {
+  A36: { fya: 2530, futa: 4080, nombre: "ASTM A36 / F1554 Gr. 36" },
+  F55: { fya: 3870, futa: 5270, nombre: "ASTM F1554 Gr. 55" },
+  A37: { fya: 2400, futa: 3700, nombre: "A37-24ES" },
+};
+// Perforación en la placa [mm] (Tabla 4-46 del Manual ICHA) y paso de la rosca métrica gruesa [mm]
+const PERFORACION = { 16: 30, 20: 34, 22: 39, 24: 45, 27: 48, 30: 51, 36: 57 };
+const PASO = { 16: 2, 20: 2.5, 22: 2.5, 24: 3, 27: 3, 30: 3.5, 36: 4 };
+
+
+// Catálogo Cintac de vigas laminadas (el mismo de acero.html).
+// [nombre, h, b, tw, tf, r (mm), peso (kgf/m), A (cm²), Ix (cm⁴), Wx (cm³), Iy (cm⁴), Wy (cm³)]
+const CATALOGO = {
+  HEA: [
+    ["HEA 100", 96, 100, 5.0, 8.0, 12, 16.7, 21.2, 349, 72.8, 134, 26.8],
+    ["HEA 120", 114, 120, 5.0, 8.0, 12, 19.9, 25.3, 606, 106, 231, 38.5],
+    ["HEA 140", 133, 140, 5.5, 8.5, 12, 24.7, 31.4, 1030, 155, 389, 55.6],
+    ["HEA 160", 152, 160, 6.0, 9.0, 15, 30.4, 38.8, 1670, 220, 616, 76.9],
+    ["HEA 180", 171, 180, 6.0, 9.5, 15, 35.5, 45.3, 2510, 294, 925, 103],
+    ["HEA 200", 190, 200, 6.5, 10.0, 18, 42.3, 53.8, 3690, 389, 1340, 134],
+    ["HEA 220", 210, 220, 7.0, 11.0, 18, 50.5, 64.3, 5410, 515, 1950, 178],
+    ["HEA 240", 230, 240, 7.5, 12.0, 21, 60.3, 76.8, 7760, 675, 2770, 231],
+    ["HEA 260", 250, 260, 7.5, 12.5, 24, 68.2, 86.8, 10450, 836, 3670, 282],
+    ["HEA 280", 270, 280, 8.0, 13.0, 24, 76.4, 97.3, 13670, 1010, 4760, 340],
+    ["HEA 300", 290, 300, 8.5, 14.0, 27, 88.3, 112.0, 18260, 1260, 6310, 421],
+    ["HEA 320", 310, 300, 9.0, 15.5, 27, 97.6, 124.4, 22928, 1480, 6985, 466],
+    ["HEA 340", 330, 300, 9.5, 16.5, 27, 105.0, 133.5, 27693, 1680, 7436, 496],
+    ["HEA 360", 350, 300, 10.0, 17.5, 27, 112.0, 142.8, 33090, 1890, 7887, 526],
+    ["HEA 400", 390, 300, 11.0, 19.0, 27, 125.0, 159.0, 45069, 2310, 8564, 571],
+    ["HEA 450", 440, 300, 11.5, 21.0, 27, 140.0, 178.0, 63722, 2900, 9465, 631],
+    ["HEA 500", 490, 300, 12.0, 23.0, 27, 155.0, 197.5, 86975, 3550, 10367, 691],
+  ],
+  HEB: [
+    ["HEB 100", 100, 100, 6.0, 10.0, 12, 20.4, 26.0, 450, 89.9, 167, 33.5],
+    ["HEB 120", 120, 120, 6.5, 11.0, 12, 26.7, 34.0, 864, 144, 318, 52.9],
+    ["HEB 140", 140, 140, 7.0, 12.0, 12, 33.7, 43.0, 1510, 216, 550, 78.5],
+    ["HEB 160", 160, 160, 8.0, 13.0, 15, 42.6, 54.3, 2490, 311, 889, 111],
+    ["HEB 180", 180, 180, 8.5, 14.0, 15, 51.2, 65.3, 3830, 426, 1360, 151],
+    ["HEB 200", 200, 200, 9.0, 15.0, 18, 61.3, 78.1, 5700, 570, 2000, 200],
+    ["HEB 220", 220, 220, 9.5, 16.0, 18, 71.5, 91.0, 8090, 736, 2840, 258],
+    ["HEB 240", 240, 240, 10.0, 17.0, 21, 83.2, 106.0, 11260, 938, 3920, 327],
+    ["HEB 260", 260, 260, 10.0, 17.5, 24, 93.0, 118.0, 14920, 1150, 5130, 395],
+    ["HEB 280", 280, 280, 10.5, 18.0, 24, 103.0, 131.0, 19270, 1380, 6590, 471],
+    ["HEB 300", 300, 300, 11.0, 19.0, 27, 117.0, 149.0, 25170, 1680, 8560, 571],
+    ["HEB 320", 320, 300, 11.5, 20.5, 27, 127.0, 161.3, 30820, 1930, 9239, 616],
+    ["HEB 340", 340, 300, 12.0, 21.5, 27, 134.0, 170.9, 36656, 2160, 9690, 646],
+    ["HEB 360", 360, 300, 12.5, 22.5, 27, 142.0, 180.6, 43193, 2400, 10141, 676],
+    ["HEB 400", 400, 300, 13.5, 24.0, 27, 155.0, 197.8, 57680, 2880, 10819, 721],
+    ["HEB 450", 450, 300, 14.0, 26.0, 27, 171.0, 218.0, 79887, 3550, 11721, 781],
+    ["HEB 500", 500, 300, 14.5, 28.0, 27, 187.0, 238.6, 107176, 4290, 12624, 842],
+  ],
+  IPE: [
+    ["IPE 80", 80, 46, 3.8, 5.2, 5, 6.0, 7.64, 80.1, 20.0, 8.49, 3.69],
+    ["IPE 100", 100, 55, 4.1, 5.7, 7, 8.1, 10.3, 171, 34.2, 15.9, 5.79],
+    ["IPE 120", 120, 64, 4.4, 6.3, 7, 10.4, 13.2, 318, 53.0, 27.7, 8.65],
+    ["IPE 140", 140, 73, 4.7, 6.9, 7, 12.9, 16.4, 541, 77.3, 44.9, 12.3],
+    ["IPE 160", 160, 82, 5.0, 7.4, 9, 15.8, 20.1, 869, 109, 68.3, 16.7],
+    ["IPE 180", 180, 91, 5.3, 8.0, 9, 18.8, 23.9, 1320, 146, 101, 22.2],
+    ["IPE 200", 200, 100, 5.6, 8.5, 12, 22.4, 28.5, 1940, 194, 142, 28.5],
+    ["IPE 220", 220, 110, 5.9, 9.2, 12, 26.2, 33.4, 2770, 252, 205, 37.3],
+    ["IPE 240", 240, 120, 6.2, 9.8, 11, 30.7, 39.1, 3890, 324, 284, 47.3],
+    ["IPE 270", 270, 135, 6.6, 10.2, 15, 36.1, 45.9, 5790, 429, 420, 62.2],
+    ["IPE 300", 300, 150, 7.1, 10.7, 15, 42.2, 53.8, 8360, 557, 604, 80.5],
+    ["IPE 330", 330, 160, 7.5, 11.5, 18, 49.1, 62.6, 11770, 713, 788, 98.5],
+    ["IPE 360", 360, 170, 8.0, 12.7, 18, 57.1, 72.7, 16270, 904, 1040, 123],
+    ["IPE 400", 400, 180, 8.6, 13.5, 21, 66.3, 84.5, 23130, 1160, 1320, 146],
+    ["IPE 450", 450, 190, 9.4, 14.6, 21, 77.7, 98.8, 33740, 1500, 1680, 176],
+    ["IPE 500", 500, 200, 10.2, 16.0, 24, 90.7, 115.5, 48200, 1930, 2140, 214],
+    ["IPE 550", 550, 210, 11.1, 17.2, 24, 106.0, 134.0, 67120, 2440, 2670, 254],
+    ["IPE 600", 600, 220, 12.0, 19.0, 24, 122.0, 156.0, 92080, 3070, 3387, 308],
+  ],
+  IPN: [
+    ["IPN 80", 80, 42, 3.9, 5.9, 3.9, 5.95, 7.58, 77.8, 19.5, 6.29, 3.00],
+    ["IPN 100", 100, 50, 4.5, 6.8, 4.5, 8.32, 10.6, 171, 34.2, 12.2, 4.88],
+    ["IPN 120", 120, 58, 5.1, 7.7, 5.1, 11.2, 14.2, 328, 54.7, 21.5, 7.41],
+    ["IPN 140", 140, 66, 5.7, 8.6, 5.7, 14.4, 18.3, 573, 81.9, 35.2, 10.7],
+    ["IPN 160", 160, 74, 6.3, 9.5, 6.3, 17.9, 22.8, 935, 117, 54.7, 14.8],
+    ["IPN 180", 180, 82, 6.9, 10.4, 6.9, 21.9, 27.9, 1450, 161, 81.3, 19.8],
+    ["IPN 200", 200, 90, 7.5, 11.3, 7.5, 26.3, 33.5, 2140, 214, 117, 26.0],
+    ["IPN 220", 220, 98, 8.1, 12.2, 8.1, 31.1, 39.6, 3060, 278, 162, 33.1],
+    ["IPN 240", 240, 106, 8.7, 13.1, 8.7, 36.2, 46.1, 4250, 354, 221, 41.7],
+    ["IPN 260", 260, 113, 9.4, 14.1, 9.4, 41.9, 53.4, 5740, 442, 288, 51.0],
+    ["IPN 300", 300, 125, 10.8, 16.2, 10.8, 54.2, 69.1, 9800, 653, 451, 72.2],
+    ["IPN 340", 340, 137, 12.2, 18.3, 12.2, 68.1, 86.8, 15700, 923, 674, 98.4],
+    ["IPN 360", 360, 143, 13.0, 19.5, 13.0, 76.2, 97.1, 19610, 1090, 818, 114],
+    ["IPN 400", 400, 155, 14.4, 21.6, 14.4, 92.6, 118.0, 29210, 1460, 1160, 149],
+    ["IPN 450", 450, 170, 16.2, 24.3, 16.2, 115.0, 147.0, 45850, 2040, 1730, 203],
+    ["IPN 500", 500, 185, 18.0, 27.0, 18.0, 141.0, 180.0, 68740, 2750, 2480, 268],
+    ["IPN 550", 550, 200, 19.0, 30.0, 19.0, 167.0, 213.0, 99180, 3610, 3490, 349],
+  ],
+};
+
+// ---------------------------------------------------------------------------
+// Utilidades de formato
+// ---------------------------------------------------------------------------
+const fmt = (x, d = 2) => Number.isFinite(x)
+  ? x.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d }).replace(/,/g, " ")
+  : "—";
+const $ = (id) => document.getElementById(id);
+const num = (id) => { const v = parseFloat($(id).value); return Number.isFinite(v) ? v : 0; };
+const L = String.raw;
+const tn = (x, d = 2) => Number.isFinite(x) ? fmt(x, d).replace(/ /g, "\\,") : "\\infty";
+const LE = L`\le`;
+const texTxt = (t) => t.replace(/—/g, "---").replace(/%/g, "\\%");
+const estado = (dc) => (dc <= 1 + 1e-9 ? "Cumple" : "No cumple");
+const tag = (ok, txt) => `<span class="tag ${ok ? "ok" : "bad"}">${txt}</span>`;
+const tagDC = (dc) => tag(dc <= 1 + 1e-9, `D/C = ${fmt(dc, 3)}`);
+const cmp = (dc) => (dc <= 1 + 1e-9 ? LE : ">");
+const T = (kgf) => kgf / 1000;   // kgf → tf
+const MM = (cm) => cm * 10;      // cm → mm
+
+class Memo {
+  constructor() { this.out = []; this.tex = []; this.n = 0; }
+  h(t) { memoTexCerrar(this); this.n++; this.out.push(`<h3>${this.n}. ${t}</h3>`); this.tex.push(`\\section{${texTxt(t)}}`); }
+  sub(t) { memoTexCerrar(this); this.out.push(`<h4>${t}</h4>`); this.tex.push(`\\subsection{${texTxt(t)}}`); }
+  row(k, v, ref) { this.out.push({ k, v, ref }); }
+  note(t, tt) { this.out.push(`<div class="note">${t}</div>`); if (tt) this.tex.push(`\\textit{${tt}}\n`); }
+  eq(s, ref) { this.tex.push(texDisplay(s, ref)); this.out.push({ tex: s + (ref ? `\\tag*{(${ref})}` : ""), eq: true }); }
+  p(s, soloTex) { memoTexP(this, s); if (!soloTex) this.out.push({ tex: s }); }
+  raw(t) { memoTexCerrar(this); this.tex.push(t); }
+  texto() { memoTexCerrar(this); return this.tex.join("\n"); }
+  html() { return memoHTML(this.out); }
+}
+
+// ---------------------------------------------------------------------------
+// Perfil y datos
+// ---------------------------------------------------------------------------
+function llenarPerfiles() {
+  const serie = $("serie").value, otro = serie === "otro";
+  $("otroBox").classList.toggle("hidden", !otro);
+  $("perfil").disabled = otro;
+  if (otro) { $("perfil").innerHTML = ""; return; }
+  const prev = $("perfil").value;
+  $("perfil").innerHTML = CATALOGO[serie].map(r => `<option>${r[0]}</option>`).join("");
+  if ([...$("perfil").options].some(o => o.value === prev)) $("perfil").value = prev;
+  else if (serie === "HEB" || serie === "HEA") $("perfil").value = `${serie} 240`;
+}
+// Perfil en cm. En el soldado ("otro") no hay acuerdos (r = 0).
+function perfil() {
+  const serie = $("serie").value;
+  if (serie === "otro") return { nombre: `H ${fmt(num("pd"), 0)}x${fmt(num("pbf"), 0)}`, d: num("pd") / 10, bf: num("pbf") / 10, tf: num("ptf") / 10, tw: num("ptw") / 10, r: 0 };
+  const row = CATALOGO[serie][$("perfil").selectedIndex] || CATALOGO[serie][0];
+  const [nombre, h, b, tw, tf, r] = row;
+  return { nombre, d: h / 10, bf: b / 10, tf: tf / 10, tw: tw / 10, r: r / 10 };
+}
+function leerDatos() {
+  const c = (id) => num(id) / 10;           // mm → cm
+  const db = parseFloat($("db").value);
+  const ac = ACEROS[$("acero").value], ap = ACEROS_PERNO[$("aceroP").value];
+  return {
+    p: perfil(), acero: $("acero").value, Fy: ac.Fy, Fu: ac.Fu,
+    N: c("N"), B: c("B"), tp: c("tp"), Np: c("Np"), Bp: c("Bp"), ha: c("ha"), fc: num("fc"), eg: c("eg"), phic: parseFloat($("phic").value),
+    Pu: num("Pu") * 1000, Pmin: num("Pmin") * 1000, Vu: num("Vu") * 1000,
+    modoV: $("modoV").value, mu: num("mu"), phiR: num("phiR"),
+    db: db / 10, dh: PERFORACION[db] / 10, paso: PASO[db] / 10, aceroP: $("aceroP").value, fya: ap.fya, futa: ap.futa,
+    hef: c("hef"), s1: c("s1"), s2: c("s2"), fisurado: $("fis").value === "1", grout: $("grout").checked,
+    w: c("w"), fexx: parseFloat($("fexx").value), contacto: $("contacto").checked,
+  };
+}
+function reglasDatos() {
+  const r = [["N", 0, true], ["B", 0, true], ["tp", 0, true], ["Np", 0, true], ["Bp", 0, true], ["ha", 0, true], ["fc", 0, true], ["eg", 0],
+    ["Pu", 0, true], ["Pmin", 0], ["Vu", 0], ["hef", 0, true], ["s1", 0, true], ["s2", 0, true], ["w", 0, true]];
+  if ($("serie").value === "otro") r.push(["pd", 0, true], ["pbf", 0, true], ["ptf", 0, true], ["ptw", 0, true]);
+  if ($("modoV").value === "roce") r.push(["mu", 0, true], ["phiR", 0, true]);
+  return r;
+}
+function reglasMaximos() {
+  const dh = PERFORACION[$("db").value];
+  return [
+    ["Pmin", num("Pu"), "P<sub>u,mín</sub> no puede superar P<sub>u</sub>"],
+    ["N", num("Np"), "La placa (N) no puede ser más larga que el pedestal (N<sub>p</sub>)"],
+    ["B", num("Bp"), "La placa (B) no puede ser más ancha que el pedestal (B<sub>p</sub>)"],
+    ["s1", num("N") - dh, "Los pernos (s<sub>1</sub>) deben quedar dentro de la placa"],
+    ["s2", num("B") - dh, "Los pernos (s<sub>2</sub>) deben quedar dentro de la placa"],
+    ["hef", num("ha") - 50, "El empotramiento h<sub>ef</sub> debe ser menor que el alto del pedestal menos 50 mm"],
+    ["ptf", num("pd") / 2 - 0.1, "El espesor del ala es demasiado grande para el alto del perfil"],
+    ["ptw", num("pbf") - 0.1, "El espesor del alma es demasiado grande para el ancho del ala"],
+  ];
+}
+
+// ---------------------------------------------------------------------------
+// ACI 318-08 Apéndice D: expresiones en N, mm y MPa (entradas en cm y kgf/cm², resultado en kgf)
+// ---------------------------------------------------------------------------
+const aci = (d) => ({ fc: d.fc * MPA, da: MM(d.db), hef: MM(d.hef) });
+// Arrancamiento del hormigón por corte de una fila de 2 pernos con borde ca1 (D.6.2)
+function arrancamientoCorte(d, ca1cm) {
+  const { fc, da, hef } = aci(d);
+  let ca1 = MM(ca1cm);
+  const ca2 = MM((d.Bp - d.s2) / 2), ha = MM(d.ha), s2 = MM(d.s2);
+  // D.6.2.4: miembro angosto y poco profundo (bordes laterales y altura menores que 1.5 ca1)
+  const angosto = ca2 < 1.5 * ca1 && ha < 1.5 * ca1;
+  const ca1Real = ca1;
+  if (angosto) ca1 = Math.max(ca2 / 1.5, ha / 1.5, s2 / 3);
+  const le = Math.min(hef, 8 * da);
+  const Vb = 0.6 * Math.pow(le / da, 0.2) * Math.sqrt(da) * Math.sqrt(fc) * Math.pow(ca1, 1.5);          // D-24 [N]
+  const Avco = 4.5 * ca1 * ca1;                                                                        // D-23
+  const Avc = Math.min((2 * Math.min(ca2, 1.5 * ca1) + s2) * Math.min(1.5 * ca1, ha), 2 * Avco);
+  const psiEd = ca2 >= 1.5 * ca1 ? 1 : 0.7 + 0.3 * ca2 / (1.5 * ca1);                                 // D-28
+  const psiC = d.fisurado ? 1.0 : 1.4;                                                                  // D.6.2.7
+  const psiH = Math.max(1, Math.sqrt(1.5 * ca1 / ha));                                                  // D-29
+  const Vcbg = Avc / Avco * psiEd * psiC * psiH * Vb;                                                   // D-22 [N]
+  return { ca1, ca1Real, angosto, ca2, ha, le, Vb, Avco, Avc, psiEd, psiC, psiH, Vcbg, phiV: PHI_CV * Vcbg * KGF };
+}
+// Desprendimiento por palanca del grupo de 4 pernos (D.6.3), con el cono de tracción de D.5.2
+function palanca(d) {
+  const { fc, hef } = aci(d);
+  const ca1 = MM((d.Np - d.s1) / 2), ca2 = MM((d.Bp - d.s2) / 2), s1 = MM(d.s1), s2 = MM(d.s2);
+  // D.5.2.3: con 4 bordes a menos de 1.5 hef, h'ef = máx(ca,máx/1.5 ; s/3)
+  const cuatro = ca1 < 1.5 * hef && ca2 < 1.5 * hef;
+  const hp = cuatro ? Math.min(hef, Math.max(Math.max(ca1, ca2) / 1.5, Math.max(s1, s2) / 3)) : hef;
+  const Nb = hp >= 280 && hp <= 635 ? 3.9 * Math.sqrt(fc) * Math.pow(hp, 5 / 3) : 10 * Math.sqrt(fc) * Math.pow(hp, 1.5);  // D-7 / D-8
+  const ANco = 9 * hp * hp;
+  const ANc = Math.min((2 * Math.min(ca1, 1.5 * hp) + s1) * (2 * Math.min(ca2, 1.5 * hp) + s2), N_PERNOS * ANco);
+  const camin = Math.min(ca1, ca2);
+  const psiEd = camin >= 1.5 * hp ? 1 : 0.7 + 0.3 * camin / (1.5 * hp);                                // D-11
+  const psiC = d.fisurado ? 1.0 : 1.25;                                                                 // D.5.2.6
+  const Ncbg = ANc / ANco * psiEd * psiC * Nb;                                                          // D-5 (ψec = ψcp = 1)
+  const kcp = hef < 65 ? 1 : 2;
+  const Vcpg = kcp * Ncbg;                                                                              // D-31
+  return { ca1, ca2, cuatro, hp, Nb, ANco, ANc, psiEd, psiC, Ncbg, kcp, Vcpg, phiV: PHI_CV * Vcpg * KGF };
+}
+
+// ---------------------------------------------------------------------------
+// Cálculo
+// ---------------------------------------------------------------------------
+let ultimoTex = "", ultimoNombre = "memoria.tex", ultimoR = null, ultimoD = null;
+
+function verificar(d, m) {
+  const checks = [], motivos = [];
+  const ck = (k, dem, cap, dc, grupo) => checks.push({ k, dem, cap, dc, grupo });
+  const p = d.p, A1 = d.N * d.B;
+
+  // ---------- 1. Datos y alcance ----------
+  m.h("Datos y alcance de la verificación");
+  m.p(L`\textbf{Versión de prueba:} esta herramienta está en desarrollo y sus resultados aún no se han validado contra ejemplos publicados; el cálculo debe comprobarse a mano.`);
+  m.p(L`Se verifica una base articulada: la columna transmite compresión $P_u$ y corte $V_u$, sin momento ni tracción. El procedimiento sigue la AISC Design Guide 1 (2.ª ed.) para la placa, la AISC 360-16 para el aplastamiento y la soldadura, y el Apéndice D del ACI 318-08 para los pernos de anclaje.`);
+  m.row("Perfil de la columna", `${p.nombre} · d = ${fmt(MM(p.d), 0)} · b<sub>f</sub> = ${fmt(MM(p.bf), 0)} · t<sub>f</sub> = ${fmt(MM(p.tf), 1)} · t<sub>w</sub> = ${fmt(MM(p.tw), 1)} mm`);
+  m.row("Placa base: N × B × t<sub>p</sub>", `${fmt(MM(d.N), 0)} × ${fmt(MM(d.B), 0)} × ${fmt(MM(d.tp), 0)} mm · ${ACEROS[d.acero].nombre}`);
+  m.row("Pedestal: N<sub>p</sub> × B<sub>p</sub> ; f'<sub>c</sub>", `${fmt(MM(d.Np), 0)} × ${fmt(MM(d.Bp), 0)} mm ; ${fmt(d.fc, 0)} kgf/cm²`);
+  m.row("Cargas mayoradas: P<sub>u</sub> ; P<sub>u,mín</sub> ; V<sub>u</sub>", `${fmt(T(d.Pu), 2)} ; ${fmt(T(d.Pmin), 2)} ; ${fmt(T(d.Vu), 2)} tf`);
+
+  // ---------- 2. Aplastamiento ----------
+  m.h("Aplastamiento del hormigón");
+  const rA = Math.min(d.Np / d.N, d.Bp / d.B), A2 = rA * rA * A1, raiz = Math.min(rA, 2);
+  const Pp = 0.85 * d.fc * A1 * raiz, phiPp = d.phic * Pp, dcAp = d.Pu / phiPp;
+  const refAp = d.phic === 0.65 ? "AISC 360-16 J8-2" : "Espec. ICHA 13.9.2";
+  m.p(L`El área $A_2$ es la mayor parte de la cara del pedestal geométricamente semejante a la placa y concéntrica con ella; el aumento $\sqrt{A_2/A_1}$ se limita a 2. Se usa $\phi_c = ${tn(d.phic, 2)}$ (${d.phic === 0.65 ? "AISC 360-16 J8" : "Especificación ICHA 13.9"}).`);
+  m.row("Área de la placa: A<sub>1</sub>", `${fmt(A1, 0)} cm²`);
+  m.eq(L`A_1 = N\,B = ${tn(d.N, 1)}\cdot ${tn(d.B, 1)} = ${tn(A1, 0)}\ \mathrm{cm^2}`);
+  m.row("Área de apoyo semejante: A<sub>2</sub>", `${fmt(A2, 0)} cm²`);
+  m.eq(L`A_2 = \left[\min\left(\frac{N_p}{N};\ \frac{B_p}{B}\right)\right]^2 A_1 = ${tn(rA, 3)}^2\cdot ${tn(A1, 0)} = ${tn(A2, 0)}\ \mathrm{cm^2} \qquad \sqrt{A_2/A_1} = ${tn(rA, 3)} \Rightarrow ${tn(raiz, 3)}`);
+  m.row("Resistencia al aplastamiento: φ<sub>c</sub>P<sub>p</sub> ≥ P<sub>u</sub>", `${fmt(T(phiPp), 2)} tf ${tagDC(dcAp)}`, refAp);
+  m.eq(L`\phi_c P_p = \phi_c\,0.85\,f'_c\,A_1\sqrt{A_2/A_1} = ${tn(d.phic, 2)}\cdot 0.85\cdot ${tn(d.fc, 0)}\cdot ${tn(A1, 0)}\cdot ${tn(raiz, 3)} = ${tn(T(phiPp), 2)}\ \mathrm{tf} \qquad \frac{P_u}{\phi_c P_p} = \frac{${tn(T(d.Pu), 2)}}{${tn(T(phiPp), 2)}} = ${tn(dcAp, 3)} ${cmp(dcAp)} 1.0`, refAp);
+  ck("Aplastamiento del hormigón", L`$P_u = ${tn(T(d.Pu), 2)}$ tf`, L`$\phi_c P_p = ${tn(T(phiPp), 2)}$ tf`, dcAp, "ap");
+
+  // ---------- 3. Espesor de la placa ----------
+  m.h("Espesor de la placa base");
+  const mV = (d.N - 0.95 * p.d) / 2, nV = (d.B - 0.8 * p.bf) / 2;
+  const X = Math.min(1, (4 * p.d * p.bf / (p.d + p.bf) ** 2) * d.Pu / phiPp);
+  const lam = Math.min(1, 2 * Math.sqrt(X) / (1 + Math.sqrt(1 - X)));
+  const lnp = lam * Math.sqrt(p.d * p.bf) / 4, ell = Math.max(mV, nV, lnp);
+  const treq = ell * Math.sqrt(2 * d.Pu / (PHI_T * d.Fy * d.B * d.N)), dcT = treq / d.tp;
+  m.p(L`La placa se analiza como voladizos desde el perfil, con la presión uniforme $P_u/(B\,N)$, y entre las alas con el modelo de Thornton (factor $\lambda$). El espesor requerido corresponde al mayor voladizo $\ell = \max(m;\ n;\ \lambda n')$ (AISC Design Guide 1, sección 3.1).`);
+  m.row("Voladizos: m ; n", `${fmt(MM(mV), 1)} ; ${fmt(MM(nV), 1)} mm`, "DG1 3.1");
+  m.eq(L`m = \frac{N - 0.95\,d}{2} = \frac{${tn(d.N, 1)} - 0.95\cdot ${tn(p.d, 1)}}{2} = ${tn(mV, 2)}\ \mathrm{cm} \qquad n = \frac{B - 0.8\,b_f}{2} = \frac{${tn(d.B, 1)} - 0.8\cdot ${tn(p.bf, 1)}}{2} = ${tn(nV, 2)}\ \mathrm{cm}`);
+  m.row("Zona entre alas: X ; λ ; λn'", `${fmt(X, 3)} ; ${fmt(lam, 3)} ; ${fmt(MM(lnp), 1)} mm`, "DG1 3.1");
+  m.eq(L`X = \frac{4\,d\,b_f}{(d + b_f)^2}\,\frac{P_u}{\phi_c P_p} = ${tn(X, 3)} \qquad \lambda = \frac{2\sqrt{X}}{1 + \sqrt{1 - X}} = ${tn(lam, 3)} \le 1 \qquad \lambda n' = \lambda\,\frac{\sqrt{d\,b_f}}{4} = ${tn(lnp, 2)}\ \mathrm{cm}`);
+  m.row("Voladizo que controla: ℓ", `${fmt(MM(ell), 1)} mm`);
+  m.row("Espesor requerido: t<sub>req</sub> ≤ t<sub>p</sub>", `${fmt(MM(treq), 1)} ≤ ${fmt(MM(d.tp), 0)} mm ${tagDC(dcT)}`, "DG1 3.3.14a");
+  m.eq(L`t_{req} = \ell\sqrt{\frac{2\,P_u}{\phi\,F_y\,B\,N}} = ${tn(ell, 2)}\sqrt{\frac{2\cdot ${tn(d.Pu, 0)}}{0.90\cdot ${tn(d.Fy, 0)}\cdot ${tn(d.B, 1)}\cdot ${tn(d.N, 1)}}} = ${tn(treq, 2)}\ \mathrm{cm} \qquad \frac{t_{req}}{t_p} = \frac{${tn(treq, 2)}}{${tn(d.tp, 2)}} = ${tn(dcT, 3)} ${cmp(dcT)} 1.0`);
+  ck("Espesor de la placa", L`$t_{req} = ${tn(MM(treq), 1)}$ mm`, L`$t_p = ${tn(MM(d.tp), 0)}$ mm`, dcT, "pl");
+  if (d.tp <= 5) m.p(L`Con $t_p \le 50$ mm la placa puede usarse sin cepillar si se logra una superficie de contacto satisfactoria (Especificación ICHA 16.2.8).`);
+
+  // ---------- 4. Pernos: ubicación ----------
+  m.h("Pernos de anclaje: disposición");
+  const xP = d.s1 / 2, zP = d.s2 / 2, rH = d.dh / 2;
+  const caraIntAla = p.d / 2 - p.tf;
+  const dentro = xP + rH <= caraIntAla, fuera = xP - rH >= p.d / 2;
+  const libreAla = dentro ? caraIntAla - (xP + rH) : fuera ? xP - rH - p.d / 2 : -1;
+  const libreAlma = dentro ? zP - rH - p.tw / 2 : Infinity;
+  const holgura = Math.min(libreAla, libreAlma);
+  m.p(L`Se usan ${N_PERNOS} pernos en $(\pm s_1/2;\ \pm s_2/2)$. La perforación de la placa se toma de la Tabla 4-46 del Manual ICHA (perforación sobredimensionada para el montaje); se deben usar golillas gruesas soldadas en terreno para que todos los pernos tomen corte.`);
+  m.row("Perno ; perforación en la placa", `ø${fmt(MM(d.db), 0)} mm ${ACEROS_PERNO[d.aceroP].nombre} ; ø${fmt(MM(d.dh), 0)} mm`, "Manual ICHA Tabla 4-46");
+  m.row("Distancia libre de la perforación al perfil", `${holgura >= 0 ? fmt(MM(holgura), 1) + " mm" : "interfiere"} ${holgura >= d.w ? tag(true, "OK") : tag(false, holgura >= 0 ? "menor que el filete" : "interfiere")}`);
+  m.eq(L`x_{perno} = s_1/2 = ${tn(MM(xP), 0)}\ \mathrm{mm} \qquad z_{perno} = s_2/2 = ${tn(MM(zP), 0)}\ \mathrm{mm} \qquad \text{cara interior del ala} = d/2 - t_f = ${tn(MM(caraIntAla), 1)}\ \mathrm{mm}`);
+  if (holgura < d.w) motivos.push(holgura < 0 ? "los pernos interfieren con el perfil" : "los pernos quedan sobre la soldadura del perfil");
+  const eN = (d.N - d.s1) / 2, eB = (d.B - d.s2) / 2, ca1 = (d.Np - d.s1) / 2, ca2 = (d.Bp - d.s2) / 2;
+  m.row("Borde de la placa: (N − s<sub>1</sub>)/2 ; (B − s<sub>2</sub>)/2", `${fmt(MM(eN), 0)} ; ${fmt(MM(eB), 0)} mm`);
+  m.row("Borde del pedestal: c<sub>a1</sub> (según el corte) ; c<sub>a2</sub>", `${fmt(MM(ca1), 0)} ; ${fmt(MM(ca2), 0)} mm`);
+
+  // ---------- 5. Transferencia del corte ----------
+  m.h("Transferencia del corte");
+  let sinVerificar = false;
+  const r = { A1, A2, rA, raiz, phiPp, mV, nV, X, lam, lnp, ell, treq, holgura, ca1, ca2, eN, eB };
+  if (d.Vu <= 0) {
+    m.p(L`No hay corte: los pernos son constructivos.`);
+  } else if (d.modoV === "roce") {
+    const phiVf = d.phiR * d.mu * d.Pmin, dcF = d.Vu / phiVf;
+    m.p(L`El corte se transmite por roce entre la placa y el grout con la menor compresión concomitante $P_{u,m\acute{i}n}$ (AISC Design Guide 1, sección 3.5). Este mecanismo solo vale si siempre hay compresión; en diseño sísmico (NCh 2369) muchas veces no se acepta y el corte se asigna a los pernos o a una llave de corte.`);
+    m.row("Resistencia por roce: φμP<sub>u,mín</sub> ≥ V<sub>u</sub>", `${fmt(T(phiVf), 2)} tf ${tagDC(dcF)}`, "DG1 3.5");
+    m.eq(L`\phi\,\mu\,P_{u,m\acute{i}n} = ${tn(d.phiR, 2)}\cdot ${tn(d.mu, 2)}\cdot ${tn(T(d.Pmin), 2)} = ${tn(T(phiVf), 2)}\ \mathrm{tf} \qquad \frac{V_u}{\phi\mu P_{u,m\acute{i}n}} = ${tn(dcF, 3)} ${cmp(dcF)} 1.0`);
+    ck("Corte por roce", L`$V_u = ${tn(T(d.Vu), 2)}$ tf`, L`$\phi\mu P_{u,min} = ${tn(T(phiVf), 2)}$ tf`, dcF, "v");
+    r.phiVf = phiVf;
+  } else if (d.modoV === "llave") {
+    sinVerificar = true;
+    m.note("Llave de corte: no se calcula en esta versión. El corte queda SIN VERIFICAR.", L`La llave de corte no se calcula en esta versión: el corte queda SIN VERIFICAR.`);
+    m.p(L`El corte se asigna a una llave de corte soldada bajo la placa, que esta versión no diseña (aplastamiento del hormigón frente a la llave, flexión de la llave, soldadura y arrancamiento del pedestal). Los pernos quedan como elementos de montaje.`);
+  } else {
+    m.p(L`El corte lo toman los pernos de anclaje, sin roce. Las expresiones del Apéndice D del ACI 318-08 están en N, mm y MPa: se evalúan en esas unidades y se convierten a tf. Se considera ${d.fisurado ? "hormigón fisurado" : "hormigón no fisurado"} y sin armadura de anclaje en el pedestal (condición B, $\phi = 0.70$).`);
+    const fcM = d.fc * MPA;
+    // Acero
+    m.sub("Resistencia del acero del perno");
+    const Ase = Math.PI / 4 * (d.db - 0.9743 * d.paso) ** 2;
+    const futa = Math.min(d.futa, 1.9 * d.fya, 860 / MPA);
+    const Vsa = 0.6 * Ase * futa * (d.grout ? 0.8 : 1), phiVsa = PHI_SV * N_PERNOS * Vsa, dcS = d.Vu / phiVsa;
+    m.row("Área efectiva a corte: A<sub>se,V</sub>", `${fmt(Ase, 3)} cm²`);
+    m.eq(L`A_{se} = \frac{\pi}{4}\left(d_a - \frac{0.9743}{n_t}\right)^2 = \frac{\pi}{4}\left(${tn(d.db, 1)} - 0.9743\cdot ${tn(d.paso, 2)}\right)^2 = ${tn(Ase, 3)}\ \mathrm{cm^2}`);
+    m.row("Resistencia a corte del grupo: φV<sub>sa</sub> ≥ V<sub>u</sub>", `${fmt(T(phiVsa), 2)} tf ${tagDC(dcS)}`, "ACI 318-08 D-20");
+    m.eq(L`\phi V_{sa} = \phi\,n\,(0.6\,A_{se}\,f_{uta})${d.grout ? L`\cdot 0.8` : ""} = 0.65\cdot ${N_PERNOS}\cdot 0.6\cdot ${tn(Ase, 3)}\cdot ${tn(futa, 0)}${d.grout ? L`\cdot 0.8` : ""} = ${tn(T(phiVsa), 2)}\ \mathrm{tf} \qquad f_{uta} \le \min(1.9 f_{ya};\ 8\,770\ \mathrm{kgf/cm^2})`, "D-20");
+    if (d.grout) m.p(L`Con grout bajo la placa, la resistencia a corte del acero se multiplica por 0.8 (ACI 318-08 D.6.1.3).`);
+    ck("Corte en el acero de los pernos", L`$V_u = ${tn(T(d.Vu), 2)}$ tf`, L`$\phi V_{sa} = ${tn(T(phiVsa), 2)}$ tf`, dcS, "v");
+    // Arrancamiento
+    m.sub("Arrancamiento del hormigón por corte");
+    m.p(L`Con perforaciones sobredimensionadas se revisan dos casos (ACI 318-08 D.6.2.1 y su comentario): la fila frontal, más cercana al borde, con la mitad del corte, y la fila trasera con todo el corte, cuyo cono se mide desde la fila trasera.`);
+    const casos = [["frontal", ca1, 0.5], ["trasera", ca1 + d.s1, 1]].map(([nom, c, f]) => {
+      const a = arrancamientoCorte(d, c), dem = f * d.Vu, dc = dem / a.phiV;
+      m.row(`Fila ${nom}: c<sub>a1</sub> ; ψ<sub>ed,V</sub> ; ψ<sub>h,V</sub>`, `${fmt(a.ca1Real, 0)} mm ; ${fmt(a.psiEd, 3)} ; ${fmt(a.psiH, 3)}`, "D.6.2");
+      m.eq(L`V_b = 0.6\left(\frac{l_e}{d_a}\right)^{0.2}\sqrt{d_a}\,\lambda\sqrt{f'_c}\,c_{a1}^{1.5} = 0.6\left(\frac{${tn(a.le, 0)}}{${tn(MM(d.db), 0)}}\right)^{0.2}\sqrt{${tn(MM(d.db), 0)}}\sqrt{${tn(fcM, 1)}}\cdot ${tn(a.ca1, 0)}^{1.5} = ${tn(a.Vb / 1000, 2)}\ \mathrm{kN}`, "D-24");
+      if (a.angosto) m.p(L`Miembro angosto y poco profundo: $c_{a1}$ se reemplaza por $\max(c_{a2}/1.5;\ h_a/1.5;\ s/3) = ${tn(a.ca1, 0)}$ mm (D.6.2.4).`);
+      m.eq(L`A_{Vco} = 4.5\,c_{a1}^2 = ${tn(a.Avco, 0)}\ \mathrm{mm^2} \qquad A_{Vc} = (2\min(c_{a2};\ 1.5c_{a1}) + s_2)\min(1.5c_{a1};\ h_a) = ${tn(a.Avc, 0)}\ \mathrm{mm^2}`, "D-23");
+      m.row(`Fila ${nom}: φV<sub>cbg</sub> ≥ ${f === 1 ? "V<sub>u</sub>" : "V<sub>u</sub>/2"}`, `${fmt(T(a.phiV), 2)} tf ${tagDC(dc)}`, "ACI 318-08 D-22");
+      m.eq(L`\phi V_{cbg} = \phi\,\frac{A_{Vc}}{A_{Vco}}\,\psi_{ed,V}\,\psi_{c,V}\,\psi_{h,V}\,V_b = 0.70\cdot\frac{${tn(a.Avc, 0)}}{${tn(a.Avco, 0)}}\cdot ${tn(a.psiEd, 3)}\cdot ${tn(a.psiC, 2)}\cdot ${tn(a.psiH, 3)}\cdot ${tn(a.Vb / 1000, 2)} = ${tn(a.phiV / 101.97, 2)}\ \mathrm{kN} = ${tn(T(a.phiV), 2)}\ \mathrm{tf} \qquad \frac{${tn(T(dem), 2)}}{${tn(T(a.phiV), 2)}} = ${tn(dc, 3)} ${cmp(dc)} 1.0`, "D-22");
+      ck(`Arrancamiento por corte, fila ${nom}`, L`${f === 1 ? "$V_u$" : "$V_u/2$"} $= ${tn(T(dem), 2)}$ tf`, L`$\phi V_{cbg} = ${tn(T(a.phiV), 2)}$ tf`, dc, "v");
+      return { nom, ...a, dem, dc };
+    });
+    // Palanca
+    m.sub("Desprendimiento por palanca (pryout)");
+    const pr = palanca(d), dcP = d.Vu / pr.phiV;
+    m.row("Empotramiento efectivo: h'<sub>ef</sub>", `${fmt(pr.hp, 0)} mm`, "ACI 318-08 D.5.2.3");
+    m.eq(pr.cuatro
+      ? L`h'_{ef} = \max\left(\frac{c_{a,m\acute{a}x}}{1.5};\ \frac{s_{m\acute{a}x}}{3}\right) = ${tn(pr.hp, 0)}\ \mathrm{mm} \le h_{ef}`
+      : L`h'_{ef} = h_{ef} = ${tn(pr.hp, 0)}\ \mathrm{mm}`, "D.5.2.3");
+    m.eq(L`N_b = ${pr.hp >= 280 && pr.hp <= 635 ? L`3.9\sqrt{f'_c}\,h_{ef}'^{5/3}` : L`10\sqrt{f'_c}\,h_{ef}'^{1.5}`} = ${tn(pr.Nb / 1000, 2)}\ \mathrm{kN} \qquad \frac{A_{Nc}}{A_{Nco}} = \frac{${tn(pr.ANc, 0)}}{${tn(pr.ANco, 0)}} \qquad \psi_{ed,N} = ${tn(pr.psiEd, 3)} \qquad N_{cbg} = ${tn(pr.Ncbg / 1000, 2)}\ \mathrm{kN}`, pr.hp >= 280 && pr.hp <= 635 ? "D-8" : "D-7");
+    m.row("Resistencia por palanca: φV<sub>cpg</sub> ≥ V<sub>u</sub>", `${fmt(T(pr.phiV), 2)} tf ${tagDC(dcP)}`, "ACI 318-08 D-31");
+    m.eq(L`\phi V_{cpg} = \phi\,k_{cp}\,N_{cbg} = 0.70\cdot ${pr.kcp}\cdot ${tn(pr.Ncbg / 1000, 2)} = ${tn(T(pr.phiV), 2)}\ \mathrm{tf} \qquad \frac{V_u}{\phi V_{cpg}} = ${tn(dcP, 3)} ${cmp(dcP)} 1.0`, "D-31");
+    ck("Desprendimiento por palanca", L`$V_u = ${tn(T(d.Vu), 2)}$ tf`, L`$\phi V_{cpg} = ${tn(T(pr.phiV), 2)}$ tf`, dcP, "v");
+    if (casos.some(c => c.dc > 1 + 1e-9)) m.note("El cono de hormigón no resiste el corte. Opciones: tomar el corte por roce (solo con compresión permanente), agregar una llave de corte o disponer armadura de anclaje en el pedestal (D.6.2.9).", L`El cono de hormigón no resiste el corte: tomar el corte por roce (solo con compresión permanente), agregar una llave de corte o disponer armadura de anclaje en el pedestal (ACI 318-08 D.6.2.9).`);
+    Object.assign(r, { Ase, futa, phiVsa, casos, pr });
+  }
+  m.p(L`No se verifica la tracción en los pernos ni la interacción tracción–corte (D.7): la base está comprimida en todas las combinaciones (${L`$P_{u,m\acute{i}n} \ge 0$`}).`);
+
+  // ---------- 6. Soldadura ----------
+  m.h("Soldadura columna – placa");
+  const hw = p.d - 2 * p.tf - 2 * p.r, Lw = 2 * hw, Lf = 2 * p.bf + 2 * (p.bf - p.tw), Lt = Lw + Lf;
+  const rn = PHI_W * 0.6 * d.fexx * 0.707 * d.w;      // kgf/cm de cordón
+  const Pw = d.contacto ? 0 : d.Pu;
+  m.p(d.contacto
+    ? L`Con contacto pleno entre el extremo de la columna y la placa, la compresión se transmite por apoyo directo (Especificación ICHA 13.1.4) y la soldadura de filete en todo el contorno toma el corte, asignado a los cordones del alma.`
+    : L`Sin contacto pleno, la soldadura de filete en todo el contorno toma la compresión $P_u$ repartida en su largo y el corte en los cordones del alma; se verifica la resultante por unidad de largo.`);
+  m.row("Largos de cordón: alma (2 lados) ; contorno total", `${fmt(MM(Lw), 0)} ; ${fmt(MM(Lt), 0)} mm`);
+  m.eq(L`L_w = 2\,(d - 2t_f - 2r) = ${tn(MM(Lw), 0)}\ \mathrm{mm} \qquad L_t = L_w + 2b_f + 2(b_f - t_w) = ${tn(MM(Lt), 0)}\ \mathrm{mm}`);
+  m.row("Resistencia por unidad de largo: φr<sub>n</sub>", `${fmt(rn, 1)} kgf/cm`, "AISC 360-16 J2-4");
+  m.eq(L`\phi r_n = \phi\,0.60\,F_{EXX}\,(0.707\,w) = 0.75\cdot 0.60\cdot ${tn(d.fexx, 0)}\cdot 0.707\cdot ${tn(d.w, 2)} = ${tn(rn, 1)}\ \mathrm{kgf/cm}`, "J2-4");
+  const q = Math.hypot(Pw / Lt, d.Vu / Lw), dcW = q / rn;
+  m.row("Fuerza resultante en el cordón: q ≤ φr<sub>n</sub>", `${fmt(q, 1)} kgf/cm ${tagDC(dcW)}`, "AISC 360-16 J2.4");
+  m.eq(L`q = \sqrt{\left(\frac{P_w}{L_t}\right)^2 + \left(\frac{V_u}{L_w}\right)^2} = \sqrt{\left(\frac{${tn(Pw, 0)}}{${tn(Lt, 1)}}\right)^2 + \left(\frac{${tn(d.Vu, 0)}}{${tn(Lw, 1)}}\right)^2} = ${tn(q, 1)}\ \mathrm{kgf/cm} \qquad \frac{q}{\phi r_n} = ${tn(dcW, 3)} ${cmp(dcW)} 1.0`);
+  ck("Soldadura de filete", L`$q = ${tn(q, 1)}$ kgf/cm`, L`$\phi r_n = ${tn(rn, 1)}$ kgf/cm`, dcW, "w");
+  const phiVy = 1.0 * 0.6 * d.Fy * p.tw * hw, dcMB = d.Vu / phiVy;
+  m.row("Metal base del alma, fluencia por corte: φR<sub>n</sub> ≥ V<sub>u</sub>", `${fmt(T(phiVy), 2)} tf ${tagDC(dcMB)}`, "AISC 360-16 J4-3");
+  m.eq(L`\phi R_n = 1.0\cdot 0.60\,F_y\,t_w\,h_w = 0.60\cdot ${tn(d.Fy, 0)}\cdot ${tn(p.tw, 2)}\cdot ${tn(hw, 2)} = ${tn(T(phiVy), 2)}\ \mathrm{tf}`, "J4-3");
+  ck("Metal base del alma", L`$V_u = ${tn(T(d.Vu), 2)}$ tf`, L`$\phi R_n = ${tn(T(phiVy), 2)}$ tf`, dcMB, "w");
+  const tDelg = Math.min(p.tw, d.tp), tmm = MM(tDelg);
+  const wMin = (tmm <= 6 ? 3 : tmm <= 13 ? 5 : tmm <= 19 ? 6 : 8) / 10;
+  const tGrueso = MM(Math.max(p.tf, d.tp)), wMinAnt = (tGrueso <= 6 ? 3 : tGrueso <= 13 ? 5 : tGrueso <= 19 ? 6 : 8) / 10;
+  const wMax = MM(p.tf) < 6 ? p.tf : p.tf - 0.2;
+  const okMin = d.w >= wMin - 1e-9, okMax = d.w <= wMax + 1e-9;
+  m.row("Tamaño mínimo del filete (parte más delgada)", `${fmt(MM(wMin), 0)} mm ${tag(okMin, okMin ? "Cumple" : "No cumple")}`, "AISC 360-16 Tabla J2.4");
+  m.row("Tamaño máximo en el borde del ala", `${fmt(MM(wMax), 0)} mm ${tag(okMax, okMax ? "Cumple" : "No cumple")}`, "AISC 360-16 J2.2b");
+  if (d.w < wMinAnt - 1e-9) m.note(`La especificación anterior (AISC de los 90, base del Manual ICHA) fija el mínimo con la parte más gruesa: ${fmt(MM(wMinAnt), 0)} mm. Si el proyecto la exige, aumente el filete.`, L`La especificación anterior (AISC de los 90, base del Manual ICHA) fija el mínimo con la parte más gruesa: ${tn(MM(wMinAnt), 0)} mm.`);
+  if (!okMin) motivos.push("filete menor que el mínimo");
+  if (!okMax) motivos.push("filete mayor que el máximo en el borde del ala");
+
+  const falla = (re) => checks.some(c => re.test(c.k) && c.dc > 1 + 1e-9);
+  const criticos = {
+    pedestal: falla(/Aplastamiento|Arrancamiento|palanca/),
+    placa: falla(/Espesor|roce/),
+    pernos: falla(/acero de los pernos/) || holgura < d.w,
+    columna: falla(/Soldadura|Metal base/) || !okMin || !okMax,
+  };
+  const dcMax = Math.max(...checks.map(c => c.dc));
+  const ok = dcMax <= 1 + 1e-9 && !motivos.length;
+  return Object.assign(r, { criticos, checks, motivos, dcMax, ok, sinVerificar, hw, Lw, Lt, rn, q, phiVy, wMin, wMinAnt, wMax });
+}
+
+// ---------------------------------------------------------------------------
+// Dibujo: planta y elevación (SVG en pantalla y TikZ en la memoria). Escala en mm.
+// ---------------------------------------------------------------------------
+function contornoI(p) {   // contorno de la sección I en mm, centrada; x según d, z según bf
+  const d = MM(p.d) / 2, b = MM(p.bf) / 2, tf = MM(p.tf), tw = MM(p.tw) / 2;
+  return [[-d, -b], [-d + tf, -b], [-d + tf, -tw], [d - tf, -tw], [d - tf, -b], [d, -b], [d, b], [d - tf, b], [d - tf, tw], [-d + tf, tw], [-d + tf, b], [-d, b]];
+}
+function svgBase(d, r) {
+  const Np = MM(d.Np), Bp = MM(d.Bp), N = MM(d.N), B = MM(d.B), k = 240 / Math.max(Np, Bp);
+  const c = "#3d4450", t = (x, y, s, a = "start", fs = 10.5) => `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" font-size="${fs}" fill="${c}" text-anchor="${a}">${s}</text>`;
+  const ox = 50 + Bp * k / 2, oy = 40 + Np * k / 2, X = (z) => ox + z * k, Y = (x) => oy - x * k;   // planta: z horizontal, x vertical
+  const NAR = "#e65c00", mal = r.criticos.columna ? NAR : "#7d8796", malPl = r.criticos.placa ? NAR : "#c3c9d1", malPed = r.criticos.pedestal ? "#f6d2bb" : "#eef0f2", malPer = r.criticos.pernos ? NAR : "#c62828";
+  const I = contornoI(d.p).map(([x, z]) => `${X(z).toFixed(1)},${Y(x).toFixed(1)}`).join(" ");
+  const pernos = [[1, 1], [1, -1], [-1, 1], [-1, -1]].map(([a, b]) => `<circle cx="${X(b * MM(d.s2) / 2)}" cy="${Y(a * MM(d.s1) / 2)}" r="${MM(d.dh) / 2 * k}" fill="#fff" stroke="${c}"/><circle cx="${X(b * MM(d.s2) / 2)}" cy="${Y(a * MM(d.s1) / 2)}" r="${MM(d.db) / 2 * k}" fill="${malPer}" stroke="none"/>`).join("");
+  const cota = (x1, y1, x2, y2, s, tx, ty, a = "middle") => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#8a93a0"/>${t(tx, ty, s, a, 10)}`;
+  const planta = `<rect x="${X(-Bp / 2)}" y="${Y(Np / 2)}" width="${Bp * k}" height="${Np * k}" fill="${malPed}" stroke="#8a93a0" stroke-dasharray="5 3"/>
+    <rect x="${X(-B / 2)}" y="${Y(N / 2)}" width="${B * k}" height="${N * k}" fill="${malPl}" stroke="${c}" stroke-width="1.4"/>
+    <polygon points="${I}" fill="${mal}" stroke="${c}"/>${pernos}
+    ${cota(X(-B / 2), Y(-N / 2) + 14, X(B / 2), Y(-N / 2) + 14, `B = ${fmt(B, 0)}`, ox, Y(-N / 2) + 26)}
+    ${cota(X(B / 2) + 14, Y(N / 2), X(B / 2) + 14, Y(-N / 2), `N = ${fmt(N, 0)}`, X(B / 2) + 18, oy + 4, "start")}
+    ${cota(X(-MM(d.s2) / 2), Y(N / 2) - 10, X(MM(d.s2) / 2), Y(N / 2) - 10, `s₂ = ${fmt(MM(d.s2), 0)}`, ox, Y(N / 2) - 14)}
+    ${cota(X(-B / 2) - 12, Y(MM(d.s1) / 2), X(-B / 2) - 12, Y(-MM(d.s1) / 2), `s₁ = ${fmt(MM(d.s1), 0)}`, X(-B / 2) - 16, oy + 4, "end")}
+    ${t(ox, Y(-Np / 2) + 16, `pedestal ${fmt(Bp, 0)} × ${fmt(Np, 0)}`, "middle", 9.5)}
+    <path d="M${X(-Bp / 2) - 26},${Y(-40)} L${X(-Bp / 2) - 26},${Y(40)}" stroke="#c0392b" stroke-width="1.6" marker-end="url(#fl)"/>${t(X(-Bp / 2) - 30, Y(0) + 4, "V", "end", 10)}
+    ${t(ox, 26, "PLANTA", "middle", 11)}`;
+  // Elevación (corte según d): pedestal, grout, placa, columna y pernos
+  const ex0 = 50 + Bp * k + 130, kv = k, hP = Math.min(MM(d.hef) + 120, MM(d.ha)), eg = MM(d.eg), tp = MM(d.tp), col = 260;
+  const EX = (x) => ex0 + (x + Np / 2) * kv, EY = (y) => 40 + (col + tp + eg - y) * kv;   // y = 0 en la cara superior del pedestal
+  const pernosE = [-1, 1].map(s => { const x = s * MM(d.s1) / 2; return `<line x1="${EX(x)}" y1="${EY(-MM(d.hef))}" x2="${EX(x)}" y2="${EY(eg + tp + 30)}" stroke="${malPer}" stroke-width="${Math.max(1.2, MM(d.db) * kv)}"/><rect x="${EX(x) - MM(d.db) * kv}" y="${EY(eg + tp + 18)}" width="${2 * MM(d.db) * kv}" height="${18 * kv}" fill="#5f6b7a"/>`; }).join("");
+  const elev = `<rect x="${EX(-Np / 2)}" y="${EY(0)}" width="${Np * kv}" height="${hP * kv}" fill="${malPed}" stroke="${c}"/>
+    <rect x="${EX(-N / 2) + 4}" y="${EY(eg)}" width="${N * kv - 8}" height="${eg * kv}" fill="#d9d2c3" stroke="${c}"/>
+    <rect x="${EX(-N / 2)}" y="${EY(eg + tp)}" width="${N * kv}" height="${tp * kv}" fill="${malPl}" stroke="${c}" stroke-width="1.4"/>
+    <rect x="${EX(-MM(d.p.d) / 2)}" y="${EY(eg + tp + col)}" width="${MM(d.p.d) * kv}" height="${col * kv}" fill="${mal}" fill-opacity="${r.criticos.columna ? 0.6 : 0.35}" stroke="${c}"/>
+    <line x1="${EX(-MM(d.p.d) / 2 + MM(d.p.tf))}" y1="${EY(eg + tp + col)}" x2="${EX(-MM(d.p.d) / 2 + MM(d.p.tf))}" y2="${EY(eg + tp)}" stroke="${c}"/>
+    <line x1="${EX(MM(d.p.d) / 2 - MM(d.p.tf))}" y1="${EY(eg + tp + col)}" x2="${EX(MM(d.p.d) / 2 - MM(d.p.tf))}" y2="${EY(eg + tp)}" stroke="${c}"/>
+    ${pernosE}
+    ${t(EX(N / 2) + 6, EY(eg + tp / 2) + 4, `t<tspan font-size="8" dy="2">p</tspan><tspan dy="-2"> = ${fmt(tp, 0)}</tspan>`, "start", 10)}
+    ${t(EX(N / 2) + 6, EY(eg / 2) + 12, `grout ${fmt(eg, 0)}`, "start", 9.5)}
+    ${t(EX(MM(d.s1) / 2) + 8, EY(-MM(d.hef) / 2), `h<tspan font-size="8" dy="2">ef</tspan><tspan dy="-2"> = ${fmt(MM(d.hef), 0)}</tspan>`, "start", 10)}
+    ${t(EX(0), 26, "ELEVACIÓN (según d)", "middle", 11)}`;
+  const W = ex0 + Np * kv + 90, Ht = Math.max(40 + Np * k + 40, EY(-hP) + 26);
+  return `<svg viewBox="0 0 ${W.toFixed(0)} ${Ht.toFixed(0)}" role="img" aria-label="Planta y elevación de la placa base">
+    <defs><marker id="fl" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#c0392b"/></marker></defs>
+    ${planta}${elev}
+    <text x="4" y="${(Ht - 6).toFixed(0)}" font-size="10" fill="#8a93a0">Cotas en mm · perforaciones de la placa en blanco · pedestal en línea segmentada · en naranja lo que no cumple</text>
+  </svg>`;
+}
+function tikzBase(d, r) {
+  const k = 7 / Math.max(MM(d.Np), MM(d.Bp)), f = (v) => (v * k).toFixed(3);
+  const I = contornoI(d.p).map(([x, z]) => `(${f(z)},${f(x)})`).join(" -- ");
+  const pernos = [[1, 1], [1, -1], [-1, 1], [-1, -1]].map(([a, b]) => L`\draw (${f(b * MM(d.s2) / 2)},${f(a * MM(d.s1) / 2)}) circle (${f(MM(d.dh) / 2)});`).join("\n");
+  const Np = MM(d.Np), Bp = MM(d.Bp), N = MM(d.N), B = MM(d.B);
+  return L`\begin{figure}[H]
+\centering
+\begin{tikzpicture}[>=stealth, cota/.style={<->,thin}]
+\draw[dashed] (${f(-Bp / 2)},${f(-Np / 2)}) rectangle (${f(Bp / 2)},${f(Np / 2)});
+\filldraw[fill=gray!20,draw=black,thick] (${f(-B / 2)},${f(-N / 2)}) rectangle (${f(B / 2)},${f(N / 2)});
+\filldraw[fill=gray!55,draw=black] ${I} -- cycle;
+${pernos}
+\draw[cota] (${f(-B / 2)},${f(-N / 2 - 25)}) -- (${f(B / 2)},${f(-N / 2 - 25)}) node[midway,below]{\small $B = ${tn(B, 0)}$ mm};
+\draw[cota] (${f(B / 2 + 25)},${f(-N / 2)}) -- (${f(B / 2 + 25)},${f(N / 2)}) node[midway,right]{\small $N = ${tn(N, 0)}$ mm};
+\end{tikzpicture}
+\caption{Planta de la placa base sobre el pedestal (${tn(Bp, 0)} $\times$ ${tn(Np, 0)} mm) con el perfil y los pernos.}
+\end{figure}
+`;
+}
+
+// ---------------------------------------------------------------------------
+// Memoria LaTeX
+// ---------------------------------------------------------------------------
+function documentoTex(d, r, cuerpo) {
+  const fecha = new Date().toLocaleDateString("es-CL", { day: "numeric", month: "long", year: "numeric" });
+  const fila = (a, b) => `${a} & ${b}\\\\`;
+  const p = d.p;
+  const datos = [
+    fila("Columna", L`${p.nombre}: $d = ${tn(MM(p.d), 0)}$, $b_f = ${tn(MM(p.bf), 0)}$, $t_f = ${tn(MM(p.tf), 1)}$, $t_w = ${tn(MM(p.tw), 1)}$ mm`),
+    fila(L`Placa $N \times B \times t_p$`, L`${tn(MM(d.N), 0)} $\times$ ${tn(MM(d.B), 0)} $\times$ ${tn(MM(d.tp), 0)} mm, ${ACEROS[d.acero].nombre} ($F_y = ${tn(d.Fy, 0)}$ kgf/cm$^2$)`),
+    fila("Pedestal", L`${tn(MM(d.Np), 0)} $\times$ ${tn(MM(d.Bp), 0)} mm, $h_a = ${tn(MM(d.ha), 0)}$ mm, $f'_c = ${tn(d.fc, 0)}$ kgf/cm$^2$, grout ${tn(MM(d.eg), 0)} mm`),
+    fila("Pernos", L`${N_PERNOS} ø${tn(MM(d.db), 0)} mm ${ACEROS_PERNO[d.aceroP].nombre}, $h_{ef} = ${tn(MM(d.hef), 0)}$ mm, $s_1 = ${tn(MM(d.s1), 0)}$, $s_2 = ${tn(MM(d.s2), 0)}$ mm`),
+    fila("Soldadura", L`filete ${tn(MM(d.w), 0)} mm en todo el contorno, $F_{EXX} = ${tn(d.fexx, 0)}$ kgf/cm$^2$`),
+    fila("Cargas mayoradas", L`$P_u = ${tn(T(d.Pu), 2)}$ tf, $P_{u,min} = ${tn(T(d.Pmin), 2)}$ tf, $V_u = ${tn(T(d.Vu), 2)}$ tf`),
+    fila("Transferencia del corte", { pernos: "pernos de anclaje", roce: "roce placa--grout", llave: "llave de corte (sin verificar)" }[d.modoV]),
+  ].join("\n");
+  const resumen = r.checks.map(c => `${c.k} & ${c.dem} & ${c.cap} & ${tn(c.dc, 3)} & ${estado(c.dc)}\\\\`).join("\n");
+  const alcance = [
+    L`\textbf{Versión de prueba}: la herramienta está en desarrollo y sus resultados aún no se han validado contra ejemplos publicados.`,
+    L`Base articulada: compresión y corte, sin momento. No se verifica la tracción en los pernos ni la interacción tracción--corte, por lo que no es aplicable si alguna combinación produce levantamiento (por ejemplo, combinaciones sísmicas de NCh 2369).`,
+    L`El espesor de la placa sigue la AISC Design Guide 1 con presión uniforme. El aplastamiento usa $\phi_c = ${tn(d.phic, 2)}$.`,
+    L`Los pernos se verifican con el Apéndice D del ACI 318-08, sin armadura de anclaje en el pedestal; con perforaciones sobredimensionadas se exigen golillas soldadas.`,
+    d.modoV === "roce" ? L`El corte por roce supone compresión permanente concomitante; NCh 2369 suele no aceptarlo en sismo.` : "",
+    d.modoV === "llave" ? L`La llave de corte no se calcula: el corte queda sin verificar.` : "",
+    L`No se verifican el pedestal (armaduras, corte, flexión), el traspaso de cargas a la fundación, la estabilidad de montaje ni las tolerancias.`,
+  ].filter(Boolean).map(t => `\\item ${t}`).join("\n");
+  const concl = r.sinVerificar
+    ? L`El corte queda \textbf{SIN VERIFICAR}; las demás verificaciones dan una razón máxima $D/C = ${tn(r.dcMax, 3)}$.`
+    : L`Por lo tanto, como la relación demanda-capacidad máxima es $D/C = ${tn(r.dcMax, 3)}$ ${r.dcMax <= 1 ? L`$\le 1.0$` : L`$> 1.0$`}${r.motivos.length ? ` y ${r.motivos.join(", ")}` : ""}, la placa base \textbf{${r.ok ? "cumple" : "no cumple"}} con las verificaciones indicadas.`;
+  return L`\documentclass[11pt,letterpaper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-tabla,es-noshorthands,es-nolists]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+${TEX_ESTILO}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{tikz}
+\usepackage{fancyhdr}
+\setlength{\headheight}{14pt}
+\pagestyle{fancy}
+\fancyhf{}
+\chead{Placa base articulada (versión de prueba)}
+\lfoot{Memoria de cálculo --- Placa base, AISC 360-16 y ACI 318-08}
+\rfoot{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+\allowdisplaybreaks
+
+\begin{document}
+
+\begin{center}
+{\Large\bfseries Memoria de Cálculo}\\[4pt]
+{\large Placa base articulada de columna de acero}\\[2pt]
+{\small\bfseries VERSIÓN DE PRUEBA}\\[2pt]
+${tn(MM(d.N), 0)} $\times$ ${tn(MM(d.B), 0)} $\times$ ${tn(MM(d.tp), 0)} mm\\[2pt]
+{\small ${fecha}}
+\end{center}
+
+\section{Datos de diseño}
+\begin{table}[H]
+\centering
+\caption{Datos de la placa base.}
+\begin{tabular}{lp{10cm}}
+\toprule
+Parámetro & Valor\\
+\midrule
+${datos}
+\bottomrule
+\end{tabular}
+\end{table}
+
+${tikzBase(d, r)}
+
+${cuerpo}
+
+\section{Alcance, hipótesis y limitaciones}
+\begin{itemize}
+${alcance}
+\end{itemize}
+
+\section{Resumen de resultados}
+\begin{table}[H]
+\centering
+\small
+\caption{Comparación demanda versus capacidad.}
+\begin{tabular}{lllcc}
+\toprule
+Verificación & Demanda & Capacidad & D/C & Estado\\
+\midrule
+${resumen}
+\bottomrule
+\end{tabular}
+\end{table}
+
+${concl}
+
+\end{document}
+`;
+}
+
+// ---------------------------------------------------------------------------
+// Cálculo e interfaz
+// ---------------------------------------------------------------------------
+function calcular() {
+  $("roceBox").classList.toggle("hidden", $("modoV").value !== "roce");
+  $("otroBox").classList.toggle("hidden", $("serie").value !== "otro");
+  limpiarInvalidos($("inputs"));
+  let malos = datosInvalidos(reglasDatos());
+  if (!malos.length) malos = datosSobreMaximo(reglasMaximos());
+  if (!malos.length) {
+    const p = perfil();
+    if (num("N") / 10 <= 0.95 * p.d || num("B") / 10 <= 0.8 * p.bf) { $("N").classList.add("invalido"); $("B").classList.add("invalido"); malos = ["La placa debe ser más grande que el perfil (N > 0.95 d y B > 0.8 b<sub>f</sub>)"]; }
+  }
+  const limpiar = (msg) => {
+    $("resTitle").textContent = "Resultados";
+    $("summary").innerHTML = ""; $("memo").innerHTML = ""; $("dibujo").innerHTML = "";
+    $("verdict").innerHTML = msg;
+    ultimoTex = ""; ultimoR = null; ultimoD = null;
+  };
+  if (malos.length) { limpiar(avisoInvalidos(malos)); return; }
+  const d = leerDatos();
+  const m = new Memo();
+  const r = verificar(d, m);
+
+  const peor = (g) => r.checks.filter(c => c.grupo === g).reduce((a, c) => (c.dc > (a?.dc ?? -1) ? c : a), null);
+  const ap = peor("ap"), pl = peor("pl"), v = peor("v"), w = peor("w");
+  const card = (t, c, s) => {
+    if (!c) return `<div class="card"><div class="t">${t}</div><div class="v">—</div><div class="s">${s}</div></div>`;
+    const wd = Math.min(100, Math.max(0, c.dc * 100));
+    return `<div class="card"><div class="t">${t}</div><div class="v">${fmt(c.dc, 3)}</div><div class="bar ${c.dc > 1 + 1e-9 ? "bad" : ""}"><i style="width:${wd}%"></i></div><div class="s">${s}</div></div>`;
+  };
+  $("summary").innerHTML = [
+    card("Aplastamiento del hormigón", ap, `φ<sub>c</sub>P<sub>p</sub> = ${fmt(T(r.phiPp), 1)} tf`),
+    card("Espesor de la placa", pl, `t<sub>req</sub> = ${fmt(MM(r.treq), 1)} mm / t<sub>p</sub> = ${fmt(MM(d.tp), 0)} mm`),
+    card("Corte", v, v ? `más exigido: ${v.k.toLowerCase()}` : d.modoV === "llave" ? "llave de corte: SIN VERIFICAR" : "sin corte"),
+    card("Soldadura", w, `filete ${fmt(MM(d.w), 0)} mm en todo el contorno`),
+  ].join("");
+
+  $("resTitle").textContent = `Resultados — Placa base ${fmt(MM(d.N), 0)} × ${fmt(MM(d.B), 0)} × ${fmt(MM(d.tp), 0)} mm · ${d.p.nombre}`;
+  const rm = Number.isFinite(r.dcMax) ? fmt(r.dcMax, 3) : "∞";
+  const fallas = [...r.checks.filter(c => c.dc > 1 + 1e-9).map(c => c.k.toLowerCase()), ...r.motivos];
+  const txt = r.sinVerificar
+    ? `⚠ Placa base: corte SIN VERIFICAR (llave de corte no calculada)${fallas.length ? `; no cumple: ${fallas.join(", ")}` : ""}`
+    : r.ok ? "✔ La placa base CUMPLE" : `✘ La placa base NO CUMPLE (${fallas.join(", ")})`;
+  $("verdict").innerHTML = `<div class="verdict ${r.ok && !r.sinVerificar ? "ok" : "bad"}">${txt} — razón máxima = ${rm}</div>`
+    + `<div class="note">Versión de prueba: compruebe el resultado a mano antes de usarlo.</div>`;
+  $("dibujo").innerHTML = svgBase(d, r);
+  $("memo").innerHTML = m.html();
+
+  ultimoR = r; ultimoD = d;
+  ultimoTex = documentoTex(d, r, m.texto());
+  ultimoNombre = `memoria_placa_base_${fmt(MM(d.N), 0)}x${fmt(MM(d.B), 0)}x${fmt(MM(d.tp), 0)}.tex`;
+}
+
+// ---------------------------------------------------------------------------
+// Plano DXF en lámina con viñeta (dxf.js): planta, elevación, cuadro de elementos y notas
+// ---------------------------------------------------------------------------
+function descargarDXF() {
+  if (!ultimoTex || !ultimoR) { alert("Corrija los datos inválidos antes de descargar el plano."); return; }
+  const d = ultimoD, r = ultimoR, p = d.p;
+  const N = MM(d.N), B = MM(d.B), tp = MM(d.tp), Np = MM(d.Np), Bp = MM(d.Bp), eg = MM(d.eg), s1 = MM(d.s1), s2 = MM(d.s2);
+  const db = MM(d.db), dh = MM(d.dh), hef = MM(d.hef), dP = MM(p.d), tf = MM(p.tf), col = 400;
+  const grado = { 170: "G17", 200: "G20", 250: "G25", 300: "G30", 350: "G35", 400: "G40" }[d.fc] || `f'c = ${d.fc} kgf/cm²`;
+  const pl = new PlanoDXF({ titulo: `PLACA BASE ${fmt(N, 0)} x ${fmt(B, 0)} x ${fmt(tp, 0)} mm`, contenido: "planta, elevación y especificaciones (versión de prueba)" });
+  const PER = [[1, 1], [1, -1], [-1, 1], [-1, -1]];
+  pl.vista({
+    titulo: "Planta", bbox: [-Bp / 2 - 120, -Np / 2 - 120, Bp / 2 + 160, Np / 2 + 100], objetivo: [170, 170], margen: [22, 20, 40, 10],
+    dibujar: (v) => {
+      v.poly("OCULTO", [[-Bp / 2, -Np / 2], [Bp / 2, -Np / 2], [Bp / 2, Np / 2], [-Bp / 2, Np / 2]]);
+      v.poly("CONTORNO", [[-B / 2, -N / 2], [B / 2, -N / 2], [B / 2, N / 2], [-B / 2, N / 2]]);
+      v.poly("SECCION", contornoI(p).map(([x, z]) => [z, x]));
+      v.line("EJES", -Bp / 2 - 80, 0, Bp / 2 + 80, 0); v.line("EJES", 0, -Np / 2 - 80, 0, Np / 2 + 80);
+      for (const [a, b] of PER) { v.circle("CONTORNO", b * s2 / 2, a * s1 / 2, dh / 2); v.circle("ARMADURA", b * s2 / 2, a * s1 / 2, db / 2); }
+      v.referencia(s2 / 2, s1 / 2, B / 2 + v.pp(10), N / 2 + v.pp(4), `4 pernos %%c${fmt(db, 0)} - perf. %%c${fmt(dh, 0)}`, "TEXTOS");
+      v.cotaH(-B / 2, B / 2, -N / 2, -10, `B = ${fmtCota(B)}`); v.cotaH(-s2 / 2, s2 / 2, N / 2, 6, `s2 = ${fmtCota(s2)}`);
+      v.cotaH(-Bp / 2, Bp / 2, -Np / 2, -18, `Bp = ${fmtCota(Bp)}`);
+      v.cotaV(-N / 2, N / 2, B / 2, 10, `N = ${fmtCota(N)}`); v.cotaV(-s1 / 2, s1 / 2, -B / 2, -6, `s1 = ${fmtCota(s1)}`);
+      v.cotaV(-Np / 2, Np / 2, -Bp / 2, -16, `Np = ${fmtCota(Np)}`);
+      v.text("TEXTOS", 0, -Np / 2 - v.pp(26), 2.2, `Columna ${p.nombre}`, 1, 0);
+    },
+  });
+  pl.vista({
+    titulo: "Elevación", bbox: [-Np / 2 - 120, -hef - 150, Np / 2 + 200, eg + tp + col + 80], objetivo: [170, 150], margen: [22, 16, 40, 10],
+    dibujar: (v) => {
+      const yb = -Math.min(hef + 150, MM(d.ha));
+      v.poly("CONTORNO", [[-Np / 2, yb], [-Np / 2, 0], [Np / 2, 0], [Np / 2, yb]], false);
+      v.line("OCULTO", -Np / 2, yb, Np / 2, yb);
+      v.poly("CONTORNO", [[-N / 2, eg], [N / 2, eg], [N / 2, eg + tp], [-N / 2, eg + tp]]);
+      v.poly("OCULTO", [[-N / 2 + 10, 0], [N / 2 - 10, 0], [N / 2 - 10, eg], [-N / 2 + 10, eg]]);
+      v.line("CONTORNO", -dP / 2, eg + tp, -dP / 2, eg + tp + col); v.line("CONTORNO", dP / 2, eg + tp, dP / 2, eg + tp + col);
+      v.line("CONTORNO", -dP / 2 + tf, eg + tp, -dP / 2 + tf, eg + tp + col); v.line("CONTORNO", dP / 2 - tf, eg + tp, dP / 2 - tf, eg + tp + col);
+      v.line("EJES", 0, yb - 40, 0, eg + tp + col + 40);
+      for (const s of [-1, 1]) {
+        const x = s * s1 / 2;
+        v.line("OCULTO", x - db / 2, -hef, x - db / 2, eg); v.line("OCULTO", x + db / 2, -hef, x + db / 2, eg);
+        v.line("ARMADURA", x - db / 2, eg + tp, x - db / 2, eg + tp + 1.6 * db + 10); v.line("ARMADURA", x + db / 2, eg + tp, x + db / 2, eg + tp + 1.6 * db + 10);
+        v.poly("CONTORNO", [[x - db, eg + tp + 8], [x + db, eg + tp + 8], [x + db, eg + tp + 8 + 0.9 * db], [x - db, eg + tp + 8 + 0.9 * db]]);
+        v.poly("CONTORNO", [[x - 1.5 * db, eg + tp], [x + 1.5 * db, eg + tp], [x + 1.5 * db, eg + tp + 8], [x - 1.5 * db, eg + tp + 8]]);
+      }
+      v.text("TEXTOS", N / 2 + v.pp(3), eg + tp / 2, 2.2, `Placa ${fmt(tp, 0)} mm`, 0, 2);
+      v.text("TEXTOS", N / 2 + v.pp(3), eg / 2 - v.pp(2), 2.2, `Grout sin retracción ${fmt(eg, 0)} mm`, 0, 2);
+      v.cotaV(-hef, 0, s1 / 2 + db / 2, 8, `hef = ${fmtCota(hef)}`);
+      v.cotaH(-N / 2, N / 2, eg + tp + col, 6, `N = ${fmtCota(N)}`);
+      v.text("TEXTOS", -Np / 2 - v.pp(2), v.pp(1), 2.2, "Cara sup. pedestal", 2, 0);
+    },
+  });
+  pl.tabla({
+    titulo: "Cuadro de elementos", columnas: [["Elemento", 34], ["Descripción", 70], ["Cant.", 12]],
+    filas: [
+      ["Placa base", `PL ${fmt(N, 0)} x ${fmt(B, 0)} x ${fmt(tp, 0)} mm, ${ACEROS[d.acero].nombre}`, "1"],
+      ["Pernos de anclaje", `%%c${fmt(db, 0)} mm ${ACEROS_PERNO[d.aceroP].nombre}, hef = ${fmt(hef, 0)} mm`, "4"],
+      ["Perforaciones", `%%c${fmt(dh, 0)} mm (Tabla 4-46 Manual ICHA)`, "4"],
+      ["Golillas", "Golilla gruesa soldada en terreno a la placa", "4"],
+      ["Soldadura", `Filete ${fmt(MM(d.w), 0)} mm todo el contorno, ${d.fexx >= 4900 ? "E70XX" : "E60XX"}`, "-"],
+      ["Grout", `Sin retracción, ${fmt(eg, 0)} mm`, "-"],
+    ],
+  });
+  pl.notas([
+    "VERSION DE PRUEBA: verificar el cálculo a mano antes de construir.",
+    "Cotas en mm. No medir sobre el plano.",
+    `Acero de la placa ${ACEROS[d.acero].nombre}; fabricación y montaje según NCh 428. Hormigón del pedestal ${grado} según NCh 170.`,
+    `Diseño: AISC 360-16 y AISC Design Guide 1 (placa y soldadura), ACI 318-08 Apéndice D (pernos). Razón D/C máxima ${Number.isFinite(r.dcMax) ? fmt(r.dcMax, 3) : "infinita"}${r.sinVerificar ? " (corte SIN VERIFICAR)" : r.ok ? " (cumple)" : " (NO CUMPLE)"}.`,
+    `Corte transmitido por ${{ pernos: "los pernos de anclaje", roce: "roce placa-grout", llave: "llave de corte (no calculada)" }[d.modoV]}. Base articulada: no se consideró tracción en los pernos.`,
+    d.contacto ? "Extremo de la columna cepillado para contacto pleno con la placa (holgura máxima 2 mm)." : "Sin contacto pleno: la soldadura transmite la compresión.",
+  ]);
+  descargarPlano(pl, `plano_placa_base_${fmt(N, 0)}x${fmt(B, 0)}x${fmt(tp, 0)}.dxf`);
+}
+
+function init() {
+  llenarPerfiles();
+  $("serie").addEventListener("change", () => { llenarPerfiles(); calcular(); });
+  $("inputs").addEventListener("input", (e) => { if (e.target.tagName === "INPUT" && e.target.type !== "checkbox") calcular(); });
+  $("inputs").addEventListener("change", () => calcular());
+  calcular();
+}
+init();
+
+// ---------------------------------------------------------------------------
+// Vista 2D / 3D (modelo3d.js): pedestal, grout, placa, tramo de columna y pernos (x = N, y = vertical, z = B; mm)
+// ---------------------------------------------------------------------------
+window.Zona2D3D?.montar({
+  antes: document.querySelector(".toolbar"),
+  fuente2D: () => $("dibujo").querySelector("svg"),
+  observar: [$("verdict"), $("dibujo")],
+  capas: [["hormigon", "Pedestal"]],
+  nota: "tramo de columna y alto del pedestal referenciales; en naranja lo que no cumple",
+  construir: () => {
+    if (!ultimoTex || !ultimoR) return null;
+    const d = ultimoD, r = ultimoR, p = d.p;
+    const N = MM(d.N), B = MM(d.B), tp = MM(d.tp), Np = MM(d.Np), Bp = MM(d.Bp), eg = MM(d.eg), s1 = MM(d.s1), s2 = MM(d.s2), db = MM(d.db), hef = MM(d.hef);
+    const e = new Geo3D.Escena(), c = r.criticos, mat = c.placa ? "critico" : "acero";
+    const hP = Math.min(hef + 200, MM(d.ha));
+    e.caja({ mat: c.pedestal ? "critico" : "hormigon", alfa: 0.35, grupo: "hormigon" }, -Np / 2, Np / 2, -hP, 0, -Bp / 2, Bp / 2);
+    e.caja({ mat: "base", alfa: 0.8 }, -N / 2 + 10, N / 2 - 10, 0, eg, -B / 2 + 10, B / 2 - 10);
+    e.caja({ mat }, -N / 2, N / 2, eg, eg + tp, -B / 2, B / 2);
+    const perfilI = Geo3D.dobleT(MM(p.bf), MM(p.d), MM(p.tw), MM(p.tf), MM(p.r));
+    e.extruir({ mat: c.columna ? "critico" : "acero" }, perfilI, eg + tp, eg + tp + 600, (u, v, w) => [v, w, u]);
+    for (const [a, b] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) {
+      const x = a * s1 / 2, z = b * s2 / 2;
+      e.tubo({ mat: c.pernos ? "critico" : "armadura" }, [x, -hef, z], [x, eg + tp + 1.6 * db + 10, z], db / 2);
+      e.caja({ mat: "acero" }, x - 1.5 * db, x + 1.5 * db, eg + tp, eg + tp + 8, z - 1.5 * db, z + 1.5 * db);
+      e.caja({ mat: "acero" }, x - db, x + db, eg + tp + 8, eg + tp + 8 + 0.9 * db, z - db, z + db);
+    }
+    return e;
+  },
+});
+// Integración con proyectos (proyectos.js): datos para guardar y restaurar este cálculo
+window.AURA_MEMO = {
+  tipo: "Placa base articulada (prueba)",
+  elemento: () => "", tex: () => ultimoTex, nombre: () => ultimoNombre,
+  recalcular: (v) => { llenarPerfiles(); if (v && v.perfil) $("perfil").value = v.perfil; calcular(); },
+};
+</script>
+<script src="proyectos.js?v=39"></script>
+<script>
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
+</script>
+</body>
+</html>
