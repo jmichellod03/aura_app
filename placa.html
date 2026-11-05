@@ -475,8 +475,9 @@ function conector(d, m) {
   const Q2 = Rg * Rp * Asa * FU_CON;
   const QnA = Math.min(Q1, Q2);
   const Qn = d.QnUser ?? QnA;
-  m.row(`Conector ${D.txt}: A<sub>sa</sub> = π d²/4`, `${fmt(Asa, 2)} cm²`);
-  m.row("Módulo elástico del hormigón E<sub>c</sub> = 15 100 √f'<sub>c</sub>", `${fmt(Ec, 0)} kgf/cm²`, "ACI 318-08 8.5.1");
+  m.row(`Área del conector ${D.txt}: A<sub>sa</sub>`, `${fmt(Asa, 2)} cm²`);
+  m.eq(L`A_{sa} = \frac{\pi\,d^2}{4} = \frac{\pi\cdot ${tn(D.d, 2)}^2}{4} = ${tn(Asa, 2)}\ \mathrm{cm^2}`);
+  m.row("Módulo elástico del hormigón: E<sub>c</sub>", `${fmt(Ec, 0)} kgf/cm²`, "ACI 318-08 8.5.1");
   m.row(`R<sub>g</sub> (${d.cnv} por valle) ; R<sub>p</sub> (posición ${d.pos === "fuerte" ? "fuerte" : "débil"})`, `${fmt(Rg, 2)} ; ${fmt(Rp, 2)}`, "I8.2a");
   m.eq(L`E_c = 15\,100\sqrt{f'_c} = 15\,100\sqrt{${tn(d.fc, 0)}} = ${tn(Ec, 0)}\ \mathrm{kgf/cm^2}`);
   m.eq(L`Q_n = 0.5\,A_{sa}\sqrt{f'_c E_c} = 0.5 \cdot ${tn(Asa, 3)}\sqrt{${tn(d.fc, 0)} \cdot ${tn(Ec, 0)}} = ${tn(Q1, 0)}\ \mathrm{kgf}`, "I8-1");
@@ -500,9 +501,10 @@ function verificar(eh, d, m) {
   // 1. Peso propio y cubicación (Tabla IV)
   m.h("Peso propio y cubicación");
   m.row("Espesor de hormigón sobre la cresta e<sub>h</sub>", `${fmt(eh, 1)} cm`);
-  m.row("Espesor total e<sub>t</sub> = h<sub>r</sub> + e<sub>h</sub>", `${fmt(et, 2)} cm`, "Tabla IV");
+  m.row("Espesor total: e<sub>t</sub>", `${fmt(et, 2)} cm`, "Tabla IV");
   m.row("Volumen de hormigón", `${fmt(t4.V, 3)} m³/m²`, "Tabla IV");
-  m.row("Peso propio: hormigón + placa", `${fmt(t4.ppH, 0)} + ${fmt(PLACA.peso, 0)} = ${fmt(t4.pp, 0)} kgf/m²`, "Tabla IV");
+  m.row("Peso propio del hormigón y la placa: PP", `${fmt(t4.pp, 0)} kgf/m²`, "Tabla IV");
+  m.eq(L`PP = PP_{h} + PP_{placa} = ${tn(t4.ppH, 0)} + ${tn(PLACA.peso, 0)} = ${tn(t4.pp, 0)}\ \mathrm{kgf/m^2}`, "Tabla IV");
   m.row("Inercia de la sección compuesta (deformaciones)", `${fmt(t4.Ic, 0)} cm⁴/m`, "Ficha técnica");
   m.eq(L`e_t = h_r + e_h = ${tn(PLACA.hr, 2)} + ${tn(eh, 1)} = ${tn(et, 2)}\ \mathrm{cm}`);
   m.p(L`El peso propio se obtiene de la tabla de cubicación del fabricante (Tabla IV), sin considerar pérdidas de hormigón.`, true);
@@ -514,7 +516,7 @@ function verificar(eh, d, m) {
   const fP = d.puntual ? 1.3 : 1;
   const qDem = qBase * fP;
   const t1 = tablaI(eh, d.L);
-  m.row("Carga permanente adicional + sobrecarga de uso", `${fmt(d.qD, 0)} + ${fmt(d.qL, 0)} = ${fmt(qSC, 0)} kgf/m²`);
+  m.row("Carga permanente adicional y sobrecarga de uso: q<sub>D</sub> + q<sub>L</sub>", `${fmt(qSC, 0)} kgf/m²`);
   if (d.ppDem) m.row("Peso propio sumado a la demanda (criterio conservador)", `${fmt(t4.pp, 0)} kgf/m²`);
   if (d.puntual) m.row("Amplificación por cargas puntuales", "× 1.30", "Manual, pto. 7");
   m.row("Sobrecarga solicitante q", `${fmt(qDem, 0)} kgf/m²`);
@@ -527,9 +529,9 @@ function verificar(eh, d, m) {
       L`La separación entre apoyos supera 4.0 m, la mayor luz de la Tabla I; queda fuera del alcance de las tablas del fabricante.`);
   } else {
     dc1 = qDem / t1.q;
-    m.row(`Columna de la tabla: primera luz tabulada ≥ L = ${fmt(d.L / 100, 2)} m`, `${fmt(t1.Lt, 1)} m`);
+    m.row(`Columna de la tabla: primera luz tabulada ≥ ${fmt(d.L / 100, 2)} m`, `${fmt(t1.Lt, 1)} m`);
     m.row("Sobrecarga admisible q<sub>adm</sub>", `${fmt(t1.q, 0)} kgf/m²`, "Tabla I");
-    m.row("q / q<sub>adm</sub>", tagDC(dc1));
+    m.row("Razón de capacidad: q / q<sub>adm</sub>", tagDC(dc1));
     m.p(L`La sobrecarga admisible de la Tabla I considera el peso propio de la placa y del hormigón, y es la menor entre flexión, deflexión ($L/360$) y corte (SDI 1991). Para separaciones intermedias se usa, del lado seguro, la columna de la primera luz tabulada mayor o igual a la de diseño.`, true);
     m.eq(L`\frac{q}{q_{adm}} = \frac{${tn(qDem, 0)}}{${tn(t1.q, 0)}} = ${tn(dc1, 3)} ${dc1 <= 1 ? LE : ">"} 1.0`, "Tabla I");
   }
@@ -540,7 +542,7 @@ function verificar(eh, d, m) {
   const L2 = TABLA_II[eh][cond];
   const dc2 = d.L / L2;
   m.row(`Distancia máxima entre apoyos (${Math.min(d.tramos, 3)}${d.tramos >= 3 ? " o más" : ""} tramo${d.tramos > 1 ? "s" : ""}, e<sub>t</sub> = ${fmt(et, 2)} cm)`, `${fmt(L2, 0)} cm`, "Tabla II");
-  m.row("L / L<sub>máx</sub>", tagDC(dc2));
+  m.row("Razón de luz: L / L<sub>máx</sub>", tagDC(dc2));
   m.eq(L`\frac{L}{L_{m\acute{a}x}} = \frac{${tn(d.L, 0)}}{${tn(L2, 0)}} = ${tn(dc2, 3)} ${dc2 <= 1 ? LE : ">"} 1.0`, "Tabla II");
   if (d.tramos > 1) m.note("Con tramos continuos se requiere armadura superior (negativa) en los apoyos intermedios, a definir por el ingeniero calculista.",
     L`Con tramos continuos se requiere armadura superior (negativa) en los apoyos intermedios, a definir por el ingeniero calculista del proyecto.`);
@@ -557,16 +559,16 @@ function verificar(eh, d, m) {
   const flecha = fPlaca + fComp;
   const fAdm = d.L / d.flechaLim;
   const dcF = flecha / fAdm;
-  m.row("E<sub>c</sub> = 15 100 √f'<sub>c</sub> ; I<sub>c</sub> compuesta (referida al hormigón)", `${fmt(EcF, 0)} kgf/cm² ; ${fmt(t4.Ic, 0)} cm⁴/m`, "Ficha técnica");
+  m.row("Módulo del hormigón ; inercia compuesta (referida al hormigón): E<sub>c</sub> ; I<sub>c</sub>", `${fmt(EcF, 0)} kgf/cm² ; ${fmt(t4.Ic, 0)} cm⁴/m`, "Ficha técnica");
   if (!alzaprimada) {
-    m.row(`Placa sola con el peso propio (sin alzaprimas): ${fmt(t4.pp, 0)} kgf/m², E<sub>s</sub> · I<sup>+</sup> = 2 100 000 · ${fmt(PLACA.I, 2)}`, `δ<sub>1</sub> = ${fmt(fPlaca, 3)} cm`, "Ficha técnica");
-    m.row(`Sección compuesta con q<sub>D</sub> + q<sub>L</sub> = ${fmt(d.qD, 0)} + ${fmt(d.qL, 0)} = ${fmt(qComp, 0)} kgf/m²`, `δ<sub>2</sub> = ${fmt(fComp, 3)} cm`);
-    m.row("Flecha total δ = δ<sub>1</sub> + δ<sub>2</sub>", `${fmt(flecha, 3)} cm`);
+    m.row("Flecha de la placa sola con el peso propio (sin alzaprimas): δ<sub>1</sub>", `${fmt(fPlaca, 3)} cm`, "Ficha técnica");
+    m.row("Flecha de la sección compuesta con q<sub>D</sub> + q<sub>L</sub>: δ<sub>2</sub>", `${fmt(fComp, 3)} cm`);
+    m.row("Flecha total: δ", `${fmt(flecha, 3)} cm`);
   } else {
-    m.row(`Sección compuesta con PP + q<sub>D</sub> + q<sub>L</sub> = ${fmt(t4.pp, 0)} + ${fmt(d.qD, 0)} + ${fmt(d.qL, 0)} = ${fmt(qComp, 0)} kgf/m² (losa alzaprimada)`, `δ = ${fmt(flecha, 3)} cm`);
+    m.row("Flecha de la sección compuesta con PP + q<sub>D</sub> + q<sub>L</sub> (losa alzaprimada): δ", `${fmt(flecha, 3)} cm`);
   }
-  m.row(`δ<sub>adm</sub> = L/${d.flechaLim}`, `${fmt(fAdm, 3)} cm`);
-  m.row("δ / δ<sub>adm</sub>", tagDC(dcF));
+  m.row(`Flecha admisible (L/${d.flechaLim}): δ<sub>adm</sub>`, `${fmt(fAdm, 3)} cm`);
+  m.row("Razón de flecha: δ / δ<sub>adm</sub>", tagDC(dcF));
   if (!alzaprimada) {
     m.eq(L`\delta_1 = \frac{5\,PP\,L^4}{384\,E_s I^+} = \frac{5 \cdot ${tn(t4.pp / 100, 2)} \cdot ${tn(d.L, 0)}^4}{384 \cdot 2\,100\,000 \cdot ${tn(PLACA.I, 2)}} = ${tn(fPlaca, 3)}\ \mathrm{cm}`);
     m.eq(L`\delta_2 = \frac{5\,(q_D + q_L)\,L^4}{384\,E_c I_c} = \frac{5 \cdot ${tn(qComp / 100, 2)} \cdot ${tn(d.L, 0)}^4}{384 \cdot ${tn(EcF, 0)} \cdot ${tn(t4.Ic, 0)}} = ${tn(fComp, 3)}\ \mathrm{cm}`);
@@ -600,17 +602,17 @@ function verificar(eh, d, m) {
   m.h("Armadura de retracción");
   const dc4 = AS_MIN / d.As;
   m.row("Malla en cada dirección", `φ${fmt(d.dM, 1)} a ${fmt(d.sM, 1)} cm`);
-  m.row("A<sub>s</sub> = (π φ²/4) · 100/s", `${fmt(d.As, 2)} cm²/m`);
+  m.row("Armadura dispuesta: A<sub>s</sub>", `${fmt(d.As, 2)} cm²/m`);
   m.eq(L`A_s = \frac{\pi\,\phi^2}{4}\cdot\frac{100}{s} = \frac{\pi \cdot ${tn(d.dM / 10, 2)}^2}{4}\cdot\frac{100}{${tn(d.sM, 1)}} = ${tn(d.As, 2)}\ \mathrm{cm^2/m}`);
-  m.row("A<sub>s,mín</sub>", `${fmt(AS_MIN, 2)} cm²/m`, "Tabla IV, nota 3");
-  m.row("A<sub>s,mín</sub> / A<sub>s</sub>", tagDC(dc4));
+  m.row("Armadura mínima: A<sub>s,mín</sub>", `${fmt(AS_MIN, 2)} cm²/m`, "Tabla IV, nota 3");
+  m.row("Razón de armadura: A<sub>s,mín</sub> / A<sub>s</sub>", tagDC(dc4));
   m.eq(L`\frac{A_{s,m\acute{\imath}n}}{A_s} = \frac{${tn(AS_MIN, 2)}}{${tn(d.As, 2)}} = ${tn(dc4, 3)} ${dc4 <= 1 ? LE : ">"} 1.0`);
   const asACI = 0.0018 * 100 * eh;
   m.p(L`La malla se ubica a 2.5 cm de la cara superior del hormigón, con acero A63-42H como mínimo. Se usa el mínimo del fabricante; como referencia, la cuantía $0.0018\,b\,e_h$ del ACI 318 aplicada al hormigón sobre la cresta daría ${tn(asACI, 2)} cm$^2$/m.`, true);
   checks.push({ k: "Malla de retracción", dem: L`$A_{s,m\acute{\imath}n} = ${tn(AS_MIN, 2)}$ cm$^2$/m`, cap: L`$A_s = ${tn(d.As, 2)}$ cm$^2$/m`, dc: dc4, html: "Malla de retracción" });
   const sMaxM = Math.min(5 * eh, 45);
   const dc4b = d.sM / sMaxM;
-  m.row("Espaciamiento máximo s<sub>máx</sub> = mín(5 e<sub>h</sub> ; 45 cm)", `${fmt(d.sM, 1)} ${dc4b <= 1 + 1e-9 ? "≤" : ">"} ${fmt(sMaxM, 1)} cm ${tagDC(dc4b)}`, "ACI 318-08 7.12.2.2");
+  m.row("Espaciamiento de la malla: s ≤ s<sub>máx</sub>", `${fmt(d.sM, 1)} ${dc4b <= 1 + 1e-9 ? "≤" : ">"} ${fmt(sMaxM, 1)} cm ${tagDC(dc4b)}`, "ACI 318-08 7.12.2.2");
   m.eq(L`s = ${tn(d.sM, 1)}\ \mathrm{cm} ${cmp(d.sM, sMaxM)} s_{m\acute{a}x} = \min(5 e_h;\ 45) = \min(${tn(5 * eh, 0)};\ 45) = ${tn(sMaxM, 1)}\ \mathrm{cm}`, "ACI 318-08 7.12.2.2");
   checks.push({ k: "Espaciamiento de la malla", dem: L`$s = ${tn(d.sM, 1)}$ cm`, cap: L`$s_{m\acute{a}x} = ${tn(sMaxM, 1)}$ cm`, dc: dc4b, html: "Espaciamiento de la malla" });
 
@@ -630,7 +632,7 @@ function verificar(eh, d, m) {
     m.row("Valles por metro de ancho (3 por cada 95 cm)", fmt(vpm, 3));
     m.row("Resistencia de los conectores por metro", `${fmt(R / 1000, 2)} tf/m`);
     m.row("Mínimo exigido por el fabricante", `${fmt(V_APOYO / 1000, 1)} tf/m`, "Tabla I, nota d");
-    m.row("11.2 / R", tagDC(dc5));
+    m.row("Razón de conectores: 11.2 / R", tagDC(dc5));
     m.p(L`Se compara la resistencia nominal $Q_n$, sin factor $\phi$, igual que en el Capítulo I del AISC 360-16. Conviene confirmar con Cintac si la resistencia última de 11.2 tf/m de la nota d se refiere a $Q_n$ o a $\phi Q_n$.`, true);
     m.eq(L`R = n_v \cdot \frac{100}{${tn(SEP_VALLE, 2)}} \cdot Q_n = ${d.cnv} \cdot ${tn(vpm, 3)} \cdot ${tn(con.Qn, 0)} = ${tn(R, 0)}\ \mathrm{kgf/m}`);
     m.eq(L`\frac{11\,200}{R} = \frac{11\,200}{${tn(R, 0)}} = ${tn(dc5, 3)} ${dc5 <= 1 ? LE : ">"} 1.0`, "Tabla I, nota d");
@@ -639,8 +641,8 @@ function verificar(eh, d, m) {
     m.sub("Altura y recubrimiento del conector");
     const sobre = d.hs - PLACA.hr, recub = et - d.hs;
     const dc6a = sobre > 0 ? 3.8 / sobre : Infinity, dc6b = recub > 0 ? 1.3 / recub : Infinity;
-    m.row("Altura sobre la cresta h<sub>s</sub> − h<sub>r</sub> (mínimo 38 mm)", `${fmt(sobre * 10, 1)} mm ${tagDC(dc6a)}`, "I8.2d");
-    m.row("Recubrimiento sobre el conector e<sub>t</sub> − h<sub>s</sub> (mínimo 13 mm)", `${fmt(recub * 10, 1)} mm ${tagDC(dc6b)}`, "I8.2d");
+    m.row("Altura del conector sobre la cresta (mínimo 38 mm)", `${fmt(sobre * 10, 1)} mm ${tagDC(dc6a)}`, "I8.2d");
+    m.row("Recubrimiento sobre el conector (mínimo 13 mm)", `${fmt(recub * 10, 1)} mm ${tagDC(dc6b)}`, "I8.2d");
     m.eq(L`h_s - h_r = ${tn(d.hs * 10, 1)} - ${tn(PLACA.hr * 10, 1)} = ${tn(sobre * 10, 1)}\ \mathrm{mm} ${cmp(38, sobre * 10) === LE ? GE : "<"} 38\ \mathrm{mm}`, "I8.2d");
     m.eq(L`e_t - h_s = ${tn(et * 10, 1)} - ${tn(d.hs * 10, 1)} = ${tn(recub * 10, 1)}\ \mathrm{mm} ${cmp(13, recub * 10) === LE ? GE : "<"} 13\ \mathrm{mm}`, "I8.2d");
     if (sobre + recub < 3.8 + 1.3) m.note(`Con e<sub>h</sub> = ${fmt(eh, 0)} cm no cabe un conector que sobresalga 38 mm de la cresta y quede con 13 mm de recubrimiento (se necesitan 51 mm sobre la cresta).`,
@@ -656,7 +658,7 @@ function verificar(eh, d, m) {
       const dc9 = bNec / bf;
       m.row(`Perfil ${d.pv.nombre}: b<sub>f</sub> ; t<sub>f</sub>`, `${fmt(bf * 10, 0)} mm ; ${fmt(tf * 10, 1)} mm`);
       m.row("Diámetro del conector d ≤ 2.5 t<sub>f</sub>", `${fmt(dd * 10, 1)} ${dc8 <= 1 + 1e-9 ? "≤" : ">"} ${fmt(2.5 * tf * 10, 1)} mm ${tagDC(dc8)}`, "I8.1");
-      m.row(`Ancho del ala para ${d.cnv} conector${d.cnv > 1 ? "es" : ""}: ${d.cnv > 1 ? "4d entre ejes + " : ""}cabeza ≈ 1.6d`, `${fmt(bNec * 10, 0)} ${dc9 <= 1 + 1e-9 ? "≤" : ">"} ${fmt(bf * 10, 0)} mm ${tagDC(dc9)}`, "I8.2d");
+      m.row(`Ancho del ala para ${d.cnv} conector${d.cnv > 1 ? "es" : ""}: b<sub>nec</sub> ≤ b<sub>f</sub>`, `${fmt(bNec * 10, 0)} ${dc9 <= 1 + 1e-9 ? "≤" : ">"} ${fmt(bf * 10, 0)} mm ${tagDC(dc9)}`, "I8.2d");
       m.eq(L`d = ${tn(dd * 10, 1)}\ \mathrm{mm} ${cmp(dd, 2.5 * tf)} 2.5\,t_f = 2.5 \cdot ${tn(tf * 10, 1)} = ${tn(2.5 * tf * 10, 1)}\ \mathrm{mm}`, "I8.1");
       m.eq(L`b_{nec} = ${d.cnv > 1 ? L`(${d.cnv} - 1)\cdot 4d + ` : ""}1.6\,d = ${tn(bNec * 10, 0)}\ \mathrm{mm} ${cmp(bNec, bf)} b_f = ${tn(bf * 10, 0)}\ \mathrm{mm}`, "I8.2d");
       m.p(L`El límite $d \le 2.5\,t_f$ no se aplica si el conector queda directamente sobre el alma. El ancho necesario considera la separación transversal mínima de $4d$ entre ejes y el diámetro de la cabeza del conector (criterio práctico).`, true);
@@ -685,12 +687,12 @@ function verificar(eh, d, m) {
       m.row("Ancho medio del nervio de hormigón w<sub>r</sub> (geometría aproximada de la ficha)", `${fmt(wr * 10, 0)} ≥ 50 mm ${tagDC(dcW)}`, "I3.2c");
       m.row("Altura del nervio h<sub>r</sub> ≤ 75 mm ; hormigón sobre la cresta ≥ 50 mm", `${fmt(PLACA.hr * 10, 1)} mm ; ${fmt(eh * 10, 0)} mm`, "I3.2c");
       checks.push({ k: L`Ancho medio del nervio ($w_r \ge 50$ mm)`, dem: "50 mm", cap: L`${tn(wr * 10, 0)} mm`, dc: dcW, html: "Ancho del nervio", viga: true });
-      m.row("Ancho efectivo b = mín(L<sub>v</sub>/4 ; s)", `${fmt(bef, 1)} cm`, "I3.1a");
-      m.row("Área de hormigón sobre la cresta A<sub>c</sub> = b · e<sub>h</sub>", `${fmt(Ac, 0)} cm²`, "I3.2c");
-      m.row("0.85 f'<sub>c</sub> A<sub>c</sub>", `${fmt(C / 1000, 2)} tf`, "I3-1a");
-      m.row(`A<sub>s</sub> F<sub>y</sub> (${d.aceroV})`, `${fmt(T / 1000, 2)} tf`, "I3-1b");
-      m.row("Corte horizontal V'", `${fmt(Vh / 1000, 2)} tf`, "I3.2d");
-      m.row("Conectores entre el apoyo y el centro de la viga n = V'/Q<sub>n</sub>", `${nMit}`);
+      m.row("Ancho efectivo: b", `${fmt(bef, 1)} cm`, "I3.1a");
+      m.row("Área de hormigón sobre la cresta: A<sub>c</sub>", `${fmt(Ac, 0)} cm²`, "I3.2c");
+      m.row("Fuerza de compresión en el hormigón: 0.85 f'<sub>c</sub> A<sub>c</sub>", `${fmt(C / 1000, 2)} tf`, "I3-1a");
+      m.row(`Fuerza de fluencia del acero (${d.aceroV}): A<sub>s</sub> F<sub>y</sub>`, `${fmt(T / 1000, 2)} tf`, "I3-1b");
+      m.row("Corte horizontal: V'", `${fmt(Vh / 1000, 2)} tf`, "I3.2d");
+      m.row("Conectores entre el apoyo y el centro de la viga: n", `${nMit}`);
       m.row("Conectores totales en la viga (2n)", `${2 * nMit}`);
       m.row(`Máximo que cabe en media viga (${nValles} valles × ${d.cnv})`, `${nMax} ${tagDC(dc7)}`);
       m.eq(L`b = \min\left(\frac{L_v}{4};\ s\right) = \min\left(\frac{${tn(d.Lv, 0)}}{4};\ ${tn(d.L, 0)}\right) = ${tn(bef, 1)}\ \mathrm{cm}`, "I3.1a");

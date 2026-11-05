@@ -482,11 +482,12 @@ function verificar(d, m) {
   const gob14 = Math.abs(cu14.P) > Math.abs(cu16.P), cu = gob14 ? cu14 : cu16;
   const Pa = Math.abs(ca.P), Mxa = Math.abs(ca.Mx), Mya = Math.abs(ca.My);
   const Pu = Math.abs(cu.P), Mxu = Math.abs(cu.Mx), Myu = Math.abs(cu.My);
-  m.row("Brazo de las fuerzas horizontales D<sub>f</sub> + h<sub>t</sub>", `${fmt(M(d.Df), 2)} + ${fmt(M(d.ht), 2)} = ${fmt(M(h), 2)} m`);
-  m.row("ASD: P<sub>a</sub> ; H<sub>xa</sub> ; H<sub>ya</sub>", `${fmt(T(Pa), 2)} ; ${fmt(T(ca.Hx), 3)} ; ${fmt(T(ca.Hy), 3)} tf`);
-  m.row("ASD: M<sub>xa</sub> = |M<sub>x</sub> + H<sub>y</sub>(D<sub>f</sub> + h<sub>t</sub>)| ; M<sub>ya</sub> = |M<sub>y</sub> + H<sub>x</sub>(D<sub>f</sub> + h<sub>t</sub>)|", `${fmt(TM(Mxa), 2)} ; ${fmt(TM(Mya), 2)} tf·m`);
+  m.row("Brazo de las fuerzas horizontales: D<sub>f</sub> + h<sub>t</sub>", `${fmt(M(h), 2)} m`);
+  m.eq(L`D_f + h_t = ${tn(M(d.Df), 2)} + ${tn(M(d.ht), 2)} = ${tn(M(h), 2)}\ \mathrm{m}`);
+  m.row("Cargas de servicio (ASD): P<sub>a</sub> ; H<sub>xa</sub> ; H<sub>ya</sub>", `${fmt(T(Pa), 2)} ; ${fmt(T(ca.Hx), 3)} ; ${fmt(T(ca.Hy), 3)} tf`);
+  m.row("Momentos de servicio en el sello (ASD): M<sub>xa</sub> ; M<sub>ya</sub>", `${fmt(TM(Mxa), 2)} ; ${fmt(TM(Mya), 2)} tf·m`);
   m.eq(L`P_a = |P_D + P_L| = ${tn(T(Pa), 2)}\ \mathrm{tf} \qquad M_{xa} = |M_x + H_y\,(D_f + h_t)| = ${tn(TM(Mxa), 2)}\ \mathrm{tf\,m} \qquad M_{ya} = |M_y + H_x\,(D_f + h_t)| = ${tn(TM(Mya), 2)}\ \mathrm{tf\,m}`);
-  m.row("LRFD: P<sub>u</sub> ; M<sub>xu</sub> ; M<sub>yu</sub>", `${fmt(T(Pu), 2)} tf ; ${fmt(TM(Mxu), 2)} ; ${fmt(TM(Myu), 2)} tf·m`, gob14 ? "1.4D (ACI 318-08 9-1)" : "1.2D + 1.6L");
+  m.row("Solicitaciones mayoradas (LRFD): P<sub>u</sub> ; M<sub>xu</sub> ; M<sub>yu</sub>", `${fmt(T(Pu), 2)} tf ; ${fmt(TM(Mxu), 2)} ; ${fmt(TM(Myu), 2)} tf·m`, gob14 ? "1.4D (ACI 318-08 9-1)" : "1.2D + 1.6L");
   m.eq(gob14
     ? L`P_u = |1.4\,P_D| = ${tn(T(Pu), 2)}\ \mathrm{tf} > |1.2\,P_D + 1.6\,P_L| = ${tn(T(Math.abs(cu16.P)), 2)}\ \mathrm{tf} \qquad M_{xu} = ${tn(TM(Mxu), 2)}\ \mathrm{tf\,m} \qquad M_{yu} = ${tn(TM(Myu), 2)}\ \mathrm{tf\,m}`
     : L`P_u = |1.2\,P_D + 1.6\,P_L| = ${tn(T(Pu), 2)}\ \mathrm{tf} \qquad M_{xu} = ${tn(TM(Mxu), 2)}\ \mathrm{tf\,m} \qquad M_{yu} = ${tn(TM(Myu), 2)}\ \mathrm{tf\,m}`);
@@ -499,18 +500,19 @@ function verificar(d, m) {
   const ldc = Math.max(Ldh, 0.0043 * d.fy * d.dbc, 20);
   const ldh = Math.max(Ldh, 8 * d.dbc, 15, ldc), hReq = ldh + d.rec, dcH = hReq / d.hc;
   m.p(L`La barra (o perno) de la columna se ancla en la zapata con gancho estándar; con $\psi_e = 1$ y $\lambda = 1$ la longitud de desarrollo es $l_{dh} = (0.075\,\psi_e f_y / \lambda\sqrt{f'_c})\,d_b$, no menor que $8 d_b$ ni que 15 cm (ACI 318-08 12.5.2). La altura de la zapata debe alojarla más el recubrimiento.`);
-  m.row("l<sub>dh</sub> = 0.075 ψ<sub>e</sub> f<sub>y</sub> / (λ √f'<sub>c</sub>) · φ<sub>c</sub>", `${fmt(Ldh, 2)} cm`, "ACI 318-08 12.5.2");
+  m.row("Longitud de desarrollo con gancho: l<sub>dh</sub>", `${fmt(Ldh, 2)} cm`, "ACI 318-08 12.5.2");
   m.eq(L`l_{dh} = \phi_c\,\frac{0.075\,\psi_e\,f_y}{\lambda\sqrt{f'_c}} = ${tn(d.dbc, 1)}\cdot\frac{0.075\cdot 1\cdot ${tn(d.fy, 0)}}{1\cdot\sqrt{${tn(d.fc, 0)}}} = ${tn(Ldh, 2)}\ \mathrm{cm}`, "ACI 318-08 12.5.2");
-  m.row("En compresión: l<sub>dc</sub> = máx(0.075 f<sub>y</sub> φ<sub>c</sub>/√f'<sub>c</sub> ; 0.0043 f<sub>y</sub> φ<sub>c</sub> ; 20 cm)", `${fmt(ldc, 2)} cm`, "ACI 318-08 12.3.2");
-  m.row("h<sub>c,mín</sub> = máx(l<sub>dh</sub> ; 8φ<sub>c</sub> ; 15 cm ; l<sub>dc</sub>) + r", `${fmt(ldh, 2)} + ${fmt(d.rec, 1)} = ${fmt(hReq, 1)} cm ≤ h<sub>c</sub> = ${fmt(d.hc, 0)} cm ${tagDC(dcH)}`);
-  m.eq(L`h_{c,m\acute{i}n} = l_{dh} + r = ${tn(ldh, 2)} + ${tn(d.rec, 1)} = ${tn(hReq, 1)}\ \mathrm{cm} \qquad \frac{h_{c,m\acute{i}n}}{h_c} = \frac{${tn(hReq, 1)}}{${tn(d.hc, 0)}} = ${tn(dcH, 3)} ${cmp(dcH)} 1.0`);
+  m.row("Longitud de desarrollo en compresión: l<sub>dc</sub>", `${fmt(ldc, 2)} cm`, "ACI 318-08 12.3.2");
+  m.eq(L`l_{dc} = \max\left(\frac{0.075\,f_y\,\phi_c}{\lambda\sqrt{f'_c}};\ 0.0043\,f_y\,\phi_c;\ 20\ \mathrm{cm}\right) = \max(${tn(Ldh, 2)};\ ${tn(0.0043 * d.fy * d.dbc, 2)};\ 20) = ${tn(ldc, 2)}\ \mathrm{cm}`, "ACI 318-08 12.3.2");
+  m.row("Altura mínima de la zapata: h<sub>c,mín</sub> ≤ h<sub>c</sub>", `${fmt(hReq, 1)} ≤ ${fmt(d.hc, 0)} cm ${tagDC(dcH)}`);
+  m.eq(L`h_{c,m\acute{i}n} = \max(l_{dh};\ 8\phi_c;\ 15\ \mathrm{cm};\ l_{dc}) + r = ${tn(ldh, 2)} + ${tn(d.rec, 1)} = ${tn(hReq, 1)}\ \mathrm{cm} \qquad \frac{h_{c,m\acute{i}n}}{h_c} = \frac{${tn(hReq, 1)}}{${tn(d.hc, 0)}} = ${tn(dcH, 3)} ${cmp(dcH)} 1.0`);
   ck("Peralte por anclaje", L`$h_{c,m\acute{i}n} = ${tn(hReq, 1)}$ cm`, L`$h_c = ${tn(d.hc, 0)}$ cm`, dcH, "Peralte por anclaje");
 
   // ---------- c) Área basal y tensiones de contacto ----------
   m.h("Área basal y tensiones de contacto");
   const sna = d.sadm - (d.gs * (d.Df - d.hc) + d.gh * d.hc);
   m.p(L`La tensión admisible neta descuenta el peso del suelo sobre la zapata y el de la zapata. Las tensiones de servicio se obtienen con la fórmula de Navier en las cuatro esquinas, que vale mientras la resultante quede dentro del núcleo central.`);
-  m.row("σ<sub>na</sub> = σ<sub>adm</sub> − (γ<sub>s</sub>(D<sub>f</sub> − h<sub>c</sub>) + γ<sub>h</sub> h<sub>c</sub>)", `${fmt(S(sna), 2)} tf/m²`);
+  m.row("Tensión admisible neta: σ<sub>na</sub>", `${fmt(S(sna), 2)} tf/m²`);
   m.eq(L`\sigma_{na} = \sigma_{adm} - \left(\gamma_s\,(D_f - h_c) + \gamma_h\,h_c\right) = ${tn(S(d.sadm), 2)} - \left(${tn(d.gs * 1000, 2)}\,(${tn(M(d.Df), 2)} - ${tn(M(d.hc), 2)}) + ${tn(d.gh * 1000, 2)}\cdot ${tn(M(d.hc), 2)}\right) = ${tn(S(sna), 2)}\ \mathrm{tf/m^2}`);
   if (!(sna > 0)) return { error: "La tensión admisible neta σna es menor o igual a cero (revise σadm, Df y los pesos específicos)." };
   let B = d.B, Broot = NaN;
@@ -518,23 +520,24 @@ function verificar(d, m) {
   if (d.modo === "dim") {
     Broot = sna > 0 ? anchoNecesario(Pa, Mxa, Mya, Ly, sna) : NaN;
     B = Number.isFinite(Broot) ? Math.max(Math.ceil(Broot / d.paso - 1e-9) * d.paso, d.a + 2 * d.paso) : NaN;
-    m.row("B tal que σ<sub>máx</sub> = σ<sub>na</sub> (L fijo)", Number.isFinite(Broot) ? `${fmt(M(Broot), 3)} m → <b>B = ${fmt(M(B), 2)} m</b>` : tag(false, "sin solución: aumente L o revise σ<sub>na</sub>"));
+    m.row("Ancho con L fijo para σ<sub>máx</sub> = σ<sub>na</sub>: B", Number.isFinite(Broot) ? `${fmt(M(Broot), 3)} m → <b>B = ${fmt(M(B), 2)} m</b>` : tag(false, "sin solución: aumente L o revise σ<sub>na</sub>"));
     m.eq(L`\frac{P_a}{B\,L} + \frac{6\,M_{ya}}{B^2 L} + \frac{6\,M_{xa}}{B\,L^2} = \sigma_{na} \;\Rightarrow\; B_1 = ${tn(M(Broot), 3)}\ \mathrm{m} \;\Rightarrow\; B = ${tn(M(B), 2)}\ \mathrm{m}`);
     if (!Number.isFinite(B)) return { error: "No existe un ancho B que cumpla con σ_na para el largo L dado." };
   }
   const nav = navier(Pa, Mya / Pa, Mxa / Pa, B, Ly);
   const exa = Mya / Pa, eya = Mxa / Pa, nucleo = nav.kx + nav.ky;
-  m.row("A<sub>c</sub> = B · L", `${fmt(M(B), 2)} · ${fmt(M(Ly), 2)} = ${fmt(nav.A / 1e4, 2)} m²`);
-  m.row("e<sub>xa</sub> = M<sub>ya</sub>/P<sub>a</sub> ; e<sub>ya</sub> = M<sub>xa</sub>/P<sub>a</sub>", `${fmt(M(exa), 3)} ; ${fmt(M(eya), 3)} m`);
-  m.row("Núcleo central: 6e<sub>xa</sub>/B + 6e<sub>ya</sub>/L ≤ 1", `${fmt(nucleo, 3)} ${tagDC(nucleo)}`);
+  m.row("Área basal: A<sub>c</sub>", `${fmt(nav.A / 1e4, 2)} m²`);
+  m.eq(L`A_c = B\,L = ${tn(M(B), 2)}\cdot ${tn(M(Ly), 2)} = ${tn(nav.A / 1e4, 2)}\ \mathrm{m^2}`);
+  m.row("Excentricidades de servicio: e<sub>xa</sub> ; e<sub>ya</sub>", `${fmt(M(exa), 3)} ; ${fmt(M(eya), 3)} m`);
+  m.row("Resultante dentro del núcleo central", `${fmt(nucleo, 3)} ${tagDC(nucleo)}`);
   m.eq(L`e_{xa} = \frac{M_{ya}}{P_a} = ${tn(M(exa), 3)}\ \mathrm{m} \qquad e_{ya} = \frac{M_{xa}}{P_a} = ${tn(M(eya), 3)}\ \mathrm{m} \qquad 6\,\frac{e_{xa}}{B} + 6\,\frac{e_{ya}}{L} = ${tn(nucleo, 3)} ${cmp(nucleo)} 1`);
   if (nucleo <= 1 + 1e-9) m.p(L`La resultante queda dentro del núcleo central: la distribución de tensiones es trapecial y toda la base está en compresión.`);
   else m.note("La resultante cae fuera del núcleo central: parte de la base se levanta y la fórmula de Navier deja de valer. Aumente las dimensiones.", L`La resultante cae fuera del núcleo central: parte de la base se levanta y la fórmula de Navier deja de ser válida; se deben aumentar las dimensiones.`);
   ck("Resultante en el núcleo central", L`$6e_x/B + 6e_y/L = ${tn(nucleo, 3)}$`, "1", nucleo, "Núcleo central");
-  m.row("σ<sub>1a</sub> ; σ<sub>2a</sub> ; σ<sub>3a</sub> ; σ<sub>4a</sub>", `${fmt(S(nav.s1), 2)} ; ${fmt(S(nav.s2), 2)} ; ${fmt(S(nav.s3), 2)} ; ${fmt(S(nav.s4), 2)} tf/m²`);
+  m.row("Tensiones de servicio en las esquinas: σ<sub>1a</sub> ; σ<sub>2a</sub> ; σ<sub>3a</sub> ; σ<sub>4a</sub>", `${fmt(S(nav.s1), 2)} ; ${fmt(S(nav.s2), 2)} ; ${fmt(S(nav.s3), 2)} ; ${fmt(S(nav.s4), 2)} tf/m²`);
   m.eq(L`\sigma_{ia} = \frac{P_a}{A_c}\left(1 \pm \frac{6\,e_{xa}}{B} \pm \frac{6\,e_{ya}}{L}\right) \;\Rightarrow\; \sigma_{1a} = ${tn(S(nav.s1), 2)},\ \sigma_{2a} = ${tn(S(nav.s2), 2)},\ \sigma_{3a} = ${tn(S(nav.s3), 2)},\ \sigma_{4a} = ${tn(S(nav.s4), 2)}\ \mathrm{tf/m^2}`);
   const dcS = nav.s1 / sna;
-  m.row("σ<sub>1a</sub> ≤ σ<sub>na</sub>", `${fmt(S(nav.s1), 2)} ≤ ${fmt(S(sna), 2)} tf/m² ${tagDC(dcS)}`);
+  m.row("Tensión máxima de servicio: σ<sub>1a</sub> ≤ σ<sub>na</sub>", `${fmt(S(nav.s1), 2)} ≤ ${fmt(S(sna), 2)} tf/m² ${tagDC(dcS)}`);
   m.eq(L`\frac{\sigma_{1a}}{\sigma_{na}} = \frac{${tn(S(nav.s1), 2)}}{${tn(S(sna), 2)}} = ${tn(dcS, 3)} ${cmp(dcS)} 1.0`);
   ck("Tensión de contacto (ASD)", L`$\sigma_{1a} = ${tn(S(nav.s1), 2)}$ tf/m$^2$`, L`$\sigma_{na} = ${tn(S(sna), 2)}$ tf/m$^2$`, dcS, "Tensión de contacto");
 
@@ -542,9 +545,11 @@ function verificar(d, m) {
   m.h("Diseño a corte");
   const dEf = d.hc - d.rec;
   const nu = navier(Pu, Myu / Pu, Mxu / Pu, B, Ly);
-  m.row("Altura útil d = h<sub>c</sub> − r", `${fmt(d.hc, 1)} − ${fmt(d.rec, 1)} = ${fmt(dEf, 1)} cm`, "criterio del curso");
-  m.row("e<sub>xu</sub> ; e<sub>yu</sub> ; 6e<sub>xu</sub>/B + 6e<sub>yu</sub>/L", `${fmt(M(Myu / Pu), 3)} ; ${fmt(M(Mxu / Pu), 3)} m ; ${fmt(nu.kx + nu.ky, 3)}`);
-  m.row("σ<sub>1u</sub> ; σ<sub>2u</sub> ; σ<sub>3u</sub> ; σ<sub>4u</sub>", `${fmt(S(nu.s1), 2)} ; ${fmt(S(nu.s2), 2)} ; ${fmt(S(nu.s3), 2)} ; ${fmt(S(nu.s4), 2)} tf/m²`);
+  m.row("Altura útil: d", `${fmt(dEf, 1)} cm`, "criterio del curso");
+  m.eq(L`d = h_c - r = ${tn(d.hc, 1)} - ${tn(d.rec, 1)} = ${tn(dEf, 1)}\ \mathrm{cm}`);
+  m.row("Excentricidades mayoradas ; razón del núcleo central: e<sub>xu</sub> ; e<sub>yu</sub> ; D/C", `${fmt(M(Myu / Pu), 3)} ; ${fmt(M(Mxu / Pu), 3)} m ; ${fmt(nu.kx + nu.ky, 3)}`);
+  m.eq(L`e_{xu} = \frac{M_{yu}}{P_u} = ${tn(M(Myu / Pu), 3)}\ \mathrm{m} \qquad e_{yu} = \frac{M_{xu}}{P_u} = ${tn(M(Mxu / Pu), 3)}\ \mathrm{m} \qquad 6\,\frac{e_{xu}}{B} + 6\,\frac{e_{yu}}{L} = ${tn(nu.kx + nu.ky, 3)}`);
+  m.row("Tensiones mayoradas en las esquinas: σ<sub>1u</sub> ; σ<sub>2u</sub> ; σ<sub>3u</sub> ; σ<sub>4u</sub>", `${fmt(S(nu.s1), 2)} ; ${fmt(S(nu.s2), 2)} ; ${fmt(S(nu.s3), 2)} ; ${fmt(S(nu.s4), 2)} tf/m²`);
   m.eq(L`\sigma_{iu} = \frac{P_u}{A_c}\left(1 \pm \frac{6\,e_{xu}}{B} \pm \frac{6\,e_{yu}}{L}\right) \;\Rightarrow\; \sigma_{1u} = ${tn(S(nu.s1), 2)},\ \sigma_{2u} = ${tn(S(nu.s2), 2)},\ \sigma_{3u} = ${tn(S(nu.s3), 2)},\ \sigma_{4u} = ${tn(S(nu.s4), 2)}\ \mathrm{tf/m^2}`);
   const nucU = nu.kx + nu.ky;
   if (nucU > 1 + 1e-9) m.note("La resultante mayorada cae fuera del núcleo central: las presiones de Navier dejan de valer y subestiman el corte y la flexión. Aumente las dimensiones.", L`La resultante mayorada cae fuera del núcleo central: las presiones de Navier dejan de ser válidas y subestiman el corte y la flexión; se deben aumentar las dimensiones.`);
@@ -557,13 +562,15 @@ function verificar(d, m) {
   const Vux = (nu.s1 + sx) / 2 * Ax, Vuy = (nu.s1 + sy) / 2 * Ay;
   const Vcx = 0.53 * sq * Ly * dEf, Vcy = 0.53 * sq * B * dEf;
   const dcVx = Vux / (PHI_V * Vcx), dcVy = Vuy / (PHI_V * Vcy);
-  m.row("Dirección x (sección 1-1): a<sub>x</sub> = (B + a)/2 + d ; A<sub>x</sub> = (B − a<sub>x</sub>) L", `${fmt(M(ax), 3)} m ; ${fmt(Ax / 1e4, 3)} m²`);
-  m.row("σ<sub>x</sub> = a<sub>x</sub>/B (σ<sub>1u</sub> − σ<sub>2u</sub>) + σ<sub>2u</sub> ; V<sub>ux</sub> = (σ<sub>1u</sub> + σ<sub>x</sub>)/2 · A<sub>x</sub>", `${fmt(S(sx), 2)} tf/m² ; ${fmt(T(Vux), 2)} tf`);
-  m.row("V<sub>cx</sub> = 0.53 √f'<sub>c</sub> L d ; V<sub>ux</sub>/φV<sub>cx</sub>", `${fmt(T(Vcx), 2)} tf ${tagDC(dcVx)}`, "ACI 318-08 11-3");
+  m.row("Dirección x (sección 1-1), distancia a la sección crítica ; área tributaria: a<sub>x</sub> ; A<sub>x</sub>", `${fmt(M(ax), 3)} m ; ${fmt(Ax / 1e4, 3)} m²`);
+  m.row("Dirección x, presión en la sección ; corte último: σ<sub>x</sub> ; V<sub>ux</sub>", `${fmt(S(sx), 2)} tf/m² ; ${fmt(T(Vux), 2)} tf`);
+  m.row("Dirección x, resistencia al corte del hormigón: V<sub>cx</sub>", `${fmt(T(Vcx), 2)} tf ${tagDC(dcVx)}`, "ACI 318-08 11-3");
+  m.eq(L`a_x = \frac{B + a}{2} + d = ${tn(M(ax), 3)}\ \mathrm{m} \qquad A_x = (B - a_x)\,L = ${tn(Ax / 1e4, 3)}\ \mathrm{m^2} \qquad \sigma_x = \frac{a_x}{B}\,(\sigma_{1u} - \sigma_{2u}) + \sigma_{2u} = ${tn(S(sx), 2)}\ \mathrm{tf/m^2}`);
   m.eq(L`V_{ux} = \frac{\sigma_{1u} + \sigma_x}{2}\,A_x = \frac{${tn(S(nu.s1), 2)} + ${tn(S(sx), 2)}}{2}\cdot ${tn(Ax / 1e4, 3)} = ${tn(T(Vux), 2)}\ \mathrm{tf} \qquad V_{cx} = 0.53\sqrt{f'_c}\,L\,d = ${tn(T(Vcx), 2)}\ \mathrm{tf} \qquad \frac{V_{ux}}{\phi V_{cx}} = ${tn(dcVx, 3)} ${cmp(dcVx)} 1`, "ACI 318-08 11-3");
-  m.row("Dirección y (sección 2-2): a<sub>y</sub> = (L + b)/2 + d ; A<sub>y</sub> = (L − a<sub>y</sub>) B", `${fmt(M(ay), 3)} m ; ${fmt(Ay / 1e4, 3)} m²`);
-  m.row("σ<sub>y</sub> = a<sub>y</sub>/L (σ<sub>1u</sub> − σ<sub>3u</sub>) + σ<sub>3u</sub> ; V<sub>uy</sub> = (σ<sub>1u</sub> + σ<sub>y</sub>)/2 · A<sub>y</sub>", `${fmt(S(sy), 2)} tf/m² ; ${fmt(T(Vuy), 2)} tf`);
-  m.row("V<sub>cy</sub> = 0.53 √f'<sub>c</sub> B d ; V<sub>uy</sub>/φV<sub>cy</sub>", `${fmt(T(Vcy), 2)} tf ${tagDC(dcVy)}`, "ACI 318-08 11-3");
+  m.row("Dirección y (sección 2-2), distancia a la sección crítica ; área tributaria: a<sub>y</sub> ; A<sub>y</sub>", `${fmt(M(ay), 3)} m ; ${fmt(Ay / 1e4, 3)} m²`);
+  m.row("Dirección y, presión en la sección ; corte último: σ<sub>y</sub> ; V<sub>uy</sub>", `${fmt(S(sy), 2)} tf/m² ; ${fmt(T(Vuy), 2)} tf`);
+  m.row("Dirección y, resistencia al corte del hormigón: V<sub>cy</sub>", `${fmt(T(Vcy), 2)} tf ${tagDC(dcVy)}`, "ACI 318-08 11-3");
+  m.eq(L`a_y = \frac{L + b}{2} + d = ${tn(M(ay), 3)}\ \mathrm{m} \qquad A_y = (L - a_y)\,B = ${tn(Ay / 1e4, 3)}\ \mathrm{m^2} \qquad \sigma_y = \frac{a_y}{L}\,(\sigma_{1u} - \sigma_{3u}) + \sigma_{3u} = ${tn(S(sy), 2)}\ \mathrm{tf/m^2}`);
   m.eq(L`V_{uy} = \frac{\sigma_{1u} + \sigma_y}{2}\,A_y = \frac{${tn(S(nu.s1), 2)} + ${tn(S(sy), 2)}}{2}\cdot ${tn(Ay / 1e4, 3)} = ${tn(T(Vuy), 2)}\ \mathrm{tf} \qquad V_{cy} = 0.53\sqrt{f'_c}\,B\,d = ${tn(T(Vcy), 2)}\ \mathrm{tf} \qquad \frac{V_{uy}}{\phi V_{cy}} = ${tn(dcVy, 3)} ${cmp(dcVy)} 1`, "ACI 318-08 11-3");
   ck("Corte tipo viga en x", L`$V_{ux} = ${tn(T(Vux), 2)}$ tf`, L`$\phi V_{cx} = ${tn(T(PHI_V * Vcx), 2)}$ tf`, dcVx, "Corte tipo viga x", "ha");
   ck("Corte tipo viga en y", L`$V_{uy} = ${tn(T(Vuy), 2)}$ tf`, L`$\phi V_{cy} = ${tn(T(PHI_V * Vcy), 2)}$ tf`, dcVy, "Corte tipo viga y", "ha");
@@ -574,13 +581,14 @@ function verificar(d, m) {
   const Vc1 = 0.53 * (1 + 2 / beta) * sq * bo * dEf, Vc2 = 0.27 * (ALFA_S * dEf / bo + 2) * sq * bo * dEf, Vc3 = d.k3 * sq * bo * dEf;
   const Vcp = Math.min(Vc1, Vc2, Vc3), dcP = Vup / (PHI_V * Vcp);
   m.p(L`Con la resultante dentro del núcleo central se usa la presión media $q_u = P_u/A_c$ sobre el área fuera del perímetro crítico, como en el procedimiento del curso.`);
-  m.row("q<sub>u</sub> = P<sub>u</sub>/A<sub>c</sub> ; V<sub>u</sub> = q<sub>u</sub>(A<sub>c</sub> − (a + d)(b + d))", `${fmt(S(qu), 2)} tf/m² ; ${fmt(T(Vup), 2)} tf`);
+  m.row("Presión media ; corte último: q<sub>u</sub> ; V<sub>u</sub>", `${fmt(S(qu), 2)} tf/m² ; ${fmt(T(Vup), 2)} tf`);
   m.eq(L`q_u = \frac{P_u}{A_c} = ${tn(S(qu), 2)}\ \mathrm{tf/m^2} \qquad V_u = q_u\left(A_c - (a + d)(b + d)\right) = ${tn(T(Vup), 2)}\ \mathrm{tf}`);
-  m.row("b<sub>0</sub> = 2((a + d) + (b + d)) ; β = lado mayor/lado menor ; α<sub>s</sub>", `${fmt(bo, 1)} cm ; ${fmt(beta, 2)} ; ${ALFA_S}`, "ACI 318-08 11.11.2.1");
-  m.row("V<sub>c1</sub> = 0.53 (1 + 2/β) √f'<sub>c</sub> b<sub>0</sub> d", `${fmt(T(Vc1), 2)} tf`, "ACI 318-08 11-31");
-  m.row("V<sub>c2</sub> = 0.27 (α<sub>s</sub> d/b<sub>0</sub> + 2) √f'<sub>c</sub> b<sub>0</sub> d", `${fmt(T(Vc2), 2)} tf`, "ACI 318-08 11-32");
-  m.row(`V<sub>c3</sub> = ${d.k3 === 1 ? "" : fmt(d.k3, 2) + " "}√f'<sub>c</sub> b<sub>0</sub> d`, `${fmt(T(Vc3), 2)} tf`, d.k3 === 1 ? "pauta del curso" : "ACI 318-08 11-33");
-  m.row("V<sub>c</sub> = mín ; V<sub>u</sub>/φV<sub>c</sub>", `${fmt(T(Vcp), 2)} tf ${tagDC(dcP)}`);
+  m.row("Perímetro crítico ; relación de lados ; factor de posición: b<sub>0</sub> ; β ; α<sub>s</sub>", `${fmt(bo, 1)} cm ; ${fmt(beta, 2)} ; ${ALFA_S}`, "ACI 318-08 11.11.2.1");
+  m.eq(L`b_0 = 2\left((a + d) + (b + d)\right) = ${tn(bo, 1)}\ \mathrm{cm} \qquad \beta = \frac{\text{lado mayor}}{\text{lado menor}} = ${tn(beta, 2)} \qquad \alpha_s = ${ALFA_S}`, "ACI 318-08 11.11.2.1");
+  m.row("Resistencia según la relación de lados: V<sub>c1</sub>", `${fmt(T(Vc1), 2)} tf`, "ACI 318-08 11-31");
+  m.row("Resistencia según el perímetro crítico: V<sub>c2</sub>", `${fmt(T(Vc2), 2)} tf`, "ACI 318-08 11-32");
+  m.row("Resistencia límite: V<sub>c3</sub>", `${fmt(T(Vc3), 2)} tf`, d.k3 === 1 ? "pauta del curso" : "ACI 318-08 11-33");
+  m.row("Resistencia controlante: V<sub>c</sub>", `${fmt(T(Vcp), 2)} tf ${tagDC(dcP)}`);
   m.eq(L`V_c = \min\left(0.53\left(1 + \frac{2}{\beta}\right),\ 0.27\left(\frac{\alpha_s d}{b_0} + 2\right),\ ${d.k3 === 1 ? "1" : tn(d.k3, 2)}\right)\sqrt{f'_c}\,b_0\,d = \min(${tn(T(Vc1), 2)};\ ${tn(T(Vc2), 2)};\ ${tn(T(Vc3), 2)}) = ${tn(T(Vcp), 2)}\ \mathrm{tf} \qquad \frac{V_u}{\phi V_c} = ${tn(dcP, 3)} ${cmp(dcP)} 1`, "ACI 318-08 11.11.2.1");
   if (d.k3 === 1) m.note("La pauta del curso usa √f'c b₀ d en la tercera expresión; el ACI 318-08 (11-33) usa 1.06 √f'c b₀ d. Puede cambiarlo en los datos.", L`La pauta del curso usa $\sqrt{f'_c}\,b_0\,d$ en la tercera expresión; el ACI 318-08 (11-33) usa $1.06\sqrt{f'_c}\,b_0\,d$, por lo que el valor del curso es conservador.`);
   if (!(Vup > 0)) m.note("El perímetro crítico queda fuera de la zapata: no hay corte por punzonamiento que verificar.", L`El perímetro crítico queda fuera de la zapata, por lo que no hay corte por punzonamiento que verificar.`);
@@ -594,17 +602,18 @@ function verificar(d, m) {
   const dcPM = vuM / (PHI_V * Vcp / (bo * dEf));
   if (MxT + MyT > 0) {
     m.p(L`El procedimiento del curso no considera el momento que la columna transfiere a la zapata. Como complemento, se agrega la fracción $\gamma_v$ de ese momento (en el coronamiento de la zapata) transferida por corte excéntrico (ACI 318-08 11.11.7.2).`);
-    m.row("M<sub>x</sub> ; M<sub>y</sub> en el coronamiento = |M + H (h<sub>t</sub> + D<sub>f</sub> − h<sub>c</sub>)|", `${fmt(TM(MxT), 2)} ; ${fmt(TM(MyT), 2)} tf·m`);
-    m.row("v<sub>u</sub> = V<sub>u</sub>/(b<sub>0</sub>d) + γ<sub>v</sub> M<sub>y</sub> c/J<sub>c</sub> + γ<sub>v</sub> M<sub>x</sub> c/J<sub>c</sub> ≤ φ V<sub>c</sub>/(b<sub>0</sub>d)", `${fmt(S(vuM), 1)} ≤ ${fmt(S(PHI_V * Vcp / (bo * dEf)), 1)} tf/m² ${tagDC(dcPM)}`, "ACI 318-08 11.11.7.2");
-    m.eq(L`v_u = \frac{V_u}{b_0 d} + \frac{\gamma_{v}\,M_y\,c}{J_c} + \frac{\gamma_{v}\,M_x\,c}{J_c} = ${tn(S(vuM), 1)}\ \mathrm{tf/m^2} \qquad \gamma_v = 1 - \frac{1}{1 + \frac{2}{3}\sqrt{b_1/b_2}} \qquad \frac{v_u}{\phi v_c} = ${tn(dcPM, 3)} ${cmp(dcPM)} 1`, "ACI 318-08 11.11.7.2");
+    m.row("Momentos en el coronamiento de la zapata: M<sub>x</sub> ; M<sub>y</sub>", `${fmt(TM(MxT), 2)} ; ${fmt(TM(MyT), 2)} tf·m`);
+    m.eq(L`M_x = \left|M_{xu,c} + H_{yu}\,(h_t + D_f - h_c)\right| = ${tn(TM(MxT), 2)}\ \mathrm{tf\,m} \qquad M_y = \left|M_{yu,c} + H_{xu}\,(h_t + D_f - h_c)\right| = ${tn(TM(MyT), 2)}\ \mathrm{tf\,m}`);
+    m.row("Tensión de corte con transferencia de momento: v<sub>u</sub> ≤ φv<sub>c</sub>", `${fmt(S(vuM), 1)} ≤ ${fmt(S(PHI_V * Vcp / (bo * dEf)), 1)} tf/m² ${tagDC(dcPM)}`, "ACI 318-08 11.11.7.2");
+    m.eq(L`v_u = \frac{V_u}{b_0 d} + \frac{\gamma_{v}\,M_y\,c}{J_c} + \frac{\gamma_{v}\,M_x\,c}{J_c} = ${tn(S(vuM), 1)}\ \mathrm{tf/m^2} \qquad \gamma_v = 1 - \frac{1}{1 + \frac{2}{3}\sqrt{b_1/b_2}} \qquad \phi v_c = \frac{\phi V_c}{b_0 d} = ${tn(S(PHI_V * Vcp / (bo * dEf)), 1)}\ \mathrm{tf/m^2} \qquad \frac{v_u}{\phi v_c} = ${tn(dcPM, 3)} ${cmp(dcPM)} 1`, "ACI 318-08 11.11.7.2");
     ck("Punzonamiento con momento", L`$v_u = ${tn(S(vuM), 1)}$ tf/m$^2$`, L`$\phi v_c = ${tn(S(PHI_V * Vcp / (bo * dEf)), 1)}$ tf/m$^2$`, dcPM, "Punzonamiento con momento", "ha");
   }
   // Aplastamiento en la zapata bajo la columna (ACI 318-08 10.14.1, φ = 0.65, √(A2/A1) ≤ 2)
   m.sub("Aplastamiento bajo la columna");
   const A1 = d.a * d.b, rA = Math.min(2, Math.sqrt(Math.min(B / d.a, Ly / d.b) ** 2));
   const phiBn = 0.65 * 0.85 * d.fc * A1 * rA, dcAp = Pu / phiBn;
-  m.row("φB<sub>n</sub> = 0.65 · 0.85 f'<sub>c</sub> A<sub>1</sub> √(A<sub>2</sub>/A<sub>1</sub>), con √(A<sub>2</sub>/A<sub>1</sub>) ≤ 2", `${fmt(T(phiBn), 1)} tf ${tagDC(dcAp)}`, "ACI 318-08 10.14.1");
-  m.eq(L`\phi B_n = 0.65\cdot 0.85\,f'_c\,A_1\sqrt{A_2/A_1} = 0.65\cdot 0.85\cdot ${tn(d.fc, 0)}\cdot ${tn(A1, 0)}\cdot ${tn(rA, 2)} = ${tn(T(phiBn), 1)}\ \mathrm{tf} \qquad \frac{P_u}{\phi B_n} = ${tn(dcAp, 3)} ${cmp(dcAp)} 1`, "ACI 318-08 10.14.1");
+  m.row("Resistencia al aplastamiento: φB<sub>n</sub>", `${fmt(T(phiBn), 1)} tf ${tagDC(dcAp)}`, "ACI 318-08 10.14.1");
+  m.eq(L`\phi B_n = 0.65\cdot 0.85\,f'_c\,A_1\sqrt{A_2/A_1},\ \ \sqrt{A_2/A_1} \le 2 \;\Rightarrow\; \phi B_n = 0.65\cdot 0.85\cdot ${tn(d.fc, 0)}\cdot ${tn(A1, 0)}\cdot ${tn(rA, 2)} = ${tn(T(phiBn), 1)}\ \mathrm{tf} \qquad \frac{P_u}{\phi B_n} = ${tn(dcAp, 3)} ${cmp(dcAp)} 1`, "ACI 318-08 10.14.1");
   m.p(L`La resistencia al aplastamiento de la columna o del pedestal y la armadura mínima de traspaso ($0.005\,A_g$, ACI 318-08 15.8.2) dependen de la columna y no se verifican aquí.`);
   ck("Aplastamiento en la zapata", L`$P_u = ${tn(T(Pu), 1)}$ tf`, L`$\phi B_n = ${tn(T(phiBn), 1)}$ tf`, dcAp, "Aplastamiento", "ha");
 
@@ -617,15 +626,17 @@ function verificar(d, m) {
   const fx = flexion(Mux, dEf, d.dbx, d), fy = flexion(Muy, dEf, d.dby, d);
   const memoFlex = (f, eje, sec, sMom, l, cara) => {
     m.sub(`Dirección ${eje} (sección ${sec})`);
-    m.row(`σ<sub>s${eje}</sub> en la cara ; voladizo ${eje === "x" ? "B" : "L"} − a<sub>s${eje}</sub>`, `${fmt(S(sMom), 2)} tf/m² ; ${fmt(M(l), 3)} m`);
-    m.row(`M<sub>u${eje}</sub> = (σ<sub>s${eje}</sub> l²/2 + (σ<sub>1u</sub> − σ<sub>s${eje}</sub>) l²/3) · 1 m`, `${fmt(TM(f.Mu), 2)} tf·m/m`);
+    m.row(`Presión en la cara de la columna ; voladizo: σ<sub>s${eje}</sub> ; l`, `${fmt(S(sMom), 2)} tf/m² ; ${fmt(M(l), 3)} m`);
+    const [lado, cCol, sN] = eje === "x" ? ["B", "a", "2"] : ["L", "b", "3"], ladoV = eje === "x" ? B : Ly;
+    m.eq(L`a_{s${eje}} = \frac{${lado} + ${cCol}}{2} = ${tn(M(ladoV - l), 3)}\ \mathrm{m} \qquad \sigma_{s${eje}} = \frac{a_{s${eje}}}{${lado}}\,(\sigma_{1u} - \sigma_{${sN}u}) + \sigma_{${sN}u} = ${tn(S(sMom), 2)}\ \mathrm{tf/m^2} \qquad l = ${lado} - a_{s${eje}} = ${tn(M(l), 3)}\ \mathrm{m}`);
+    m.row(`Momento último: M<sub>u${eje}</sub>`, `${fmt(TM(f.Mu), 2)} tf·m/m`);
     m.eq(L`M_{u${eje}} = \left(\sigma_{s${eje}}\,\frac{l^2}{2} + (\sigma_{1u} - \sigma_{s${eje}})\,\frac{l^2}{3}\right)\cdot 1\ \mathrm{m} = \left(${tn(S(sMom), 2)}\cdot\frac{${tn(M(l), 3)}^2}{2} + ${tn(S(nu.s1 - sMom), 2)}\cdot\frac{${tn(M(l), 3)}^2}{3}\right) = ${tn(TM(f.Mu), 2)}\ \mathrm{tf\,m}`);
     if (f.insuf) { m.row("μ", `${fmt(f.mu, 4)} ${tag(false, "sección insuficiente")}`); return; }
-    m.row("μ = M<sub>u</sub>/(φ 0.85 f'<sub>c</sub> b d²) ; ε = 1 − √(1 − 2μ) ; ρ = 0.85 f'<sub>c</sub> ε/f<sub>y</sub>", `${fmt(f.mu, 4)} ; ${fmt(f.eps, 4)} ; ${fmt(f.rho, 5)}`);
+    m.row("Momento reducido ; profundidad relativa ; cuantía: μ ; ε ; ρ", `${fmt(f.mu, 4)} ; ${fmt(f.eps, 4)} ; ${fmt(f.rho, 5)}`);
     m.eq(L`\mu = \frac{M_u}{\phi\,0.85\,f'_c\,b\,d^2} = ${tn(f.mu, 4)} \qquad \varepsilon = 1 - \sqrt{1 - 2\mu} = ${tn(f.eps, 4)} \qquad \rho = 0.85\,f'_c\,\frac{\varepsilon}{f_y} = ${tn(f.rho, 5)} ${f.rho > RHO_MIN ? ">" : "<"} \rho_{m\acute{i}n} = 0.0018`);
-    m.row(`A<sub>s${eje}</sub> = máx(ρ ; ρ<sub>mín</sub>) · 100 · d (${f.gob}) → ${cara}`, `${fmt(f.As, 2)} cm²/m → <b>${barra(f.db, f.s)}</b>`, "criterio del curso");
-    m.eq(L`A_{s${eje}} = ${tn(Math.max(f.rho, RHO_MIN), 5)}\cdot 100\cdot ${tn(dEf, 1)} = ${tn(f.As, 2)}\ \mathrm{cm^2/m} \;\Rightarrow\; \phi${tn(f.db * 10, 0)}\ @\ ${tn(f.s, 0)}\ \mathrm{cm}\ (${tn(f.Asp, 2)}\ \mathrm{cm^2/m})`);
-    m.row("φM<sub>n</sub> con la armadura propuesta", `${fmt(TM(f.phiMn), 2)} tf·m/m ${tagDC(f.dc)}`, "ACI 318-08 10.2");
+    m.row(`Armadura requerida (${f.gob}), ${cara}: A<sub>s${eje}</sub>`, `${fmt(f.As, 2)} cm²/m → <b>${barra(f.db, f.s)}</b>`, "criterio del curso");
+    m.eq(L`A_{s${eje}} = \max(\rho;\ \rho_{m\acute{i}n})\cdot 100\cdot d = ${tn(Math.max(f.rho, RHO_MIN), 5)}\cdot 100\cdot ${tn(dEf, 1)} = ${tn(f.As, 2)}\ \mathrm{cm^2/m} \;\Rightarrow\; \phi${tn(f.db * 10, 0)}\ @\ ${tn(f.s, 0)}\ \mathrm{cm}\ (${tn(f.Asp, 2)}\ \mathrm{cm^2/m})`);
+    m.row("Resistencia de diseño con la armadura propuesta: φM<sub>n</sub>", `${fmt(TM(f.phiMn), 2)} tf·m/m ${tagDC(f.dc)}`, "ACI 318-08 10.2");
   };
   memoFlex(fx, "x", "S1-S1", ssx, lx, "barras paralelas a B");
   memoFlex(fy, "y", "S2-S2", ssy, ly, "barras paralelas a L");
@@ -640,15 +651,16 @@ function verificar(d, m) {
   // Anclaje de la parrilla desde la cara de la columna: barras con pata de 90° (gancho), l_dh ≤ voladizo − r
   const anclaje = (db, l, eje) => {
     const ldhB = Math.max(0.075 * d.fy * db / Math.sqrt(d.fc), 8 * db, 15), disp = l - d.rec, dc = ldhB / disp;
-    m.row(`Anclaje de A<sub>s${eje}</sub> con gancho desde la cara: l<sub>dh</sub> ≤ voladizo − r`, `${fmt(ldhB, 1)} ≤ ${fmt(disp, 1)} cm ${tagDC(dc)}`, "ACI 318-08 15.6.3 y 12.5.2");
+    m.row(`Anclaje de A<sub>s${eje}</sub> con gancho desde la cara: l<sub>dh</sub> ≤ l<sub>disp</sub>`, `${fmt(ldhB, 1)} ≤ ${fmt(disp, 1)} cm ${tagDC(dc)}`, "ACI 318-08 15.6.3 y 12.5.2");
+    m.eq(L`l_{dh} = \max\left(\frac{0.075\,f_y\,d_b}{\sqrt{f'_c}};\ 8\,d_b;\ 15\ \mathrm{cm}\right) = ${tn(ldhB, 1)}\ \mathrm{cm} \qquad l_{disp} = l - r = ${tn(l, 1)} - ${tn(d.rec, 1)} = ${tn(disp, 1)}\ \mathrm{cm}`, "ACI 318-08 12.5.2");
     ck(`Anclaje de la armadura en ${eje}`, L`$l_{dh} = ${tn(ldhB, 1)}$ cm`, L`${tn(disp, 1)} cm`, dc, `Anclaje ${eje}`, "ha");
   };
   anclaje(d.dbx, lx, "x"); anclaje(d.dby, ly, "y");
   const bLargo = Math.max(B, Ly) / Math.min(B, Ly);
   if (bLargo > 1 + 1e-6) {
     const fr = 2 / (bLargo + 1), corta = B <= Ly ? "x (paralelas a B)" : "y (paralelas a L)";
-    m.row(`Zapata rectangular: fracción de la armadura corta, barras ${corta}, en una banda central de ancho ${fmt(M(Math.min(B, Ly)), 2)} m = 2/(β + 1)`, `${fmt(fr * 100, 0)} %`, "ACI 318-08 15.4.4.2");
-    m.p(L`En la dirección corta, una fracción $2/(\beta + 1) = ${tn(fr * 100, 0)}\,\%$ de la armadura ($\beta = ${tn(bLargo, 3)}$) se concentra en una banda central de ancho igual al lado corto y el resto se reparte en los extremos (ACI 318-08 15.4.4.2). El espaciamiento propuesto es el uniforme.`, true);
+    m.row(`Zapata rectangular: fracción de la armadura corta, barras ${corta}, en una banda central de ancho ${fmt(M(Math.min(B, Ly)), 2)} m`, `${fmt(fr * 100, 0)} %`, "ACI 318-08 15.4.4.2");
+    m.p(L`En la dirección corta, una fracción $2/(\beta + 1) = ${tn(fr * 100, 0)}\,\%$ de la armadura ($\beta = ${tn(bLargo, 3)}$) se concentra en una banda central de ancho igual al lado corto y el resto se reparte en los extremos (ACI 318-08 15.4.4.2). El espaciamiento propuesto es el uniforme.`);
   }
 
   const dcMax = Math.max(...checks.map(c => c.dc));
@@ -675,7 +687,7 @@ function sismico(d, m, r, sis) {
   const Wc = d.gh * B * Ly * d.hc, Ws = d.gs * B * Ly * (d.Df - d.hc), W = Wc + Ws;
   m.sub("Pesos propios");
   m.p(L`Con sismo no se desprecian los pesos de la zapata ni del suelo sobre ella, porque estabilizan frente al volcamiento. El peso del pedestal se asimila al del suelo que reemplaza. Se suman a la carga muerta en todas las combinaciones.`);
-  m.row("W<sub>c</sub> = γ<sub>h</sub> B L h<sub>c</sub> ; W<sub>s</sub> = γ<sub>s</sub> B L (D<sub>f</sub> − h<sub>c</sub>)", `${fmt(T(Wc), 2)} ; ${fmt(T(Ws), 2)} tf`);
+  m.row("Peso de la zapata ; peso del suelo sobre ella: W<sub>c</sub> ; W<sub>s</sub>", `${fmt(T(Wc), 2)} ; ${fmt(T(Ws), 2)} tf`);
   m.eq(L`W_c = \gamma_h\,B\,L\,h_c = ${tn(T(Wc), 2)}\ \mathrm{tf} \qquad W_s = \gamma_s\,B\,L\,(D_f - h_c) = ${tn(T(Ws), 2)}\ \mathrm{tf}`);
   if (W <= 0) m.note("Con γ<sub>h</sub> = γ<sub>s</sub> = 0 la zapata no tiene peso estabilizante: ingrese los pesos específicos para el análisis sísmico.", L`Con $\gamma_h = \gamma_s = 0$ la zapata no tiene peso estabilizante; el análisis sísmico requiere los pesos específicos.`);
 
@@ -769,9 +781,10 @@ ${filasU.map(f => `$${f.nTex}$ & ${celdaU(f).map(v => v.replace(/ /g, "\\,").re
     const vcV = PHI_V * 0.53 * sq * dEf;                       // por cm de ancho
     const dcVx = VX / vcV, dcVy = VY / vcV, dcPu = vuP / (PHI_V * vc);
     const dcMx = MpX / r.fx.phiMn, dcMy = MpY / r.fy.phiMn;
-    m.row("Corte tipo viga x: V<sub>u</sub> en la franja más exigida / φ 0.53 √f'<sub>c</sub> d", `${fmt(T(VX * BW), 2)} tf/m ${tagDC(dcVx)}`, "ACI 318-08 11-3");
-    m.row("Corte tipo viga y", `${fmt(T(VY * BW), 2)} tf/m ${tagDC(dcVy)}`, "ACI 318-08 11-3");
-    m.row("Punzonamiento con momento: v<sub>u</sub> = V<sub>u</sub>/(b<sub>0</sub>d) + γ<sub>v</sub>M c/J<sub>c</sub> (x e y) ≤ φv<sub>c</sub>", `${fmt(S(vuP), 1)} ≤ ${fmt(S(PHI_V * vc), 1)} tf/m² ${tagDC(dcPu)}`, "ACI 318-08 11.11.7.2");
+    m.row("Corte tipo viga x en la franja más exigida: V<sub>u</sub>", `${fmt(T(VX * BW), 2)} tf/m ${tagDC(dcVx)}`, "ACI 318-08 11-3");
+    m.row("Corte tipo viga y en la franja más exigida: V<sub>u</sub>", `${fmt(T(VY * BW), 2)} tf/m ${tagDC(dcVy)}`, "ACI 318-08 11-3");
+    m.eq(L`\phi V_c = \phi\,0.53\sqrt{f'_c}\,b\,d = ${tn(T(vcV * BW), 2)}\ \mathrm{tf/m} \qquad \frac{V_{ux}}{\phi V_c} = ${tn(dcVx, 3)} \qquad \frac{V_{uy}}{\phi V_c} = ${tn(dcVy, 3)}`, "ACI 318-08 11-3");
+    m.row("Punzonamiento con transferencia de momento: v<sub>u</sub> ≤ φv<sub>c</sub>", `${fmt(S(vuP), 1)} ≤ ${fmt(S(PHI_V * vc), 1)} tf/m² ${tagDC(dcPu)}`, "ACI 318-08 11.11.7.2");
     m.eq(L`v_u = \frac{V_u}{b_0\,d} + \frac{\gamma_{vx}\,M_{y}\,c_x}{J_{cx}} + \frac{\gamma_{vy}\,M_{x}\,c_y}{J_{cy}} = ${tn(S(vuP), 1)}\ \mathrm{tf/m^2} \qquad \gamma_v = 1 - \frac{1}{1 + \frac{2}{3}\sqrt{b_1/b_2}} \qquad \frac{v_u}{\phi v_c} = ${tn(dcPu, 3)} ${cmp(dcPu)} 1`, "ACI 318-08 11.11.7.2");
     m.row(`Flexión inferior x con la armadura estática ${barra(d.dbx, r.fx.s)}`, `M<sub>u</sub> = ${fmt(TM(MpX), 2)} tf·m/m ${tagDC(dcMx)}`);
     m.row(`Flexión inferior y con la armadura estática ${barra(d.dby, r.fy.s)}`, `M<sub>u</sub> = ${fmt(TM(MpY), 2)} tf·m/m ${tagDC(dcMy)}`);

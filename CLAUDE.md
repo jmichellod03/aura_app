@@ -77,7 +77,7 @@ Todo el texto de la interfaz, las memorias y los commits va en **español (Chile
 - Cada verificación muestra la razón demanda/capacidad (D/C) y la referencia a la ecuación o cláusula de la norma (por ejemplo `"E3-2"` o `"Tabla D3.1"`).
 - Clase `Memo` (definida en cada página):
   - `h()`: sección; `sub()`: subsección.
-  - `row(k, v, ref)`: fila de resultados.
+  - `row(k, v, ref)`: fila de resultados. La etiqueta lleva una descripción y el símbolo (`"Tensión admisible neta: σ<sub>na</sub>"`), sin fórmula, y el valor solo el resultado (se admite una condición como `σ ≤ σ<sub>adm</sub>`). La fórmula y el reemplazo van en `eq` y se ven en el desplegable.
   - `eq(tex, ref)`: ecuación con valores reemplazados.
   - `p(tex, soloTex)`: párrafo.
   - `note()`: advertencia.

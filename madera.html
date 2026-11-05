@@ -1338,13 +1338,13 @@ function calcularMuro(d, m) {
   const q = d.qPP + d.qSCp + d.qSCt;
   const Pg = q * d.B, Ppp = d.qPP * d.B;
   const Pc = C + Pg, Tt = Math.max(0, T - Ppp);
-  m.row("Viento en fachada por piso: V<sub>1</sub> = q<sub>f</sub>·a·h" + (d.pisos === 2 ? " ; V<sub>2</sub>" : ""), `${fmt(V1, 1)}${d.pisos === 2 ? ` ; ${fmt(V2, 1)}` : ""} kgf`);
-  m.row("Presión neta perpendicular al techo ; componente horizontal: q<sub>t</sub> ; q<sub>t</sub>·cos α", `${fmt(qtn, 2)} ; ${fmt(qth, 2)} kgf/m²`);
+  m.row("Viento en fachada por piso: V<sub>1</sub>" + (d.pisos === 2 ? " ; V<sub>2</sub>" : ""), `${fmt(V1, 1)}${d.pisos === 2 ? ` ; ${fmt(V2, 1)}` : ""} kgf`);
+  m.row("Presión neta perpendicular al techo ; componente horizontal: q<sub>t</sub> ; q<sub>t,h</sub>", `${fmt(qtn, 2)} ; ${fmt(qth, 2)} kgf/m²`);
   m.row("Viento de techo (horizontal): V<sub>t</sub>", `${fmt(Vt, 1)} kgf`);
   m.row("Corte total en la base del muro: V", `${fmt(V, 1)} kgf`);
   m.row("Momento volcante en la base: M", `${fmt(M, 1)} kgf·m`);
-  m.row("<b>Par en los pies de borde: C = T = M/b</b>", `<b>${fmt(C, 1)} kgf</b>`);
-  m.row("Carga gravitacional en el pie de borde: (q<sub>PP</sub> + q<sub>SC</sub>)·B ; q<sub>PP</sub>·B", `${fmt(Pg, 2)} ; ${fmt(Ppp, 2)} kgf`);
+  m.row("<b>Par en los pies de borde: C = T</b>", `<b>${fmt(C, 1)} kgf</b>`);
+  m.row("Carga gravitacional en el pie de borde, total ; solo peso propio", `${fmt(Pg, 2)} ; ${fmt(Ppp, 2)} kgf`);
   m.p(L`El muro de corte se modela como un voladizo empotrado en su base (12.3.3 y 12.3.4). Recibe el viento de ${d.pisos === 2 ? "la fachada de los dos pisos" : "la fachada"} y del techo sobre el ancho aportante $a = ${tn(d.anch, 3)}$ m; cada fuerza se aplica en el centro de su superficie: a media altura de cada piso y, en el techo, en la mitad del largo del faldón.`);
   m.p(L`\textbf{Viento en fachada.} Las presiones de viento corresponden a NCh 432 Of.1971. Con la presión horizontal total (presión más succión) $q_f = ${tn(d.qf, 1)}$ kgf/m$^2$ y la altura de piso $h = ${tn(d.hm, 2)}$ m:`);
   m.eq(L`V_1 = q_f\,a\,h = ${tn(d.qf, 1)}\cdot ${tn(d.anch, 3)}\cdot ${tn(d.hm, 2)} = ${tn(V1, 2)}\ \mathrm{kgf}${d.pisos === 2 ? L` \qquad V_2 = V_1 = ${tn(V2, 2)}\ \mathrm{kgf}` : ""}`);
@@ -1395,7 +1395,7 @@ function calcularMuro(d, m) {
   if (lam >= 10) { Ac = ((FcE / Fcpd) * (1 + lam / 200) + 1) / (2 * cc); Bc = FcE / (cc * Fcpd); Kl = Ac - Math.sqrt(Ac ** 2 - Bc); }
   const Fcl = Fcpd * Kl;
   r.comp = fcp / Fcl; r.lam = lam;
-  m.row("Área del pie de borde (n piezas): A = n·b<sub>pd</sub>·h<sub>pd</sub>", `${d.n} · ${fmt(A1, 2)} = ${fmt(An, 2)} cm²`);
+  m.row(`Área del pie de borde (${d.n} piezas): A`, `${fmt(An, 2)} cm²`);
   m.row("Esbelteces ; controlante: λ<sub>x</sub> ; λ<sub>y</sub> ; λ ≤ 170", `${fmt(lx, 2)} ; ${fmt(ly, 2)} ; ${fmt(lam, 2)} ${okTxt(lam <= 170)}`);
   m.row("Tensión crítica de pandeo ; factor de pandeo: F<sub>cE</sub> ; K<sub>λ</sub>", `${fmt(FcE, 2)} kgf/cm² ; ${fmt(Kl, 4)}`, "8.3");
   m.row("<b>Compresión paralela: f<sub>cp</sub> / F<sub>cp,λ,dis</sub></b>", `<b>${fmt(fcp, 2)} / ${fmt(Fcl, 2)} = ${fmt(r.comp, 3)}</b> ${okTxt(r.comp <= 1)}`);
@@ -1438,7 +1438,7 @@ function calcularMuro(d, m) {
   const vc = Math.abs(V) / d.bm;                            // kgf/m
   const vcN = vc / 100;                                     // N/mm (para el desplazamiento, 12.5)
   r.corte = KFRA ? vc / Vcd : Infinity;
-  m.row("Solicitación de corte unitario: v<sub>c</sub> = V/b", `${fmt(vc, 1)} kgf/m`);
+  m.row("Solicitación de corte unitario: v<sub>c</sub>", `${fmt(vc, 1)} kgf/m`);
   m.row(`Capacidad admisible (${tab.txt.split(" (")[0]}, S<sub>ct</sub> = ${d.Sct} mm): V<sub>c</sub>`, `${fmt(VcN, 1)} N/mm = ${fmt(Vc, 1)} kgf/m`, "12.4.7");
   m.row("Relación de aspecto ; factores: h/b ; K<sub>FRA</sub> ; K<sub>n</sub>", `${fmt(hb, 3)} ; ${fmt(KFRA, 3)} ; ${fmt(Kn, 0)}`, "12.4.9 / 12.4.10");
   m.row("<b>Corte en el plano: v<sub>c</sub> / V<sub>c,dis</sub></b>", `<b>${fmt(vc, 1)} / ${fmt(Vcd, 1)} kgf/m = ${Number.isFinite(r.corte) ? fmt(r.corte, 3) : "∞"}</b> ${okTxt(r.corte <= 1)}`, "12.4.8");
@@ -1461,7 +1461,7 @@ function calcularMuro(d, m) {
   const limD = d.desp ? hmm / d.desp : null;
   if (limD) r.desp = dmc / limD;
   Object.assign(r, { dmc, limD });
-  m.row("Rigidez aparente de diseño: G<sub>a,dis</sub> = G<sub>a</sub>·K<sub>n</sub>·K<sub>HG</sub>", `${fmt(GaN, 0)} · ${fmt(Kn, 0)} · ${fmt(KHG, 2)} = ${fmt(Gad, 0)} N/mm`, "12.5.1");
+  m.row("Rigidez aparente de diseño: G<sub>a,dis</sub>", `${fmt(Gad, 0)} N/mm`, "12.5.1");
   m.row("Flexión ; corte ; anclaje", `${fmt(d1, 2)} ; ${fmt(d2, 2)} ; ${fmt(d3, 2)} mm`);
   m.row(limD ? `<b>Desplazamiento lateral: δ<sub>mc</sub> ≤ h/${d.desp}</b>` : "<b>Desplazamiento lateral: δ<sub>mc</sub></b>", limD ? `<b>${fmt(dmc, 2)} ≤ ${fmt(limD, 2)} mm</b> ${okTxt(dmc <= limD)}` : `<b>${fmt(dmc, 2)} mm</b>`, "12.5");
   m.p(L`El desplazamiento lateral considera la flexión del muro, la deformación por corte del tablero y los clavos, y el alargamiento del anclaje antilevantamiento (12.5). $E_{dis}$ es el módulo de diseño de los pies de borde en MPa, $A$ el área de los pies derechos de borde de un extremo del muro ($n$ piezas) y $\Delta_a = ${tn(d.Da, 1)}$ mm el alargamiento vertical total del anclaje:`);

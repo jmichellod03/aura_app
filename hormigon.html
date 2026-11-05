@@ -1155,7 +1155,7 @@ function disenoFaja(t, Mu, db, d, g, dosDir, m) {
   const dc = resuelve && phiMn > 0 ? MuC / phiMn : Infinity;   // sin solución con armadura simple no hay capacidad
   m.row("Momento último ; altura útil: M<sub>u</sub> ; d", `${fmt(Mu, 1)} kgf·m/m ; ${fmt(d, 2)} cm`);
   m.row("Momento reducido ; profundidad relativa ; cuantía: μ ; α ; ρ", `${fmt(mu, 4)} ; ${fmt(alpha, 4)} ; ${fmt(rho, 5)}`);
-  m.row("Armadura requerida: A<sub>s</sub>", `máx(${fmt(AsCalc, 3)} ; ${fmt(AsMin, 3)}) = ${fmt(As, 3)} cm²/m`, "7.12.2.1");
+  m.row("Armadura requerida: A<sub>s</sub>", `${fmt(As, 3)} cm²/m`, "7.12.2.1");
   m.row(`Espaciamiento calculado φ${db} ; espaciamiento máximo: s ; s<sub>máx</sub>`, `${fmt(sCalc, 2)} ; ${fmt(sMax, 1)} cm`, dosDir ? "13.3.2" : "7.6.5");
   m.row(`<b>Armadura adoptada</b>`, `<b>φ${db} @ ${s} cm</b> (${fmt(AsP, 2)} cm²/m)`);
   m.row("Deformación del acero ; resistencia de diseño ; razón D/C: ε<sub>t</sub> ; φM<sub>n</sub> ; D/C", `${fmt(et, 4)} ; ${fmt(phiMn / 100, 1)} kgf·m/m ; <b>${fmt(dc, 3)}</b> ${okTxt(dc <= 1 && okEt)}`);
