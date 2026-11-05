@@ -102,6 +102,8 @@
   table.alt td { padding: 4px 7px; border-bottom: 1px solid #eef0f3; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
   table.alt td.malo { color: var(--bad); font-weight: 600; }
   table.alt td.aviso { color: var(--warn); font-weight: 600; }
+  .dibujo { display: flex; justify-content: center; padding: 6px 16px 4px; }
+  .dibujo svg { width: 760px; }
   .toolbar { display: flex; justify-content: flex-end; padding: 10px 16px 0; gap: 8px; flex-wrap: wrap; }
   .btn { padding: 7px 14px; border-radius: 5px; border: 1px solid var(--head); background: var(--head); color: #fff; font: inherit; font-size: 13px; cursor: pointer; }
   .btn.sec { background: #fff; color: var(--head); }
@@ -149,6 +151,7 @@
         <input type="hidden" id="nombrePier">
         <input type="hidden" id="nombreGeom">
         <textarea id="piersVariables" hidden aria-hidden="true"></textarea>
+        <textarea id="pisosPier" hidden aria-hidden="true"></textarea>
       </fieldset>
 
       <fieldset>
@@ -182,6 +185,7 @@
       <h2 id="resTitle">Resultados</h2>
       <div class="summary" id="summary"></div>
       <div id="verdict"></div>
+      <div class="dibujo" id="dibujo"></div>
       <div class="toolbar">
         <button class="btn sec" type="button" onclick="window.print()">Imprimir</button>
         <button class="btn" type="button" onclick="descargarZipMemoria(ultimoTex, ultimoNombre, document.body)">Descargar memoria (.zip)</button>
@@ -194,6 +198,7 @@
 
 <script src="memo.js?v=38"></script>
 <script src="tablero.js?v=3"></script>
+<script src="modelo3d.js?v=6"></script>
 <script>
 "use strict";
 // ---------------------------------------------------------------------------
@@ -350,10 +355,10 @@ function extraerFuerzas(filas) {
 function extraerSecciones(filas) {
   const t = tablaEtabs(filas, [["story"], ["pier"], ANCHO, ESPESOR]);
   if (!t) return null;
-  const cP = t.pick("pier"), cA = t.pick(...ANCHO), cE = t.pick(...ESPESOR), cAt = t.pick("widthtop"), cEt = t.pick("thicknesstop", "thicktop"), cZb = t.pick("cgbottomz", "cgbotz"), cZt = t.pick("cgtopz");
+  const cS = t.pick("story"), cP = t.pick("pier"), cA = t.pick(...ANCHO), cE = t.pick(...ESPESOR), cAt = t.pick("widthtop"), cEt = t.pick("thicknesstop", "thicktop"), cZb = t.pick("cgbottomz", "cgbotz"), cZt = t.pick("cgtopz");
   const fac = (c) => FACTOR_LARGO[t.unidad(c)];
   if (!fac(cA) || !fac(cE)) throw new Error(`no se reconoce la unidad de la sección ("${t.unidad(cA) || "sin unidad"}"); exporte la tabla en m, cm, mm, in o ft`);
-  const piers = {}, variables = new Set();
+  const piers = {}, variables = new Set(), pisos = {};
   let zMin = Infinity, zMax = -Infinity;
   for (const f of t.datos) {
     const Lw = parseFloat(f[cA]) * fac(cA), e = parseFloat(f[cE]) * fac(cE);
@@ -367,10 +372,11 @@ function extraerSecciones(filas) {
       const zb = parseFloat(f[cZb]) * fac(cZb), zt = parseFloat(f[cZt]) * fac(cZt);
       if (zb < zMin) zMin = zb;
       if (zt > zMax) zMax = zt;
+      if (f[cS] && !pisos[f[cS]] && zt > zb) pisos[f[cS]] = [+zb.toFixed(4), +zt.toFixed(4)];
     }
   }
   if (!Object.keys(piers).length) throw new Error("la tabla Pier Section Properties no tiene filas con datos");
-  return { piers, variables: [...variables], Hw: zMax > zMin ? +(zMax - zMin).toFixed(4) : null };
+  return { piers, variables: [...variables], pisos, Hw: zMax > zMin ? +(zMax - zMin).toFixed(4) : null };
 }
 // Revisa todas las hojas: un mismo archivo puede traer una o las dos tablas
 async function leerTablasEtabs(buf) {
@@ -472,6 +478,7 @@ async function importar(ev) {
       if (secciones) {
         $("geomPier").value = JSON.stringify({ ...geometria(), ...secciones.piers });
         $("piersVariables").value = JSON.stringify(secciones.variables);
+        $("pisosPier").value = JSON.stringify(secciones.pisos);
         $("nombreGeom").value = archivo.name;
         if (secciones.Hw) $("Hw").value = secciones.Hw;
       }
@@ -507,10 +514,86 @@ function analizar(c) {
   return { res, faltan, n: filas.length };
 }
 
-function memoPier(m, r, c) {
+// ---------------------------------------------------------------------------
+// Dibujo del pier crítico: elevación con los pisos y corte con las barras horizontales.
+// La planilla no calcula armadura vertical ni define recubrimiento: la posición de las barras es referencial.
+// ---------------------------------------------------------------------------
+const REC_DIBUJO = 0.025;                      // m, solo para dibujar
+const SIN_VERTICAL = "Armadura vertical no calculada; recubrimiento referencial.";
+// Con barras muy juntas para la escala, se dibuja una de cada N
+const pasoBarras = (sM, k, min) => Math.max(1, Math.ceil(min / (sM * k)));
+function svgPier(r, c) {
+  const { p, Lw, e, crit: f, gob } = r, s = gob.s, sM = s / 100, pisos = json("pisosPier", {});
+  const k = Math.min(380 / Lw, 320 / c.Hw), w = Lw * k, h = c.Hw * k, X0 = 112, Y0 = 44;
+  const tin = "#3d4450", arm = "#c62828", cota = "#8a93a0", nar = "#bf4b00";
+  const t = (x, y, txt, a = "start", fs = 10.5, col = tin) => `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" font-size="${fs}" fill="${col}" text-anchor="${a}">${txt}</text>`;
+  const Y = (z) => Y0 + h - z * k;
+  const z0 = Math.min(...Object.values(pisos).map(v => v[0]), 0);
+  const paso = s > 0 ? pasoBarras(sM, k, 3) : 1;
+  let barras = "";
+  if (s > 0) for (let i = 0, z = sM / 2; z < c.Hw; z += sM, i++) if (i % paso === 0) barras += `<line x1="${X0 + REC_DIBUJO * k}" y1="${Y(z).toFixed(1)}" x2="${X0 + w - REC_DIBUJO * k}" y2="${Y(z).toFixed(1)}" stroke="${arm}" stroke-width="0.8"/>`;
+  const dPiso = pisos[f.piso];
+  let niveles = "", vu = "";
+  for (const [n, [zb, zt]] of Object.entries(pisos)) {
+    const es = n === f.piso;
+    niveles += `<line x1="${X0 - 6}" y1="${Y(zt - z0).toFixed(1)}" x2="${X0 + w + 6}" y2="${Y(zt - z0).toFixed(1)}" stroke="${cota}" stroke-dasharray="4 3"/>`;
+    niveles += t(X0 + w + 10, Y((zb + zt) / 2 - z0) + 4, escH(n), "start", 10, es ? nar : tin);
+    if (es) niveles = `<rect x="${X0}" y="${Y(zt - z0).toFixed(1)}" width="${w.toFixed(1)}" height="${((zt - zb) * k).toFixed(1)}" fill="${nar}" fill-opacity="0.14"/>` + niveles;
+  }
+  if (dPiso) {
+    const zV = (/top/i.test(f.ubic) ? dPiso[1] : /bot/i.test(f.ubic) ? dPiso[0] : (dPiso[0] + dPiso[1]) / 2) - z0, yV = Y(zV);
+    vu = `<line x1="${X0 - 50}" y1="${yV.toFixed(1)}" x2="${X0 - 2}" y2="${yV.toFixed(1)}" stroke="${nar}" stroke-width="1.8"/><path d="M${X0 - 2},${yV.toFixed(1)} l-8,-4 v8 z" fill="${nar}"/>${t(X0 - 8, yV - 8, `V<tspan font-size="8" dy="2">u</tspan><tspan dy="-2"> = ${fmt(f.Vu / 1000, 1)} tf</tspan>`, "end", 10, nar)}`;
+  }
+  const elev = `<rect x="${X0}" y="${Y0}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" fill="#e3e8ee" stroke="${tin}" stroke-width="1.6"/>${niveles}${barras}${vu}
+    <line x1="${X0}" y1="${Y0 + h + 16}" x2="${X0 + w}" y2="${Y0 + h + 16}" stroke="${cota}"/>${t(X0 + w / 2, Y0 + h + 30, `L<tspan font-size="8" dy="2">w</tspan><tspan dy="-2"> = ${fmt(Lw, 2)} m</tspan>`, "middle", 10)}
+    <line x1="24" y1="${Y0}" x2="24" y2="${Y0 + h}" stroke="${cota}"/>${t(30, Y0 + 14, `H<tspan font-size="8" dy="2">w</tspan><tspan dy="-2"> = ${fmt(c.Hw, 2)} m</tspan>`, "start", 10)}
+    ${t(X0 + w / 2, 26, `ELEVACIÓN · PIER ${escH(p)}`, "middle", 11)}`;
+  // Corte vertical por el espesor: las barras horizontales se ven como puntos en cada cara
+  const Dx = X0 + w + 92, sD = s > 0 ? sM : 0.2, kd = Math.min(90 / e, 80 / sD), ew = e * kd, alto = 3 * sD * kd, Dy = Y0 + 26;
+  const rD = Math.max(3, c.db / 2000 * kd), xFace = REC_DIBUJO * kd;
+  let puntos = "";
+  if (s > 0) for (let i = 0; i < 3; i++) { const y = Dy + (i + 0.5) * sD * kd; puntos += `<circle cx="${(Dx + xFace).toFixed(1)}" cy="${y.toFixed(1)}" r="${rD.toFixed(1)}" fill="${arm}"/><circle cx="${(Dx + ew - xFace).toFixed(1)}" cy="${y.toFixed(1)}" r="${rD.toFixed(1)}" fill="${arm}"/>`; }
+  const yIni = Dy + 0.5 * sD * kd, yFin = yIni + sD * kd;
+  const corte = `<rect x="${Dx}" y="${Dy}" width="${ew.toFixed(1)}" height="${alto.toFixed(1)}" fill="#e3e8ee" stroke="${tin}" stroke-width="1.4"/>${puntos}
+    ${t(Dx + ew / 2, 26, "CORTE VERTICAL", "middle", 11)}${t(Dx + ew / 2, Y0 + 12, "(detalle)", "middle", 9.5)}
+    <line x1="${Dx}" y1="${Dy + alto + 14}" x2="${Dx + ew}" y2="${Dy + alto + 14}" stroke="${cota}"/>${t(Dx + ew / 2, Dy + alto + 28, `e = ${fmt(e * 100, 0)} cm`, "middle", 10)}
+    ${s > 0 ? `<line x1="${Dx + ew + 12}" y1="${yIni.toFixed(1)}" x2="${Dx + ew + 12}" y2="${yFin.toFixed(1)}" stroke="${cota}"/>${t(Dx + ew + 18, (yIni + yFin) / 2 + 4, `s = ${s} cm`, "start", 10)}` : ""}
+    ${t(Dx + ew + 18, Dy + alto - 22, `A<tspan font-size="8" dy="2">s</tspan><tspan dy="-2"> = ${fmt(gob.As, 2)} cm²/m</tspan>`, "start", 10)}
+    ${t(Dx + ew + 18, Dy + alto - 8, `<tspan font-weight="600">${barra(c.db, s)} por cara</tspan>`, "start", 10, arm)}`;
+  const nota = t(X0, Y0 + h + 48, `${SIN_VERTICAL}${paso > 1 ? ` Se dibuja 1 de cada ${paso} barras.` : ""}`, "start", 10);
+  const W = Dx + ew + 170, H = Math.max(Y0 + h + 58, Dy + alto + 40);
+  return `<svg role="img" aria-label="Elevación y corte del pier ${escH(p)} con su armadura horizontal" viewBox="0 0 ${W.toFixed(0)} ${H.toFixed(0)}" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, system-ui, sans-serif">${elev}${corte}${nota}</svg>`;
+}
+function tikzPier(r, c) {
+  const { p, Lw, e, gob } = r, s = gob.s, sM = s / 100, k = Math.min(8 / Lw, 9 / c.Hw), f = (v) => (v * k).toFixed(3);
+  const paso = s > 0 ? pasoBarras(sM, k * 28.35, 3) : 1;
+  let barras = "";
+  if (s > 0) for (let i = 0, z = sM / 2; z < c.Hw; z += sM, i++) if (i % paso === 0) barras += `\\draw[red!70!black,very thin] (${f(REC_DIBUJO)},${f(z)}) -- (${f(Lw - REC_DIBUJO)},${f(z)});\n`;
+  const dx = Lw * k + 2, sD = s > 0 ? sM : 0.2, kd = Math.min(1.5 / e, 1.3 / sD), g = (v) => (v * kd).toFixed(3);
+  let puntos = "";
+  if (s > 0) for (let i = 0; i < 3; i++) { const y = (i + 0.5) * sD; puntos += `\\fill[red!70!black] (${g(REC_DIBUJO)},${g(y)}) circle (0.05);\n\\fill[red!70!black] (${g(e - REC_DIBUJO)},${g(y)}) circle (0.05);\n`; }
+  return L`\begin{figure}[H]
+\centering
+\begin{tikzpicture}[>=stealth, cota/.style={<->,thin}]
+\filldraw[fill=gray!15,draw=black,thick] (0,0) rectangle (${f(Lw)},${f(c.Hw)});
+${barras}\draw[cota] (0,-0.3) -- (${f(Lw)},-0.3) node[midway,below]{\small $L_w = ${tn(Lw, 2)}$ m};
+\draw[cota] (-0.3,0) -- (-0.3,${f(c.Hw)}) node[midway,above,sloped]{\small $H_w = ${tn(c.Hw, 2)}$ m};
+\begin{scope}[shift={(${dx.toFixed(3)},0)}]
+\filldraw[fill=gray!15,draw=black] (0,0) rectangle (${g(e)},${g(3 * sD)});
+${puntos}\draw[cota] (0,-0.3) -- (${g(e)},-0.3) node[midway,below]{\small $e = ${tn(e * 100, 0)}$ cm};
+\node[right] at (${g(e)},${g(1.5 * sD)}) {\small $\phi$${c.db} @ ${s} cm por cara};
+\end{scope}
+\end{tikzpicture}
+\caption{Elevación y corte vertical del pier ${escTex(p)} con la armadura horizontal${paso > 1 ? ` (se dibuja 1 de cada ${paso} barras)` : ""}. ${SIN_VERTICAL}}
+\end{figure}
+`;
+}
+
+function memoPier(m, r, c, figura) {
   const { p, Lw, e, gob: f } = r, raiz = Math.sqrt(c.fc), d = 0.8 * Lw, hl = c.Hw / Lw;
   const Acv = e * Lw, Acw = e * c.Hw, limAcv = 2.12 * Acv * raiz * 1e4, limAcw = 2.65 * Acw * raiz * 1e4;
   m.h(`Pier ${p}`);
+  if (figura) m.raw(tikzPier(r, c));
   m.sub("Geometría y demanda");
   m.row("Largo ; espesor ; altura útil: L<sub>w</sub> ; e ; d", `${fmt(Lw, 2)} ; ${fmt(e, 2)} ; ${fmt(d, 2)} m`);
   m.eq(L`d = 0.8\,L_w = 0.8\cdot ${tn(Lw, 2)} = ${tn(d, 2)}\ \mathrm{m}`);
@@ -578,6 +661,7 @@ ${TEX_ESTILO}
 \usepackage{booktabs}
 \usepackage{longtable}
 \usepackage{float}
+\usepackage{tikz}
 \usepackage{fancyhdr}
 \setlength{\headheight}{14pt}
 \pagestyle{fancy}
@@ -653,11 +737,11 @@ La razón demanda-capacidad máxima al corte es $D/C = ${tn(dcMax, 3)}$, en el p
 // ---------------------------------------------------------------------------
 // Cálculo e interfaz
 // ---------------------------------------------------------------------------
-let ultimoTex = "", ultimoNombre = "memoria_corte_muros.tex";
+let ultimoTex = "", ultimoNombre = "memoria_corte_muros.tex", ultimoR = null;
 function limpiar(html) {
   $("resTitle").textContent = "Resultados";
-  $("summary").innerHTML = ""; $("memo").innerHTML = ""; $("verdict").innerHTML = html;
-  ultimoTex = "";
+  $("summary").innerHTML = ""; $("memo").innerHTML = ""; $("dibujo").innerHTML = ""; $("verdict").innerHTML = html;
+  ultimoTex = ""; ultimoR = null;
 }
 function calcular() {
   limpiarInvalidos($("inputs"));
@@ -706,11 +790,13 @@ function calcular() {
   m.p(L`En cada fila se calcula la mayor de las razones $V_u/\phi V_n$, $V_u/(0.75\,V_{s,m\acute{a}x})$ y $V_s/V_{s,m\acute{a}x}$. La razón de cada pier es la mayor de sus filas, y el pier crítico es el de mayor razón.`, true);
   m.row("Filas revisadas ; piers verificados", `${fmt(A.n, 0)} ; ${A.res.length}`);
   m.row("Caso o combinación", escH($("caso").value || "—"));
-  memoPier(m, crit, c);
+  memoPier(m, crit, c, true);
   if (sel && sel !== crit) memoPier(m, sel, c);
   m.h("Resumen de todos los piers");
   m.html_(`<div class="tablaWrap"><table class="alt"><tr><th>Pier</th><th>L<sub>w</sub> [m]</th><th>e [m]</th><th>Piso</th><th>V<sub>u</sub> [kgf]</th><th>φV<sub>n</sub> [kgf]</th><th>Límite [kgf]</th><th>D/C</th><th>A<sub>s</sub> [cm²/m]</th><th>Barra</th><th>S<sub>v,máx</sub> [cm]</th><th>Estado</th></tr>${A.res.map(r => `<tr><td>${escH(r.p)}</td><td>${fmt(r.Lw, 2)}</td><td>${fmt(r.e, 2)}</td><td>${escH(r.crit.piso)}</td><td>${fmt(r.crit.Vu, 0)}</td><td>${fmt(r.crit.phiVn, 0)}</td><td>${fmt(r.crit.limite, 0)}</td><td class="${r.dc > 1 + 1e-9 ? "malo" : ""}">${fmt(r.dc, 3)}</td><td>${fmt(r.gob.As, 2)}</td><td class="${r.gob.s > r.svMax ? "aviso" : ""}">${barra(c.db, r.gob.s)}</td><td>${fmt(r.svMax, 1)}</td><td class="${r.dc > 1 + 1e-9 ? "malo" : ""}">${estado(r.dc)}</td></tr>`).join("")}</table></div>`);
+  $("dibujo").innerHTML = svgPier(crit, c);
   $("memo").innerHTML = m.html();
+  ultimoR = { r: crit, c };
   ultimoTex = documentoTex(c, A, m.texto());
   ultimoNombre = `memoria_corte_muros_${A.res.length}_piers.tex`;
 }
@@ -720,6 +806,22 @@ $("tablaGeom").addEventListener("paste", pegarGeometria);
 $("tablaGeom").addEventListener("input", () => { guardarGeometria(); calcular(); });
 ["caso", "fc", "fy", "db", "pierSel", "Hw", "eDef"].forEach(id => $(id).addEventListener("input", calcular));
 calcular();
+
+window.Zona2D3D?.montar({
+  antes: document.querySelector(".toolbar"),
+  fuente2D: () => $("dibujo").querySelector("svg"),
+  observar: [$("verdict"), $("dibujo")],
+  capas: [["hormigon", "Hormigón"]],
+  nota: "pier crítico con su armadura horizontal; armadura vertical no calculada y recubrimiento referencial; en naranja si no cumple",
+  construir: () => {
+    if (!ultimoTex || !ultimoR) return null;
+    const { r, c } = ultimoR, Lw = r.Lw * 1000, Hw = c.Hw * 1000, e = r.e * 1000, rec = REC_DIBUJO * 1000, s = r.gob.s * 10;
+    const E = new Geo3D.Escena(), ARM = { mat: "armadura" };
+    E.caja({ mat: r.dc <= 1 + 1e-9 ? "hormigon" : "critico", alfa: 0.32, grupo: "hormigon" }, -Lw / 2, Lw / 2, 0, Hw, -e / 2, e / 2);
+    if (s > 0) for (let y = s / 2; y < Hw; y += s) for (const z of [-e / 2 + rec, e / 2 - rec]) E.barra(ARM, [[-Lw / 2 + rec, y, z], [Lw / 2 - rec, y, z]], c.db / 2);
+    return E;
+  },
+});
 
 // Integración con proyectos (proyectos.js): datos para guardar y restaurar este cálculo
 window.AURA_MEMO = {
