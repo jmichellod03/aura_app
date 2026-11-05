@@ -94,6 +94,8 @@ Todo el texto de la interfaz, las memorias y los commits va en **español (Chile
 4. **Registro en la app:**
    - agregar la página a `PAGINAS_CALCULO` en `proyectos.js`;
    - agregar el enlace en `index.html`;
+   - agregarla a `GRUPOS` en `lateral.js`;
+   - agregarla a `PAGINAS_APP` en `login.html` (si falta, al iniciar sesión se vuelve al inicio y no a la página);
    - agregarla a `ARCHIVOS` en `sw.js`.
 5. **Versiones y caché:** al publicar cambios, subir `VERSION` en `sw.js` para que los dispositivos actualicen la copia sin conexión. Si se modifica `memo.js`, `proyectos.js`, `aura.css`, `modelo3d.js`, `dxf.js`, `tablero.js` o `lateral.js`, subir también el `?v=N` con que lo cargan las páginas.
 6. **Recursos externos:** solo KaTeX (cdnjs) y supabase-js (jsdelivr). No agregar otras dependencias externas.
