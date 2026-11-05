@@ -1,11 +1,12 @@
 // Función de Supabase del asistente de AURA: recibe la pregunta de un usuario con sesión y responde con Gemini.
 // La clave de Gemini solo existe aquí, como secreto GEMINI_API_KEY. Nunca debe ir en la página.
 // Etapa actual (plan gratis de Gemini): no recibe datos del cálculo, solo la página abierta y la conversación.
-// Secretos opcionales: GEMINI_MODEL, ASISTENTE_LIMITE_DIARIO, ASISTENTE_ORIGENES y AURA_BASE.
+// Secretos opcionales: GEMINI_MODEL, GEMINI_MODEL_RESPALDO, ASISTENTE_LIMITE_DIARIO, ASISTENTE_ORIGENES y AURA_BASE.
 
 const PAGINAS = ["index.html", "acero.html", "reticulada.html", "placa.html", "hormigon.html", "piers.html", "muro.html", "zapata.html", "madera.html", "mle.html", "espectros.html", "vial.html", "rigido.html"];
 const MAX_MENSAJES = 12, MAX_TEXTO = 2000, MAX_CATALOGO = 40000, CACHE_MS = 10 * 60 * 1000;
 const GEMINI = "https://generativelanguage.googleapis.com/v1beta/models";
+const PAUSAS_MS = [800, 2000];                 // antes de cada reintento de un mismo modelo
 
 type Entorno = { get(nombre: string): string | undefined };
 type Mensaje = { rol: "user" | "model"; texto: string };
@@ -56,6 +57,28 @@ export function textoDeEvento(datos: string): { texto: string; fin?: string; blo
   return { texto, fin: cand?.finishReason, bloqueo: e.promptFeedback?.blockReason };
 }
 
+// Llama a Gemini y resiste la saturación: reintenta cuando el modelo está saturado y luego pasa al modelo de respaldo.
+// Un error de cupo (429) o un modelo retirado (404) no mejora reintentando el mismo modelo: pasa directo al respaldo
+export async function llamarGemini(modelos: string[], clave: string, cuerpo: string, pedir: typeof fetch, pausa = (ms: number) => new Promise(r => setTimeout(r, ms))): Promise<Response> {
+  let ultima: Response | null = null;
+  for (const modelo of modelos) {
+    for (let intento = 0; intento <= PAUSAS_MS.length; intento++) {
+      if (intento > 0) await pausa(PAUSAS_MS[intento - 1]);
+      const r = await pedir(`${GEMINI}/${encodeURIComponent(modelo)}:streamGenerateContent?alt=sse`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": clave },
+        body: cuerpo,
+      });
+      if (r.ok) return r;
+      console.error("Gemini", modelo, r.status, (await r.text()).slice(0, 300));
+      ultima = r;
+      if (r.status !== 503 && r.status !== 500) break;
+    }
+    if (ultima && ![429, 404, 500, 503].includes(ultima.status)) break;   // otro error (clave, solicitud): el respaldo fallaría igual
+  }
+  return ultima as Response;
+}
+
 const cache = new Map<string, { texto: string; hora: number }>();
 async function documento(url: string, pedir: typeof fetch): Promise<string> {
   const c = cache.get(url);
@@ -69,7 +92,7 @@ async function documento(url: string, pedir: typeof fetch): Promise<string> {
   } catch { return c?.texto ?? ""; }
 }
 
-export async function atender(req: Request, env: Entorno, pedir: typeof fetch = fetch): Promise<Response> {
+export async function atender(req: Request, env: Entorno, pedir: typeof fetch = fetch, pausa?: (ms: number) => Promise<unknown>): Promise<Response> {
   const origenes = (env.get("ASISTENTE_ORIGENES") ?? "https://ligan12-aura.github.io").split(",").map(o => o.trim());
   const origen = req.headers.get("origin") ?? "";
   const cors: Record<string, string> = { "Access-Control-Allow-Headers": "authorization, apikey, content-type", "Access-Control-Allow-Methods": "POST, OPTIONS", Vary: "Origin" };
@@ -108,21 +131,15 @@ export async function atender(req: Request, env: Entorno, pedir: typeof fetch = 
   ]);
   const sistema = `${INSTRUCCIONES}\n\nPágina abierta: ${datos.pagina}\n\n<documentacion_aura>\n${guia}\n</documentacion_aura>\n\n<documentos_de_referencia>\n${general}\n</documentos_de_referencia>\n\n<ficha_normativa_pagina_abierta>\n${ficha || "No hay una página de cálculo abierta. Pida abrir el programa para citar sus referencias."}\n</ficha_normativa_pagina_abierta>\n\n<procedimiento_pagina_abierta>\n${catalogoPagina(pagina)}\n</procedimiento_pagina_abierta>`;
 
-  const modelo = env.get("GEMINI_MODEL") ?? "gemini-3.8-flash";
-  const respuesta = await pedir(`${GEMINI}/${encodeURIComponent(modelo)}:streamGenerateContent?alt=sse`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "x-goog-api-key": clave },
-    body: JSON.stringify({
-      systemInstruction: { parts: [{ text: sistema }] },
-      contents: datos.mensajes.map(m => ({ role: m.rol, parts: [{ text: m.texto }] })),
-      generationConfig: { maxOutputTokens: 4096 },
-    }),
-  });
+  const modelos = [...new Set([env.get("GEMINI_MODEL") ?? "gemini-3.8-flash", env.get("GEMINI_MODEL_RESPALDO") ?? "gemini-3.5-flash-lite"])];
+  const respuesta = await llamarGemini(modelos, clave, JSON.stringify({
+    systemInstruction: { parts: [{ text: sistema }] },
+    contents: datos.mensajes.map(m => ({ role: m.rol, parts: [{ text: m.texto }] })),
+    generationConfig: { maxOutputTokens: 4096 },
+  }), pedir, pausa);
   if (respuesta.status === 429) return error(429, "Se agotó por ahora el cupo gratuito del asistente. Intente más tarde.");
-  if (!respuesta.ok || !respuesta.body) {
-    console.error("Gemini", respuesta.status, (await respuesta.text()).slice(0, 500));
-    return error(502, "El servicio de IA no respondió. Intente más tarde.");
-  }
+  if (respuesta.status === 503 || respuesta.status === 500) return error(503, "El servicio de IA está saturado. Intente en unos minutos.");
+  if (!respuesta.ok || !respuesta.body) return error(502, "El servicio de IA no respondió. Intente más tarde.");
 
   const lector = respuesta.body.getReader(), dec = new TextDecoder(), cod = new TextEncoder();
   let resto = "";
