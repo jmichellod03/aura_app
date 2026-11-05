@@ -10,6 +10,13 @@ Documentos: NCh 1198:2024.
 - NCh 1198 es un PDF escaneado: la página indicada es donde empieza la sección según su índice o tabla, no siempre la del subpunto.
 - Muro de corte: la fuerza horizontal de techo con cos α es criterio de la planilla FULL MADERA.
 - NCh 432 (viento) y NCh 1537 no están en el proyecto.
+- Especies: pino radiata (Tabla U.1) y las siete con tabla propia de madera seca: pino ponderosa (U.2), pino oregón (U.3), eucaliptus nitens (U.4), raulí (U.5), lenga (U.6), roble (U.7) y acacia dealbata (U.8). Las demás especies de la Tabla A.1 no están en la app.
+- Las Tablas U.2 a U.8 no dan compresión normal: el calculista ingresa F_cn para madera seca. Para roble se indica como referencia el valor de la Tabla U.10 de su grupo ES4.
+- Especies distintas del pino radiata con H ≥ 20 %: solo pino oregón (grupo E5) y roble (grupo E4), que figuran en la Tabla A.1, con la clase estructural de la Tabla U.11 y los valores de la Tabla U.9 (K_H = 1; al F_cn ingresado se aplica 0.67 de la Tabla 4, nota 1). Para las otras cinco no se calcula en estado verde.
+- Bajo 20 % de humedad, las especies distintas del pino radiata usan ΔR de "especies en general" (Tabla 3). El pino radiata mantiene su criterio anterior (ΔR hasta 18 % y Tabla 4 sobre 18 %).
+- Factor de altura en flexión y tracción para especies distintas del pino radiata: (50/h)^(1/9) (8.2.2.3). El factor de altura en E (8.2.4.2) y el índice E_cn,h son solo de pino radiata.
+- Módulo de corte: G = 0.065 E en coníferas y 0.07 E en latifoliadas (Anexo B.3, G_LT).
+- Viga maestra: 0.60 E_f es la nota 2 de la Tabla U.1 (pino radiata); la app la aplica también a las otras especies como criterio.
 
 ## Referencias usadas por el cálculo
 
@@ -48,3 +55,12 @@ Documentos: NCh 1198:2024.
 | Corte en el plano del muro — 12.4.7 a 12.4.10 | Corte en el plano: vc / Vc,dis | 12.4.8 | NCh 1198:2024 | 161 |
 | Desplazamiento lateral del muro — 12.5 | Rigidez aparente de diseño: Ga,dis | 12.5.1 | NCh 1198:2024 | 164 |
 | Compresión normal en la solera inferior — 12.4.4 y 8.5 | Compresión normal: fcn / Fcn,dis | 8.5 | NCh 1198:2024 | 63 |
+| Propiedades mecánicas admisibles (otras especies) | Tensiones admisibles y módulo de elasticidad: pino ponderosa, pino oregón, eucaliptus nitens | Tablas U.2, U.3, U.4 | NCh 1198:2024 | 226 |
+| Propiedades mecánicas admisibles (otras especies) | Tensiones admisibles y módulo de elasticidad: raulí, lenga, roble | Tablas U.5, U.6, U.7 | NCh 1198:2024 | 227 |
+| Propiedades mecánicas admisibles (otras especies) | Tensiones admisibles y módulo de elasticidad: acacia dealbata; clases estructurales en estado verde | Tablas U.8, U.9 | NCh 1198:2024 | 228 |
+| Propiedades mecánicas admisibles (otras especies) | Clase estructural en estado verde según grupo y grado; referencia de F_cn | Tablas U.10, U.11 | NCh 1198:2024 | 229 |
+| Propiedades mecánicas admisibles (otras especies) | Grupo de pino oregón y roble | Tabla A.1 | NCh 1198:2024 | 174 |
+| Factores de modificación y propiedades de diseño | Factor de humedad, especies en general: ΔR | Tabla 3 | NCh 1198:2024 | 21 |
+| Factores de modificación y propiedades de diseño | Factor de altura, especies distintas del pino radiata: Khf | 8.2.2.3 | NCh 1198:2024 | 28 |
+| Pandeo | Coeficiente de proporcionalidad para grados N°1 y N°2: c | Tabla 9 | NCh 1198:2024 | 51 |
+| Deformaciones | Módulo de corte en coníferas y latifoliadas: G | Anexo B.3 | NCh 1198:2024 | 175 |
