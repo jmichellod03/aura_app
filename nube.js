@@ -5,6 +5,9 @@
 "use strict";
 const SUPABASE_URL = "https://olrrwjwmcrezpnigybwo.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Zr1WEb3QFTx9TCr8hZALPg_-F9VX-l6";
+// reCAPTCHA Enterprise (invisible), como el App Check de la bodega: el asistente solo atiende pedidos hechos desde AURA.
+// La clave de sitio es pública. Vacía = desactivado. La verificación la hace la función asistente (secretos RECAPTCHA_*).
+const RECAPTCHA_CLAVE = "";
 const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
 }) : null;
@@ -86,4 +89,23 @@ function errorEnEspanol(e) {
   if (/Unable to validate email|invalid format/i.test(m)) return "El correo no es válido.";
   if (/Failed to fetch|NetworkError|network/i.test(m)) return "No hay conexión con el servidor. Revise su conexión a internet.";
   return m || "Ocurrió un error inesperado.";
+}
+
+// Token de reCAPTCHA para una acción (por ejemplo "asistente"). La librería de Google se carga solo la primera vez que se usa.
+// Sin clave configurada devuelve "" (la función no lo exige mientras no tenga sus secretos).
+let cargaRecaptcha = null;
+async function tokenRecaptcha(accion) {
+  if (!RECAPTCHA_CLAVE) return "";
+  cargaRecaptcha ??= new Promise((ok, mal) => {
+    const s = document.createElement("script");
+    s.src = `https://www.google.com/recaptcha/enterprise.js?render=${encodeURIComponent(RECAPTCHA_CLAVE)}`;
+    s.async = true; s.onload = ok; s.onerror = () => { cargaRecaptcha = null; mal(new Error("No se pudo cargar reCAPTCHA. Revise su conexión.")); };
+    document.head.appendChild(s);
+  });
+  await cargaRecaptcha;
+  const g = window.grecaptcha?.enterprise;
+  if (!g) throw new Error("No se pudo cargar reCAPTCHA. Revise su conexión.");
+  await new Promise((ok) => g.ready(ok));
+  return Promise.race([g.execute(RECAPTCHA_CLAVE, { action: accion }),
+    new Promise((_, mal) => setTimeout(() => mal(new Error("reCAPTCHA no respondió a tiempo. Intente nuevamente.")), 8000))]);
 }

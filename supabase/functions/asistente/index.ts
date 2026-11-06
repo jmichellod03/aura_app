@@ -8,7 +8,7 @@ const MAX_MENSAJES = 12, MAX_TEXTO = 2000, MAX_CATALOGO = 40000, CACHE_MS = 10 *
 const GEMINI = "https://generativelanguage.googleapis.com/v1beta/models";
 const PAUSAS_MS = [800, 2000];                 // antes de cada reintento de un mismo modelo
 // Tiempos máximos en ms: Supabase corta la función a los 150 s, sin dejar registro de qué quedó esperando
-export const TIEMPOS = { gemini: 30000, total: 100000, flujo: 30000, documento: 5000, supabase: 8000 };
+export const TIEMPOS = { gemini: 30000, total: 100000, flujo: 30000, documento: 5000, supabase: 8000, recaptcha: 8000 };
 
 type Entorno = { get(nombre: string): string | undefined };
 type Mensaje = { rol: "user" | "model"; texto: string };
@@ -107,10 +107,36 @@ async function documento(url: string, pedir: typeof fetch): Promise<string> {
   } catch { return c?.texto ?? ""; }
 }
 
+// reCAPTCHA Enterprise, como el App Check de la bodega: confirma que el pedido viene de la página de AURA (acción "asistente").
+// Se exige solo si están los secretos RECAPTCHA_PROYECTO, RECAPTCHA_API_KEY y RECAPTCHA_CLAVE_SITIO; puntaje mínimo RECAPTCHA_PUNTAJE (0.5).
+// Devuelve null si pasa, o el mensaje de error.
+export async function verificarRecaptcha(token: string, env: Entorno, pedir: typeof fetch = fetch): Promise<string | null> {
+  const proyecto = env.get("RECAPTCHA_PROYECTO"), claveApi = env.get("RECAPTCHA_API_KEY"), sitio = env.get("RECAPTCHA_CLAVE_SITIO");
+  if (!proyecto || !claveApi || !sitio) return null;
+  if (!token || token.length > 4000) return "No se pudo comprobar que la consulta viene de AURA. Recargue la página e intente nuevamente.";
+  let r: Response;
+  try {
+    r = await pedir(`https://recaptchaenterprise.googleapis.com/v1/projects/${encodeURIComponent(proyecto)}/assessments?key=${encodeURIComponent(claveApi)}`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ event: { token, siteKey: sitio, expectedAction: "asistente" } }),
+      signal: AbortSignal.timeout(TIEMPOS.recaptcha),
+    });
+  } catch (e) { console.error("reCAPTCHA:", (e as Error).name); return "No se pudo comprobar reCAPTCHA. Intente nuevamente."; }
+  if (!r.ok) { console.error("reCAPTCHA HTTP", r.status); return "No se pudo comprobar reCAPTCHA. Intente nuevamente."; }
+  // deno-lint-ignore no-explicit-any
+  const a: any = await r.json().catch(() => null);
+  const minimo = Number(env.get("RECAPTCHA_PUNTAJE") ?? 0.5);
+  if (!a?.tokenProperties?.valid || a.tokenProperties.action !== "asistente" || !(Number(a.riskAnalysis?.score) >= minimo)) {
+    console.error("reCAPTCHA rechazado:", a?.tokenProperties?.invalidReason, a?.riskAnalysis?.score);
+    return "reCAPTCHA no confirmó la consulta. Recargue la página e intente nuevamente.";
+  }
+  return null;
+}
+
 export async function atender(req: Request, env: Entorno, pedir: typeof fetch = fetch, pausa?: (ms: number) => Promise<unknown>): Promise<Response> {
   const origenes = (env.get("ASISTENTE_ORIGENES") ?? "https://ligan12-aura.github.io").split(",").map(o => o.trim());
   const origen = req.headers.get("origin") ?? "";
-  const cors: Record<string, string> = { "Access-Control-Allow-Headers": "authorization, apikey, content-type", "Access-Control-Allow-Methods": "POST, OPTIONS", Vary: "Origin" };
+  const cors: Record<string, string> = { "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-recaptcha", "Access-Control-Allow-Methods": "POST, OPTIONS", Vary: "Origin" };
   if (origenes.includes(origen)) cors["Access-Control-Allow-Origin"] = origen;
   const error = (status: number, mensaje: string) => new Response(JSON.stringify({ error: mensaje }), { status, headers: { ...cors, "Content-Type": "application/json" } });
 
@@ -129,6 +155,8 @@ export async function atender(req: Request, env: Entorno, pedir: typeof fetch = 
   try { usuario = await pedir(`${urlSb}/auth/v1/user`, { headers: cabSb, signal: senalSb() }); }
   catch (e) { console.error("Supabase auth:", (e as Error).name); return error(503, "No se pudo comprobar la sesión. Intente nuevamente."); }
   if (!usuario.ok) return error(401, "Su sesión venció. Vuelva a iniciar sesión.");
+  const malRecaptcha = await verificarRecaptcha(req.headers.get("x-recaptcha") ?? "", env, pedir);
+  if (malRecaptcha) return error(403, malRecaptcha);
 
   let cuerpo: unknown;
   try { cuerpo = await req.json(); } catch { return error(400, "Solicitud inválida."); }
@@ -139,7 +167,11 @@ export async function atender(req: Request, env: Entorno, pedir: typeof fetch = 
   let uso: Response;
   try { uso = await pedir(`${urlSb}/rest/v1/rpc/asistente_consumir`, { method: "POST", headers: cabSb, body: JSON.stringify({ limite }), signal: senalSb() }); }
   catch (e) { console.error("Supabase rpc:", (e as Error).name); return error(503, "No se pudo comprobar el límite de preguntas. Intente nuevamente."); }
-  if (!uso.ok) return error(503, "Hormi no está configurado.");
+  if (!uso.ok) {
+    const detalle = await uso.text().catch(() => "");
+    if (/correo no autorizado/.test(detalle)) return error(403, "Este correo no está autorizado para usar AURA.");
+    return error(503, "Hormi no está configurado.");
+  }
   if ((await uso.json()) === null) return error(429, `Alcanzó el límite de ${limite} preguntas diarias. Vuelva a intentarlo mañana.`);
 
   const base = (env.get("AURA_BASE") ?? "https://ligan12-aura.github.io/aura_app/").replace(/\/?$/, "/");
