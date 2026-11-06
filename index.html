@@ -116,8 +116,9 @@
   dialog input:focus { outline: none; border-color: var(--azul); box-shadow: 0 0 0 3px rgba(0,0,139,.15); }
   dialog .dlg-acc { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
 </style>
-<link rel="stylesheet" href="aura.css?v=12">
-<script src="lateral.js?v=4"></script>
+<link rel="stylesheet" href="aura.css?v=13">
+<script src="lateral.js?v=10"></script>
+<script src="asistente.js?v=3" defer></script>
 </head>
 <body>
 <header class="solo-movil">
@@ -138,7 +139,6 @@
         <button type="button" data-cat="" aria-pressed="true">Todas</button>
         <button type="button" data-cat="acero" aria-pressed="false">Acero</button>
         <button type="button" data-cat="hormigon" aria-pressed="false">Hormigón</button>
-        <button type="button" data-cat="fundaciones" aria-pressed="false">Fundaciones</button>
         <button type="button" data-cat="madera" aria-pressed="false">Madera</button>
         <button type="button" data-cat="sismico" aria-pressed="false">Sísmico</button>
         <button type="button" data-cat="vial" aria-pressed="false">Vial</button>
@@ -147,9 +147,13 @@
 
     <div class="herr">
       <div class="grid" id="gridHerr">
-        <a class="tool" href="acero.html" data-cat="acero" data-q="perfiles laminados hea heb ipe ipn columna flexion corte compresion">
+        <a class="tool" href="acero.html?elemento=viga" data-cat="acero" data-q="perfiles laminados hea heb ipe ipn flexion corte">
           <span class="ico"><svg viewBox="0 0 32 32" fill="none" stroke="#00008B" stroke-width="2.4" stroke-linecap="square"><path d="M7 6h18M7 26h18M16 6v20"/></svg></span>
-          <span class="tx"><b>Vigas y columnas de acero</b><small>Perfiles laminados HEA, HEB, IPE e IPN</small><span class="norma">AISC 360-16</span></span>
+          <span class="tx"><b>Vigas de acero</b><small>Perfiles laminados HEA, HEB, IPE e IPN · flexión y corte</small><span class="norma">AISC 360-16</span></span>
+        </a>
+        <a class="tool" href="acero.html?elemento=columna" data-cat="acero" data-q="perfiles laminados hea heb ipe ipn pilar compresion flexocompresion pandeo">
+          <span class="ico"><svg viewBox="0 0 32 32" fill="none" stroke="#00008B" stroke-width="2.4" stroke-linecap="square"><path d="M10 4h12M10 24h12M16 4v20M6 28h20"/></svg></span>
+          <span class="tx"><b>Columnas de acero</b><small>Perfiles laminados HEA, HEB, IPE e IPN · compresión y flexocompresión</small><span class="norma">AISC 360-16</span></span>
         </a>
         <a class="tool" href="reticulada.html" data-cat="acero" data-q="cordones diagonales montantes dxf sap2000 cercha armadura">
           <span class="ico"><svg viewBox="0 0 32 32" fill="none" stroke="#00008B" stroke-width="2" stroke-linejoin="round"><path d="M3 10h26M3 23h26M3 23l6-13 6 13 6-13 6 13M9 10v13M21 10v13"/></svg></span>
@@ -159,15 +163,35 @@
           <span class="ico"><svg viewBox="0 0 32 32" fill="none" stroke="#00008B" stroke-width="2" stroke-linejoin="round"><path d="M3 12h26"/><path d="M3 20l3-6h4l3 6h4l3-6h4l3 6"/><path d="M3 20h26" stroke-width="1.4"/></svg></span>
           <span class="tx"><b>Placa colaborante</b><small>Losa con placa Instadeck 0.8 mm · tablas Cintac (SDI) · conectores</small><span class="norma">AISC 360-16 Cap. I</span></span>
         </a>
-        <a class="tool" href="hormigon.html" data-cat="hormigon" data-q="hormigon armado vigas losas muros aci">
+        <a class="tool" href="base.html" data-cat="acero hormigon" data-q="placa base columna pernos de anclaje traccion levantamiento pedestal aplastamiento llave de corte soldadura design guide 1 aci apendice d prueba">
+          <span class="ico"><svg viewBox="0 0 32 32" fill="none" stroke="#00008B" stroke-width="2" stroke-linejoin="round"><path d="M13 3h6v16h-6z"/><path d="M6 19h20v3H6z"/><path d="M4 22h24v7H4z" stroke-width="1.4"/><path d="M9 19v10M23 19v10" stroke-dasharray="2 2"/></svg></span>
+          <span class="tx"><b>Placa base <small style="color:#9a6400">(versión de prueba)</small></b><small>Base articulada · aplastamiento, espesor, pernos a corte y tracción, llave de corte y soldadura</small><span class="norma">AISC DG1 · ACI 318-08 Ap. D</span></span>
+        </a>
+        <a class="tool" href="conexion.html?tipo=corte" data-cat="acero" data-q="conexion union viga columna placa de corte shear tab pernos aplastamiento desgarre bloque de corte soldadura prueba">
+          <span class="ico"><svg viewBox="0 0 32 32" fill="none" stroke="#00008B" stroke-width="2" stroke-linejoin="round"><path d="M4 3v26M8 3v26"/><path d="M12 10h17M12 22h17"/><path d="M8 13h8v6H8z"/><circle cx="13" cy="16" r="1" fill="#00008B"/></svg></span>
+          <span class="tx"><b>Conexión de corte <small style="color:#9a6400">(versión de prueba)</small></b><small>Placa simple viga–columna · pernos, bloque de corte y soldadura</small><span class="norma">AISC 360-16 Cap. J</span></span>
+        </a>
+        <a class="tool" href="conexion.html?tipo=momento" data-cat="acero" data-q="conexion union viga columna momento rigida placas de ala apernadas empotramiento pernos zona panel atiesadores j10 prueba">
+          <span class="ico"><svg viewBox="0 0 32 32" fill="none" stroke="#00008B" stroke-width="2" stroke-linejoin="round"><path d="M4 3v26M8 3v26"/><path d="M12 10h17M12 22h17"/><path d="M8 7h12v3H8zM8 22h12v3H8z"/><path d="M8 13h6v6H8z"/></svg></span>
+          <span class="tx"><b>Conexión de momento <small style="color:#9a6400">(versión de prueba)</small></b><small>Placas de ala apernadas y placa de corte · columna (J10)</small><span class="norma">AISC 360-16 Cap. J</span></span>
+        </a>
+        <a class="tool" href="hormigon.html?elemento=viga" data-cat="hormigon" data-q="vigas hormigon armado flexion corte estribos aci">
           <span class="ico"><svg viewBox="0 0 32 32" fill="none" stroke="#00008B" stroke-width="2"><rect x="6" y="4" width="20" height="24" rx="1.5"/><g fill="#00008B" stroke="none"><circle cx="11" cy="23" r="1.8"/><circle cx="16" cy="23" r="1.8"/><circle cx="21" cy="23" r="1.8"/><circle cx="11" cy="9" r="1.4"/><circle cx="21" cy="9" r="1.4"/></g></svg></span>
-          <span class="tx"><b>Hormigón armado</b><small>Vigas, losas y muros</small><span class="norma">ACI 318-08</span></span>
+          <span class="tx"><b>Vigas de hormigón</b><small>Flexión, corte y armaduras</small><span class="norma">ACI 318-08</span></span>
+        </a>
+        <a class="tool" href="hormigon.html?elemento=losa" data-cat="hormigon" data-q="losas hormigon armado czerny flexion mallas suples aci">
+          <span class="ico"><svg viewBox="0 0 32 32" fill="none" stroke="#00008B" stroke-width="2" stroke-linejoin="round"><rect x="3" y="11" width="26" height="10" rx="1"/><g fill="#00008B" stroke="none"><circle cx="9" cy="17.5" r="1.4"/><circle cx="16" cy="17.5" r="1.4"/><circle cx="23" cy="17.5" r="1.4"/></g></svg></span>
+          <span class="tx"><b>Losas de hormigón</b><small>Tablas de Czerny o momentos ingresados · flexión y armaduras</small><span class="norma">ACI 318-08</span></span>
+        </a>
+        <a class="tool" href="piers.html" data-cat="hormigon" data-q="muros de corte hormigon piers etabs pier forces machones armadura horizontal xlsx importar">
+          <span class="ico"><svg viewBox="0 0 32 32" fill="none" stroke="#00008B" stroke-width="2" stroke-linejoin="round"><path d="M10 4h12v24H10z"/><path d="M10 12h12M10 20h12" stroke-width="1.2"/><path d="M3 8h5M6 6l2 2-2 2" stroke="#e65c00" stroke-width="1.6"/></svg></span>
+          <span class="tx"><b>Muros de corte</b><small>Piers importados desde ETABS · corte y armadura horizontal · flexocompresión sin verificar</small><span class="norma">ACI 318-08</span></span>
         </a>
         <a class="tool" href="muro.html" data-cat="hormigon" data-q="muro de contencion voladizo empuje rankine mononobe okabe volcamiento deslizamiento pantalla pie talon dentellon">
           <span class="ico"><svg viewBox="0 0 32 32" fill="none" stroke="#00008B" stroke-width="2" stroke-linejoin="round"><path d="M12 4h4v18h10v5H4v-5h6z"/><path d="M16 6l10 0M16 4v18" stroke-width="1.2" stroke-dasharray="2 2"/><path d="M23 9v11" stroke="#e65c00" stroke-width="1.6"/></svg></span>
           <span class="tx"><b>Muros de contención</b><small>Muro en voladizo · volcamiento, deslizamiento y tensión de contacto · pantalla, pie y talón</small><span class="norma">Rankine · M-O · ACI 318-08</span></span>
         </a>
-        <a class="tool" href="zapata.html" data-cat="fundaciones hormigon" data-q="zapata aislada fundacion superficial cimiento punzonamiento tension de contacto sello pedestal sismo">
+        <a class="tool" href="zapata.html" data-cat="hormigon" data-q="zapata aislada fundaciones fundacion superficial cimiento punzonamiento tension de contacto sello pedestal sismo">
           <span class="ico"><svg viewBox="0 0 32 32" fill="none" stroke="#00008B" stroke-width="2" stroke-linejoin="round"><path d="M13 4h6v15h-6z"/><path d="M4 19h24v7H4z"/><path d="M6 23.5h20" stroke="#e65c00" stroke-width="1.4" stroke-dasharray="2 2"/></svg></span>
           <span class="tx"><b>Zapata aislada</b><small>Tensiones de contacto, corte, punzonamiento y flexión · sismo por verificar</small><span class="norma">ACI 318-08</span></span>
         </a>
@@ -229,7 +253,7 @@
   </form>
 </dialog>
 <script src="memo.js?v=39"></script>
-<script src="proyectos.js?v=37"></script>
+<script src="proyectos.js?v=40"></script>
 
 <script>
 "use strict";

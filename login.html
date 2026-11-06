@@ -12,7 +12,7 @@
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <title>Acceso — AURA</title>
 <!-- Antes de los estilos propios: los botones y campos de esta página tienen su propio tamaño -->
-<link rel="stylesheet" href="aura.css?v=12">
+<link rel="stylesheet" href="aura.css?v=13">
 <script>
 // Tema claro u oscuro, igual que en el resto de la app (lateral.js): la elección guardada o la del sistema
 try { const t = localStorage.getItem("auraTema"); document.documentElement.dataset.tema = t === "claro" || t === "oscuro" ? t : (matchMedia("(prefers-color-scheme: dark)").matches ? "oscuro" : "claro"); } catch { /* sin almacenamiento */ }
@@ -151,7 +151,7 @@ async function enviar(form, fn) {
   try { await fn(); } catch (e) { mensaje(errorEnEspanol(e)); } finally { b.disabled = false; }
 }
 // Solo se vuelve a páginas propias de la app (lista blanca); cualquier otro valor va al inicio
-const PAGINAS_APP = ["index.html", "acero.html", "reticulada.html", "placa.html", "hormigon.html", "muro.html", "madera.html", "mle.html", "espectros.html", "vial.html", "rigido.html"];
+const PAGINAS_APP = ["index.html", "acero.html", "reticulada.html", "placa.html", "hormigon.html", "muro.html", "madera.html", "mle.html", "espectros.html", "vial.html", "rigido.html", "zapata.html", "piers.html", "base.html", "conexion.html"];
 const destino = () => {
   const v = new URLSearchParams(location.search).get("volver");
   if (!v) return "index.html";

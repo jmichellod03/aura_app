@@ -96,6 +96,26 @@ const Guia = (() => {
       { en: "t:Berma", titulo: "6 · Berma, juntas y clima", texto: "Tipo de berma, largo de losa, esviaje de las juntas y clima." },
       { en: "t:Transferencia", titulo: "7 · Transferencia de carga", texto: "Con o sin barras de traspaso: define el coeficiente J y la verificación de escalonamiento." },
     ],
+    "base.html": [
+      { en: "t:1. Columna", titulo: "1 · Columna", texto: "Perfil de la columna de acero que llega a la placa base." },
+      { en: "t:2. Placa", titulo: "2 · Placa y pedestal", texto: "Dimensiones y espesor de la placa y del pedestal de hormigón: definen el aplastamiento (A2/A1) y la flexión de la placa (Design Guide 1)." },
+      { en: "t:3. Cargas", titulo: "3 · Cargas mayoradas", texto: "Compresión o tracción, corte y momento en la base (LRFD)." },
+      { en: "t:4. Pernos", titulo: "4 · Pernos de anclaje", texto: "Diámetro, calidad y largo embebido de los pernos: se verifican a tracción, corte y arrancamiento del hormigón (ACI 318-08 Apéndice D). Si el corte no lo toman los pernos, defina la llave de corte." },
+      { en: "t:5. Soldadura", titulo: "5 · Soldadura", texto: "Tamaño de la soldadura entre la columna y la placa." },
+    ],
+    "conexion.html": [
+      { en: "t:1. Viga", titulo: "1 · Viga", texto: "Perfil de la viga que llega a la columna." },
+      { en: "t:2. Columna", titulo: "2 · Columna", texto: "Perfil de la columna; la viga llega a su ala, cuyas alas y alma también se verifican." },
+      { en: "t:3. Solicitaciones", titulo: "3 · Solicitaciones", texto: "Corte y, si la conexión es de momento, el momento mayorados (LRFD)." },
+      { en: "t:4. Pernos", titulo: "4 · Pernos y soldadura", texto: "Diámetro y calidad de los pernos y tamaño de las soldaduras (AISC 360-16 capítulo J)." },
+      { en: "t:5. Placa de corte", titulo: "5 · Placa de corte", texto: "Placa en el alma que toma el corte: se verifican pernos, aplastamiento, bloque de corte y soldadura." },
+      { en: "t:6. Placas de ala", titulo: "6 · Placas de ala", texto: "Placas apernadas a las alas que transmiten el momento como un par de fuerzas." },
+    ],
+    "piers.html": [
+      { en: "t:1. Tablas", titulo: "1 · Tablas de ETABS", texto: "Importe las tablas de piers exportadas desde ETABS: cada pier trae sus fuerzas por combinación." },
+      { en: "t:2. Materiales", titulo: "2 · Materiales y armadura", texto: "Hormigón, acero y armadura horizontal de los muros." },
+      { en: "t:3. Geometría", titulo: "3 · Geometría", texto: "Largo y espesor de cada muro; con ellos se verifica el corte y la armadura horizontal." },
+    ],
     "zapata.html": [
       { en: "t:1. Geometría", titulo: "1 · Geometría", texto: "Elija si calcula el ancho B con el largo L fijo (como el ejercicio del curso) o verifica B y L dados. Ingrese la altura hc, el sello Df, la altura ht de la carga sobre el terreno y la columna a × b con la barra que se ancla." },
       { en: "t:2. Suelo", titulo: "2 · Suelo", texto: "Tensión admisible y pesos específicos del suelo y del hormigón. Con γ = 0 se desprecian los pesos, como en el curso." },
