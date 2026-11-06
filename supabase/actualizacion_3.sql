@@ -13,7 +13,9 @@ create table if not exists public.correos_autorizados (
 alter table public.correos_autorizados enable row level security;
 
 insert into public.correos_autorizados (email, nota) values
-  ('jmichellod03@gmail.com', 'administrador')
+  ('jmichellod03@gmail.com', 'administrador'),
+  ('benjaminestebanp@gmail.com', null),
+  ('merino.lagos@hotmail.com', null)
   -- , ('otra.persona@gmail.com', 'nombre')
 on conflict (email) do nothing;
 
