@@ -4,6 +4,13 @@
 (() => {
   const html = document.documentElement;
   html.classList.add("con-lateral");
+  // Tema claro u oscuro: la elección guardada o, si no hay, la del sistema (se fija antes de pintar la página)
+  const CLAVE_TEMA = "auraTema", sistemaOscuro = matchMedia("(prefers-color-scheme: dark)");
+  let temaGuardado = null;
+  try { const v = localStorage.getItem(CLAVE_TEMA); if (v === "claro" || v === "oscuro") temaGuardado = v; } catch { /* sin almacenamiento */ }
+  const temaActual = () => temaGuardado || (sistemaOscuro.matches ? "oscuro" : "claro");
+  const aplicarTema = () => { html.dataset.tema = temaActual(); document.querySelector('meta[name="theme-color"]')?.setAttribute("content", html.dataset.tema === "oscuro" ? "#0b0d33" : "#00008B"); };
+  aplicarTema();
   const CLAVE = "auraLateralCorta";
   // Preferencia guardada; entre 900 y 1280 px la barra va contraída para no angostar los resultados
   let prefCorta = null;
@@ -35,6 +42,8 @@
     rigido: svg('<rect x="2" y="8" width="20" height="8" rx="1"/><path d="M9 8v8M15 8v8"/>'),
     plegar: svg('<path d="M15 6l-6 6 6 6"/>'),
     menu: svg('<path d="M4 6h16M4 12h16M4 18h16"/>'),
+    luna: svg('<path d="M20 14.5A8 8 0 019.5 4a8 8 0 1010.5 10.5z"/>'),
+    sol: svg('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'),
     cerrar: svg('<path d="M6 6l12 12M18 6L6 18"/>'),
   };
   const GRUPOS = [
@@ -100,7 +109,22 @@
     const pie = el("div", { class: "lat-pie" });
     const corta = el("button", { type: "button", class: "lat-corta-btn", "aria-label": "Contraer menú", title: "Contraer menú",
       html: `${ICO.plegar}<span class="lat-tx">Contraer menú</span>` });
-    pie.append(corta);
+    // Modo claro / oscuro: el botón muestra el modo al que cambia
+    const tema = el("button", { type: "button", class: "lat-tema" });
+    const rotularTema = () => {
+      const oscuro = html.dataset.tema === "oscuro", txt = oscuro ? "Modo claro" : "Modo oscuro";
+      tema.innerHTML = `${oscuro ? ICO.sol : ICO.luna}<span class="lat-tx"></span>`;
+      tema.querySelector(".lat-tx").textContent = txt;
+      tema.title = txt; tema.setAttribute("aria-label", txt);
+    };
+    tema.addEventListener("click", () => {
+      temaGuardado = html.dataset.tema === "oscuro" ? "claro" : "oscuro";
+      try { localStorage.setItem(CLAVE_TEMA, temaGuardado); } catch { /* sin almacenamiento */ }
+      aplicarTema(); rotularTema();
+    });
+    enCambio(sistemaOscuro, () => { if (!temaGuardado) { aplicarTema(); rotularTema(); } });
+    rotularTema();
+    pie.append(tema, corta);
     lat.append(pie);
 
     const velo = el("div", { class: "lat-velo", hidden: "" });

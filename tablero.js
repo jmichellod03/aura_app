@@ -2,7 +2,8 @@
 // memoria .tex). Reorganiza lo que cada página ya dibuja, observando el DOM:
 //   - panel de datos plegable (botón en el título "Datos de entrada");
 //   - tablero: medidor del D/C máximo junto al veredicto y semáforo en las tarjetas de resumen;
-//   - procedimiento en tarjetas por sección (h3) con su estado (cumple / no cumple) e índice de chips.
+//   - procedimiento en tarjetas por sección (h3) con su estado (cumple / no cumple), en pestañas ("Todo", una por
+//     sección y "Referencias", con las normas y cláusulas citadas en las filas).
 // Se carga después de memo.js y antes del script de la página.
 "use strict";
 const Tablero = (() => {
@@ -141,27 +142,178 @@ const Tablero = (() => {
     }
     indice(memo, cards);
   }
+
+  // ---------- Pestañas del procedimiento: «Todo», una por sección y «Referencias» ----------
+  const elegida = new Map();                  // por memoria: pestaña elegida ("todo", título de la sección o "refs")
   function indice(memo, cards) {
-    // El índice se identifica por su memoria (entre ambos puede quedar el botón "Mostrar / ocultar todas las ecuaciones")
-    const de = memo.id || "memo";
+    // La barra se identifica por su memoria (entre ambas puede quedar el botón "Mostrar / ocultar todas las ecuaciones")
+    if (!memo.id) memo.id = "memo";
+    const de = memo.id;
     let nav = memo.parentElement.querySelector(`:scope > .mindice[data-de="${de}"]`);
-    if (!cards.length) { nav?.remove(); return; }
+    let panel = memo.parentElement.querySelector(`:scope > .mrefs[data-de="${de}"]`);
+    const eqs = memo.previousElementSibling?.classList.contains("todasEq") ? memo.previousElementSibling : null;
+    if (!cards.length) { nav?.remove(); panel?.remove(); memo.classList.remove("oculta"); eqs?.classList.remove("oculta"); return; }
     if (!nav) {
       nav = document.createElement("nav"); nav.className = "mindice"; nav.dataset.de = de; nav.setAttribute("aria-label", "Secciones del procedimiento");
       (memo.previousElementSibling?.classList.contains("todasEq") ? memo.previousElementSibling : memo).before(nav);
     }
+    if (!panel) {
+      panel = document.createElement("div"); panel.className = "mrefs"; panel.dataset.de = de; panel.id = de + "-refs";
+      panel.setAttribute("role", "tabpanel"); panel.tabIndex = 0;
+      memo.after(panel);
+    }
+    referencias(panel, cards);
     nav.replaceChildren();
-    const t = document.createElement("span"); t.className = "mindice-t"; t.textContent = "Procedimiento"; nav.append(t);
+    const lista = document.createElement("div"); lista.className = "mtabs"; lista.setAttribute("role", "tablist"); lista.setAttribute("aria-label", "Procedimiento");
+    nav.append(lista);
+    const pestanas = [];
+    // Cada pestaña controla un panel (la memoria completa, una tarjeta o las referencias), que se rotula con ella
+    const paneles = new Map();
+    const nueva = (clave, texto, titulo, clase, el) => {
+      const b = document.createElement("button");
+      b.type = "button"; b.setAttribute("role", "tab"); b.className = "mtab" + (clase ? " " + clase : ""); b.dataset.clave = clave;
+      b.id = `${de}-tab-${pestanas.length}`;
+      b.setAttribute("aria-controls", el.id); b.title = titulo; b.textContent = texto;
+      if (clase === "ok" || clase === "bad") { const s = document.createElement("span"); s.className = "sr-only"; s.textContent = clase === "ok" ? ", cumple" : ", no cumple"; b.append(s); }
+      b.addEventListener("click", () => mostrar(clave, true));
+      lista.append(b); pestanas.push(b); paneles.set(clave, [el, b]);
+    };
+    // Clave estable de una sección: su título sin el número ni lo que va tras " — " (cambian al recalcular)
+    const claveDe = (c) => c.querySelector(".mcard-h3").dataset.titulo.replace(/^\s*\d+\.\s*/, "").split(/\s+—\s+/)[0].trim();
+    nueva("todo", "Todo", "Procedimiento completo", "", memo);
     for (const c of cards) {
-      const a = document.createElement("a");
-      a.href = "#" + c.id; a.className = c.classList.contains("est-bad") ? "bad" : c.classList.contains("est-ok") ? "ok" : "";
-      a.textContent = c.querySelector(".mcard-t").textContent.trim();
-      a.addEventListener("click", (e) => {
-        e.preventDefault();
-        if (c.classList.contains("plegada")) c.querySelector(".mcard-cab").click();
-        c.scrollIntoView({ behavior: "smooth", block: "start" });
-      });
-      nav.append(a);
+      const titulo = c.querySelector(".mcard-t").textContent.trim(), n = c.querySelector(".mcard-n").textContent;
+      // Nombre corto: lo que va antes de " — " (la norma o el capítulo quedan en el título completo de la pestaña)
+      const base = titulo.split(/\s+—\s+/)[0], corto = base.length > 30 ? base.slice(0, 28).trimEnd() + "…" : base;
+      const est = c.classList.contains("est-bad") ? "bad" : c.classList.contains("est-ok") ? "ok" : "";
+      nueva(claveDe(c), `${n === "i" ? "" : n + " · "}${corto}`, titulo + (est === "ok" ? " (cumple)" : est === "bad" ? " (no cumple)" : ""), est, c);
+    }
+    nueva("refs", "Referencias", "Normas y cláusulas usadas en el cálculo", "refs", panel);
+    // Flechas, Inicio y Fin recorren las pestañas (patrón de pestañas de WAI-ARIA)
+    lista.addEventListener("keydown", (e) => {
+      const i = pestanas.indexOf(document.activeElement);
+      if (i < 0) return;
+      const j = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: pestanas.length - 1 }[e.key];
+      if (j === undefined) return;
+      e.preventDefault();
+      const b = pestanas[(j + pestanas.length) % pestanas.length];
+      b.focus(); mostrar(b.dataset.clave, false);
+    });
+    function mostrar(clave, alClic) {
+      if (!pestanas.some(b => b.dataset.clave === clave)) clave = "todo";
+      elegida.set(de, clave);
+      for (const b of pestanas) {
+        const si = b.dataset.clave === clave;
+        b.setAttribute("aria-selected", String(si)); b.tabIndex = si ? 0 : -1;
+        if (si && alClic) b.scrollIntoView({ block: "nearest", inline: "nearest" });
+      }
+      memo.classList.toggle("oculta", clave === "refs");
+      eqs?.classList.toggle("oculta", clave === "refs");
+      panel.hidden = clave !== "refs";
+      for (const c of cards) {
+        const si = clave === "todo" || clave === claveDe(c);
+        c.classList.toggle("fuera", !si);
+        // La sección elegida se ve desplegada, sin cambiar la preferencia de plegado guardada
+        if (si && clave !== "todo" && c.classList.contains("plegada")) { c.classList.remove("plegada"); c.querySelector(".mcard-cab").setAttribute("aria-expanded", "true"); }
+      }
+      // Rol de panel en el elemento que muestra la pestaña elegida (las tarjetas, solo cuando son una pestaña)
+      for (const [k, [el, b]] of paneles) {
+        if (k === "refs") { el.setAttribute("aria-labelledby", b.id); continue; }
+        if (k === clave) { el.setAttribute("role", "tabpanel"); el.setAttribute("aria-labelledby", b.id); }
+        else if (el !== memo || clave === "refs") { el.removeAttribute("role"); el.removeAttribute("aria-labelledby"); }
+      }
+      if (clave !== "todo" && clave !== "refs") { memo.removeAttribute("role"); memo.removeAttribute("aria-labelledby"); }
+      // Al cambiar de pestaña con el procedimiento ya recorrido, se vuelve al inicio del contenido
+      if (alClic && memo.getBoundingClientRect().top < nav.getBoundingClientRect().bottom) {
+        const destino = clave === "refs" ? panel : memo, y = nav.getBoundingClientRect().bottom + 8;
+        scrollTo({ top: scrollY + destino.getBoundingClientRect().top - y });
+      }
+    }
+    mostrar(elegida.get(de) || "todo", false);
+  }
+
+  // ---------- Referencias: normas usadas, con sus cláusulas y la sección donde se aplican ----------
+  // patron: reconoce la norma en el texto de la marca; clausula: marcas sin el nombre de la norma que le pertenecen
+  // cuando la norma es la principal de la página (subtítulo de la cabecera).
+  const NORMAS = [
+    { id: "aisc", patron: /(?:ANSI\/)?AISC\s?360-16/, clausula: /^(?:[A-N]\d|A-\d)/, titulo: "ANSI/AISC 360-16",
+      desc: "Specification for Structural Steel Buildings. American Institute of Steel Construction, Chicago, 2016. Diseño por factores de carga y resistencia (LRFD)." },
+    { id: "aci", patron: /ACI\s?318-08/, clausula: /^\d{1,2}(?:[.-]\d+)+(?![\d.A-Z])/, titulo: "ACI 318-08",
+      desc: "Building Code Requirements for Structural Concrete and Commentary. American Concrete Institute, Farmington Hills, 2008. Adoptado en Chile mediante el DS 60 y la NCh 430." },
+    { id: "aci14", patron: /ACI\s?318-14/, titulo: "ACI 318-14", desc: "Building Code Requirements for Structural Concrete and Commentary. American Concrete Institute, 2014." },
+    { id: "nch1198", patron: /NCh\s?1198(?::2024)?/, clausula: /^(?:\d{1,2}(?:\.\d+)+(?![\dA-Z])|Tabla \d|Anexo [A-Z]\b)/, titulo: "NCh 1198:2024",
+      desc: "Madera — Construcciones en madera — Cálculo. Instituto Nacional de Normalización (INN), Santiago, 2024. Método de tensiones admisibles." },
+    { id: "nch2165", patron: /NCh\s?2165(?::2023)?/, titulo: "NCh 2165:2023", desc: "Madera laminada encolada estructural — Propiedades físicas y mecánicas. Instituto Nacional de Normalización (INN), Santiago, 2023." },
+    { id: "mc", patron: /Manual de Carreteras/, clausula: /^(?:Tablas? |Láminas? )?3\.6\d\d/, titulo: "Manual de Carreteras, Volumen 3",
+      desc: "Instrucciones y Criterios de Diseño. Dirección de Vialidad, Ministerio de Obras Públicas de Chile. Capítulo 3.600, diseño de pavimentos." },
+    { id: "aashto", patron: /AASHTO/, titulo: "AASHTO 1993 (Suplemento 1998)", desc: "Guide for Design of Pavement Structures. American Association of State Highway and Transportation Officials, 1993, con el Suplemento de 1998 para pavimentos rígidos." },
+    { id: "instadeck", patron: /Instadeck|Ficha t[ée]cnica|Manual T[ée]cnico/, clausula: /^(?:Tabla [IVX]+\b|Ficha t[ée]cnica|Manual, pto\.)/, titulo: "Cintac — Manual Técnico Instadeck",
+      desc: "Manual Técnico Instadeck (noviembre 2010) y Ficha Técnica de la placa colaborante Instadeck 0.8 mm. Tablas I a IV según el método SDI (1991)." },
+    { id: "sdi", patron: /SDI/, titulo: "SDI 1991", desc: "Steel Deck Institute — Composite Deck Design Handbook, 1991. Método del que derivan las tablas del fabricante." },
+    { id: "nch433", patron: /NCh\s?433|DS\s?(?:61|117)/, titulo: "NCh 433", desc: "Diseño sísmico de edificios. Instituto Nacional de Normalización (INN), con el Decreto Supremo 61 (2011) del MINVU." },
+    { id: "nch2369", patron: /NCh\s?2369/, titulo: "NCh 2369", desc: "Diseño sísmico de estructuras e instalaciones industriales. Instituto Nacional de Normalización (INN)." },
+    { id: "nch3171", patron: /NCh\s?3171/, titulo: "NCh 3171:2017", desc: "Diseño estructural — Disposiciones generales y combinaciones de carga. Instituto Nacional de Normalización (INN), 2017." },
+    { id: "rankine", patron: /Rankine/, titulo: "Rankine", desc: "Teoría de empujes activo y pasivo de tierras (W. J. M. Rankine, 1857), para relleno sin cohesión y trasdós vertical." },
+    { id: "mo", patron: /Mononobe|Okabe|\bM-O\b/, titulo: "Mononobe-Okabe", desc: "Empuje sísmico de tierras (Okabe, 1926; Mononobe y Matsuo, 1929), extensión pseudoestática de la teoría de Coulomb." },
+    { id: "ich", patron: /\bICH\b/, titulo: "Manual de cálculo de hormigón armado (ICH)", desc: "Instituto del Cemento y del Hormigón de Chile. Tablas de apoyo para el diseño de losas." },
+  ];
+  const OTRAS = { id: "otras", titulo: "Otras referencias y criterios", desc: "Criterios del curso, combinaciones de carga y otras referencias citadas sin una norma asociada." };
+  function referencias(panel, cards) {
+    const sub = document.querySelector("header > span")?.textContent || "";
+    // Normas principales de la página, en el orden en que aparecen en el subtítulo
+    const principales = NORMAS.filter(n => n.clausula && n.patron.test(sub)).sort((a, b) => sub.search(a.patron) - sub.search(b.patron));
+    const grupos = new Map();
+    const agregar = (norma, clausula, seccion) => {
+      if (!grupos.has(norma.id)) grupos.set(norma.id, { norma, cl: new Map() });
+      const g = grupos.get(norma.id);
+      if (!clausula) return;
+      if (!g.cl.has(clausula)) g.cl.set(clausula, new Set());
+      g.cl.get(clausula).add(seccion);
+    };
+    for (const n of NORMAS) if (n.patron.test(sub)) agregar(n, "", "");
+    // Marcas sin norma de una sección cuyo título nombra una norma ("Propiedades del material — NCh 2165")
+    const GENERICA = /^(?:Tablas? \d|\d{1,2}(?:\.\d+)+(?![\dA-Z])|Anexo [A-Z]\b)/;
+    for (const c of cards) {
+      const seccion = c.querySelector(".mcard-h3").dataset.titulo;
+      const deSeccion = NORMAS.find(x => x.patron.test(seccion));
+      // Referencias de las filas (.ref) y de las ecuaciones (.kref, entre paréntesis)
+      for (const r of c.querySelectorAll(".ref, .kref")) {
+        const t = r.textContent.trim().replace(/^\((.*)\)$/, "$1").trim();
+        if (!t) continue;
+        const ns = NORMAS.filter(x => x.patron.test(t));
+        if (ns.length) {
+          let resto = t;
+          for (const n of ns) resto = resto.replace(n.patron, "");
+          resto = resto.replace(/^[\s,;:·—/-]+|[\s,;:·—/-]+$/g, "").trim();
+          for (const n of ns) agregar(n, resto || t, seccion);
+          continue;
+        }
+        if (deSeccion && GENERICA.test(t)) { agregar(deSeccion, t, seccion); continue; }
+        const p = principales.find(x => x.clausula.test(t));
+        agregar(p || OTRAS, t, seccion);
+      }
+    }
+    panel.replaceChildren();
+    const intro = document.createElement("p"); intro.className = "mrefs-int";
+    intro.textContent = "Normas y documentos usados en este cálculo, con las cláusulas, ecuaciones y tablas que se aplican y la sección del procedimiento donde aparecen. Cada fila del procedimiento muestra además su referencia.";
+    panel.append(intro);
+    const orden = [...grupos.values()].sort((a, b) => (a.norma === OTRAS) - (b.norma === OTRAS));
+    for (const { norma, cl } of orden) {
+      const s = document.createElement("section"); s.className = "mref";
+      const h = document.createElement("h4"); h.textContent = norma.titulo;
+      const p = document.createElement("p"); p.className = "mref-d"; p.textContent = norma.desc;
+      s.append(h, p);
+      if (cl.size) {
+        const ul = document.createElement("ul");
+        for (const [clausula, secciones] of cl) {
+          const li = document.createElement("li");
+          const r = document.createElement("span"); r.className = "ref"; r.textContent = clausula || norma.titulo;
+          const q = document.createElement("span"); q.className = "mref-s"; q.textContent = [...secciones].join(" · ");
+          li.append(r, q); ul.append(li);
+        }
+        s.append(ul);
+      }
+      panel.append(s);
     }
   }
 
