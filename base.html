@@ -233,6 +233,7 @@
         <div class="row2">
           <div><label for="ag">Golilla: lado <span class="unit">[mm]</span></label><input id="ag" type="number" step="1" value="51"></div>
           <div><label for="tg">Golilla: espesor <span class="unit">[mm]</span></label><input id="tg" type="number" step="1" value="6"></div>
+          <div><label for="wg">Golilla: filete a la placa <span class="unit">[mm]</span></label><input id="wg" type="number" step="1" value="4"></div>
         </div>
         <label class="chk"><input id="grout" type="checkbox" checked> Placa sobre grout (reduce el corte del acero, D.6.1.3)</label>
         <label class="chk"><input id="torque" type="checkbox"> Pernos con apriete controlado (torque)</label>
@@ -461,13 +462,13 @@ function leerDatos() {
     cabeza: $("cabeza").value, eh: c("eh"), sis: $("sis").value, armAnc: $("armAnc").checked, nAr: Math.round(num("nAr")), dbAr: parseFloat($("dbAr").value) / 10,
     modoV: $("modoV").value, mu: num("mu"), phiR: num("phiR"),
     db: db / 10, dh: PERFORACION[db] / 10, paso: PASO[db] / 10, aceroP: $("aceroP").value, fya: ap.fya, futa: ap.futa,
-    hef: c("hef"), s1: c("s1"), s2: c("s2"), fisurado: $("fis").value === "1", grout: $("grout").checked, torque: $("torque").checked, ag: c("ag"), tg: c("tg"),
+    hef: c("hef"), s1: c("s1"), s2: c("s2"), fisurado: $("fis").value === "1" || $("sis").value !== "no", grout: $("grout").checked, torque: $("torque").checked, ag: c("ag"), tg: c("tg"), wg: c("wg"),
     w: c("w"), fexx: parseFloat($("fexx").value), contacto: $("contacto").checked,
   };
 }
 function reglasDatos() {
   const r = [["N", 0, true], ["B", 0, true], ["tp", 0, true], ["Np", 0, true], ["Bp", 0, true], ["ha", 0, true], ["fc", 0, true], ["eg", 0],
-    ["Pu", 0, true], ["Pmin", 0], ["Vu", 0], ["Tu", 0], ["hef", 0, true], ["s1", 0, true], ["s2", 0, true], ["w", 0, true], ["ag", 0, true], ["tg", 0, true]];
+    ["Pu", 0, true], ["Pmin", 0], ["Vu", 0], ["Tu", 0], ["hef", 0, true], ["s1", 0, true], ["s2", 0, true], ["w", 0, true], ["ag", 0, true], ["tg", 0, true], ["wg", 0, true]];
   if ($("serie").value === "otro") r.push(["pd", 0, true], ["pbf", 0, true], ["ptf", 0, true], ["ptw", 0, true]);
   if ($("modoV").value === "roce") r.push(["mu", 0, true], ["phiR", 0, true]);
   if ($("modoV").value === "llave") r.push(["bL", 0, true], ["tL", 0, true], ["HL", 0, true], ["wL", 0, true]);
@@ -621,6 +622,7 @@ function verificar(d, m) {
   const r = { A1, A2, rA, raiz, phiPp, mV, nV, X, lam, lnp, ell, treq, holgura, ca1, ca2, eN, eB };
   // Sismo (ACI 318-08 D.3.3): 0.75 en los modos de falla del hormigón (D.3.3.3) y, si se elige D.3.3.6, 0.4 en todos
   const fC = d.sis === "no" ? 1 : 0.75, fR = d.sis === "red" ? 0.4 : 1;
+  if (d.sis !== "no") m.p(L`En sismo se supone hormigón fisurado (ACI 318-08 D.3.3.3).`);
   const sisTxt = d.sis === "no" ? "" : d.sis === "red"
     ? L` En sismo, las resistencias del hormigón se multiplican por 0.75 (D.3.3.3) y todas las del anclaje por 0.4 (D.3.3.6).`
     : L` En sismo, las resistencias del hormigón se multiplican por 0.75 (D.3.3.3) y debe controlar la falla dúctil del acero (D.3.3.4).`;
@@ -727,11 +729,23 @@ function verificar(d, m) {
     m.sub("Aplastamiento en la perforación de la golilla");
     const dhg = d.db + 0.2, lc = d.ag / 2 - dhg / 2;
     const Rn1 = Math.min(1.2 * lc * d.tg * d.Fu, 2.4 * d.db * d.tg * d.Fu), phiRb = 0.75 * N_PERNOS * Rn1, dcB = d.Vu / phiRb;
-    m.p(L`Como la perforación de la placa está sobredimensionada, el perno apoya contra la golilla soldada (perforación $d_a + 2$ mm). Se usa la expresión con la deformación en la perforación como consideración de diseño; $l_c$ es la distancia libre, en la dirección de la fuerza, entre el borde de la perforación y el borde de la golilla. La golilla es del mismo acero de la placa. No se verifica la soldadura de la golilla a la placa.`);
+    m.p(L`Como la perforación de la placa está sobredimensionada, el perno apoya contra la golilla soldada (perforación $d_a + 2$ mm). Se usa la expresión con la deformación en la perforación como consideración de diseño; $l_c$ es la distancia libre, en la dirección de la fuerza, entre el borde de la perforación y el borde de la golilla. La golilla es del mismo acero de la placa.`);
     m.row("Distancia libre al borde de la golilla: l<sub>c</sub>", `${fmt(MM(lc), 1)} mm`);
     m.row("Aplastamiento del grupo: φR<sub>n</sub> ≥ V<sub>u</sub>", `${fmt(T(phiRb), 2)} tf ${tagDC(dcB)}`, "AISC 360-16 J3-6a");
     m.eq(L`R_n = 1.2\,l_c\,t_g\,F_u \le 2.4\,d_a\,t_g\,F_u:\ \min(1.2\cdot ${tn(lc, 2)}\cdot ${tn(d.tg, 2)}\cdot ${tn(d.Fu, 0)};\ 2.4\cdot ${tn(d.db, 1)}\cdot ${tn(d.tg, 2)}\cdot ${tn(d.Fu, 0)}) = ${tn(Rn1, 0)}\ \mathrm{kgf} \qquad \phi R_n = 0.75\cdot ${N_PERNOS}\cdot ${tn(Rn1, 0)} = ${tn(T(phiRb), 2)}\ \mathrm{tf} \qquad \frac{V_u}{\phi R_n} = ${tn(dcB, 3)} ${cmp(dcB)} 1.0`, "J3-6a");
     ck("Aplastamiento en la golilla", L`$V_u = ${tn(T(d.Vu), 2)}$ tf`, L`$\phi R_n = ${tn(T(phiRb), 2)}$ tf`, dcB, "v");
+    // Soldadura de cada golilla a la placa: filete en su contorno (4 a_g) con V_u/4 (AISC 360-16 J2-4)
+    m.sub("Soldadura de las golillas a la placa");
+    const rnG = PHI_W * 0.6 * d.fexx * 0.707 * d.wg, phiRg = rnG * 4 * d.ag, demG = d.Vu / N_PERNOS, dcG = demG / phiRg;
+    m.p(L`El corte de cada perno pasa a la placa por la soldadura de filete en el contorno de su golilla, de largo $4\,a_g$.`);
+    m.row("Soldadura de una golilla: φR<sub>n</sub> ≥ V<sub>u</sub>/4", `${fmt(T(phiRg), 2)} tf ${tagDC(dcG)}`, "AISC 360-16 J2-4");
+    m.eq(L`\phi R_n = 0.75\cdot 0.60\,F_{EXX}\,(0.707\,w_g)\,(4\,a_g) = 0.75\cdot 0.60\cdot ${tn(d.fexx, 0)}\cdot 0.707\cdot ${tn(d.wg, 2)}\cdot 4\cdot ${tn(d.ag, 1)} = ${tn(T(phiRg), 2)}\ \mathrm{tf} \qquad \frac{V_u/4}{\phi R_n} = \frac{${tn(T(demG), 2)}}{${tn(T(phiRg), 2)}} = ${tn(dcG, 3)} ${cmp(dcG)} 1.0`, "J2-4");
+    ck("Soldadura de las golillas", L`$V_u/4 = ${tn(T(demG), 2)}$ tf`, L`$\phi R_n = ${tn(T(phiRg), 2)}$ tf`, dcG, "v");
+    const tgm = MM(Math.min(d.tg, d.tp)), wgMin = (tgm <= 6 ? 3 : tgm <= 13 ? 5 : tgm <= 19 ? 6 : 8) / 10;
+    const wgMax = MM(d.tg) < 6 ? d.tg : d.tg - 0.2, okWg = d.wg >= wgMin - 1e-9 && d.wg <= wgMax + 1e-9;
+    m.row("Filete de la golilla: mínimo ; máximo en su borde", `${fmt(MM(wgMin), 0)} ; ${fmt(MM(wgMax), 0)} mm ${tag(okWg, okWg ? "Cumple" : "No cumple")}`, "AISC 360-16 Tabla J2.4, J2.2b");
+    m.p(L`El máximo de J2.2b aplica aquí porque el filete corre a lo largo del borde de la golilla, apoyada sobre la placa.`);
+    if (!okWg) motivos.push(d.wg < wgMin ? `filete de las golillas menor que el mínimo (${fmt(MM(wgMin), 0)} mm)` : `filete de las golillas mayor que el máximo (${fmt(MM(wgMax), 0)} mm)`);
     if (casos.some(c => c.dc > 1 + 1e-9)) m.note("El cono de hormigón no resiste el corte. Opciones: tomar el corte por roce (solo con compresión permanente), usar una llave de corte o disponer armadura de anclaje para corte en el pedestal (D.6.2.9, no calculada aquí).", L`El cono de hormigón no resiste el corte: tomar el corte por roce (solo con compresión permanente), usar una llave de corte o disponer armadura de anclaje para corte en el pedestal (ACI 318-08 D.6.2.9).`);
     Object.assign(r, { Ase, futa, phiVsa, casos, pr, phiVcp });
   }
@@ -801,26 +815,43 @@ function verificar(d, m) {
       const c1 = MM(ca1), c2 = MM(ca2), c = Math.min(c1, c2), cPerp = c === c1 ? c2 : c1, sBorde = MM(c === c1 ? d.s2 : d.s1), hefm = MM(d.hef);
       if (c < 0.4 * hefm) {
         m.sub("Desprendimiento lateral del hormigón (side-face blowout)");
-        let Nsb = 13.3 * c * Math.sqrt(Abrg) * Math.sqrt(fcM);                       // D-17 [N]
+        const Nsb = 13 * c * Math.sqrt(Abrg) * Math.sqrt(fcM);                        // D-17 [N], unidades SI
+        // Pernos individuales (s ≥ 6c): factor de esquina de D.5.4.1. Grupo (s < 6c, D-18): N_sb sin modificar por el borde perpendicular.
         const fEsq = cPerp < 3 * c ? (1 + Math.min(cPerp / c, 3)) / 4 : 1;
-        Nsb *= fEsq;
-        const Nsbg = sBorde < 6 * c ? (1 + sBorde / (6 * c)) * Nsb : 2 * Nsb;        // D-18: fila de 2 pernos junto al borde
+        const grupo = sBorde < 6 * c;
+        const Nsbg = grupo ? (1 + sBorde / (6 * c)) * Nsb : 2 * fEsq * Nsb;           // fila de 2 pernos junto al borde
         const phiNsb = PHI_CV * Nsbg * KGF * fC * fR, dem = d.Tu / 2, dcSb = dem / phiNsb;
         tracConc = Math.min(tracConc, 2 * phiNsb);
         m.row("Borde más cercano: c<sub>a1</sub> < 0.4h<sub>ef</sub>", `${fmt(c, 0)} < ${fmt(0.4 * hefm, 0)} mm`, "ACI 318-08 D.5.4.1");
-        m.eq(L`N_{sb} = 13.3\,c_{a1}\sqrt{A_{brg}}\,\lambda\sqrt{f'_c}${fEsq !== 1 ? L`\cdot\frac{1 + c_{a2}/c_{a1}}{4}` : ""} = ${tn(Nsb / 1000, 2)}\ \mathrm{kN} \qquad N_{sbg} = \left(1 + \frac{s}{6c_{a1}}\right)N_{sb} = ${tn(Nsbg / 1000, 2)}\ \mathrm{kN}`, "D-17, D-18");
+        m.eq(L`N_{sb} = 13\,c_{a1}\sqrt{A_{brg}}\,\lambda\sqrt{f'_c} = 13\cdot ${tn(c, 0)}\sqrt{${tn(Abrg, 0)}}\sqrt{${tn(fcM, 1)}} = ${tn(Nsb / 1000, 2)}\ \mathrm{kN}`, "D-17");
+        m.eq(grupo
+          ? L`N_{sbg} = \left(1 + \frac{s}{6c_{a1}}\right)N_{sb} = \left(1 + \frac{${tn(sBorde, 0)}}{6\cdot ${tn(c, 0)}}\right)${tn(Nsb / 1000, 2)} = ${tn(Nsbg / 1000, 2)}\ \mathrm{kN}`
+          : L`s \ge 6c_{a1}:\ \text{pernos individuales},\ 2\,N_{sb}${fEsq !== 1 ? L`\cdot\frac{1 + c_{a2}/c_{a1}}{4}` : ""} = ${tn(Nsbg / 1000, 2)}\ \mathrm{kN}`, grupo ? "D-18" : "D-17");
+        if (grupo) m.p(L`En el grupo, $N_{sb}$ se usa sin modificar por la distancia al borde perpendicular (D.5.4.2).`);
         m.row("Desprendimiento lateral, fila de borde: φN<sub>sbg</sub> ≥ T<sub>u</sub>/2", `${fmt(T(phiNsb), 2)} tf ${tagDC(dcSb)}`, "ACI 318-08 D-18");
         ck("Desprendimiento lateral", L`$T_u/2 = ${tn(T(dem), 2)}$ tf`, L`$\phi N_{sbg} = ${tn(T(phiNsb), 2)}$ tf`, dcSb, "t");
       } else m.p(L`Desprendimiento lateral: no aplica, porque la menor distancia al borde ($${tn(c, 0)}$ mm) no es menor que $0.4\,h_{ef} = ${tn(0.4 * hefm, 0)}$ mm (D.5.4.1).`);
     }
     // Flexión de la placa por la tracción de los pernos (AISC Design Guide 1): voladizo con ancho efectivo a 45°, b_ef = 2x
     m.sub("Flexión de la placa por la tracción de los pernos");
-    const treqT = Math.sqrt(2 * Nua / (PHI_T * d.Fy)), dcTT = treqT / d.tp;
-    m.p(L`Cada perno tira de la placa, que trabaja en voladizo desde la cara del perfil más cercana (distancia $x$). Con un ancho efectivo $b_{ef} = 2x$ (reparto a 45°, AISC Design Guide 1) el brazo se cancela: $t_{req} = \sqrt{4N_{ua}x/(\phi F_y\,2x)} = \sqrt{2N_{ua}/(\phi F_y)}$. No se considera el efecto de palanca.`);
+    // Brazo x a la cara del perfil más cercana y ancho perpendicular limitado a x por lado, a la mitad de la separación
+    // al perno vecino y al borde de la placa.
+    const xPb = d.s1 / 2, zPb = d.s2 / 2, caraInt = p.d / 2 - p.tf, entreAlas = xPb < caraInt;
+    const xAla = entreAlas ? caraInt - xPb : xPb - p.d / 2, xAlma = entreAlas ? zPb - p.tw / 2 : Infinity;
+    const haciaAla = xAla <= xAlma, xT = Math.max(haciaAla ? xAla : xAlma, 0.1);
+    const bef = haciaAla
+      ? Math.min(xT, d.s2 / 2) + Math.min(xT, d.B / 2 - zPb)
+      : Math.min(xT, d.s1 / 2) + Math.min(xT, d.N / 2 - xPb);
+    const treqT = Math.sqrt(4 * Nua * xT / (PHI_T * d.Fy * bef)), dcTT = treqT / d.tp;
+    m.p(L`Cada perno tira de la placa, que trabaja en voladizo desde la cara del perfil más cercana (${haciaAla ? "el ala" : "el alma"}, a una distancia $x$). El ancho efectivo se reparte a 45° (AISC Design Guide 1), con hasta $x$ a cada lado del perno, limitado por la mitad de la separación al perno vecino y por el borde de la placa. No se considera el efecto de palanca.`);
+    m.row("Brazo y ancho efectivo: x ; b<sub>ef</sub>", `${fmt(MM(xT), 1)} ; ${fmt(MM(bef), 1)} mm`, "DG1 3.4");
+    m.eq(haciaAla
+      ? L`b_{ef} = \min(x;\ s_2/2) + \min(x;\ B/2 - s_2/2) = \min(${tn(MM(xT), 1)};\ ${tn(MM(d.s2 / 2), 1)}) + \min(${tn(MM(xT), 1)};\ ${tn(MM(d.B / 2 - zPb), 1)}) = ${tn(MM(bef), 1)}\ \mathrm{mm}`
+      : L`b_{ef} = \min(x;\ s_1/2) + \min(x;\ N/2 - s_1/2) = \min(${tn(MM(xT), 1)};\ ${tn(MM(d.s1 / 2), 1)}) + \min(${tn(MM(xT), 1)};\ ${tn(MM(d.N / 2 - xPb), 1)}) = ${tn(MM(bef), 1)}\ \mathrm{mm}`);
     m.row("Espesor requerido por la tracción: t<sub>req,T</sub> ≤ t<sub>p</sub>", `${fmt(MM(treqT), 1)} ≤ ${fmt(MM(d.tp), 0)} mm ${tagDC(dcTT)}`, "DG1 3.4");
-    m.eq(L`t_{req,T} = \sqrt{\frac{2\,N_{ua}}{\phi\,F_y}} = \sqrt{\frac{2\cdot ${tn(Nua, 0)}}{0.90\cdot ${tn(d.Fy, 0)}}} = ${tn(treqT, 2)}\ \mathrm{cm} \qquad \frac{t_{req,T}}{t_p} = ${tn(dcTT, 3)} ${cmp(dcTT)} 1.0`);
+    m.eq(L`t_{req,T} = \sqrt{\frac{4\,N_{ua}\,x}{\phi\,F_y\,b_{ef}}} = \sqrt{\frac{4\cdot ${tn(Nua, 0)}\cdot ${tn(xT, 2)}}{0.90\cdot ${tn(d.Fy, 0)}\cdot ${tn(bef, 2)}}} = ${tn(treqT, 2)}\ \mathrm{cm} \qquad \frac{t_{req,T}}{t_p} = ${tn(dcTT, 3)} ${cmp(dcTT)} 1.0`);
     ck("Flexión de la placa por tracción", L`$t_{req,T} = ${tn(MM(treqT), 1)}$ mm`, L`$t_p = ${tn(MM(d.tp), 0)}$ mm`, dcTT, "pl");
-    Object.assign(r, { Nua, phiNsa, phiNpn, Np, Abrg, treqT });
+    Object.assign(r, { Nua, phiNsa, phiNpn, Np, Abrg, treqT, xT, bef });
 
     // Interacción tracción–corte (D.7), solo si el corte lo toman los pernos
     if (cortePernos) {
@@ -887,9 +918,9 @@ function verificar(d, m) {
   const criticos = {
     pedestal: falla(/Aplastamiento del hormigón|Arrancamiento|palanca|Extracción|Desprendimiento lateral|Llave: (aplastamiento|arrancamiento)/),
     placa: falla(/Espesor|roce|Flexión de la placa/),
-    pernos: falla(/acero de los pernos|golilla|Interacción|Armadura de anclaje/) || holgura < d.w || !okS || !okC || motivos.some(t => /dúctil|gancho/.test(t)),
+    pernos: falla(/acero de los pernos|golilla|Interacción|Armadura de anclaje/) || motivos.some(t => /golillas/.test(t)) || holgura < d.w || !okS || !okC || motivos.some(t => /dúctil|gancho/.test(t)),
     llave: falla(/^Llave: (flexión|corte|soldadura)/) || motivos.some(t => /llave/.test(t)),
-    columna: falla(/Soldadura|Metal base/) || !okMin,
+    columna: falla(/^Soldadura de filete|Metal base/) || !okMin,
   };
   const dcMax = Math.max(...checks.map(c => c.dc));
   const ok = dcMax <= 1 + 1e-9 && !motivos.length;
@@ -989,7 +1020,7 @@ function documentoTex(d, r, cuerpo) {
     d.sis !== "no" ? L`Sismo según ACI 318-08 D.3.3: resistencias del hormigón por 0.75${d.sis === "red" ? " y todas las del anclaje por 0.4 (D.3.3.6)" : " y verificación de falla dúctil del acero (D.3.3.4)"}.` : L`Sin las exigencias sísmicas de D.3.3; si la combinación incluye sismo (NCh 433, NCh 2369), elija la opción de sismo.`,
     d.armAnc ? L`La armadura de anclaje a tracción reemplaza el cono de hormigón (D.5.2.9); su desarrollo a ambos lados del plano de falla debe verificarse aparte.` : "",
     L`El espesor de la placa sigue la AISC Design Guide 1 con presión uniforme. El aplastamiento usa $\phi_c = ${tn(d.phic, 2)}$.`,
-    L`Los pernos se verifican con el Apéndice D del ACI 318-08${d.armAnc ? "" : ", sin armadura de anclaje en el pedestal"}; con perforaciones sobredimensionadas se exigen golillas soldadas (no se verifica su soldadura). Pernos ${d.torque ? "con" : "sin"} apriete controlado (D.8).`,
+    L`Los pernos se verifican con el Apéndice D del ACI 318-08${d.armAnc ? "" : ", sin armadura de anclaje en el pedestal"}; con perforaciones sobredimensionadas se exigen golillas soldadas, cuya soldadura se verifica cuando el corte va por los pernos. Pernos ${d.torque ? "con" : "sin"} apriete controlado (D.8).`,
     d.modoV === "roce" ? L`El corte por roce supone compresión permanente concomitante; NCh 2369 suele no aceptarlo en sismo.` : "",
     d.modoV === "llave" ? L`La llave de corte sigue la AISC Design Guide 1 (2.ª ed., 3.5): aplastamiento con ACI 318-08 10.14.1, flexión F11-1 y corte J4-3 de la llave, soldadura con el momento como par de fuerzas de brazo $t_L$ y arrancamiento del hormigón con el criterio de ACI 349; exige grout que la rodee completamente.` : "",
     L`No se verifican el pedestal (armaduras, corte, flexión), el traspaso de cargas a la fundación, la estabilidad de montaje ni las tolerancias.`,
@@ -1078,6 +1109,10 @@ function calcular() {
   $("llaveNota").classList.toggle("hidden", $("modoV").value !== "llave");
   $("ehBox").classList.toggle("hidden", $("cabeza").value !== "gancho");
   $("armBox").classList.toggle("hidden", !$("armAnc").checked);
+  // ACI 318-08 D.3.3.3: en sismo el hormigón se supone fisurado
+  const conSismo = $("sis").value !== "no";
+  $("fis").disabled = conSismo;
+  if (conSismo) $("fis").value = "1";
   $("otroBox").classList.toggle("hidden", $("serie").value !== "otro");
   limpiarInvalidos($("inputs"));
   let malos = datosInvalidos(reglasDatos());
@@ -1191,7 +1226,7 @@ function descargarDXF() {
       ["Placa base", `PL ${fmt(N, 0)} x ${fmt(B, 0)} x ${fmt(tp, 0)} mm, ${ACEROS[d.acero].nombre}`, "1"],
       ["Pernos de anclaje", `%%c${fmt(db, 0)} mm ${ACEROS_PERNO[d.aceroP].nombre}, hef = ${fmt(hef, 0)} mm`, "4"],
       ["Perforaciones", `%%c${fmt(dh, 0)} mm (Tabla 4-46 Manual ICHA)`, "4"],
-      ["Golillas", `${fmt(MM(d.ag), 0)} x ${fmt(MM(d.ag), 0)} x ${fmt(MM(d.tg), 0)} mm, perf. %%c${fmt(db + 2, 0)}, soldada en terreno`, "4"],
+      ["Golillas", `${fmt(MM(d.ag), 0)} x ${fmt(MM(d.ag), 0)} x ${fmt(MM(d.tg), 0)} mm, perf. %%c${fmt(db + 2, 0)}, filete ${fmt(MM(d.wg), 0)} mm en terreno`, "4"],
       ["Soldadura", `Filete ${fmt(MM(d.w), 0)} mm todo el contorno, ${d.fexx >= 4900 ? "E70XX" : "E60XX"}`, "-"],
       ["Grout", `Sin retracción, ${fmt(eg, 0)} mm`, "-"],
       ...(d.modoV === "llave" ? [["Llave de corte", `PL ${fmt(MM(d.bL), 0)} x ${fmt(MM(d.tL), 0)} x ${fmt(MM(d.HL), 0)} mm, filete ${fmt(MM(d.wL), 0)} mm ambas caras`, "1"]] : []),
@@ -1214,7 +1249,7 @@ function descargarDXF() {
 function init() {
   llenarPerfiles();
   $("serie").addEventListener("change", () => { llenarPerfiles(); calcular(); });
-  $("db").addEventListener("change", () => { const g = GOLILLA[$("db").value]; $("ag").value = g[0]; $("tg").value = g[1]; });
+  $("db").addEventListener("change", () => { const g = GOLILLA[$("db").value]; $("ag").value = g[0]; $("tg").value = g[1]; $("wg").value = g[1] >= 6 ? g[1] - 2 : g[1]; });
   $("inputs").addEventListener("input", (e) => { if (e.target.tagName === "INPUT" && e.target.type !== "checkbox") calcular(); });
   $("inputs").addEventListener("change", () => calcular());
   calcular();
