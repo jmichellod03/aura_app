@@ -14,6 +14,7 @@ Las rutas de esta guía son relativas a la raíz del repositorio. Las normas y d
 |---|---|---|---|
 | Acero | `acero.html` | AISC 360-16 | `../Acero/AISC360-16.pdf`, `../Acero/vigas_laminadas_H.pdf` (catálogo) |
 | Vigas reticuladas | `reticulada.html` | AISC 360-16 LRFD; combinaciones NCh 3171 en el `.s2k` | ver la sección Vigas reticuladas |
+| Conexión viga–columna (prueba) | `conexion.html` (`?tipo=corte` o `momento`) | AISC 360-16 Cap. J, G2, F13; Especificación ICHA 13.4.3 como opción | `../Acero/AISC360-16.pdf`; Manual ICHA 2000 (ver `fichas/conexion.md` para las páginas) |
 | Placa colaborante | `placa.html` | Tablas Instadeck (Cintac, SDI 1991); conectores AISC 360-16 Cap. I | ficha y manual técnico Instadeck (carpeta "Placa Colaborante" del usuario) |
 | Hormigón: vigas y losas | `hormigon.html` (`?elemento=viga` o `losa`) | ACI 318-08 (y 318S-14 para detallamiento), NCh 430 | `../hormigon/ACI_318_08_Espanol (1).pdf`, `../hormigon/Requisitos_del_reglamento_ACI_318S_14_en.pdf`, `../hormigon/NORMA_CHILENA_OFICIAL_NCh430_Of2008 (1).pdf`, `../hormigon/Manual detallamiento.pdf`, `../hormigon/Tabla Marcus Czerny.pdf` |
 | Muros de corte | `piers.html` | Hoja `Muro` de la planilla IIO348 (criterio del usuario), basada en ACI 318-08 Cap. 11 y 21 | ver la sección Muros de corte |

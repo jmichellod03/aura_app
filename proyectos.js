@@ -176,7 +176,7 @@ function tituloSugerido() {
 }
 const paginaActual = () => location.pathname.split("/").pop() || "index.html";
 // Solo páginas propias de la app (un dato manipulado no puede convertirse en un enlace javascript: u otro sitio)
-const PAGINAS_CALCULO = ["acero.html", "reticulada.html", "placa.html", "hormigon.html", "muro.html", "madera.html", "mle.html", "vial.html", "rigido.html", "zapata.html", "piers.html", "base.html"];
+const PAGINAS_CALCULO = ["acero.html", "reticulada.html", "placa.html", "hormigon.html", "muro.html", "madera.html", "mle.html", "vial.html", "rigido.html", "zapata.html", "piers.html", "base.html", "conexion.html"];
 function urlElemento(p, e) {
   const q = new URLSearchParams();
   if (e.elemento) q.set("elemento", e.elemento);
