@@ -12,7 +12,11 @@
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <title>Acceso — AURA</title>
 <!-- Antes de los estilos propios: los botones y campos de esta página tienen su propio tamaño -->
-<link rel="stylesheet" href="aura.css?v=12">
+<link rel="stylesheet" href="aura.css?v=13">
+<script>
+// Tema claro u oscuro, igual que en el resto de la app (lateral.js): la elección guardada o la del sistema
+try { const t = localStorage.getItem("auraTema"); document.documentElement.dataset.tema = t === "claro" || t === "oscuro" ? t : (matchMedia("(prefers-color-scheme: dark)").matches ? "oscuro" : "claro"); } catch { /* sin almacenamiento */ }
+</script>
 <style>
   html { -webkit-text-size-adjust: 100%; }
   @media (max-width: 900px) { input { font-size: 16px !important; } }
@@ -29,13 +33,9 @@
   .vitrina .logo { height: 64px; }
   .vitrina h1 { margin: 26px 0 0; font-size: 34px; line-height: 1.12; letter-spacing: -.02em; color: var(--tinta); max-width: 520px; }
   .vitrina p.lema { margin: 10px 0 0; color: var(--muted); font-size: 15px; max-width: 500px; }
-  .escena { position: relative; flex: 1; min-height: 320px; margin-top: 10px; }
-  .escena canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-  .visor-estado { position: absolute; left: 0; right: 0; top: 45%; text-align: center; font-size: 13px; color: var(--muted); pointer-events: none; }
-  .vitrina .pie { display: flex; align-items: center; justify-content: space-between; gap: 6px 10px; flex-wrap: wrap; }
-  .vitrina .pie small { color: var(--muted); font-size: 12px; }
-  .vitrina .pie .credito { font-size: 11px; }
-  .vitrina .pie a { color: var(--muted); }
+  .areas { list-style: none; margin: 28px 0 0; padding: 0; display: grid; gap: 8px; max-width: 520px; }
+  .areas li { display: flex; justify-content: space-between; gap: 12px; padding: 10px 14px; background: var(--sup, #fff); border: 1px solid var(--line); border-left: 3px solid var(--azul); border-radius: var(--r-m, 6px); font-size: 14px; }
+  .areas li span { color: var(--muted); font-size: 12.5px; text-align: right; }
 
   /* Formulario */
   .lado { display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 40px 28px 24px; background: var(--acero); }
@@ -65,7 +65,7 @@
     .vitrina .logo { height: 44px; }
     .vitrina h1 { font-size: 24px; margin-top: 14px; }
     .vitrina p.lema { display: none; }
-    .escena { flex: none; height: 240px; min-height: 0; }
+    .areas { display: none; }
     .lado { padding: 24px 16px 20px; justify-content: flex-start; }
   }
 </style>
@@ -78,14 +78,13 @@
   <span class="logo"><img src="icons/logo-mmp.webp" alt="MMP"></span>
   <h1>Ingeniería estructural</h1>
   <p class="lema">Cálculo de elementos de acero, hormigón y madera, espectros de diseño sísmico y diseño vial, con memoria de cálculo lista para entregar.</p>
-  <div class="escena">
-    <canvas id="modelo3d" role="img" aria-label="Modelo 3D de una torre de oficinas girando"></canvas>
-    <span class="visor-estado" id="visorEstado">Cargando modelo 3D…</span>
-  </div>
-  <div class="pie">
-    <small>Arrastre para girar</small>
-    <small class="credito"><a href="https://sketchfab.com/3d-models/skyscraper-tower-8c141fda071f4f6a927f4d7047f48ec7" target="_blank" rel="noopener">«Skyscraper Tower»</a> de VertaScan · <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a></small>
-  </div>
+  <ul class="areas" aria-label="Áreas de cálculo">
+    <li>Acero <span>AISC 360-16</span></li>
+    <li>Hormigón armado y fundaciones <span>ACI 318-08</span></li>
+    <li>Madera <span>NCh 1198:2024 · NCh 2165</span></li>
+    <li>Espectros sísmicos <span>NCh 433 · DS 117 · NCh 2369</span></li>
+    <li>Pavimentos <span>Manual de Carreteras · AASHTO 93</span></li>
+  </ul>
 </section>
 <main class="lado">
   <div class="caja">
@@ -127,13 +126,6 @@
   <footer>Herramienta de apoyo académico. Verifique siempre los resultados.</footer>
 </main>
 </div>
-<script src="modelo3d.js?v=6"></script>
-<script>
-"use strict";
-Modelo3D.montar(document.getElementById("modelo3d"), { url: "modelos/torre.glb" }).listo
-  .then(() => document.getElementById("visorEstado").remove())
-  .catch((e) => { console.error(e); document.getElementById("visorEstado").textContent = "No se pudo mostrar el modelo 3D."; });
-</script>
 
 <script>
 "use strict";

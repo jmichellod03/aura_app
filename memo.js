@@ -618,21 +618,24 @@ function crearZip(archivos) {
 async function prepararFiguras(tex, contenedor, prefijo = "figura") {
   // Dibujos de resultados visibles; se excluyen los esquemas de ayuda de los datos de entrada (dentro de <details>).
   // Las tarjetas del procedimiento que el usuario plegó (tablero.js) se despliegan un instante para no perder sus figuras.
-  const plegadas = contenedor ? [...contenedor.querySelectorAll(".mcard.plegada")] : [];
-  plegadas.forEach(c => c.classList.remove("plegada"));
-  const svgs = contenedor ? [...contenedor.querySelectorAll('svg[role="img"]')].filter(s => s.getBoundingClientRect().width > 0 && !s.closest("details, [data-sin-figura]")) : [];
-  plegadas.forEach(c => c.classList.add("plegada"));
+  // Lo mismo con las secciones de otras pestañas (.fuera) y con la memoria oculta tras la pestaña «Referencias» (.oculta).
+  const ocultas = contenedor ? ["plegada", "fuera", "oculta"].flatMap(k => [...contenedor.querySelectorAll(`.${k}`)].filter(e => e.matches(".mcard, .memo")).map(e => [e, k])) : [];
+  ocultas.forEach(([e, k]) => e.classList.remove(k));
   const archivos = [];
   let i = 0;
-  for (const b of [...tex.matchAll(/\\begin\{tikzpicture\}[\s\S]*?\\end\{tikzpicture\}/g)]) {
-    if (i >= svgs.length) break;
-    try {
-      const ruta = `figuras/${prefijo}${i + 1}.png`;
-      archivos.push({ nombre: ruta, datos: await svgAPng(svgs[i]) });
-      tex = tex.replace(b[0], `\\includegraphics[width=0.85\\linewidth]{${ruta}}`);
-      i++;
-    } catch (e) { break; }
-  }
+  // Las clases se restauran después de convertir los dibujos (svgAPng puede medir el SVG en pantalla)
+  try {
+    const svgs = contenedor ? [...contenedor.querySelectorAll('svg[role="img"]')].filter(s => s.getBoundingClientRect().width > 0 && !s.closest("details, [data-sin-figura]")) : [];
+    for (const b of [...tex.matchAll(/\\begin\{tikzpicture\}[\s\S]*?\\end\{tikzpicture\}/g)]) {
+      if (i >= svgs.length) break;
+      try {
+        const ruta = `figuras/${prefijo}${i + 1}.png`;
+        archivos.push({ nombre: ruta, datos: await svgAPng(svgs[i]) });
+        tex = tex.replace(b[0], `\\includegraphics[width=0.85\\linewidth]{${ruta}}`);
+        i++;
+      } catch (e) { break; }
+    }
+  } finally { ocultas.forEach(([e, k]) => e.classList.add(k)); }
   // Varias imágenes en una misma figura (lado a lado): se reparte el ancho
   tex = tex.replace(/\\begin\{figure\}[\s\S]*?\\end\{figure\}/g, (fig) => {
     const k = (fig.match(/\\includegraphics\[width=0\.85\\linewidth\]/g) || []).length;

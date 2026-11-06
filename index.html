@@ -30,12 +30,12 @@
   body { margin: 0; color: var(--ink); font: 14px/1.45 "Segoe UI", system-ui, -apple-system, sans-serif; min-height: 100vh; }
 
 
-  /* ---------- Portada: herramientas + visor 3D ---------- */
+  /* ---------- Portada: buscador y herramientas ---------- */
   .inicio { background-color: #f6f7fb;
             background-image: linear-gradient(rgba(0,0,139,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,139,.05) 1px, transparent 1px);
             background-size: 28px 28px; border-bottom: 1px solid var(--line); }
-  .inicio-in { max-width: 1240px; margin: 0 auto; padding: 34px 24px 40px; display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 32px;
-               grid-template-areas: "cab visor" "herr visor"; align-items: start; }
+  .inicio-in { max-width: 1240px; margin: 0 auto; padding: 34px 24px 40px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px;
+               grid-template-areas: "cab" "herr"; align-items: start; }
   .cab { grid-area: cab; }
   .eyebrow { margin: 0 0 6px; font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--naranja); }
   .cab h1 { margin: 0; font-size: 30px; line-height: 1.15; letter-spacing: -.02em; color: var(--tinta); }
@@ -70,20 +70,9 @@
   .tool[hidden] { display: none; }
   .sinres { display: none; padding: 22px; text-align: center; color: var(--muted); background: #fff; border: 1px dashed var(--acero-osc); border-radius: var(--r-l); }
 
-  .visor { grid-area: visor; position: sticky; top: 24px; background: #fff; border: 1px solid var(--line); border-radius: var(--r-l); overflow: hidden; }
-  .visor canvas { display: block; width: 100%; height: 440px;
-                  background: #f3f5f8; }
-  .visor-pie { display: flex; align-items: center; justify-content: space-between; gap: 6px 10px; padding: 10px 14px; border-top: 1px solid var(--line); flex-wrap: wrap; }
-  .visor-pie small { color: var(--muted); font-size: 12px; }
-  .visor-pie .credito { font-size: 11px; }
-  .visor-pie a { color: var(--muted); }
-  .visor-estado { position: absolute; left: 0; right: 0; top: 200px; text-align: center; font-size: 13px; color: var(--muted); pointer-events: none; }
 
   @media (max-width: 1000px) {
-    .inicio-in { grid-template-columns: 1fr; grid-template-areas: "cab" "visor" "herr"; gap: 22px; }
-    .visor { position: static; }
-    .visor canvas { height: 300px; }
-    .visor-estado { top: 140px; }
+    .inicio-in { gap: 22px; }
   }
   @media (max-width: 680px) { .inicio-in { padding: 22px 16px 28px; } .cab h1 { font-size: 25px; } }
 
@@ -127,8 +116,8 @@
   dialog input:focus { outline: none; border-color: var(--azul); box-shadow: 0 0 0 3px rgba(0,0,139,.15); }
   dialog .dlg-acc { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
 </style>
-<link rel="stylesheet" href="aura.css?v=12">
-<script src="lateral.js?v=9"></script>
+<link rel="stylesheet" href="aura.css?v=13">
+<script src="lateral.js?v=10"></script>
 <script src="asistente.js?v=3" defer></script>
 </head>
 <body>
@@ -237,14 +226,6 @@
       <p class="sinres" id="sinRes">No hay herramientas que coincidan con la búsqueda.</p>
     </div>
 
-    <figure class="visor" style="margin:0">
-      <canvas id="modelo3d" aria-label="Modelo 3D de una torre de oficinas girando" role="img"></canvas>
-      <span class="visor-estado" id="visorEstado">Cargando modelo 3D…</span>
-      <figcaption class="visor-pie">
-        <small>Arrastre para girar</small>
-        <small class="credito"><a href="https://sketchfab.com/3d-models/skyscraper-tower-8c141fda071f4f6a927f4d7047f48ec7" target="_blank" rel="noopener">«Skyscraper Tower»</a> de VertaScan · <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a></small>
-      </figcaption>
-    </figure>
   </div>
 </section>
 
@@ -271,9 +252,8 @@
     <div class="dlg-acc"><button type="button" class="pb sec" id="dlgCancelar">Cancelar</button><button type="submit" class="pb">Guardar proyecto</button></div>
   </form>
 </dialog>
-<script src="memo.js?v=38"></script>
+<script src="memo.js?v=39"></script>
 <script src="proyectos.js?v=40"></script>
-<script src="modelo3d.js?v=6"></script>
 
 <script>
 "use strict";
@@ -298,10 +278,6 @@ document.querySelectorAll(".filtros button").forEach(b => b.addEventListener("cl
   filtrar();
 }));
 
-// Visor 3D
-Modelo3D.montar(document.getElementById("modelo3d"), { url: "modelos/torre.glb" }).listo
-  .then(() => document.getElementById("visorEstado").remove())
-  .catch((e) => { console.error(e); document.getElementById("visorEstado").textContent = "No se pudo mostrar el modelo 3D."; });
 </script>
 <script>
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
