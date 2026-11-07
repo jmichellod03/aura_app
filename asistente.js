@@ -119,9 +119,13 @@
         if (!data.session) throw Object.assign(new Error("Su sesión venció. Vuelva a iniciar sesión."), { visible: true });
         const historial = conversacion.slice(-MAX_MENSAJES);
         while (historial.length && historial[0].rol !== "user") historial.shift();
+        let recaptcha = "";
+        try { recaptcha = await tokenRecaptcha("asistente"); }
+        catch (e) { throw Object.assign(new Error(e.message), { visible: true }); }
         const resp = await fetch(`${SUPABASE_URL}/functions/v1/asistente`, {
           method: "POST",
-          headers: { Authorization: `Bearer ${data.session.access_token}`, apikey: SUPABASE_KEY, "Content-Type": "application/json" },
+          headers: { Authorization: `Bearer ${data.session.access_token}`, apikey: SUPABASE_KEY, "Content-Type": "application/json",
+                     ...(recaptcha ? { "x-recaptcha": recaptcha } : {}) },
           body: JSON.stringify({ pagina, mensajes: historial }),
           signal: AbortSignal.timeout(MAX_ESPERA_MS),
         });

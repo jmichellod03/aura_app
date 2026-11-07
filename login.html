@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <title>Acceso — AURA</title>
-<!-- Antes de los estilos propios: los botones y campos de esta página tienen su propio tamaño -->
+<!-- Antes de los estilos propios: los botones de esta página tienen su propio tamaño -->
 <link rel="stylesheet" href="aura.css?v=13">
 <script>
 // Tema claro u oscuro, igual que en el resto de la app (lateral.js): la elección guardada o la del sistema
@@ -19,141 +19,100 @@ try { const t = localStorage.getItem("auraTema"); document.documentElement.datas
 </script>
 <style>
   html { -webkit-text-size-adjust: 100%; }
-  @media (max-width: 900px) { input { font-size: 16px !important; } }
   :root { --ink: #141a26; --muted: #556070; --line: #d9dde3; }
   * { box-sizing: border-box; }
-  body { margin: 0; min-height: 100vh; color: var(--ink); font: 14px/1.45 "Segoe UI", system-ui, -apple-system, sans-serif; }
-  .acceso { min-height: 100vh; display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(380px, 1fr); }
-
-  /* Vitrina: logo, lema y modelo 3D sobre retícula de plano */
-  .vitrina { position: relative; display: flex; flex-direction: column; padding: 32px 40px 28px; overflow: hidden;
-             background-color: #f6f7fb; border-right: 1px solid var(--line);
-             background-image: linear-gradient(rgba(0,0,139,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,139,.05) 1px, transparent 1px);
-             background-size: 28px 28px; }
-  .vitrina .logo { height: 64px; }
-  .vitrina h1 { margin: 26px 0 0; font-size: 34px; line-height: 1.12; letter-spacing: -.02em; color: var(--tinta); max-width: 520px; }
-  .vitrina p.lema { margin: 10px 0 0; color: var(--muted); font-size: 15px; max-width: 500px; }
-  .areas { list-style: none; margin: 28px 0 0; padding: 0; display: grid; gap: 8px; max-width: 520px; }
-  .areas li { display: flex; justify-content: space-between; gap: 12px; padding: 10px 14px; background: var(--sup, #fff); border: 1px solid var(--line); border-left: 3px solid var(--azul); border-radius: var(--r-m, 6px); font-size: 14px; }
-  .areas li span { color: var(--muted); font-size: 12.5px; text-align: right; }
-
-  /* Formulario */
-  .lado { display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 40px 28px 24px; background: var(--acero); }
-  .caja { width: min(400px, 100%); background: var(--nieve); border: 1px solid var(--line); border-radius: var(--r-l); padding: 28px 28px 24px; box-shadow: 0 1px 2px rgba(10,16,48,.05); }
-  .caja h2 { margin: 0 0 4px; font-size: 22px; color: var(--tinta); }
-  .caja p.sub { margin: 0 0 18px; color: var(--muted); font-size: 13.5px; }
-  .tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; margin-bottom: 18px; background: #f2f4f7; border: 1px solid var(--line); border-radius: var(--r-m); padding: 2px; }
-  .tabs button { font: inherit; font-weight: 600; background: none; border: none; padding: 8px 12px; cursor: pointer; color: #3b4556; border-radius: var(--r-s); }
-  .tabs button.on { color: #fff; background: var(--azul); }
-  form { display: grid; gap: 14px; }
-  label { display: grid; gap: 5px; font-size: 12.5px; font-weight: 500; color: var(--muted); }
-  input { font: inherit; padding: 11px 12px; border: 1px solid #cfd5dd; border-radius: var(--r-s); color: var(--ink); background: #fff; transition: border-color .15s, box-shadow .15s; }
-  input:focus { outline: none; border-color: var(--azul); box-shadow: 0 0 0 4px rgba(0,0,139,.13); }
-  .btn { font: inherit; font-size: 15px; font-weight: 600; padding: 11px 14px; border-radius: var(--r-m); border: 1px solid var(--azul); background: var(--azul); color: #fff; cursor: pointer; transition: background .15s; }
-  .btn:hover:not(:disabled) { background: var(--azul-hover); }
+  /* Como la bodega de productos: fondo de color, una tarjeta al centro y un solo botón para ingresar con Google */
+  body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
+         padding: 24px 16px; color: var(--ink); font: 14px/1.45 "Segoe UI", system-ui, -apple-system, sans-serif;
+         background-color: var(--azul);
+         background-image: linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px);
+         background-size: 28px 28px; }
+  .caja { width: min(384px, 100%); background: var(--nieve); border-radius: var(--r-l); padding: 32px 28px 28px; text-align: center;
+          box-shadow: 0 18px 40px rgba(0,0,40,.35); animation: sube .35s ease-out both; }
+  @keyframes sube { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .caja { animation: none; } }
+  .caja .logo { margin: 0 auto 18px; height: 56px; align-self: center; }
+  .caja h1 { margin: 0; font-size: 24px; letter-spacing: -.01em; color: var(--tinta); }
+  .caja p.sub { margin: 6px 0 26px; color: var(--muted); font-size: 14.5px; }
+  .btn { width: 100%; min-height: 52px; display: flex; align-items: center; justify-content: center; gap: 12px;
+         font: inherit; font-size: 15px; font-weight: 600; border-radius: var(--r-m); cursor: pointer; transition: background .15s; }
   .btn:disabled { opacity: .6; cursor: default; }
-  .link { background: none; border: none; color: var(--azul); cursor: pointer; font: inherit; font-size: 13px; padding: 0; justify-self: start; text-decoration: underline; text-underline-offset: 3px; }
-  .msg { font-size: 13px; padding: 10px 12px; border-radius: var(--r-m); display: none; }
-  .msg.err { display: block; background: #fdecea; color: #b3261e; border: 1px solid #f3c2bd; }
-  .msg.ok { display: block; background: #e3f3ea; color: #1e7a46; border: 1px solid #bfe3cd; }
+  .btn:focus-visible { outline: none; box-shadow: 0 0 0 4px rgba(0,0,139,.25); }
+  .btn-google { border: 1px solid #c9ced6; background: #fff; color: #1f2633; }
+  .btn-google:hover:not(:disabled) { background: #f4f6f8; }
+  .btn-oscuro { margin-top: 26px; border: 1px solid var(--azul); background: var(--azul); color: #fff; min-height: 46px; }
+  .btn-oscuro:hover:not(:disabled) { background: var(--azul-hover); }
+  .btn svg { width: 20px; height: 20px; flex: none; }
+  .giro { animation: gira .8s linear infinite; }
+  @keyframes gira { to { transform: rotate(360deg); } }
+  .msg { font-size: 13px; margin: 16px 0 0; color: var(--bad, #b3261e); }
+  .msg:empty { display: none; }
+  .aviso { width: 60px; height: 60px; border-radius: var(--r-l); background: #fdf0e0; color: var(--naranja, #e65c00);
+           display: grid; place-items: center; margin: 0 auto 18px; }
+  .aviso svg { width: 30px; height: 30px; }
+  .correo { font-weight: 600; color: var(--ink); word-break: break-all; }
   .hidden { display: none !important; }
-  footer { text-align: center; color: var(--muted); font-size: 12px; padding: 18px 0 0; }
-
-  @media (max-width: 860px) {
-    .acceso { grid-template-columns: 1fr; }
-    .vitrina { padding: 20px 18px 14px; border-right: 0; border-bottom: 1px solid var(--line); }
-    .vitrina .logo { height: 44px; }
-    .vitrina h1 { font-size: 24px; margin-top: 14px; }
-    .vitrina p.lema { display: none; }
-    .areas { display: none; }
-    .lado { padding: 24px 16px 20px; justify-content: flex-start; }
-  }
+  /* Modo oscuro: aura.css pone el fondo oscuro; la tarjeta usa --nieve del tema */
+  html[data-tema="oscuro"] .caja { box-shadow: none; border: 1px solid var(--linea); }
+  html[data-tema="oscuro"] .aviso { background: var(--bad-sup); }
+  html[data-tema="oscuro"] footer { color: var(--tenue); }
+  footer { margin-top: 22px; color: rgba(255,255,255,.6); font-size: 12px; text-align: center; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js" integrity="sha384-K0oxqktRvaThvYgGL4G+OK2Ih6VS6Uyu7j3+7WJgp/uWM0Yv6Xi4YEiw0BB+mPfi" crossorigin="anonymous"></script>
-<script src="nube.js?v=28"></script>
+<script src="nube.js?v=30"></script>
 </head>
 <body>
-<div class="acceso">
-<section class="vitrina">
+<main class="caja" id="cajaCarga" aria-busy="true">
+  <span class="logo"><img src="icons/logo-mmp.webp" alt="MMP"></span>
+  <p class="sub" style="margin:0">Comprobando la sesión…</p>
+</main>
+
+<main class="caja hidden" id="cajaEntrar">
   <span class="logo"><img src="icons/logo-mmp.webp" alt="MMP"></span>
   <h1>Ingeniería estructural</h1>
-  <p class="lema">Cálculo de elementos de acero, hormigón y madera, espectros de diseño sísmico y diseño vial, con memoria de cálculo lista para entregar.</p>
-  <ul class="areas" aria-label="Áreas de cálculo">
-    <li>Acero <span>AISC 360-16</span></li>
-    <li>Hormigón armado y fundaciones <span>ACI 318-08</span></li>
-    <li>Madera <span>NCh 1198:2024 · NCh 2165</span></li>
-    <li>Espectros sísmicos <span>NCh 433 · DS 117 · NCh 2369</span></li>
-    <li>Pavimentos <span>Manual de Carreteras · AASHTO 93</span></li>
-  </ul>
-</section>
-<main class="lado">
-  <div class="caja">
-    <h2 id="titulo">Bienvenido</h2>
-    <p class="sub" id="subtitulo">Ingrese con su cuenta para acceder a sus proyectos.</p>
-    <div class="tabs" id="tabs">
-      <button type="button" class="on" data-modo="entrar">Iniciar sesión</button>
-      <button type="button" data-modo="registro">Crear cuenta</button>
-    </div>
-    <div class="msg" id="msg" role="status"></div>
-
-    <form id="fEntrar" autocomplete="on">
-      <label>Correo electrónico<input name="email" type="email" required autocomplete="username"></label>
-      <label>Contraseña<input name="clave" type="password" required autocomplete="current-password"></label>
-      <button class="btn" type="submit">Iniciar sesión</button>
-      <button class="link" type="button" id="btnOlvido">¿Olvidó su contraseña?</button>
-    </form>
-
-    <form id="fRegistro" class="hidden" autocomplete="on">
-      <label>Nombre<input name="nombre" maxlength="80" autocomplete="name"></label>
-      <label>Correo electrónico<input name="email" type="email" required autocomplete="username"></label>
-      <label>Contraseña (mínimo 8 caracteres)<input name="clave" type="password" required minlength="8" autocomplete="new-password"></label>
-      <label>Repetir contraseña<input name="clave2" type="password" required minlength="8" autocomplete="new-password"></label>
-      <button class="btn" type="submit">Crear cuenta</button>
-    </form>
-
-    <form id="fOlvido" class="hidden">
-      <label>Correo electrónico<input name="email" type="email" required autocomplete="username"></label>
-      <button class="btn" type="submit">Enviar enlace de recuperación</button>
-      <button class="link" type="button" data-volver>Volver a iniciar sesión</button>
-    </form>
-
-    <form id="fNueva" class="hidden">
-      <label>Nueva contraseña (mínimo 8 caracteres)<input name="clave" type="password" required minlength="8" autocomplete="new-password"></label>
-      <label>Repetir contraseña<input name="clave2" type="password" required minlength="8" autocomplete="new-password"></label>
-      <button class="btn" type="submit">Guardar nueva contraseña</button>
-    </form>
-  </div>
-  <footer>Herramienta de apoyo académico. Verifique siempre los resultados.</footer>
+  <p class="sub">Ingrese con su cuenta de Google para acceder a sus proyectos.</p>
+  <button class="btn btn-google" type="button" id="btnGoogle">
+    <svg viewBox="0 0 48 48" aria-hidden="true" id="icoGoogle">
+      <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/>
+      <path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/>
+      <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/>
+      <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/>
+    </svg>
+    <svg viewBox="0 0 24 24" aria-hidden="true" class="giro hidden" id="icoGiro" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.2-8.6"/></svg>
+    <span>Ingresar con Google</span>
+  </button>
+  <p class="msg" id="msg" role="alert"></p>
 </main>
-</div>
+
+<main class="caja hidden" id="cajaSinAcceso">
+  <div class="aviso" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+  </div>
+  <h1 style="font-size:20px">Su cuenta no tiene acceso</h1>
+  <p class="sub" style="margin-bottom:0"><span class="correo" id="correoSinAcceso"></span> no está autorizada para usar AURA. Pídale al administrador que la agregue.</p>
+  <button class="btn btn-oscuro" type="button" id="btnOtra">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
+    Usar otra cuenta
+  </button>
+</main>
+<footer>Herramienta de apoyo académico. Verifique siempre los resultados.</footer>
 
 <script>
 "use strict";
 const $ = (id) => document.getElementById(id);
-const formularios = { entrar: "fEntrar", registro: "fRegistro", olvido: "fOlvido", nueva: "fNueva" };
-const textos = {
-  entrar: ["Bienvenido", "Ingrese con su cuenta para acceder a sus proyectos."],
-  registro: ["Crear cuenta", "Cada usuario tiene sus propios proyectos y memorias."],
-  olvido: ["Recuperar contraseña", "Le enviaremos un enlace para crear una nueva contraseña."],
-  nueva: ["Nueva contraseña", "Ingrese su nueva contraseña."],
-};
-function mostrar(modo) {
-  for (const [m, id] of Object.entries(formularios)) $(id).classList.toggle("hidden", m !== modo);
-  $("tabs").classList.toggle("hidden", modo === "olvido" || modo === "nueva");
-  document.querySelectorAll("#tabs button").forEach(b => b.classList.toggle("on", b.dataset.modo === modo));
-  [$("titulo").textContent, $("subtitulo").textContent] = textos[modo];
-  mensaje("");
+function pantalla(id) {
+  for (const c of ["cajaCarga", "cajaEntrar", "cajaSinAcceso"]) $(c).classList.toggle("hidden", c !== id);
 }
-function mensaje(t, ok = false) { const m = $("msg"); m.textContent = t; m.className = "msg" + (t ? (ok ? " ok" : " err") : ""); }
-async function enviar(form, fn) {
-  const b = form.querySelector('button[type="submit"]');
-  b.disabled = true; mensaje("");
-  try { await fn(); } catch (e) { mensaje(errorEnEspanol(e)); } finally { b.disabled = false; }
+function cargando(si) {
+  $("btnGoogle").disabled = si;
+  $("icoGoogle").classList.toggle("hidden", si);
+  $("icoGiro").classList.toggle("hidden", !si);
 }
 // Solo se vuelve a páginas propias de la app (lista blanca); cualquier otro valor va al inicio
 const PAGINAS_APP = ["index.html", "acero.html", "reticulada.html", "placa.html", "hormigon.html", "muro.html", "madera.html", "mle.html", "espectros.html", "vial.html", "rigido.html", "zapata.html", "piers.html", "base.html", "conexion.html"];
+const parametros = new URLSearchParams(location.search);
 const destino = () => {
-  const v = new URLSearchParams(location.search).get("volver");
+  const v = parametros.get("volver");
   if (!v) return "index.html";
   try {
     const u = new URL(v, location.href);
@@ -164,47 +123,45 @@ const destino = () => {
   return "index.html";
 };
 
-document.querySelectorAll("#tabs button").forEach(b => b.addEventListener("click", () => mostrar(b.dataset.modo)));
-$("btnOlvido").addEventListener("click", () => { $("fOlvido").email.value = $("fEntrar").email.value; mostrar("olvido"); });
-document.querySelector("[data-volver]").addEventListener("click", () => mostrar("entrar"));
+// Google devuelve a esta misma página (con ?volver para seguir donde estaba). La URL debe estar en
+// Supabase > Authentication > URL Configuration > Redirect URLs.
+$("btnGoogle").addEventListener("click", async () => {
+  $("msg").textContent = "";
+  cargando(true);
+  try {
+    const volver = parametros.get("volver");
+    const { error } = await sb.auth.signInWithOAuth({ provider: "google", options: {
+      redirectTo: baseApp + "login.html" + (volver ? `?volver=${encodeURIComponent(volver)}` : ""),
+      queryParams: { prompt: "select_account" } } });
+    if (error) throw error;
+  } catch (e) { $("msg").textContent = errorEnEspanol(e); cargando(false); }
+});
+$("btnOtra").addEventListener("click", async () => {
+  $("btnOtra").disabled = true;
+  try { await sb.auth.signOut(); } catch { /* sin conexión: igual se borra la sesión local */ }
+  history.replaceState(null, "", location.pathname + (parametros.get("volver") ? `?volver=${encodeURIComponent(parametros.get("volver"))}` : ""));
+  $("btnOtra").disabled = false;
+  pantalla("cajaEntrar");
+});
 
-$("fEntrar").addEventListener("submit", (ev) => { ev.preventDefault(); const f = ev.target; enviar(f, async () => {
-  const { error } = await sb.auth.signInWithPassword({ email: f.email.value.trim(), password: f.clave.value });
-  if (error) throw error;
-  location.replace(destino());
-}); });
+// Error que devuelve Supabase en la URL al volver de Google (por ejemplo, el hook que rechaza correos no autorizados)
+function errorDeRetorno() {
+  const h = new URLSearchParams(location.hash.slice(1));
+  const d = parametros.get("error_description") || h.get("error_description");
+  return d ? d.replace(/\+/g, " ") : "";
+}
 
-$("fRegistro").addEventListener("submit", (ev) => { ev.preventDefault(); const f = ev.target; enviar(f, async () => {
-  if (f.clave.value !== f.clave2.value) throw new Error("Las contraseñas no coinciden.");
-  const { data, error } = await sb.auth.signUp({ email: f.email.value.trim(), password: f.clave.value,
-    options: { data: { nombre: f.nombre.value.trim() }, emailRedirectTo: baseApp + "index.html" } });
-  if (error) throw error;
-  if (data.session) { location.replace("index.html"); return; }
-  mostrar("entrar");
-  $("fEntrar").email.value = f.email.value.trim();
-  mensaje("Cuenta creada. Le enviamos un correo para confirmarla; después podrá iniciar sesión.", true);
-}); });
-
-$("fOlvido").addEventListener("submit", (ev) => { ev.preventDefault(); const f = ev.target; enviar(f, async () => {
-  const { error } = await sb.auth.resetPasswordForEmail(f.email.value.trim(), { redirectTo: baseApp + "login.html?modo=nueva" });
-  if (error) throw error;
-  mensaje("Si el correo está registrado, recibirá un enlace para crear una nueva contraseña.", true);
-}); });
-
-$("fNueva").addEventListener("submit", (ev) => { ev.preventDefault(); const f = ev.target; enviar(f, async () => {
-  if (f.clave.value !== f.clave2.value) throw new Error("Las contraseñas no coinciden.");
-  const { error } = await sb.auth.updateUser({ password: f.clave.value });
-  if (error) throw error;
-  mensaje("Contraseña actualizada. Ingresando…", true);
-  setTimeout(() => location.replace("index.html"), 900);
-}); });
-
-// Enlace de recuperación de contraseña: Supabase abre esta página con una sesión temporal
-sb?.auth.onAuthStateChange((evento) => { if (evento === "PASSWORD_RECOVERY") mostrar("nueva"); });
-sesionLista.then((u) => {
-  if (!sb) { mensaje("No se pudo cargar el servicio de acceso. Revise su conexión a internet."); return; }
-  if (new URLSearchParams(location.search).get("modo") === "nueva" || /type=recovery/.test(location.hash)) mostrar("nueva");
-  else if (u) location.replace(destino());
+sesionLista.then(async (u) => {
+  if (!sb) { pantalla("cajaEntrar"); $("btnGoogle").disabled = true; $("msg").textContent = "No se pudo cargar el servicio de acceso. Revise su conexión a internet."; return; }
+  if (!u) {
+    pantalla("cajaEntrar");
+    const e = errorDeRetorno();
+    if (e) $("msg").textContent = errorEnEspanol({ message: e });
+    return;
+  }
+  if (await accesoAutorizado(u)) { location.replace(destino()); return; }
+  $("correoSinAcceso").textContent = u.email || "Esta cuenta";
+  pantalla("cajaSinAcceso");
 });
 </script>
 <script>
