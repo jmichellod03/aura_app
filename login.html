@@ -109,7 +109,7 @@ function cargando(si) {
   $("icoGiro").classList.toggle("hidden", !si);
 }
 // Solo se vuelve a páginas propias de la app (lista blanca); cualquier otro valor va al inicio
-const PAGINAS_APP = ["index.html", "acero.html", "reticulada.html", "placa.html", "hormigon.html", "muro.html", "madera.html", "mle.html", "espectros.html", "vial.html", "rigido.html", "zapata.html", "piers.html", "base.html", "conexion.html"];
+const PAGINAS_APP = ["index.html", "acero.html", "reticulada.html", "placa.html", "hormigon.html", "muro.html", "madera.html", "mle.html", "espectros.html", "vial.html", "rigido.html", "zapata.html", "piers.html", "base.html", "conexion.html", "diagonal.html"];
 const parametros = new URLSearchParams(location.search);
 const destino = () => {
   const v = parametros.get("volver");

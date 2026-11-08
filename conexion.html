@@ -116,7 +116,7 @@
   }
 </style>
 <link rel="stylesheet" href="aura.css?v=13">
-<script src="lateral.js?v=11"></script>
+<script src="lateral.js?v=12"></script>
 <script src="asistente.js?v=5" defer></script>
 </head>
 <body>
@@ -284,7 +284,7 @@
 
 <script src="memo.js?v=39"></script>
 <script src="tablero.js?v=6"></script>
-<script src="guia.js?v=2"></script>
+<script src="guia.js?v=3"></script>
 <script src="dxf.js?v=2"></script>
 <script src="modelo3d.js?v=6"></script>
 <script>
@@ -637,19 +637,39 @@ const subBloque = (p, phi, dc) => Object.assign(p, {
   subTex: L`$\phi R_n =${tn(T(phi), 2)}$ tf, $D/C = ${tn(dc, 3)}$`,
 });
 // Panel de la placa de corte (elevación): bloque en L entre la línea de pernos y el borde libre, desde el perno superior al borde inferior
-function panelBloquePlaca(d, r, dc, fuerza, fuerzaTex) {
+// pleno = true: camino 1-2-3, solo corte por la línea de pernos en todo el alto de la placa (A_gt = A_nt = 0)
+function panelBloquePlaca(d, r, dc, fuerza, fuerzaTex, pleno = false) {
   const Bp = MM(r.Bpc), Lp = MM(r.Lp), a = MM(d.a), lev = MM(d.lev), s = MM(d.s), rr = MM(d.dh) / 2;
-  const yT = lev + (d.nb - 1) * s;
+  const yT = pleno ? Lp : lev + (d.nb - 1) * s;
   const items = [
     { t: "rect", x0: -14, y0: -12, x1: 0, y1: Lp + 12, tipo: "col" },
     { t: "rect", x0: 0, y0: 0, x1: Bp, y1: Lp, tipo: "placa" },
     { t: "poly", pts: [[a, 0], [Bp, 0], [Bp, yT], [a, yT]] },
     { t: "lin", x1: a, y1: 0, x2: a, y2: yT, tipo: "corte" },
-    { t: "lin", x1: a, y1: yT, x2: Bp, y2: yT, tipo: "trac" },
   ];
+  if (!pleno) items.push({ t: "lin", x1: a, y1: yT, x2: Bp, y2: yT, tipo: "trac" });
   for (let i = 0; i < d.nb; i++) items.push({ t: "hole", x: a, y: lev + i * s, r: rr });
-  const lf = Math.max(0.35 * Lp, 30);
-  items.push({ t: "flecha", x: Bp + 16, y: yT, dx: 0, dy: -lf, txt: fuerza, tex: fuerzaTex });
+  const lf = Math.max(0.35 * Lp, 30), yF = pleno ? 0.75 * Lp : yT;
+  items.push({ t: "flecha", x: Bp + 16, y: yF, dx: 0, dy: -lf, txt: fuerza, tex: fuerzaTex });
+  return { items, falla: dc > 1 + 1e-9 };
+}
+// Panel del alma de la viga (elevación del extremo): bloque entre la línea de pernos y el extremo de la viga, desde el perno
+// inferior hasta el borde superior considerado (cara interior del ala superior), que sube con la reacción
+function panelBloqueAlma(d, g, dc) {
+  const v = d.v, dV = MM(v.d), tf = MM(v.tf), gap = MM(g.gap), a = MM(d.a), s = MM(d.s), rr = MM(d.dh) / 2, Lp = MM(g.Lp), Bp = MM(g.Bpc);
+  const yB = -MM(g.yTop), ySup = dV / 2 - tf, xF = a + Math.max(70, 0.35 * dV);
+  const items = [
+    { t: "rect", x0: gap, y0: -dV / 2 + tf, x1: xF, y1: ySup, tipo: "perfil" },
+    { t: "rect", x0: gap, y0: ySup, x1: xF, y1: dV / 2, tipo: "col" },
+    { t: "rect", x0: gap, y0: -dV / 2, x1: xF, y1: -dV / 2 + tf, tipo: "col" },
+    { t: "poly", pts: [[gap, yB], [a, yB], [a, ySup], [gap, ySup]] },
+    { t: "lin", x1: 0, y1: -Lp / 2, x2: Bp, y2: -Lp / 2, tipo: "oculta" }, { t: "lin", x1: Bp, y1: -Lp / 2, x2: Bp, y2: Lp / 2, tipo: "oculta" },
+    { t: "lin", x1: Bp, y1: Lp / 2, x2: 0, y2: Lp / 2, tipo: "oculta" }, { t: "lin", x1: 0, y1: Lp / 2, x2: 0, y2: -Lp / 2, tipo: "oculta" },
+    { t: "lin", x1: a, y1: yB, x2: a, y2: ySup, tipo: "corte" },
+    { t: "lin", x1: gap, y1: yB, x2: a, y2: yB, tipo: "trac" },
+  ];
+  for (let i = 0; i < d.nb; i++) items.push({ t: "hole", x: a, y: yB + i * s, r: rr });
+  items.push({ t: "flecha", x: xF + 16, y: yB, dx: 0, dy: Math.max(0.3 * dV, 30), txt: "V<tspan font-size=\"7\" dy=\"2\">u</tspan>", tex: "$V_u$" });
   return { items, falla: dc > 1 + 1e-9 };
 }
 // Paneles del momento (planta): placa de ala (bloques exteriores y central) y ala de la viga (bloques exteriores)
@@ -805,20 +825,31 @@ function verificar(d, m) {
   m.row("Ruptura por corte: φR<sub>n</sub> ≥ V<sub>u</sub>", `${fmt(T(phiVr), 2)} tf ${tagDC(dcVr)}`, "AISC 360-16 J4-4");
   m.eq(L`\phi R_n = 0.75\cdot 0.60\,F_u\,${npTxt}(L_p - n\,d_h')\,t_p = 0.45\cdot ${tn(d.FuP, 0)}\cdot ${npNum}(${tn(Lp, 1)} - ${d.nb}\cdot ${tn(d.dhn, 3)})\cdot ${tn(d.tp, 2)} = ${tn(T(phiVr), 2)}\ \mathrm{tf} \qquad \frac{V_u}{\phi R_n} = ${tn(dcVr, 3)} ${cmp(dcVr)} 1.0`, "J4-4");
   ck(`Ruptura por corte ${dePl}`, L`$V_u = ${tn(T(d.Vu), 2)}$ tf`, L`$\phi R_n = ${tn(T(phiVr), 2)}$ tf`, dcVr, "pl");
-  // Bloque: corte a lo largo de la línea de pernos desde el borde superior, tracción hacia el borde libre de la placa (por placa)
+  // Bloque (por placa), dos caminos: L (corte por la línea de pernos desde el perno superior hasta el borde inferior y tracción
+  // hacia el borde libre) y 1-2-3 (solo corte por la línea de pernos en todo el alto, A_gt = A_nt = 0, como el Trabajo Práctico 3)
   const bAgv = (d.lev + (d.nb - 1) * d.s) * d.tp, bAnv = bAgv - (d.nb - 0.5) * d.dhn * d.tp;
   const bAgt = d.leh * d.tp, bAnt = (d.leh - d.dhn / 2) * d.tp;
-  const phiBl1 = EL.bloque(bAgv, bAnv, bAgt, bAnt, d.FyP, d.FuP, d.crit), phiBl = nP * phiBl1, dcBl = d.Vu / phiBl;
-  m.p(L`Bloque de corte en forma de L${dos ? " en cada placa" : ""}: plano de corte a lo largo de la línea de pernos hasta el borde de la placa y plano de tracción hacia su borde libre ($U_{bs} = 1$, una línea de pernos).`);
-  m.eq(L`A_{gv} = (l_{ev} + (n-1)s)\,t_p = ${tn(bAgv, 2)} \qquad A_{nv} = A_{gv} - (n - 0.5)\,d_h'\,t_p = ${tn(bAnv, 2)} \qquad A_{gt} = l_{eh}t_p = ${tn(bAgt, 2)} \qquad A_{nt} = (l_{eh} - d_h'/2)\,t_p = ${tn(bAnt, 2)}\ \mathrm{cm^2}`);
-  m.row(dos ? "Bloque de corte de las dos placas: φR<sub>n</sub> ≥ V<sub>u</sub>" : "Bloque de corte de la placa: φR<sub>n</sub> ≥ V<sub>u</sub>", `${fmt(T(phiBl), 2)} tf ${tagDC(dcBl)}`, refBloque(d.crit));
-  m.eq(dos
-    ? L`\text{Por placa: } ${texBloque(bAgv, bAnv, bAgt, bAnt, d.FyP, d.FuP, d.crit)} = ${tn(T(phiBl1), 2)}\ \mathrm{tf} \qquad \phi R_n = 2\cdot ${tn(T(phiBl1), 2)} = ${tn(T(phiBl), 2)}\ \mathrm{tf} \qquad \frac{V_u}{\phi R_n} = ${tn(dcBl, 3)} ${cmp(dcBl)} 1.0`
-    : L`${texBloque(bAgv, bAnv, bAgt, bAnt, d.FyP, d.FuP, d.crit)} = ${tn(T(phiBl), 2)}\ \mathrm{tf} \qquad \frac{V_u}{\phi R_n} = ${tn(dcBl, 3)} ${cmp(dcBl)} 1.0`, d.crit === "icha" ? "13.4.3" : "J4-5");
+  const cAgv = Lp * d.tp, cAnv = (Lp - d.nb * d.dhn) * d.tp;
+  const phiBlL = EL.bloque(bAgv, bAnv, bAgt, bAnt, d.FyP, d.FuP, d.crit), phiBl123 = EL.bloque(cAgv, cAnv, 0, 0, d.FyP, d.FuP, d.crit);
+  const phiBl1 = Math.min(phiBlL, phiBl123), phiBl = nP * phiBl1, dcBl = d.Vu / phiBl;
+  const dcBlL = d.Vu / (nP * phiBlL), dcBl123 = d.Vu / (nP * phiBl123);
+  const refB = d.crit === "icha" ? "13.4.3" : "J4-5", porPl = (x) => (dos ? L`\qquad \phi R_n = 2\cdot ${tn(T(x), 2)} = ${tn(T(2 * x), 2)}\ \mathrm{tf}` : "");
+  m.p(L`Bloque de corte${dos ? " en cada placa" : ""}, por dos caminos ($U_{bs} = 1$, una línea de pernos): en forma de L, con el plano de corte a lo largo de la línea de pernos hasta el borde inferior de la placa y el de tracción hacia su borde libre; y el camino 1-2-3, solo con el plano de corte a lo largo de la línea de pernos en todo el alto de la placa ($A_{gt} = A_{nt} = 0$). Rige el menor.`);
+  m.eq(L`\text{L: } A_{gv} = (l_{ev} + (n-1)s)\,t_p = ${tn(bAgv, 2)} \qquad A_{nv} = A_{gv} - (n - 0.5)\,d_h'\,t_p = ${tn(bAnv, 2)} \qquad A_{gt} = l_{eh}t_p = ${tn(bAgt, 2)} \qquad A_{nt} = (l_{eh} - d_h'/2)\,t_p = ${tn(bAnt, 2)}\ \mathrm{cm^2}`);
+  m.eq(L`${dos ? L`\text{Por placa: }` : ""}${texBloque(bAgv, bAnv, bAgt, bAnt, d.FyP, d.FuP, d.crit)} = ${tn(T(phiBlL), 2)}\ \mathrm{tf}${porPl(phiBlL)}`, refB);
+  m.row("Bloque en L: φR<sub>n</sub> ≥ V<sub>u</sub>", `${fmt(T(nP * phiBlL), 2)} tf ${tagDC(dcBlL)}`, refBloque(d.crit));
+  m.eq(L`\text{1-2-3: } A_{gv} = L_p\,t_p = ${tn(cAgv, 2)} \qquad A_{nv} = (L_p - n\,d_h')\,t_p = ${tn(cAnv, 2)} \qquad A_{gt} = A_{nt} = 0`);
+  m.eq(L`${dos ? L`\text{Por placa: }` : ""}${texBloque(cAgv, cAnv, 0, 0, d.FyP, d.FuP, d.crit)} = ${tn(T(phiBl123), 2)}\ \mathrm{tf}${porPl(phiBl123)}`, refB);
+  m.row("Bloque por el camino 1-2-3 (solo corte): φR<sub>n</sub> ≥ V<sub>u</sub>", `${fmt(T(nP * phiBl123), 2)} tf ${tagDC(dcBl123)}`, refBloque(d.crit));
+  m.p(L`El camino 1-2-3 es un plano de corte en todo el alto de la placa: con J4-5 da $0.75 \cdot 0.6F_yA_{gv}$ (o $0.75\cdot 0.6F_uA_{nv}$), más exigente que la fluencia por corte J4-3, que usa $\phi = 1.00$.`);
+  m.row(dos ? "Bloque de corte de las dos placas (rige el menor): φR<sub>n</sub> ≥ V<sub>u</sub>" : "Bloque de corte de la placa (rige el menor): φR<sub>n</sub> ≥ V<sub>u</sub>", `${fmt(T(phiBl), 2)} tf ${tagDC(dcBl)}`, refBloque(d.crit));
+  m.eq(L`\phi R_n = ${dos ? "2\\cdot " : ""}\min(${tn(T(phiBlL), 2)};\ ${tn(T(phiBl123), 2)}) = ${tn(T(phiBl), 2)}\ \mathrm{tf} \qquad \frac{V_u}{\phi R_n} = ${tn(dcBl, 3)} ${cmp(dcBl)} 1.0`);
   {
     const fz = `V<tspan font-size="7" dy="2">u</tspan>${dos ? "<tspan dy=\"-2\">/2</tspan>" : ""}`, fzTex = dos ? "$V_u/2$" : "$V_u$";
-    const pn = subBloque(Object.assign(panelBloquePlaca(d, { Bpc, Lp }, dcBl, fz, fzTex), { titulo: dos ? "Cada placa de corte" : "Placa de corte" }), phiBl1, dcBl);
-    m.fig(svgBloques([pn], "Bloque de corte de la placa de corte"), tikzBloques([pn], L`Bloque de corte ${dos ? "en cada placa de corte" : "de la placa de corte"}: plano de corte a lo largo de la línea de pernos, desde el perno superior hasta el borde inferior, y plano de tracción desde ese perno hasta el borde libre.`));
+    const tit = dos ? "Cada placa" : "Placa de corte";
+    const pL = subBloque(Object.assign(panelBloquePlaca(d, { Bpc, Lp }, dcBlL, fz, fzTex), { titulo: `${tit}: camino en L` }), phiBlL, dcBlL);
+    const p3 = subBloque(Object.assign(panelBloquePlaca(d, { Bpc, Lp }, dcBl123, fz, fzTex, true), { titulo: `${tit}: camino 1-2-3` }), phiBl123, dcBl123);
+    m.fig(svgBloques([pL, p3], "Bloque de corte de la placa de corte"), tikzBloques([pL, p3], L`Bloque de corte ${dos ? "en cada placa de corte" : "de la placa de corte"}: camino en L (corte por la línea de pernos desde el perno superior hasta el borde inferior y tracción hasta el borde libre) y camino 1-2-3 (solo corte por la línea de pernos en todo el alto de la placa).`));
   }
   ck(`Bloque de corte ${dePl}`, L`$V_u = ${tn(T(d.Vu), 2)}$ tf`, L`$\phi R_n = ${tn(T(phiBl), 2)}$ tf`, dcBl, "pl");
   // Flexión de la placa con la excentricidad a
@@ -870,9 +901,25 @@ function verificar(d, m) {
   m.row("Resistencia al corte: φ<sub>v</sub>V<sub>n</sub> ≥ V<sub>u</sub>", `${fmt(T(phiVn), 2)} tf ${tagDC(dcVn)}`, "AISC 360-16 G2-1");
   m.eq(L`\phi_vV_n = \phi_v\,0.6\,F_y\,A_w\,C_{v1} = ${tn(phiV, 2)}\cdot 0.6\cdot ${tn(d.FyV, 0)}\cdot ${tn(Aw, 2)}\cdot ${tn(Cv1, 3)} = ${tn(T(phiVn), 2)}\ \mathrm{tf} \qquad \frac{V_u}{\phi_vV_n} = ${tn(dcVn, 3)} ${cmp(dcVn)} 1.0`, "G2-1");
   ck("Corte de la viga", L`$V_u = ${tn(T(d.Vu), 2)}$ tf`, L`$\phi_vV_n = ${tn(T(phiVn), 2)}$ tf`, dcVn, "v");
-  m.p(L`No se verifica el bloque de corte en el alma de la viga: el ala superior no está destajada, y los bordes de la viga quedan lejos de los pernos.`);
+  // Bloque de corte en el alma de la viga: los pernos empujan el alma hacia arriba; el bloque queda entre la línea de pernos y el
+  // extremo de la viga (borde l_e,viga), con corte por la línea de pernos desde el perno inferior hasta el borde superior y tracción
+  // horizontal desde ese perno al extremo. Sin destaje, el borde superior se toma en la cara interior del ala (criterio de AURA,
+  // conservador: no cuenta el aporte del ala, que el bloque tendría que cortar)
+  const lvA = (v.d / 2 - v.tf) - yTop;                  // del perno superior a la cara interior del ala superior
+  const aAgv = (lvA + (d.nb - 1) * d.s) * v.tw, aAnv = aAgv - (d.nb - 0.5) * d.dhn * v.tw;
+  const aAgt = d.lehV * v.tw, aAnt = (d.lehV - d.dhn / 2) * v.tw;
+  const phiBa = EL.bloque(aAgv, aAnv, aAgt, aAnt, d.FyV, d.FuV, d.crit), dcBa = d.Vu / phiBa;
+  m.p(L`Bloque de corte en el alma de la viga: los pernos empujan el alma hacia arriba y el bloque queda entre la línea de pernos y el extremo de la viga, con corte a lo largo de la línea de pernos desde el perno inferior hasta el borde superior y tracción horizontal desde ese perno hasta el extremo de la viga ($U_{bs} = 1$). Como el ala superior no está destajada, se toma como borde superior la cara interior del ala, sin contar el aporte del ala que el bloque tendría que cortar (criterio de AURA, del lado seguro).`);
+  m.eq(L`l_v = \frac{d}{2} - t_f - y_{sup} = ${tn(MM(lvA), 1)}\ \mathrm{mm} \qquad A_{gv} = (l_v + (n-1)s)\,t_w = ${tn(aAgv, 2)} \qquad A_{nv} = A_{gv} - (n - 0.5)\,d_h'\,t_w = ${tn(aAnv, 2)} \qquad A_{gt} = l_{e,viga}t_w = ${tn(aAgt, 2)} \qquad A_{nt} = (l_{e,viga} - d_h'/2)\,t_w = ${tn(aAnt, 2)}\ \mathrm{cm^2}`);
+  m.row("Bloque de corte del alma de la viga: φR<sub>n</sub> ≥ V<sub>u</sub>", `${fmt(T(phiBa), 2)} tf ${tagDC(dcBa)}`, refBloque(d.crit));
+  m.eq(L`${texBloque(aAgv, aAnv, aAgt, aAnt, d.FyV, d.FuV, d.crit)} = ${tn(T(phiBa), 2)}\ \mathrm{tf} \qquad \frac{V_u}{\phi R_n} = ${tn(dcBa, 3)} ${cmp(dcBa)} 1.0`, d.crit === "icha" ? "13.4.3" : "J4-5");
+  {
+    const pa = subBloque(Object.assign(panelBloqueAlma(d, { gap: d.a - d.lehV, Lp, Bpc, yTop }, dcBa), { titulo: "Alma de la viga" }), phiBa, dcBa);
+    m.fig(svgBloques([pa], "Bloque de corte del alma de la viga"), tikzBloques([pa], L`Bloque de corte del alma de la viga: corte a lo largo de la línea de pernos desde el perno inferior hasta la cara interior del ala superior y tracción desde ese perno hasta el extremo de la viga (la placa de corte en línea de trazos).`));
+  }
+  ck("Bloque de corte del alma de la viga", L`$V_u = ${tn(T(d.Vu), 2)}$ tf`, L`$\phi R_n = ${tn(T(phiBa), 2)}$ tf`, dcBa, "v");
 
-  const r = { nPl: nP, Lp, Bpc, gap, hLibre, yTop, rv1, phiGrupo, phiVy, phiVr, phiBl, phiMp, rnW, phiW, phiVn, wMin };
+  const r = { nPl: nP, Lp, Bpc, gap, hLibre, yTop, rv1, phiGrupo, phiVy, phiVr, phiBl, phiMp, rnW, phiW, phiVn, phiBa, wMin };
 
   // ---------- 6. Momento ----------
   if (d.mom) {
@@ -1490,7 +1537,7 @@ window.AURA_MEMO = {
   },
 };
 </script>
-<script src="proyectos.js?v=41"></script>
+<script src="proyectos.js?v=42"></script>
 <script>
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
 </script>

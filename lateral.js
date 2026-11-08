@@ -74,6 +74,7 @@
       R("conexiones", "Conexiones", "conexion", [
         E("conexion.html?tipo=corte", "De corte (prueba)", null, { sel: "tipo", val: "corte" }),
         E("conexion.html?tipo=momento", "De momento (prueba)", null, { sel: "tipo", val: "momento" }),
+        E("diagonal.html", "De diagonal a tracción (prueba)", null),
       ]),
     ]),
     R("hormigon", "Hormigón", "secHormigon", [

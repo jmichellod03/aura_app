@@ -117,7 +117,7 @@
   dialog .dlg-acc { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
 </style>
 <link rel="stylesheet" href="aura.css?v=13">
-<script src="lateral.js?v=11"></script>
+<script src="lateral.js?v=12"></script>
 <script src="asistente.js?v=5" defer></script>
 </head>
 <body>
@@ -174,6 +174,10 @@
         <a class="tool" href="conexion.html?tipo=momento" data-cat="acero" data-q="conexion union viga columna momento rigida placas de ala apernadas empotramiento pernos zona panel atiesadores j10 prueba">
           <span class="ico"><svg viewBox="0 0 32 32" fill="none" stroke="#00008B" stroke-width="2" stroke-linejoin="round"><path d="M4 3v26M8 3v26"/><path d="M12 10h17M12 22h17"/><path d="M8 7h12v3H8zM8 22h12v3H8z"/><path d="M8 13h6v6H8z"/></svg></span>
           <span class="tx"><b>Conexión de momento <small style="color:#9a6400">(versión de prueba)</small></b><small>Placas de ala apernadas y placa de corte · columna (J10)</small><span class="norma">AISC 360-16 Cap. J</span></span>
+        </a>
+        <a class="tool" href="diagonal.html" data-cat="acero" data-q="conexion diagonal arriostramiento traccion tubo placa nodal gusset ranura pernos bloque de corte whitmore soldadura prueba">
+          <span class="ico"><svg viewBox="0 0 32 32" fill="none" stroke="#00008B" stroke-width="2" stroke-linejoin="round"><path d="M4 3v26M4 5h25"/><path d="M4 5h12l-6 12H4z"/><path d="M11 13l14 10"/><path d="M17 15l8 6l-2 3l-8-6z"/></svg></span>
+          <span class="tx"><b>Conexión de diagonal <small style="color:#9a6400">(versión de prueba)</small></b><small>Tubo con placa ranurada a placa nodal · tracción, pernos, bloque de corte, Whitmore y soldaduras</small><span class="norma">AISC 360-16 Cap. D y J</span></span>
         </a>
         <a class="tool" href="hormigon.html?elemento=viga" data-cat="hormigon" data-q="vigas hormigon armado flexion corte estribos aci">
           <span class="ico"><svg viewBox="0 0 32 32" fill="none" stroke="#00008B" stroke-width="2"><rect x="6" y="4" width="20" height="24" rx="1.5"/><g fill="#00008B" stroke="none"><circle cx="11" cy="23" r="1.8"/><circle cx="16" cy="23" r="1.8"/><circle cx="21" cy="23" r="1.8"/><circle cx="11" cy="9" r="1.4"/><circle cx="21" cy="9" r="1.4"/></g></svg></span>
@@ -253,7 +257,7 @@
   </form>
 </dialog>
 <script src="memo.js?v=39"></script>
-<script src="proyectos.js?v=41"></script>
+<script src="proyectos.js?v=42"></script>
 
 <script>
 "use strict";

@@ -111,6 +111,13 @@ const Guia = (() => {
       { en: "t:5. Placa de corte", titulo: "5 · Placa de corte", texto: "Placa en el alma que toma el corte: simple, a un lado del alma, o doble, una a cada lado, con los pernos a corte doble. Se verifican pernos, aplastamiento, bloque de corte y soldadura. El corte A-A del dibujo muestra las placas y los pernos." },
       { en: "t:6. Placas de ala", titulo: "6 · Placas de ala", texto: "Placas apernadas a las alas que transmiten el momento como un par de fuerzas." },
     ],
+    "diagonal.html": [
+      { en: "t:1. Solicitación", titulo: "1 · Solicitación", texto: "Tracción mayorada de la diagonal y su ángulo con la horizontal: la página verifica solo tracción." },
+      { en: "t:2. Diagonal", titulo: "2 · Diagonal", texto: "Tubo rectangular: H en el plano de la conexión y B normal a él. Se verifica la fluencia y la ruptura con el rezago de cortante de la Tabla D3.1 (caso 6)." },
+      { en: "t:3. Placa de conexión", titulo: "3 · Placa de conexión", texto: "Placa insertada en la ranura del tubo y soldada con cuatro filetes: se verifican la soldadura, el metal base y la placa en tracción y bloque de corte." },
+      { en: "t:4. Pernos", titulo: "4 · Pernos", texto: "Filas en la dirección de la fuerza, líneas, paso, gramil y bordes en la placa y en la placa nodal (corte simple)." },
+      { en: "t:5. Placa nodal", titulo: "5 · Placa nodal", texto: "Espesor, tamaño y soldadura a la columna, a la viga o a ambas. Se verifican el bloque de corte, la sección de Whitmore y los filetes." },
+    ],
     "piers.html": [
       { en: "t:1. Tablas", titulo: "1 · Tablas de ETABS", texto: "Importe las tablas de piers exportadas desde ETABS: cada pier trae sus fuerzas por combinación." },
       { en: "t:2. Materiales", titulo: "2 · Materiales y armadura", texto: "Hormigón, acero y armadura horizontal de los muros." },

@@ -1,0 +1,1113 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#00008B">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="AURA">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js" integrity="sha384-K0oxqktRvaThvYgGL4G+OK2Ih6VS6Uyu7j3+7WJgp/uWM0Yv6Xi4YEiw0BB+mPfi" crossorigin="anonymous"></script>
+<script src="nube.js?v=30"></script>
+<style>
+  /* PWA: sin zoom automático de iOS al enfocar campos y texto estable al rotar */
+  html { -webkit-text-size-adjust: 100%; }
+  @media (max-width: 900px) { input, select, textarea { font-size: 16px !important; } }
+  main > *, .row2 > *, .row3 > *, fieldset { min-width: 0; }
+  input, select { min-width: 0; max-width: 100%; }
+  .memo, .tablaWrap { overflow-x: auto; }
+  svg { max-width: 100%; }
+</style>
+<title>Conexión de diagonal</title>
+<style>
+  :root {
+    --bg: #e3e6ea;
+    --panel: #fffafa;
+    --ink: #1d2330;
+    --muted: #5f6b7a;
+    --line: #dde1e7;
+    --accent: #5b7c99;
+    --accent-ink: #ffffff;
+    --head: #00008B;
+    --ok: #1f8a4c;
+    --ok-bg: #e6f4ec;
+    --bad: #c62828;
+    --bad-bg: #fbe9e9;
+    --warn: #9a6400;
+    --warn-bg: #fff4dc;
+    --mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 "Segoe UI", system-ui, -apple-system, sans-serif; }
+  header { background: var(--head); color: #fff; padding: 10px 24px; display: flex; align-items: center; gap: 8px 16px; flex-wrap: wrap; }
+  header h1 { margin: 0; font-size: 19px; font-weight: 600; }
+  header a.home { color: #fff; text-decoration: none; font-size: 13px; border: 1px solid rgba(255,255,255,.35); border-radius: 4px; padding: 3px 9px; }
+  header span { color: #c8cbe8; font-size: 13px; }
+  header .chipPrueba { display: inline-block; vertical-align: middle; margin-left: 6px; background: var(--warn-bg); color: var(--warn); font-size: 11.5px; font-weight: 700; border-radius: 10px; padding: 1px 9px; letter-spacing: .03em; }
+  .prueba { max-width: 1400px; margin: 14px auto 0; padding: 0 24px; }
+  .prueba > div { padding: 10px 14px; border-radius: 6px; background: var(--warn-bg); color: var(--warn); border: 1px solid #f0d9a6; font-size: 13px; }
+  main { display: grid; grid-template-columns: 380px 1fr; gap: 20px; padding: 20px 24px; max-width: 1400px; margin: 0 auto; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; padding: 16px; } .prueba { padding: 0 16px; } }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+  .panel > h2 { margin: 0; padding: 10px 16px; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); border-bottom: 1px solid var(--line); }
+  .body { padding: 14px 16px; }
+  label { display: block; font-size: 12px; color: var(--muted); margin: 10px 0 4px; }
+  select, input[type=number] { width: 100%; padding: 7px 9px; border: 1px solid var(--line); border-radius: 5px; font: inherit; background: #fff; color: var(--ink); }
+  select:focus, input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .unit { color: var(--muted); font-size: 11px; }
+  fieldset { border: 1px solid var(--line); border-radius: 6px; margin: 14px 0 0; padding: 4px 12px 12px; }
+  legend { font-size: 12px; font-weight: 600; color: var(--head); padding: 0 4px; }
+  .chk { display: flex; gap: 8px; align-items: center; margin-top: 12px; font-size: 13px; color: var(--ink); }
+  .hidden { display: none !important; }
+  .invalido { border-color: var(--bad) !important; background: var(--bad-bg) !important; }
+
+  .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; padding: 14px 16px; }
+  .card { border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; }
+  .card .t { font-size: 12px; color: var(--muted); }
+  .card .v { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .card .s { font-size: 12px; color: var(--muted); }
+  .bar { height: 6px; background: #eceef1; border-radius: 3px; margin-top: 6px; overflow: hidden; }
+  .bar > i { display: block; height: 100%; background: var(--ok); }
+  .bar.bad > i { background: var(--bad); }
+  .verdict { margin: 0 16px 14px; padding: 12px 14px; border-radius: 6px; font-weight: 600; font-size: 15px; }
+  .verdict.ok { background: var(--ok-bg); color: var(--ok); }
+  .verdict.bad { background: var(--bad-bg); color: var(--bad); }
+  .note { margin: 8px 0; padding: 8px 10px; border-radius: 5px; background: var(--warn-bg); color: var(--warn); font-size: 12.5px; }
+  #verdict .note { margin: -6px 16px 14px; }
+
+  .memo { padding: 4px 16px 16px; }
+  .memo h3 { font-size: 14px; margin: 18px 0 6px; padding-bottom: 4px; border-bottom: 2px solid var(--accent); color: var(--head); }
+  .memo h4 { font-size: 13px; margin: 12px 0 4px; color: var(--head); }
+  table.calc { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.calc td { padding: 4px 8px; border-bottom: 1px solid #eef0f3; vertical-align: top; }
+  table.calc td.k { color: var(--ink); }
+  table.calc td.v { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; font-weight: 600; }
+  .ref { display: inline-block; font-size: 10.5px; color: var(--accent); border: 1px solid #c3d0dc; border-radius: 3px; padding: 0 4px; margin-left: 6px; font-weight: 500; }
+  .tag { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 11.5px; font-weight: 600; }
+  .tag.ok { background: var(--ok-bg); color: var(--ok); }
+  .tag.bad { background: var(--bad-bg); color: var(--bad); }
+  .tag.warn { background: var(--warn-bg); color: var(--warn); }
+  .esquema { display: block; width: 100%; max-width: 330px; margin: 8px auto 4px; }
+  .dibujo { display: flex; justify-content: center; padding: 6px 16px 4px; }
+  .dibujo svg { width: 760px; }
+  .figBloque { display: flex; justify-content: center; margin: 8px 0 4px; }
+  .figBloque svg { max-width: 100%; height: auto; background: #fff; border-radius: 6px; }
+  .toolbar { display: flex; justify-content: flex-end; padding: 10px 16px 0; gap: 8px; flex-wrap: wrap; }
+  .btn { padding: 7px 14px; border-radius: 5px; border: 1px solid var(--head); background: var(--head); color: #fff; font: inherit; font-size: 13px; cursor: pointer; }
+  .btn.sec { background: #fff; color: var(--head); }
+  footer { text-align: center; color: var(--muted); font-size: 12px; padding: 10px 0 24px; }
+
+  @media print {
+    body { background: #fff; }
+    header { background: #fff; color: #000; border-bottom: 2px solid #000; }
+    header span { color: #333; }
+    header a.home { display: none; }
+    main { display: block; padding: 0; }
+    #inputs, .toolbar, footer { display: none; }
+    .panel { border: 0; }
+    .memo h3 { break-after: avoid; }
+    table.calc tr { break-inside: avoid; }
+  }
+</style>
+<link rel="stylesheet" href="aura.css?v=13">
+<script src="lateral.js?v=12"></script>
+<script src="asistente.js?v=5" defer></script>
+</head>
+<body>
+<header>
+  <a class="marca" href="index.html" aria-label="Inicio"><span class="logo-tile"><span class="logo"><img src="icons/logo-mmp.webp" alt="MMP"></span></span></a>
+  <a class="home" href="index.html">← Inicio</a>
+  <h1>Conexión de diagonal a tracción <span class="chipPrueba">VERSIÓN DE PRUEBA</span></h1>
+  <span>Tubo rectangular con placa ranurada apernada a una placa nodal · Tracción del tubo (D2, D3), soldaduras, pernos, bloque de corte y Whitmore · AISC 360-16 y Manual ICHA</span>
+</header>
+<div class="prueba"><div>⚠ <b>Versión de prueba.</b> Esta herramienta está en desarrollo y sus resultados aún no se han validado contra ejemplos publicados. Úsela como apoyo y compruebe el cálculo a mano. Verifica la conexión solo a tracción (no el pandeo de la diagonal ni de la placa nodal en compresión) y no es una conexión de arriostramiento sísmico diseñada por capacidad (AISC 341, NCh 2369).</div></div>
+
+<main>
+  <!-- ===================== ENTRADAS ===================== -->
+  <section class="panel" id="inputs">
+    <h2>Datos de entrada</h2>
+    <div class="body">
+      <svg class="esquema" viewBox="0 0 330 200" aria-label="Esquema de la conexión de diagonal">
+        <rect x="10" y="10" width="26" height="182" fill="#c3c9d1" stroke="#3d4450"/>
+        <rect x="36" y="10" width="284" height="34" fill="#c3c9d1" stroke="#3d4450"/>
+        <rect x="36" y="44" width="120" height="96" fill="#e3e8ee" stroke="#3d4450"/>
+        <g transform="translate(92 92) rotate(32)">
+          <rect x="-8" y="-20" width="150" height="40" fill="#9aa4b1" fill-opacity=".85" stroke="#3d4450"/>
+          <rect x="70" y="-28" width="150" height="56" fill="#eef0f2" fill-opacity=".9" stroke="#3d4450"/>
+          <g fill="#c62828"><circle cx="8" cy="-10" r="3.5"/><circle cx="8" cy="10" r="3.5"/><circle cx="30" cy="-10" r="3.5"/><circle cx="30" cy="10" r="3.5"/></g>
+          <path d="M230 0 L262 0" stroke="#c0392b" stroke-width="1.6"/><path d="M262 0 l-7 -4 l0 8 z" fill="#c0392b"/>
+        </g>
+        <g font-size="10" fill="#3d4450">
+          <text x="40" y="31">viga</text><text x="14" y="185">col.</text><text x="44" y="135">placa nodal</text>
+          <text x="236" y="186" fill="#c0392b">P<tspan font-size="7" dy="2">u</tspan></text>
+          <path d="M156 92 L196 92" stroke="#5b7c99" stroke-dasharray="3 2"/><text x="180" y="104" fill="#5b7c99">α</text>
+        </g>
+      </svg>
+      <div class="unit" style="text-align:center">Elevación · la diagonal llega a una placa nodal soldada a la columna y a la viga · cotas en mm</div>
+
+      <fieldset>
+        <legend>1. Solicitación</legend>
+        <div class="row2">
+          <div><label for="Pu">Tracción mayorada P<sub>u</sub> <span class="unit">[tf]</span></label><input id="Pu" type="number" step="0.1" value="20.275"></div>
+          <div><label for="alfa">Ángulo con la horizontal α <span class="unit">[°]</span></label><input id="alfa" type="number" step="0.5" value="31.65"></div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>2. Diagonal (tubo rectangular)</legend>
+        <div class="row3">
+          <div><label for="tH">Alto H (en el plano) <span class="unit">[mm]</span></label><input id="tH" type="number" step="5" value="100"></div>
+          <div><label for="tB">Ancho B <span class="unit">[mm]</span></label><input id="tB" type="number" step="5" value="100"></div>
+          <div><label for="tt">Espesor t <span class="unit">[mm]</span></label><input id="tt" type="number" step="0.5" value="5"></div>
+        </div>
+        <label for="aceroT">Acero del tubo</label>
+        <select id="aceroT"><option value="A36">ASTM A36</option><option>A37-24ES</option><option selected>A42-27ES</option><option>A52-34ES</option></select>
+        <div class="unit" style="margin-top:4px">H: alto del tubo en el plano de la conexión; B: ancho normal a ese plano (Tabla D3.1). Área bruta con esquinas rectas: A<sub>g</sub> = 2t(B + H − 2t).</div>
+      </fieldset>
+
+      <fieldset>
+        <legend>3. Placa de conexión y soldadura al tubo</legend>
+        <div class="row3">
+          <div><label for="bp">Ancho b<sub>p</sub> <span class="unit">[mm]</span></label><input id="bp" type="number" step="5" value="115"></div>
+          <div><label for="tp">Espesor t<sub>p</sub> <span class="unit">[mm]</span></label><input id="tp" type="number" step="1" value="10"></div>
+          <div><label for="hr">Holgura de la ranura <span class="unit">[mm]</span></label><input id="hr" type="number" step="0.5" value="2"></div>
+          <div><label for="lw">Largo de soldadura l <span class="unit">[mm]</span></label><input id="lw" type="number" step="5" value="150"></div>
+          <div><label for="w">Filete placa–tubo <span class="unit">[mm]</span></label><input id="w" type="number" step="0.5" value="7.5"></div>
+          <div><label for="gapT">Placa nodal–tubo <span class="unit">[mm]</span></label><input id="gapT" type="number" step="5" value="30"></div>
+        </div>
+        <label for="aceroP">Acero de las placas (conexión y nodal)</label>
+        <select id="aceroP"><option value="A36">ASTM A36</option><option>A37-24ES</option><option selected>A42-27ES</option><option>A52-34ES</option></select>
+        <div class="unit" style="margin-top:4px">La placa entra en una ranura del extremo del tubo (ancho t<sub>p</sub> + holgura) y se suelda con cuatro filetes de largo l, uno por cada cara de la placa en cada pared cortada.</div>
+      </fieldset>
+
+      <fieldset>
+        <legend>4. Pernos</legend>
+        <div class="row2">
+          <div><label for="grado">Pernos</label><select id="grado">
+            <option value="A307">ASTM A307</option>
+            <option value="A325N" selected>A325, rosca incluida (N)</option>
+            <option value="A325X">A325, rosca excluida (X)</option>
+            <option value="A490N">A490, rosca incluida (N)</option>
+            <option value="A490X">A490, rosca excluida (X)</option>
+          </select></div>
+          <div><label for="db">Diámetro</label><select id="db"><option>1/2</option><option selected>5/8</option><option>3/4</option><option>7/8</option><option>1</option></select></div>
+        </div>
+        <div class="row3">
+          <div><label for="nf">Filas (en la fuerza)</label><input id="nf" type="number" step="1" value="2"></div>
+          <div><label for="nc">Líneas</label><select id="nc"><option value="1">1</option><option value="2" selected>2</option></select></div>
+          <div><label for="s">Paso s <span class="unit">[mm]</span></label><input id="s" type="number" step="5" value="55"></div>
+          <div><label for="g">Gramil g <span class="unit">[mm]</span></label><input id="g" type="number" step="5" value="55"></div>
+          <div><label for="lep">Borde en la placa <span class="unit">[mm]</span></label><input id="lep" type="number" step="1" value="30"></div>
+          <div><label for="len">Borde en la nodal <span class="unit">[mm]</span></label><input id="len" type="number" step="1" value="30"></div>
+        </div>
+        <label for="critBloque">Bloque de corte</label>
+        <select id="critBloque">
+          <option value="aisc" selected>AISC 360-16 J4-5 (U<sub>bs</sub> = 1)</option>
+          <option value="icha">Manual ICHA 13.4.3 / 13.4.4 (criterio anterior)</option>
+        </select>
+        <div class="unit" style="margin-top:4px">Pernos a corte simple (placa traslapada con la nodal), perforaciones estándar (Tabla J3.3), conexión tipo aplastamiento. Borde en la placa: de la fila más cercana a la columna al extremo de la placa; borde en la nodal: de la fila más alejada al borde de la placa nodal.</div>
+      </fieldset>
+
+      <fieldset>
+        <legend>5. Placa nodal y su soldadura</legend>
+        <div class="row3">
+          <div><label for="tn">Espesor t<sub>n</sub> <span class="unit">[mm]</span></label><input id="tn" type="number" step="1" value="10"></div>
+          <div><label for="Lc">Largo en la columna <span class="unit">[mm]</span></label><input id="Lc" type="number" step="10" value="300"></div>
+          <div><label for="Lv">Largo en la viga <span class="unit">[mm]</span></label><input id="Lv" type="number" step="10" value="300"></div>
+          <div><label for="wn">Filete nodal <span class="unit">[mm]</span></label><input id="wn" type="number" step="0.5" value="7.5"></div>
+          <div><label for="fexx">Electrodo</label><select id="fexx"><option value="4220" selected>E60</option><option value="4920">E70</option></select></div>
+          <div><label for="apoyo">Soldada a</label><select id="apoyo"><option value="ambos" selected>Columna y viga</option><option value="columna">Solo columna</option><option value="viga">Solo viga</option></select></div>
+        </div>
+        <label class="chk"><input id="direccional" type="checkbox" checked> <span>Incremento direccional de los filetes (J2-5)</span></label>
+        <div class="unit" style="margin-top:4px">Placa nodal rectangular de L<sub>viga</sub> × L<sub>columna</sub> en la esquina entre la columna y el ala inferior de la viga; el eje de la diagonal pasa por esa esquina. Filetes por ambas caras en cada borde soldado. El electrodo rige para todas las soldaduras.</div>
+      </fieldset>
+    </div>
+  </section>
+
+  <!-- ===================== RESULTADOS ===================== -->
+  <section>
+    <div class="panel">
+      <h2 id="resTitle">Resultados</h2>
+      <div class="summary" id="summary"></div>
+      <div id="verdict"></div>
+      <div class="dibujo" id="dibujo"></div>
+      <div class="toolbar">
+        <button class="btn sec" type="button" onclick="window.print()">Imprimir</button>
+        <button class="btn sec" type="button" onclick="descargarDXF()" title="Plano DXF en lámina con viñeta (dxf.js), en milímetros y por capas">Descargar plano (.dxf)</button>
+        <button class="btn" type="button" onclick="descargarZipMemoria(ultimoTex, ultimoNombre, document.body)">Descargar memoria (.zip)</button>
+      </div>
+      <div class="memo" id="memo"></div>
+    </div>
+  </section>
+</main>
+<footer>Versión de prueba. Herramienta de apoyo para conexiones de diagonales de acero a tracción (AISC 360-16 y Manual ICHA). No reemplaza la memoria de cálculo del ingeniero del proyecto. Verifique siempre los resultados.</footer>
+
+<script src="memo.js?v=39"></script>
+<script src="tablero.js?v=6"></script>
+<script src="guia.js?v=3"></script>
+<script src="dxf.js?v=2"></script>
+<script src="modelo3d.js?v=6"></script>
+<script>
+"use strict";
+// ---------------------------------------------------------------------------
+// Conexión de diagonal a tracción (VERSIÓN DE PRUEBA): tubo rectangular con una placa insertada en una ranura y soldada,
+// apernada a una placa nodal soldada a la columna y a la viga. AISC 360-16 LRFD, Capítulos D y J; Especificación ICHA 13.4 como opción.
+// Unidades internas: kgf y cm. Geometría de entrada en mm, cargas en tf.
+// Las constantes, el formato, la memoria, los estados límite y los dibujos de bloque son los de conexion.html.
+// ---------------------------------------------------------------------------
+const E_AC = 2100000;            // kgf/cm² (criterio del proyecto)
+const PHI_B = 0.75;              // pernos: corte, aplastamiento y desgarre (J3.6, J3.10); ruptura y bloque (J4)
+const PHI_W = 0.75;              // soldadura de filete (Tabla J2.5)
+const PULG = 2.54;
+
+const ACEROS = {
+  "A36": { Fy: 2530, Fu: 4080, nombre: "ASTM A36" },
+  "A37-24ES": { Fy: 2400, Fu: 3700, nombre: "A37-24ES" },
+  "A42-27ES": { Fy: 2700, Fu: 4200, nombre: "A42-27ES" },
+  "A52-34ES": { Fy: 3400, Fu: 5200, nombre: "A52-34ES" },
+};
+// Tabla J3.2 (AISC 360-16, versión en kgf/cm²): tensiones nominales de tracción y corte, conexión tipo aplastamiento
+const GRADOS = {
+  A307: { Fnt: 3160, Fnv: 1900, nombre: "ASTM A307" },
+  A325N: { Fnt: 6320, Fnv: 3800, nombre: "ASTM A325-N" },
+  A325X: { Fnt: 6320, Fnv: 4780, nombre: "ASTM A325-X" },
+  A490N: { Fnt: 7950, Fnv: 4780, nombre: "ASTM A490-N" },
+  A490X: { Fnt: 7950, Fnv: 5900, nombre: "ASTM A490-X" },
+};
+// Diámetro [pulg], perforación estándar (Tabla J3.3) y distancia mínima al borde (Tabla J3.4), en pulgadas
+const PERNOS = {
+  "1/2": { d: 0.5, dh: 9 / 16, emin: 3 / 4 },
+  "5/8": { d: 0.625, dh: 11 / 16, emin: 7 / 8 },
+  "3/4": { d: 0.75, dh: 13 / 16, emin: 1 },
+  "7/8": { d: 0.875, dh: 15 / 16, emin: 1.125 },
+  "1": { d: 1, dh: 1.125, emin: 1.25 },
+};
+
+
+// ---------------------------------------------------------------------------
+// Utilidades de formato
+// ---------------------------------------------------------------------------
+const fmt = (x, d = 2) => Number.isFinite(x)
+  ? x.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d }).replace(/,/g, "\u00a0")
+  : "—";
+const $ = (id) => document.getElementById(id);
+const num = (id) => { const v = parseFloat($(id).value); return Number.isFinite(v) ? v : 0; };
+const L = String.raw;
+const tn = (x, d = 2) => Number.isFinite(x) ? fmt(x, d).replace(/\u00a0/g, "\\,") : "\\infty";
+const tnT = (x, d = 2) => (Number.isFinite(x) ? tn(x, d) : "$\\infty$");   // en texto (tablas): ∞ en modo matemático
+const LE = L`\le`;
+const texTxt = (t) => t.replace(/—/g, "---").replace(/%/g, "\\%");
+const estado = (dc) => (dc <= 1 + 1e-9 ? "Cumple" : "No cumple");
+const tag = (ok, txt) => `<span class="tag ${ok ? "ok" : "bad"}">${txt}</span>`;
+const tagDC = (dc) => tag(dc <= 1 + 1e-9, `D/C = ${fmt(dc, 3)}`);
+const cmp = (dc) => (dc <= 1 + 1e-9 ? LE : ">");
+const T = (kgf) => kgf / 1000;   // kgf → tf
+const MM = (cm) => cm * 10;      // cm → mm
+
+class Memo {
+  constructor() { this.out = []; this.tex = []; this.n = 0; }
+  h(t) { memoTexCerrar(this); this.n++; this.out.push(`<h3>${this.n}. ${t}</h3>`); this.tex.push(`\\section{${texTxt(t)}}`); }
+  sub(t) { memoTexCerrar(this); this.out.push(`<h4>${t}</h4>`); this.tex.push(`\\subsection{${texTxt(t)}}`); }
+  row(k, v, ref) { this.out.push({ k, v, ref }); }
+  note(t, tt) { this.out.push(`<div class="note">${t}</div>`); if (tt) this.tex.push(`\\textit{${tt}}\n`); }
+  eq(s, ref) { this.tex.push(texDisplay(s, ref)); this.out.push({ tex: s + (ref ? `\\tag*{(${ref})}` : ""), eq: true }); }
+  p(s, soloTex) { memoTexP(this, s); if (!soloTex) this.out.push({ tex: s }); }
+  raw(t) { memoTexCerrar(this); this.tex.push(t); }
+  fig(svg, tikz) { this.out.push(`<div class="figBloque">${svg}</div>`); memoTexCerrar(this); this.tex.push(tikz); }
+  texto() { memoTexCerrar(this); return this.tex.join("\n"); }
+  html() { return memoHTML(this.out); }
+}
+
+// ---------------------------------------------------------------------------
+// Estados límite (AISC 360-16). Cada función devuelve la resistencia de diseño φRn en kgf.
+// ---------------------------------------------------------------------------
+const EL = {
+  // J3.6 (J3-1): corte en un perno, un plano de corte. Tabla J3.2 nota [b]: 83.3 % si el largo del patrón > 965 mm.
+  cortePerno: (d, largo = 0) => PHI_B * d.Fnv * (largo > 96.5 ? 0.833 : 1) * d.Ab,
+  // J3.10 (J3-6a y J3-6c): aplastamiento y desgarre de un perno, con la deformación como consideración de diseño
+  aplast: (lc, t, d, Fu) => PHI_B * Math.min(1.2 * Math.max(lc, 0) * t * Fu, 2.4 * d.db * t * Fu),
+  // J4-1 y J4-2: fluencia y ruptura en tracción
+  fluTrac: (Ag, Fy) => 0.90 * Fy * Ag,
+  rupTrac: (Ae, Fu) => 0.75 * Fu * Ae,
+  // J4-3 y J4-4: fluencia y ruptura en corte
+  fluCorte: (Agv, Fy) => 1.00 * 0.6 * Fy * Agv,
+  rupCorte: (Anv, Fu) => 0.75 * 0.6 * Fu * Anv,
+  // J4-5 (AISC 360-16) o 13.4.3 / 13.4.4 (Especificación ICHA, criterio anterior): bloque de corte
+  bloque(Agv, Anv, Agt, Ant, Fy, Fu, crit, Ubs = 1) {
+    if (crit === "icha") return 0.75 * (Fu * Ant >= 0.6 * Fu * Anv ? 0.6 * Fy * Agv + Fu * Ant : 0.6 * Fu * Anv + Fy * Agt);
+    return 0.75 * (Math.min(0.6 * Fu * Anv, 0.6 * Fy * Agv) + Ubs * Fu * Ant);
+  },
+  // J2-4 / J2-5: filete por unidad de largo [kgf/cm], con el incremento direccional opcional
+  filete: (w, fexx, theta = 0) => PHI_W * 0.6 * fexx * (1 + 0.5 * Math.pow(Math.sin(theta * Math.PI / 180), 1.5)) * 0.707 * w,
+};
+// Tabla J2.4: tamaño mínimo del filete según la parte más delgada unida [cm]
+const wMinTabla = (tcm) => { const t = MM(tcm); return (t <= 6 ? 3 : t <= 13 ? 5 : t <= 19 ? 6 : 8) / 10; };
+// Desarrollo del bloque de corte para la memoria
+function texBloque(Agv, Anv, Agt, Ant, Fy, Fu, crit) {
+  if (crit === "icha") {
+    const a = Fu * Ant >= 0.6 * Fu * Anv;
+    return a
+      ? L`F_uA_{nt} = ${tn(Fu * Ant, 0)} \ge 0.6F_uA_{nv} = ${tn(0.6 * Fu * Anv, 0)}\ \Rightarrow\ \phi R_n = 0.75\left(0.6F_yA_{gv} + F_uA_{nt}\right) = 0.75\left(0.6\cdot ${tn(Fy, 0)}\cdot ${tn(Agv, 2)} + ${tn(Fu, 0)}\cdot ${tn(Ant, 2)}\right)`
+      : L`F_uA_{nt} = ${tn(Fu * Ant, 0)} < 0.6F_uA_{nv} = ${tn(0.6 * Fu * Anv, 0)}\ \Rightarrow\ \phi R_n = 0.75\left(0.6F_uA_{nv} + F_yA_{gt}\right) = 0.75\left(0.6\cdot ${tn(Fu, 0)}\cdot ${tn(Anv, 2)} + ${tn(Fy, 0)}\cdot ${tn(Agt, 2)}\right)`;
+  }
+  return L`\phi R_n = 0.75\left[\min\left(0.6F_uA_{nv};\ 0.6F_yA_{gv}\right) + U_{bs}F_uA_{nt}\right] = 0.75\left[\min\left(${tn(0.6 * Fu * Anv, 0)};\ ${tn(0.6 * Fy * Agv, 0)}\right) + 1.0\cdot ${tn(Fu, 0)}\cdot ${tn(Ant, 2)}\right]`;
+}
+const refBloque = (crit) => (crit === "icha" ? "ICHA 13.4.3" : "AISC 360-16 J4-5");
+
+// ---------------------------------------------------------------------------
+// Dibujos del bloque de corte (pantalla y memoria). Cada panel es una vista en mm (x a la derecha, y hacia arriba) con:
+// rect (placa, perfil o columna), poly (bloque que se desprende), hole, lin (corte, trac u oculta), flecha y txt.
+// ---------------------------------------------------------------------------
+const COL_BLOQUE = { corte: "#c0392b", trac: "#1f5fa8", bloque: "#e65c00", placa: "#c9ced6", perfil: "#dde1e6", col: "#aab2bd" };
+function cajaPanel(p) {
+  let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+  const ext = (x, y) => { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); };
+  for (const it of p.items) {
+    if (it.t === "rect") { ext(it.x0, it.y0); ext(it.x1, it.y1); }
+    else if (it.t === "poly") it.pts.forEach(([x, y]) => ext(x, y));
+    else if (it.t === "hole") { ext(it.x - it.r, it.y - it.r); ext(it.x + it.r, it.y + it.r); }
+    else if (it.t === "lin") { ext(it.x1, it.y1); ext(it.x2, it.y2); }
+    else if (it.t === "flecha") { ext(it.x, it.y); ext(it.x + it.dx, it.y + it.dy); }
+  }
+  return [x0, y0, x1, y1];
+}
+// Pantalla: paneles lado a lado, con título, resistencia y leyenda común
+function svgBloques(paneles, aria) {
+  const PX = 200, PY = 165, SEP = 36, TOP = 44, PIE = 50;
+  const NAR = "#e65c00", cc = "#3d4450";
+  const t = (x, y, s, a = "middle", fs = 10.5, col = cc, extra = "") => `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" font-size="${fs}" fill="${col}" text-anchor="${a}" ${extra}>${s}</text>`;
+  let x = 18, s = "";
+  for (const p of paneles) {
+    const [bx0, by0, bx1, by1] = cajaPanel(p), k = Math.min(PX / (bx1 - bx0), PY / (by1 - by0));
+    const w = (bx1 - bx0) * k, h = (by1 - by0) * k, ancho = Math.max(w, 150);
+    const ox = x + (ancho - w) / 2 - bx0 * k, oy = TOP + (PY - h) / 2 + h + by0 * k;
+    const X = (u) => ox + u * k, Y = (v) => oy - v * k;
+    for (const it of p.items) {
+      if (it.t === "rect") s += `<rect x="${X(Math.min(it.x0, it.x1)).toFixed(1)}" y="${Y(Math.max(it.y0, it.y1)).toFixed(1)}" width="${(Math.abs(it.x1 - it.x0) * k).toFixed(1)}" height="${(Math.abs(it.y1 - it.y0) * k).toFixed(1)}" fill="${COL_BLOQUE[it.tipo]}" stroke="${cc}"/>`;
+      else if (it.t === "poly") s += `<polygon points="${it.pts.map(([u, v]) => `${X(u).toFixed(1)},${Y(v).toFixed(1)}`).join(" ")}" fill="${p.falla ? NAR : COL_BLOQUE.bloque}" fill-opacity="${p.falla ? 0.5 : 0.22}" stroke="none"/>`;
+      else if (it.t === "hole") s += `<circle cx="${X(it.x).toFixed(1)}" cy="${Y(it.y).toFixed(1)}" r="${Math.max(it.r * k, 2).toFixed(1)}" fill="#fff" stroke="${cc}"/>`;
+      else if (it.t === "lin") s += `<line x1="${X(it.x1).toFixed(1)}" y1="${Y(it.y1).toFixed(1)}" x2="${X(it.x2).toFixed(1)}" y2="${Y(it.y2).toFixed(1)}" ${it.tipo === "oculta" ? `stroke="${cc}" stroke-dasharray="5 3"` : `stroke="${COL_BLOQUE[it.tipo]}" stroke-width="2.6"`}/>`;
+      else if (it.t === "flecha") {
+        const x1 = X(it.x), y1 = Y(it.y), x2 = X(it.x + it.dx), y2 = Y(it.y + it.dy);
+        s += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${cc}" stroke-width="1.6" marker-end="url(#flBl)"/>`;
+        s += it.dx ? t((x1 + x2) / 2, y2 + 15, it.txt, "middle", 10.5) : t(x2 + 6, y2 + 4, it.txt, "start", 10.5);
+      }
+    }
+    s += t(x + ancho / 2, 16, p.titulo, "middle", 11, cc, `font-weight="600"`) + t(x + ancho / 2, 31, p.sub, "middle", 10, p.falla ? NAR : "#5b6472");
+    x += ancho + SEP;
+  }
+  const W = Math.max(x - SEP + 18, 460), H = TOP + PY + PIE;
+  const yl = H - 14, lx = W / 2 - 215;
+  const ley = `<rect x="${lx}" y="${yl - 9}" width="16" height="10" fill="${COL_BLOQUE.bloque}" fill-opacity="0.22" stroke="none"/>${t(lx + 21, yl, "bloque que se desprende", "start", 9.5)}`
+    + `<line x1="${lx + 150}" y1="${yl - 4}" x2="${lx + 170}" y2="${yl - 4}" stroke="${COL_BLOQUE.corte}" stroke-width="2.6"/>${t(lx + 175, yl, "planos de corte (A<tspan font-size=\"7\" dy=\"2\">gv</tspan><tspan dy=\"-2\">, A</tspan><tspan font-size=\"7\" dy=\"2\">nv</tspan><tspan dy=\"-2\">)</tspan>", "start", 9.5)}`
+    + `<line x1="${lx + 300}" y1="${yl - 4}" x2="${lx + 320}" y2="${yl - 4}" stroke="${COL_BLOQUE.trac}" stroke-width="2.6"/>${t(lx + 325, yl, "tracción (A<tspan font-size=\"7\" dy=\"2\">gt</tspan><tspan dy=\"-2\">, A</tspan><tspan font-size=\"7\" dy=\"2\">nt</tspan><tspan dy=\"-2\">)</tspan>", "start", 9.5)}`;
+  const desplaz = (W - (x - SEP + 18)) / 2;
+  return `<svg viewBox="0 0 ${W.toFixed(0)} ${H}" role="img" aria-label="${aria}" style="width:${Math.min(W, 760).toFixed(0)}px">
+    <defs><marker id="flBl" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="${cc}"/></marker></defs>
+    <g transform="translate(${desplaz.toFixed(1)},0)">${s}</g>${ley}
+  </svg>`;
+}
+// Memoria: la misma figura en TikZ (al bajar el .zip se reemplaza por el PNG del dibujo de pantalla, en el mismo orden)
+function tikzBloques(paneles, caption) {
+  const PX = 4.2, PY = 3.4, SEP = 0.9;
+  const lin = [];
+  let x = 0;
+  for (const p of paneles) {
+    const [bx0, by0, bx1, by1] = cajaPanel(p), k = Math.min(PX / (bx1 - bx0), PY / (by1 - by0));
+    const w = (bx1 - bx0) * k, h = (by1 - by0) * k, ancho = Math.max(w, 3);
+    const X = (u) => (x + (ancho - w) / 2 + (u - bx0) * k).toFixed(3), Y = (v) => ((PY - h) / 2 + (v - by0) * k).toFixed(3);
+    const relleno = { placa: "gray!25", perfil: "gray!12", col: "gray!45" };
+    for (const it of p.items) {
+      if (it.t === "rect") lin.push(L`\filldraw[fill=${relleno[it.tipo]},draw=black] (${X(it.x0)},${Y(it.y0)}) rectangle (${X(it.x1)},${Y(it.y1)});`);
+      else if (it.t === "poly") lin.push(L`\fill[orange!${p.falla ? 55 : 30}] ${it.pts.map(([u, v]) => `(${X(u)},${Y(v)})`).join(" -- ")} -- cycle;`);
+      else if (it.t === "hole") lin.push(L`\filldraw[fill=white,draw=black] (${X(it.x)},${Y(it.y)}) circle (${Math.max(it.r * k, 0.04).toFixed(3)});`);
+      else if (it.t === "lin") lin.push(it.tipo === "oculta" ? L`\draw[dashed] (${X(it.x1)},${Y(it.y1)}) -- (${X(it.x2)},${Y(it.y2)});` : L`\draw[${it.tipo === "corte" ? "red!75!black" : "blue!70!black"},line width=1.4pt] (${X(it.x1)},${Y(it.y1)}) -- (${X(it.x2)},${Y(it.y2)});`);
+      else if (it.t === "flecha") lin.push(L`\draw[-latex,thick] (${X(it.x)},${Y(it.y)}) -- node[${it.dx ? "below" : "right"},font=\small] {${it.tex}} (${X(it.x + it.dx)},${Y(it.y + it.dy)});`);
+    }
+    lin.push(L`\node[font=\small\bfseries,align=center] at (${(x + ancho / 2).toFixed(3)},${(PY + 0.55).toFixed(3)}) {${p.titulo}};`);
+    lin.push(L`\node[font=\footnotesize] at (${(x + ancho / 2).toFixed(3)},${(PY + 0.15).toFixed(3)}) {${p.subTex}};`);
+    x += ancho + SEP;
+  }
+  const xm = (x - SEP) / 2;
+  lin.push(L`\fill[orange!30] (${(xm - 6.2).toFixed(2)},-0.65) rectangle ++(0.4,0.25); \node[right,font=\footnotesize] at (${(xm - 5.75).toFixed(2)},-0.52) {bloque que se desprende};`);
+  lin.push(L`\draw[red!75!black,line width=1.4pt] (${(xm - 1.9).toFixed(2)},-0.52) -- ++(0.5,0); \node[right,font=\footnotesize] at (${(xm - 1.35).toFixed(2)},-0.52) {corte ($A_{gv}$, $A_{nv}$)};`);
+  lin.push(L`\draw[blue!70!black,line width=1.4pt] (${(xm + 2.0).toFixed(2)},-0.52) -- ++(0.5,0); \node[right,font=\footnotesize] at (${(xm + 2.55).toFixed(2)},-0.52) {tracción ($A_{gt}$, $A_{nt}$)};`);
+  return L`\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+${lin.join("\n")}
+\end{tikzpicture}
+\caption{${caption}}
+\end{figure}
+`;
+}
+const subBloque = (p, phi, dc) => Object.assign(p, {
+  sub: `φR<tspan font-size="7" dy="2">n</tspan><tspan dy="-2"> = ${fmt(T(phi), 2)} tf · D/C = ${fmt(dc, 3)}</tspan>`,
+  subTex: L`$\phi R_n =${tn(T(phi), 2)}$ tf, $D/C = ${tn(dc, 3)}$`,
+});
+// Panel de la placa de corte (elevación): bloque en L entre la línea de pernos y el borde libre, desde el perno superior al borde inferior
+
+// ---------------------------------------------------------------------------
+// Datos
+// ---------------------------------------------------------------------------
+const APOYOS = { ambos: "la columna y la viga", columna: "la columna", viga: "la viga" };
+function leerDatos() {
+  const c = (id) => num(id) / 10;
+  const pb = PERNOS[$("db").value], g = GRADOS[$("grado").value];
+  const at = ACEROS[$("aceroT").value], ap = ACEROS[$("aceroP").value];
+  const db = pb.d * PULG, dh = pb.dh * PULG;
+  return {
+    Pu: Math.abs(num("Pu")) * 1000, alfa: num("alfa"),
+    B: c("tB"), H: c("tH"), t: c("tt"), aceroT: $("aceroT").value, FyT: at.Fy, FuT: at.Fu,
+    bp: c("bp"), tp: c("tp"), hr: c("hr"), lw: c("lw"), w: c("w"), gapT: c("gapT"), aceroP: $("aceroP").value, FyP: ap.Fy, FuP: ap.Fu,
+    grado: $("grado").value, Fnv: g.Fnv, Fnt: g.Fnt, dbTxt: $("db").value, db, dh, dhn: dh + 0.16, emin: pb.emin * PULG, Ab: Math.PI / 4 * db * db,
+    nf: Math.round(num("nf")), nc: $("nc").value === "1" ? 1 : 2, s: c("s"), g: c("g"), lep: c("lep"), len: c("len"),
+    crit: $("critBloque").value,
+    tn: c("tn"), Lc: c("Lc"), Lv: c("Lv"), wn: c("wn"), fexx: parseFloat($("fexx").value), apoyo: $("apoyo").value, direccional: $("direccional").checked,
+  };
+}
+function reglasDatos() {
+  const r = [["Pu", 0, true], ["alfa", 0, true], ["tH", 0, true], ["tB", 0, true], ["tt", 0, true], ["bp", 0, true], ["tp", 0, true], ["hr", 0], ["lw", 0, true], ["w", 0, true],
+    ["gapT", 0], ["nf", 0, true], ["lep", 0, true], ["len", 0, true], ["tn", 0, true], ["Lc", 0, true], ["Lv", 0, true], ["wn", 0, true]];
+  if (num("nf") > 1) r.push(["s", 0, true]);
+  if ($("nc").value === "2") r.push(["g", 0, true]);
+  return r;
+}
+function reglasMaximos() {
+  return [
+    ["alfa", 89, "El ángulo de la diagonal debe ser menor que 89°"],
+    ["nf", 10, "Use como máximo 10 filas de pernos"],
+    ["tt", Math.min(num("tH"), num("tB")) / 2 - 0.5, "El espesor del tubo es demasiado grande para sus dimensiones"],
+  ];
+}
+
+// ---------------------------------------------------------------------------
+// Cálculo
+// ---------------------------------------------------------------------------
+let ultimoTex = "", ultimoNombre = "memoria.tex", ultimoR = null, ultimoD = null;
+
+function verificar(d, m) {
+  const checks = [], motivos = [], avisos = [], sinVer = [];
+  const ck = (k, dem, cap, dc, grupo) => { checks.push({ k, dem, cap, dc, grupo }); return dc; };
+  const geo = (ok, txt) => { if (!ok) motivos.push(txt); return ok; };
+  const tagG = (ok, si = "Cumple", no = "No cumple") => tag(ok, ok ? si : no);
+  const tagW = (ok, txt) => `<span class="tag ${ok ? "ok" : "warn"}">${txt}</span>`;
+  const texGeo = (ok, t, info = false) => m.p(t + (ok ? " (cumple)." : info ? " (criterio no cumplido)." : " (\\textbf{no cumple})."), true);
+  const Pu = d.Pu, PuT = L`$P_u = ${tn(T(Pu), 2)}$ tf`;
+  const cap = (x) => L`$\phi R_n = ${tn(T(x), 2)}$ tf`;
+  const fila = (k, phi, ref) => { const dc = Pu / phi; m.row(`${k}: φR<sub>n</sub> ≥ P<sub>u</sub>`, `${fmt(T(phi), 2)} tf ${tagDC(dc)}`, ref); return dc; };
+  const cociente = (phi) => { const dc = Pu / phi; return L`\frac{P_u}{\phi R_n} = \frac{${tn(T(Pu), 2)}}{${tn(T(phi), 2)}} = ${tn(dc, 3)} ${cmp(dc)} 1.0`; };
+
+  // ---------- 1. Datos ----------
+  m.h("Datos y alcance de la verificación");
+  m.p(L`\textbf{Versión de prueba:} esta herramienta está en desarrollo y sus resultados aún no se han validado contra ejemplos publicados; el cálculo debe comprobarse a mano.`);
+  m.p(L`Conexión a tracción de una diagonal de tubo rectangular: una placa insertada en una ranura del extremo del tubo y soldada con cuatro filetes se aperna a una placa nodal soldada a ${APOYOS[d.apoyo]}. Se verifica con la AISC 360-16 (LRFD), Capítulos D y J, para la tracción mayorada $P_u$ ingresada (solo tracción: no se verifica el pandeo en compresión).`);
+  m.row("Diagonal", `Tubo ${fmt(MM(d.H), 0)} × ${fmt(MM(d.B), 0)} × ${fmt(MM(d.t), 1)} mm (H × B × t) · ${ACEROS[d.aceroT].nombre}`);
+  m.row("Placas", `conexión ${fmt(MM(d.bp), 0)} × ${fmt(MM(d.tp), 0)} mm · nodal e = ${fmt(MM(d.tn), 0)} mm · ${ACEROS[d.aceroP].nombre}`);
+  m.row("Pernos", `${d.nf * d.nc} × ø${d.dbTxt}" (${fmt(MM(d.db), 2)} mm) ${GRADOS[d.grado].nombre} · ${d.nf} fila${d.nf > 1 ? "s" : ""} × ${d.nc} línea${d.nc > 1 ? "s" : ""} · perforación ø${fmt(MM(d.dh), 1)} mm`, "AISC 360-16 Tabla J3.3");
+  m.row("Solicitación mayorada: P<sub>u</sub> ; α", `${fmt(T(Pu), 2)} tf ; ${fmt(d.alfa, 2)}°`);
+  m.p(L`Pernos en conexión tipo aplastamiento con perforaciones estándar: $F_{nv} = ${tn(d.Fnv, 0)}$ kgf/cm$^2$ (Tabla J3.2) y $A_b = \pi d^2/4 = ${tn(d.Ab, 3)}$ cm$^2$. En las áreas netas el ancho de la perforación es $d_h + 1.6$ mm $= ${tn(MM(d.dhn), 1)}$ mm (B4.3b).`);
+
+  // ---------- 2. Diagonal ----------
+  m.h("Diagonal: fluencia y ruptura en tracción");
+  const Ag = 2 * d.t * (d.B + d.H - 2 * d.t);
+  const phiTy = 0.90 * d.FyT * Ag, dcTy = fila("Fluencia en la sección bruta", phiTy, "AISC 360-16 D2-1");
+  m.eq(L`A_g = 2t(B + H - 2t) = 2\cdot ${tn(d.t, 2)}\cdot(${tn(d.B, 1)} + ${tn(d.H, 1)} - 2\cdot ${tn(d.t, 2)}) = ${tn(Ag, 2)}\ \mathrm{cm^2} \qquad \phi P_n = 0.90\,F_yA_g = 0.90\cdot ${tn(d.FyT, 0)}\cdot ${tn(Ag, 2)} = ${tn(T(phiTy), 2)}\ \mathrm{tf} \qquad ${cociente(phiTy)}`, "D2-1");
+  m.p(L`El área bruta se toma con esquinas rectas, sin los radios de plegado (criterio de AURA).`);
+  ck("Fluencia en tracción de la diagonal", PuT, cap(phiTy), dcTy, "d");
+  const An = Ag - 2 * d.t * (d.tp + d.hr);
+  const xb = (d.B ** 2 + 2 * d.B * d.H) / (4 * (d.B + d.H));
+  m.row("Área neta en la ranura: A<sub>n</sub> = A<sub>g</sub> − 2t(t<sub>p</sub> + holgura)", `${fmt(An, 2)} cm²`, "AISC 360-16 B4.3b");
+  const okL = geo(d.lw >= d.H - 1e-9, "largo de soldadura del tubo menor que H (Tabla D3.1, caso 6)");
+  m.row("Largo de la conexión: l ≥ H (Tabla D3.1, caso 6)", `${fmt(MM(d.lw), 0)} ${okL ? "≥" : "<"} ${fmt(MM(d.H), 0)} mm ${tagG(okL)}`, "AISC 360-16 Tabla D3.1");
+  texGeo(okL, L`Largo de la conexión $l = ${tn(MM(d.lw), 0)} \ge H = ${tn(MM(d.H), 0)}$ mm, condición del caso 6 de la Tabla D3.1`);
+  let U = NaN, Ae = NaN, phiTr = NaN, dcTr = NaN;
+  if (okL) {
+    U = 1 - xb / d.lw; Ae = U * An; phiTr = 0.75 * d.FuT * Ae; dcTr = fila("Ruptura en la sección neta efectiva", phiTr, "AISC 360-16 D2-2");
+    m.eq(L`A_n = ${tn(Ag, 2)} - 2\cdot ${tn(d.t, 2)}\cdot(${tn(d.tp, 2)} + ${tn(d.hr, 2)}) = ${tn(An, 2)}\ \mathrm{cm^2} \qquad \bar{x} = \frac{B^2 + 2BH}{4(B + H)} = ${tn(xb, 2)}\ \mathrm{cm} \qquad U = 1 - \frac{\bar{x}}{l} = 1 - \frac{${tn(xb, 2)}}{${tn(d.lw, 1)}} = ${tn(U, 3)}`, "Tabla D3.1");
+    m.eq(L`A_e = U\,A_n = ${tn(Ae, 2)}\ \mathrm{cm^2} \qquad \phi P_n = 0.75\,F_uA_e = 0.75\cdot ${tn(d.FuT, 0)}\cdot ${tn(Ae, 2)} = ${tn(T(phiTr), 2)}\ \mathrm{tf} \qquad ${cociente(phiTr)}`, "D2-2");
+    ck("Ruptura en tracción de la diagonal", PuT, cap(phiTr), dcTr, "d");
+  } else m.p(L`Con $l < H$ la Tabla D3.1 no entrega el factor $U$ para un tubo rectangular con una placa concéntrica: se debe alargar la soldadura.`);
+
+  // ---------- 3. Soldadura placa–tubo ----------
+  m.h("Soldadura de la placa al tubo");
+  const rnW = EL.filete(d.w, d.fexx), phiW = 4 * d.lw * rnW, dcW = fila("Cuatro filetes de largo l", phiW, "AISC 360-16 J2-4");
+  m.p(L`Cuatro filetes de tamaño $w$ y largo $l$, uno por cada cara de la placa en cada pared cortada del tubo, cargados en su dirección (corte longitudinal).`);
+  m.eq(L`\phi r_n = 0.75\cdot 0.60\,F_{EXX}\cdot 0.707\,w = 0.75\cdot 0.60\cdot ${tn(d.fexx, 0)}\cdot 0.707\cdot ${tn(d.w, 2)} = ${tn(rnW, 1)}\ \mathrm{kgf/cm} \qquad \phi R_n = 4\,l\,\phi r_n = 4\cdot ${tn(d.lw, 1)}\cdot ${tn(rnW, 1)} = ${tn(T(phiW), 2)}\ \mathrm{tf} \qquad ${cociente(phiW)}`, "J2-4");
+  ck("Soldadura placa–tubo", PuT, cap(phiW), dcW, "w");
+  const phiBt = EL.rupCorte(4 * d.lw * d.t, d.FuT), dcBt = fila("Metal base del tubo junto a los filetes (ruptura por corte)", phiBt, "AISC 360-16 J4-4");
+  m.eq(L`\phi R_n = 0.75\cdot 0.60\,F_u\,(4\,l\,t) = 0.45\cdot ${tn(d.FuT, 0)}\cdot 4\cdot ${tn(d.lw, 1)}\cdot ${tn(d.t, 2)} = ${tn(T(phiBt), 2)}\ \mathrm{tf} \qquad ${cociente(phiBt)}`, "J4-4");
+  ck("Metal base del tubo junto a la soldadura", PuT, cap(phiBt), dcBt, "d");
+  const phiBp = EL.rupCorte(2 * d.lw * d.tp, d.FuP), dcBpl = fila("Metal base de la placa junto a los filetes (ruptura por corte)", phiBp, "AISC 360-16 J4-4");
+  m.eq(L`\phi R_n = 0.75\cdot 0.60\,F_u\,(2\,l\,t_p) = 0.45\cdot ${tn(d.FuP, 0)}\cdot 2\cdot ${tn(d.lw, 1)}\cdot ${tn(d.tp, 2)} = ${tn(T(phiBp), 2)}\ \mathrm{tf} \qquad ${cociente(phiBp)}`, "J4-4");
+  ck("Metal base de la placa junto a la soldadura", PuT, cap(phiBp), dcBpl, "pl");
+  const wMin = wMinTabla(Math.min(d.t, d.tp)), okWm = geo(d.w >= wMin - 1e-9, `filete placa–tubo menor que el mínimo (${fmt(MM(wMin), 0)} mm)`);
+  m.row("Tamaño mínimo del filete (parte más delgada)", `${fmt(MM(d.w), 1)} ≥ ${fmt(MM(wMin), 0)} mm ${tagG(okWm)}`, "AISC 360-16 Tabla J2.4");
+  texGeo(okWm, L`Tamaño mínimo del filete placa--tubo (Tabla J2.4): $w = ${tn(MM(d.w), 1)} \ge ${tn(MM(wMin), 0)}$ mm`);
+  const sob = (d.bp - d.H) / 2, okSob = geo(sob >= d.w - 1e-9, "la placa no sobresale del tubo lo suficiente para los filetes");
+  m.row("La placa sobresale del tubo: (b<sub>p</sub> − H)/2 ≥ w", `${fmt(MM(sob), 1)} ${okSob ? "≥" : "<"} ${fmt(MM(d.w), 1)} mm ${tagG(okSob)}`);
+  texGeo(okSob, L`La placa sobresale del tubo para recibir los filetes: $(b_p - H)/2 = ${tn(MM(sob), 1)} \ge w = ${tn(MM(d.w), 1)}$ mm`);
+
+  // ---------- 4. Pernos ----------
+  m.h("Pernos: corte, aplastamiento y desgarre");
+  const nb = d.nf * d.nc, largoPat = (d.nf - 1) * d.s;
+  const rv = EL.cortePerno(d, largoPat);
+  const lcPE = d.lep - d.dh / 2, lcNE = d.len - d.dh / 2, lcF = d.s - d.dh;
+  m.p(L`La placa de conexión se traslapa con la placa nodal: cada perno trabaja a corte simple. La tracción tira de la placa hacia el tubo, de modo que en la placa los pernos apoyan hacia su extremo del lado de la columna y en la placa nodal hacia su borde libre. La resistencia del grupo es la suma, perno a perno, del menor valor entre el corte del perno y el aplastamiento o desgarre en cada placa.`);
+  let phiP = 0;
+  for (let i = 0; i < d.nf; i++) {
+    const lcP = i === 0 ? lcPE : lcF, lcN = i === d.nf - 1 ? lcNE : lcF;
+    phiP += d.nc * Math.min(rv, EL.aplast(lcP, d.tp, d, d.FuP), EL.aplast(lcN, d.tn, d, d.FuP));
+  }
+  m.row("Corte de un perno: φr<sub>nv</sub>", `${fmt(T(rv), 2)} tf`, `AISC 360-16 J3-1${largoPat > 96.5 ? ", Tabla J3.2 [b]" : ""}`);
+  m.eq(L`\phi r_{nv} = \phi\,F_{nv}A_b${largoPat > 96.5 ? L`\cdot 0.833` : ""} = 0.75\cdot ${tn(d.Fnv, 0)}\cdot ${tn(d.Ab, 3)}${largoPat > 96.5 ? L`\cdot 0.833` : ""} = ${tn(rv, 0)}\ \mathrm{kgf}`, "J3-1");
+  m.eq(L`l_c:\ \text{placa (extremo) } ${tn(MM(lcPE), 1)}\ \mathrm{mm};\ \text{nodal (borde) } ${tn(MM(lcNE), 1)}\ \mathrm{mm}${d.nf > 1 ? L`;\ \text{entre filas } ${tn(MM(lcF), 1)}\ \mathrm{mm}` : ""}`);
+  m.eq(L`\phi r_n = 0.75\min(1.2\,l_c\,t\,F_u;\ 2.4\,d\,t\,F_u)\ \text{en la placa: extremo } ${tn(EL.aplast(lcPE, d.tp, d, d.FuP), 0)}${d.nf > 1 ? L`,\ \text{entre filas } ${tn(EL.aplast(lcF, d.tp, d, d.FuP), 0)}` : ""}\ \mathrm{kgf}`, "J3-6a, J3-6c");
+  m.eq(L`\phi r_n\ \text{en la placa nodal: borde } ${tn(EL.aplast(lcNE, d.tn, d, d.FuP), 0)}${d.nf > 1 ? L`,\ \text{entre filas } ${tn(EL.aplast(lcF, d.tn, d, d.FuP), 0)}` : ""}\ \mathrm{kgf}`, "J3-6a, J3-6c");
+  const dcP = fila(`Resistencia del grupo de ${nb} pernos`, phiP, "AISC 360-16 J3.6, J3.10");
+  m.eq(L`\phi R_n = \sum \min\left(\phi r_{nv};\ \phi r_{n,placa};\ \phi r_{n,nodal}\right) = ${tn(phiP, 0)}\ \mathrm{kgf} \qquad ${cociente(phiP)}`);
+  ck("Pernos", PuT, cap(phiP), dcP, "pe");
+  m.sub("Disposición de los pernos");
+  const sMin = 8 / 3 * d.db, eLat = (d.bp - (d.nc - 1) * d.g) / 2;
+  if (d.nf > 1) {
+    const okS = geo(d.s >= sMin - 1e-9, "paso de los pernos menor que 2⅔d");
+    m.row("Paso mínimo: s ≥ 2⅔ d (se prefiere 3d)", `${fmt(MM(d.s), 0)} ≥ ${fmt(MM(sMin), 1)} mm ${tagG(okS)}${okS && d.s < 3 * d.db ? " " + tagW(false, "menor que 3d") : ""}`, "AISC 360-16 J3.3");
+    texGeo(okS, L`Paso mínimo (J3.3): $s = ${tn(MM(d.s), 0)} \ge \tfrac{8}{3}d = ${tn(MM(sMin), 1)}$ mm`);
+    const sMax = Math.min(24 * Math.min(d.tp, d.tn), 30), okSM = geo(d.s <= sMax + 1e-9, "paso de los pernos mayor que el máximo");
+    m.row("Paso máximo: s ≤ mín(24t ; 300 mm)", `${fmt(MM(d.s), 0)} ≤ ${fmt(MM(sMax), 0)} mm ${tagG(okSM)}`, "AISC 360-16 J3.5");
+    texGeo(okSM, L`Paso máximo (J3.5): $s = ${tn(MM(d.s), 0)} \le \min(24t;\ 300) = ${tn(MM(sMax), 0)}$ mm`);
+  }
+  if (d.nc === 2) {
+    const okG = geo(d.g >= sMin - 1e-9, "gramil menor que 2⅔d");
+    m.row("Gramil mínimo: g ≥ 2⅔ d", `${fmt(MM(d.g), 0)} ≥ ${fmt(MM(sMin), 1)} mm ${tagG(okG)}`, "AISC 360-16 J3.3");
+    texGeo(okG, L`Gramil mínimo (J3.3): $g = ${tn(MM(d.g), 0)} \ge \tfrac{8}{3}d = ${tn(MM(sMin), 1)}$ mm`);
+  }
+  const bMin = Math.min(d.lep, d.len, eLat), okE = geo(bMin >= d.emin - 1e-9, "distancia al borde menor que la de la Tabla J3.4");
+  m.row("Borde mínimo: mín(borde en la placa ; borde en la nodal ; borde lateral) ≥ l<sub>e,mín</sub>", `${fmt(MM(bMin), 1)} ≥ ${fmt(MM(d.emin), 1)} mm ${tagG(okE)}`, "AISC 360-16 Tabla J3.4");
+  texGeo(okE, L`Borde mínimo (Tabla J3.4): $\min(l_{e,placa};\ l_{e,nodal};\ (b_p - (n_l - 1)g)/2) = \min(${tn(MM(d.lep), 0)};\ ${tn(MM(d.len), 0)};\ ${tn(MM(eLat), 1)}) = ${tn(MM(bMin), 1)} \ge ${tn(MM(d.emin), 1)}$ mm`);
+  const eMaxP = Math.min(12 * d.tp, 15), eMaxN = Math.min(12 * d.tn, 15);
+  const okEM = geo(Math.max(d.lep, eLat) <= eMaxP + 1e-9 && d.len <= eMaxN + 1e-9, "distancia al borde mayor que 12t o 150 mm");
+  m.row("Borde máximo: ≤ mín(12t ; 150 mm)", `placa ${fmt(MM(Math.max(d.lep, eLat)), 0)} ≤ ${fmt(MM(eMaxP), 0)} · nodal ${fmt(MM(d.len), 0)} ≤ ${fmt(MM(eMaxN), 0)} mm ${tagG(okEM)}`, "AISC 360-16 J3.5");
+  texGeo(okEM, L`Borde máximo (J3.5): placa $${tn(MM(Math.max(d.lep, eLat)), 0)} \le ${tn(MM(eMaxP), 0)}$ mm; placa nodal $${tn(MM(d.len), 0)} \le ${tn(MM(eMaxN), 0)}$ mm`);
+
+  // ---------- 5. Placa de conexión ----------
+  m.h("Placa de conexión: tracción y bloque de corte");
+  const Agp = d.bp * d.tp, Anp = (d.bp - d.nc * d.dhn) * d.tp, Aep = Math.min(Anp, 0.85 * Agp);
+  const phiTyP = EL.fluTrac(Agp, d.FyP), dcTyP = fila("Fluencia en tracción de la placa", phiTyP, "AISC 360-16 J4-1");
+  m.eq(L`\phi R_n = 0.90\,F_y\,b_p\,t_p = 0.90\cdot ${tn(d.FyP, 0)}\cdot ${tn(d.bp, 1)}\cdot ${tn(d.tp, 2)} = ${tn(T(phiTyP), 2)}\ \mathrm{tf} \qquad ${cociente(phiTyP)}`, "J4-1");
+  ck("Fluencia en tracción de la placa", PuT, cap(phiTyP), dcTyP, "pl");
+  const phiTrP = EL.rupTrac(Aep, d.FuP), dcTrP = fila("Ruptura en tracción de la placa", phiTrP, "AISC 360-16 J4-2");
+  m.eq(L`A_n = (b_p - n_l\,d_h')\,t_p = (${tn(d.bp, 1)} - ${d.nc}\cdot ${tn(d.dhn, 3)})\cdot ${tn(d.tp, 2)} = ${tn(Anp, 2)} \qquad A_e = \min(A_n;\ 0.85A_g) = ${tn(Aep, 2)}\ \mathrm{cm^2} \qquad \phi R_n = 0.75\,F_uA_e = ${tn(T(phiTrP), 2)}\ \mathrm{tf} \qquad ${cociente(phiTrP)}`, "J4-2");
+  ck("Ruptura en tracción de la placa", PuT, cap(phiTrP), dcTrP, "pl");
+  // Bloque en la placa: desde su extremo (lado columna) hasta la fila más alejada; corte por las líneas de pernos
+  const lvP = d.lep + (d.nf - 1) * d.s;
+  const pAgv = d.nc * lvP * d.tp, pAnv = d.nc * (lvP - (d.nf - 0.5) * d.dhn) * d.tp;
+  const pExtAgt = (d.nc === 2 ? 2 : 1) * eLat * d.tp, pExtAnt = (d.nc === 2 ? 2 : 1) * (eLat - d.dhn / 2) * d.tp;
+  const pExt = EL.bloque(pAgv, pAnv, pExtAgt, pExtAnt, d.FyP, d.FuP, d.crit);
+  const pCen = d.nc === 2 ? EL.bloque(pAgv, pAnv, d.g * d.tp, (d.g - d.dhn) * d.tp, d.FyP, d.FuP, d.crit) : Infinity;
+  const phiBlP = Math.min(pExt, pCen), dcBlP = Pu / phiBlP;
+  m.p(L`Bloque de corte en la placa, desde su extremo del lado de la columna hasta la fila de pernos más alejada: corte a lo largo de ${d.nc === 2 ? "las dos líneas" : "la línea"} de pernos y tracción ${d.nc === 2 ? "hacia los bordes laterales (bloques exteriores) o entre las dos líneas (bloque central)" : "hacia el borde lateral"} ($U_{bs} = 1$).`);
+  m.eq(L`A_{gv} = ${d.nc === 2 ? "2" : ""}\,(l_{e,placa} + (n_f - 1)s)\,t_p = ${tn(pAgv, 2)} \qquad A_{nv} = A_{gv} - ${d.nc === 2 ? "2" : ""}(n_f - 0.5)\,d_h'\,t_p = ${tn(pAnv, 2)}\ \mathrm{cm^2}`);
+  m.eq(L`\text{${d.nc === 2 ? "exteriores" : "lateral"}: } A_{gt} = ${tn(pExtAgt, 2)},\ A_{nt} = ${tn(pExtAnt, 2)}\ \mathrm{cm^2} \Rightarrow \phi R_n = ${tn(T(pExt), 2)}\ \mathrm{tf}${d.nc === 2 ? L` \qquad \text{central: } A_{gt} = g\,t_p = ${tn(d.g * d.tp, 2)},\ A_{nt} = (g - d_h')\,t_p = ${tn((d.g - d.dhn) * d.tp, 2)}\ \mathrm{cm^2} \Rightarrow \phi R_n = ${tn(T(pCen), 2)}\ \mathrm{tf}` : ""}`, d.crit === "icha" ? "13.4.3" : "J4-5");
+  m.row("Bloque de corte de la placa: φR<sub>n</sub> ≥ P<sub>u</sub>", `${fmt(T(phiBlP), 2)} tf ${tagDC(dcBlP)}`, refBloque(d.crit));
+  {
+    const paneles = [subBloque(Object.assign(panelPlaca(d, "ext"), { titulo: d.nc === 2 ? "Placa: exteriores" : "Placa: lateral" }), pExt, Pu / pExt)];
+    if (d.nc === 2) paneles.push(subBloque(Object.assign(panelPlaca(d, "cen"), { titulo: "Placa: central" }), pCen, Pu / pCen));
+    m.fig(svgBloques(paneles, "Bloques de corte de la placa de conexión"), tikzBloques(paneles, L`Bloques de corte de la placa de conexión: desde su extremo del lado de la columna hasta la fila de pernos más alejada, con corte por las líneas de pernos y tracción ${d.nc === 2 ? "hacia los bordes laterales o entre las líneas" : "hacia el borde lateral"}.`));
+  }
+  ck("Bloque de corte de la placa", PuT, cap(phiBlP), dcBlP, "pl");
+
+  // ---------- 6. Placa nodal ----------
+  m.h("Placa nodal: bloque de corte y sección de Whitmore");
+  let phiBlN = Infinity, dcBlN = 0;
+  if (d.nc === 2) {
+    const lvN = d.len + (d.nf - 1) * d.s;
+    const nAgv = 2 * lvN * d.tn, nAnv = 2 * (lvN - (d.nf - 0.5) * d.dhn) * d.tn, nAgt = d.g * d.tn, nAnt = (d.g - d.dhn) * d.tn;
+    phiBlN = EL.bloque(nAgv, nAnv, nAgt, nAnt, d.FyP, d.FuP, d.crit); dcBlN = Pu / phiBlN;
+    m.p(L`Bloque de corte central en la placa nodal, desde la fila de pernos más cercana a la columna hasta su borde libre: corte a lo largo de las dos líneas de pernos y tracción entre ellas ($U_{bs} = 1$). Los bloques exteriores no se forman porque la placa nodal continúa a ambos lados.`);
+    m.eq(L`A_{gv} = 2\,(l_{e,nodal} + (n_f - 1)s)\,t_n = ${tn(nAgv, 2)} \qquad A_{nv} = ${tn(nAnv, 2)} \qquad A_{gt} = g\,t_n = ${tn(nAgt, 2)} \qquad A_{nt} = (g - d_h')\,t_n = ${tn(nAnt, 2)}\ \mathrm{cm^2}`);
+    m.row("Bloque de corte de la placa nodal: φR<sub>n</sub> ≥ P<sub>u</sub>", `${fmt(T(phiBlN), 2)} tf ${tagDC(dcBlN)}`, refBloque(d.crit));
+    m.eq(L`${texBloque(nAgv, nAnv, nAgt, nAnt, d.FyP, d.FuP, d.crit)} = ${tn(T(phiBlN), 2)}\ \mathrm{tf} \qquad ${cociente(phiBlN)}`, d.crit === "icha" ? "13.4.3" : "J4-5");
+    const pn = subBloque(Object.assign(panelNodal(d), { titulo: "Placa nodal: central" }), phiBlN, dcBlN);
+    m.fig(svgBloques([pn], "Bloque de corte de la placa nodal"), tikzBloques([pn], L`Bloque de corte central de la placa nodal: corte por las dos líneas de pernos desde la fila más cercana a la columna hasta el borde libre y tracción entre las líneas.`));
+    ck("Bloque de corte de la placa nodal", PuT, cap(phiBlN), dcBlN, "n");
+  } else m.p(L`Con una sola línea de pernos no se forma un bloque en la placa nodal (continúa a ambos lados): el desgarre de cada perno ya se verificó con el aplastamiento.`);
+  const Lw = (d.nc - 1) * d.g + 2 * (d.nf - 1) * d.s * Math.tan(Math.PI / 6);
+  let phiWh = Infinity, dcWh = 0;
+  if (Lw > 0) {
+    phiWh = 0.90 * d.FyP * Lw * d.tn; dcWh = fila("Fluencia en la sección de Whitmore", phiWh, "Criterio Whitmore");
+    m.p(L`Sección de Whitmore (criterio de AURA, del Manual AISC Parte 9, que no está en el proyecto): la fuerza se reparte en 30° desde la primera fila de pernos hasta la última; su ancho no se limita por los bordes de la placa nodal, porque la página no conoce su forma.`);
+    m.eq(L`L_w = (n_l - 1)g + 2(n_f - 1)s\tan 30^\circ = ${tn(MM(Lw), 1)}\ \mathrm{mm} \qquad \phi R_n = 0.90\,F_y\,L_w\,t_n = 0.90\cdot ${tn(d.FyP, 0)}\cdot ${tn(Lw, 2)}\cdot ${tn(d.tn, 2)} = ${tn(T(phiWh), 2)}\ \mathrm{tf} \qquad ${cociente(phiWh)}`, "J4-1");
+    ck("Placa nodal en la sección de Whitmore", PuT, cap(phiWh), dcWh, "n");
+  } else m.p(L`Con un solo perno no hay sección de Whitmore: rige el aplastamiento del perno.`);
+
+  // ---------- 7. Soldadura de la placa nodal ----------
+  m.h("Soldadura de la placa nodal");
+  const al = d.alfa * Math.PI / 180, Ph = Pu * Math.cos(al), Pv = Pu * Math.sin(al);
+  m.p(L`La tracción se descompone en $P_{u,h} = P_u\cos\alpha = ${tn(T(Ph), 2)}$ tf y $P_{u,v} = P_u\sin\alpha = ${tn(T(Pv), 2)}$ tf. Cada borde soldado se verifica para la fuerza completa $P_u$, con dos filetes (uno por cara) en todo su largo (criterio de AURA, del lado seguro; no se usa el método de las fuerzas uniformes).`);
+  const apoyos = d.apoyo === "ambos" ? ["columna", "viga"] : [d.apoyo];
+  const phiWN = {};
+  for (const a of apoyos) {
+    const Lx = a === "columna" ? d.Lc : d.Lv, th = a === "columna" ? 90 - d.alfa : d.alfa;
+    const rn = EL.filete(d.wn, d.fexx, d.direccional ? th : 0), phi = 2 * Lx * rn, dc = fila(`Soldadura a la ${a} (2 filetes de ${fmt(MM(Lx), 0)} mm)`, phi, d.direccional ? "AISC 360-16 J2-4, J2-5" : "AISC 360-16 J2-4");
+    m.eq(L`\theta = ${tn(th, 1)}^\circ \qquad \phi r_n = 0.75\cdot 0.60\,F_{EXX}${d.direccional ? L`\left(1 + 0.5\sin^{1.5}\theta\right)` : ""}\cdot 0.707\,w = ${tn(rn, 1)}\ \mathrm{kgf/cm} \qquad \phi R_n = 2\cdot ${tn(Lx, 1)}\cdot ${tn(rn, 1)} = ${tn(T(phi), 2)}\ \mathrm{tf} \qquad ${cociente(phi)}`, d.direccional ? "J2-5" : "J2-4");
+    ck(`Soldadura de la placa nodal a la ${a}`, PuT, cap(phi), dc, "w");
+    phiWN[a] = phi;
+  }
+  if (d.direccional) m.p(L`$\theta$: ángulo entre la fuerza y el eje del filete ($90^\circ - \alpha$ en el borde vertical y $\alpha$ en el horizontal). El incremento J2-5 vale para filetes en línea cargados en su plano a través de su centro de gravedad.`);
+  const wMinN = wMinTabla(d.tn), okWn = geo(d.wn >= wMinN - 1e-9, `filete de la placa nodal menor que el mínimo (${fmt(MM(wMinN), 0)} mm)`);
+  m.row("Tamaño mínimo del filete nodal (según t<sub>n</sub>)", `${fmt(MM(d.wn), 1)} ≥ ${fmt(MM(wMinN), 0)} mm ${tagG(okWn)}`, "AISC 360-16 Tabla J2.4");
+  texGeo(okWn, L`Tamaño mínimo del filete de la placa nodal (Tabla J2.4, con $t_n$; el ala de la columna o de la viga no se ingresa): $w = ${tn(MM(d.wn), 1)} \ge ${tn(MM(wMinN), 0)}$ mm`);
+
+  // ---------- Geometría: la placa de conexión y los pernos caben en la placa nodal ----------
+  const G = geometria(d);
+  const okNod = geo(G.cabeNodal, "la placa nodal es demasiado chica para la placa de conexión");
+  const okFit = geo(G.cabe, "la placa de conexión choca con la columna o la viga");
+  const okPern = geo(G.pernosDentro, "hay pernos fuera de la placa nodal");
+  m.sub("Geometría en la placa nodal");
+  m.row("La placa nodal deja b<sub>p</sub>/2 + 15 mm a cada lado del eje en su borde", tagG(okNod));
+  m.row("La placa de conexión no toca la columna ni la viga", tagG(okFit));
+  m.row("Los pernos quedan dentro de la placa nodal", tagG(okPern));
+  m.p(L`La placa nodal es un rectángulo de ${tn(MM(d.Lv), 0)} $\times$ ${tn(MM(d.Lc), 0)} mm recortado por un borde perpendicular a la diagonal, tan afuera como permite dejar $b_p/2 + 15$ mm a cada lado del eje; desde ese borde se mide el borde en la nodal.`);
+  texGeo(okNod, L`La placa nodal deja $b_p/2 + 15$ mm a cada lado del eje en su borde`);
+  texGeo(okFit, L`La placa de conexión, con el eje de la diagonal por la esquina de la placa nodal, no toca la columna ni la viga`);
+  texGeo(okPern, L`Los pernos quedan dentro de la placa nodal`);
+
+  const falla = (g) => checks.some(x => x.grupo === g && x.dc > 1 + 1e-9);
+  const criticos = {
+    diagonal: falla("d") || motivos.some(t => /Tabla D3.1/.test(t)),
+    soldadura: falla("w") || motivos.some(t => /filete|sobresale/.test(t)),
+    pernos: falla("pe") || motivos.some(t => /paso|gramil|borde|pernos fuera/.test(t)),
+    placa: falla("pl") || motivos.some(t => /choca/.test(t)),
+    nodal: falla("n"),
+  };
+  const dcMax = Math.max(...checks.map(x => x.dc));
+  const hayFalla = dcMax > 1 + 1e-9 || motivos.length > 0;
+  return { checks, motivos, avisos, sinVer, criticos, dcMax, ok: !hayFalla && !sinVer.length, falla: hayFalla,
+    Ag, An, U, Ae, phiTy, phiTr, phiW, phiBt, phiBp, phiP, phiTyP, phiTrP, phiBlP, pExt, pCen, phiBlN, phiWh, Lw, phiWN, rv, eLat, Ph, Pv };
+}
+
+// ---------------------------------------------------------------------------
+// Geometría (mm): origen en la esquina columna–ala inferior de la viga; x a la derecha, y hacia arriba.
+// u a lo largo del eje de la diagonal (desde la esquina), v normal en el plano.
+// ---------------------------------------------------------------------------
+function geometria(d) {
+  const al = d.alfa * Math.PI / 180, e = [Math.cos(al), -Math.sin(al)], n = [Math.sin(al), Math.cos(al)];
+  const P = (u, v) => [u * e[0] + v * n[0], u * e[1] + v * n[1]];
+  const Lc = MM(d.Lc), Lv = MM(d.Lv), H = MM(d.H), bp = MM(d.bp), s = MM(d.s), g = MM(d.g), holg = 15;
+  // Placa nodal: rectángulo L_viga × L_columna recortado por un borde perpendicular a la diagonal (u = uEdge), lo más afuera
+  // posible dejando al menos b_p/2 + 15 mm a cada lado del eje dentro del rectángulo
+  const rect = [[0, 0], [Lv, 0], [Lv, -Lc], [0, -Lc]];
+  const cuerda = (u) => {      // tramo de v dentro del rectángulo sobre la recta perpendicular al eje en u
+    let lo = -Infinity, hi = Infinity;
+    const lim = (a, b, c) => { if (Math.abs(a) < 1e-12) return c >= 0; const t = c / a; if (a > 0) hi = Math.min(hi, t); else lo = Math.max(lo, t); return true; };
+    // x = u e0 + v n0 ∈ [0, Lv] ; y = u e1 + v n1 ∈ [-Lc, 0]
+    const ok = lim(-n[0], 0, u * e[0]) && lim(n[0], 0, Lv - u * e[0]) && lim(n[1], 0, -u * e[1]) && lim(-n[1], 0, u * e[1] + Lc);
+    return ok ? [lo, hi] : [1, -1];
+  };
+  const uMax = Lv * e[0] - Lc * e[1];
+  let uEdge = 0;
+  for (let u = uMax; u > 0; u -= 1) { const [lo, hi] = cuerda(u); if (lo <= -(bp / 2 + holg) && hi >= bp / 2 + holg) { uEdge = u; break; } }
+  const cabeNodal = uEdge > 0;
+  if (!cabeNodal) uEdge = uMax / 2;
+  // Recorte del rectángulo por u ≤ uEdge (Sutherland–Hodgman con un semiplano)
+  const uDe = ([x, y]) => x * e[0] + y * e[1];
+  const nodal = [];
+  for (let i = 0; i < rect.length; i++) {
+    const a = rect[i], b = rect[(i + 1) % rect.length], ua = uDe(a), ub = uDe(b);
+    if (ua <= uEdge) nodal.push(a);
+    if ((ua - uEdge) * (ub - uEdge) < 0) { const t = (uEdge - ua) / (ub - ua); nodal.push([a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1])]); }
+  }
+  const uOut = uEdge - MM(d.len), filas = [];
+  for (let i = 0; i < d.nf; i++) filas.push(uOut - (d.nf - 1 - i) * s);
+  const vs = d.nc === 2 ? [-g / 2, g / 2] : [0];
+  const pernos = filas.flatMap(u => vs.map(v => [u, v]));
+  const uP0 = filas[0] - MM(d.lep), uT0 = uEdge + MM(d.gapT), uP1 = uT0 + MM(d.lw), Lt = Math.max(2.2 * H, MM(d.lw) + 1.5 * H);
+  // La placa de conexión (de uP0 al borde de la nodal) no debe cruzar la cara de la columna (x < 0) ni la de la viga (y > 0)
+  const esquinas = [[uP0, -bp / 2], [uP0, bp / 2], [uEdge, -bp / 2], [uEdge, bp / 2]].map(([u, v]) => P(u, v));
+  const cabe = cabeNodal && uP0 > 0 && esquinas.every(([x, y]) => x >= -1e-6 && y <= 1e-6);
+  const margen = MM(d.emin);
+  const pernosDentro = pernos.every(([u, v]) => { const [x, y] = P(u, v); return x >= margen - 1e-6 && x <= Lv - margen + 1e-6 && y <= -margen + 1e-6 && y >= -Lc + margen - 1e-6; });
+  return { al, e, n, P, Lc, Lv, H, B: MM(d.B), t: MM(d.t), bp, tp: MM(d.tp), tn: MM(d.tn), uEdge, nodal, cabeNodal, filas, vs, pernos, uP0, uT0, uP1, Lt, dh: MM(d.dh), db: MM(d.db), cabe, pernosDentro, lw: MM(d.lw) };
+}
+
+// Paneles del bloque de corte (vista de la placa con el eje de la diagonal horizontal; la columna a la izquierda)
+function panelPlaca(d, tipo) {
+  const G = geometria(d), bp = G.bp, x0 = G.uP0, x1 = G.uEdge + 40, xr = G.filas[G.filas.length - 1], rr = G.dh / 2;
+  const items = [{ t: "rect", x0, y0: -bp / 2, x1, y1: bp / 2, tipo: "placa" }];
+  const lineas = G.vs, ext = tipo === "ext";
+  if (ext) {
+    if (d.nc === 2) for (const sg of [1, -1]) items.push({ t: "poly", pts: [[x0, sg * lineas[1]], [xr, sg * lineas[1]], [xr, sg * bp / 2], [x0, sg * bp / 2]] });
+    else items.push({ t: "poly", pts: [[x0, 0], [xr, 0], [xr, bp / 2], [x0, bp / 2]] });
+  } else items.push({ t: "poly", pts: [[x0, -lineas[1]], [xr, -lineas[1]], [xr, lineas[1]], [x0, lineas[1]]] });
+  for (const v of lineas) items.push({ t: "lin", x1: x0, y1: v, x2: xr, y2: v, tipo: "corte" });
+  if (ext) { if (d.nc === 2) for (const sg of [1, -1]) items.push({ t: "lin", x1: xr, y1: sg * lineas[1], x2: xr, y2: sg * bp / 2, tipo: "trac" }); else items.push({ t: "lin", x1: xr, y1: 0, x2: xr, y2: bp / 2, tipo: "trac" }); }
+  else items.push({ t: "lin", x1: xr, y1: -lineas[1], x2: xr, y2: lineas[1], tipo: "trac" });
+  for (const u of G.filas) for (const v of lineas) items.push({ t: "hole", x: u, y: v, r: rr });
+  items.push({ t: "flecha", x: x1 - 50, y: -bp / 2 - 14, dx: 40, dy: 0, txt: "P<tspan font-size=\"7\" dy=\"2\">u</tspan>", tex: "$P_u$" });
+  return { items, falla: false };
+}
+function panelNodal(d) {
+  const G = geometria(d), g = MM(d.g), rr = G.dh / 2, xi = G.filas[0], xE = G.uEdge, x0 = Math.max(xi - 80, 0), w = Math.max(g + 120, G.bp + 40);
+  const items = [
+    { t: "rect", x0, y0: -w / 2, x1: xE, y1: w / 2, tipo: "perfil" },
+    { t: "poly", pts: [[xi, -g / 2], [xE, -g / 2], [xE, g / 2], [xi, g / 2]] },
+    { t: "lin", x1: xi, y1: -g / 2, x2: xE, y2: -g / 2, tipo: "corte" }, { t: "lin", x1: xi, y1: g / 2, x2: xE, y2: g / 2, tipo: "corte" },
+    { t: "lin", x1: xi, y1: -g / 2, x2: xi, y2: g / 2, tipo: "trac" },
+  ];
+  for (const u of G.filas) for (const v of G.vs) items.push({ t: "hole", x: u, y: v, r: rr });
+  items.push({ t: "flecha", x: xE - 50, y: -w / 2 - 14, dx: 40, dy: 0, txt: "P<tspan font-size=\"7\" dy=\"2\">u</tspan>", tex: "$P_u$" });
+  return { items, falla: false };
+}
+
+// ---------------------------------------------------------------------------
+// Dibujo de la elevación (pantalla, memoria y plano)
+// ---------------------------------------------------------------------------
+function partesDibujo(d) {
+  const G = geometria(d), P = G.P, rect = (u0, u1, v0, v1) => [P(u0, v0), P(u1, v0), P(u1, v1), P(u0, v1)];
+  return {
+    G,
+    columna: [[-140, -G.Lc - 90], [0, -G.Lc - 90], [0, 220], [-140, 220]],
+    viga: [[0, 0], [G.Lv + 160, 0], [G.Lv + 160, 220], [0, 220]],
+    nodal: G.nodal,
+    placa: rect(G.uP0, G.uP1, -G.bp / 2, G.bp / 2),
+    tubo: rect(G.uT0, G.uT0 + G.Lt, -G.H / 2, G.H / 2),
+    paredes: [[P(G.uT0, -G.H / 2 + G.t), P(G.uT0 + G.Lt, -G.H / 2 + G.t)], [P(G.uT0, G.H / 2 - G.t), P(G.uT0 + G.Lt, G.H / 2 - G.t)]],
+    soldTubo: [[P(G.uT0, -G.H / 2), P(G.uP1, -G.H / 2)], [P(G.uT0, G.H / 2), P(G.uP1, G.H / 2)]],
+    eje: [P(0, 0), P(G.uT0 + G.Lt + 30, 0)],
+    pernos: G.pernos.map(([u, v]) => P(u, v)),
+    flecha: [P(G.uT0 + G.Lt + 10, 0), P(G.uT0 + G.Lt + 90, 0)],
+  };
+}
+function svgDiagonal(d, r) {
+  const D = partesDibujo(d), G = D.G, NAR = "#e65c00", cc = "#3d4450", cr = r.criticos;
+  const todos = [...D.columna, ...D.viga, ...D.nodal, ...D.placa, ...D.tubo, D.flecha[1]];
+  const xs = todos.map(p => p[0]), ys = todos.map(p => p[1]);
+  const x0 = Math.min(...xs) - 30, x1 = Math.max(...xs) + 60, y0 = Math.min(...ys) - 40, y1 = Math.max(...ys) + 30;
+  const k = Math.min(720 / (x1 - x0), 460 / (y1 - y0)), X = (x) => 10 + (x - x0) * k, Y = (y) => 30 + (y1 - y) * k;
+  const pts = (arr) => arr.map(([x, y]) => `${X(x).toFixed(1)},${Y(y).toFixed(1)}`).join(" ");
+  const poly = (arr, fill, extra = "") => `<polygon points="${pts(arr)}" fill="${fill}" stroke="${cc}" ${extra}/>`;
+  const lin = ([a, b], extra) => `<line x1="${X(a[0]).toFixed(1)}" y1="${Y(a[1]).toFixed(1)}" x2="${X(b[0]).toFixed(1)}" y2="${Y(b[1]).toFixed(1)}" ${extra}/>`;
+  const t = (x, y, s, a = "start", fs = 10.5, col = cc) => `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" font-size="${fs}" fill="${col}" text-anchor="${a}">${s}</text>`;
+  let s = poly(D.columna, "#eef0f2") + poly(D.viga, "#eef0f2");
+  s += lin([[-16, -G.Lc - 90], [-16, 220]], `stroke="${cc}"`) + lin([[0, 16], [G.Lv + 160, 16]], `stroke="${cc}"`);
+  s += poly(D.nodal, cr.nodal ? "#f6d2bb" : "#e3e8ee", `stroke-width="1.3"`);
+  const sw = cr.soldadura ? NAR : cc;
+  if (d.apoyo !== "viga") s += lin([[0, 0], [0, -G.Lc]], `stroke="${sw}" stroke-width="4"`);
+  if (d.apoyo !== "columna") s += lin([[0, 0], [G.Lv, 0]], `stroke="${sw}" stroke-width="4"`);
+  s += poly(D.placa, cr.placa ? NAR : "#9aa4b1", `fill-opacity="0.85" stroke-width="1.3"`);
+  s += poly(D.tubo, cr.diagonal ? "#f6d2bb" : "#dfe3e8", `fill-opacity="0.9" stroke-width="1.3"`);
+  for (const p of D.paredes) s += lin(p, `stroke="${cc}" stroke-dasharray="5 3"`);
+  for (const p of D.soldTubo) s += lin(p, `stroke="${sw}" stroke-width="4"`);
+  s += lin(D.eje, `stroke="#5b7c99" stroke-dasharray="10 3 2 3"`);
+  for (const [x, y] of D.pernos) s += `<circle cx="${X(x).toFixed(1)}" cy="${Y(y).toFixed(1)}" r="${(G.dh / 2 * k).toFixed(1)}" fill="#fff" stroke="${cc}"/><circle cx="${X(x).toFixed(1)}" cy="${Y(y).toFixed(1)}" r="${(G.db / 2 * k).toFixed(1)}" fill="${cr.pernos ? NAR : "#c62828"}"/>`;
+  s += lin(D.flecha, `stroke="#c0392b" stroke-width="1.8" marker-end="url(#flD)"`);
+  const [fx, fy] = D.flecha[1];
+  s += t(X(fx) + 4, Y(fy) + 14, "P<tspan font-size=\"8\" dy=\"2\">u</tspan>", "start", 11, "#c0392b");
+  // Ángulo α
+  const R = Math.min(G.Lv, G.Lc) * 0.45, a = G.al;
+  s += `<path d="M${X(R).toFixed(1)} ${Y(0).toFixed(1)} A ${(R * k).toFixed(1)} ${(R * k).toFixed(1)} 0 0 1 ${X(R * Math.cos(a)).toFixed(1)} ${Y(-R * Math.sin(a)).toFixed(1)}" fill="none" stroke="#5b7c99"/>`;
+  s += t(X(R * Math.cos(a / 2)) + 4, Y(-R * Math.sin(a / 2)) + 4, `α = ${fmt(d.alfa, 1)}°`, "start", 10, "#5b7c99");
+  // Rótulos
+  s += t(X(-70), Y(-G.Lc - 70), "Columna", "middle", 10) + t(X(G.Lv + 80), Y(190), "Viga", "middle", 10);
+  s += t(X(G.Lv * 0.45), Y(-G.Lc) - 6, `PL nodal e = ${fmt(G.tn, 0)} · ${fmt(G.Lv, 0)} × ${fmt(G.Lc, 0)}`, "middle", 9.5);
+  const [lx, ly] = G.P(G.uT0 + G.Lt, -G.H / 2);
+  s += t(X(lx) - 6, Y(ly) + 18, `Tubo ${fmt(G.H, 0)}×${fmt(G.B, 0)}×${fmt(G.t, 1)}`, "end", 9.5);
+  s += t(X(G.Lv * 0.45), Y(-G.Lc) + 16, `PL ${fmt(G.bp, 0)}×${fmt(G.uP1 - G.uP0, 0)}×${fmt(G.tp, 0)} · ${d.nf * d.nc} pernos ø${d.dbTxt}"`, "middle", 9.5);
+  const Wt = X(x1) + 10, Ht = Y(y0) + 26;
+  return `<svg viewBox="0 0 ${Wt.toFixed(0)} ${Ht.toFixed(0)}" role="img" aria-label="Elevación de la conexión de la diagonal">
+    <defs><marker id="flD" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#c0392b"/></marker></defs>
+    ${t(Wt / 2, 18, "ELEVACIÓN", "middle", 11)}${s}
+    <text x="4" y="${(Ht - 6).toFixed(0)}" font-size="10" fill="#8a93a0">Cotas en mm · columna y viga referenciales · soldaduras en trazo grueso · en naranja lo que no cumple</text>
+  </svg>`;
+}
+function tikzDiagonal(d) {
+  const D = partesDibujo(d), G = D.G;
+  const todos = [...D.columna, ...D.viga, ...D.nodal, ...D.placa, ...D.tubo, D.flecha[1]];
+  const xs = todos.map(p => p[0]), ys = todos.map(p => p[1]);
+  const k = Math.min(15 / (Math.max(...xs) - Math.min(...xs)), 10 / (Math.max(...ys) - Math.min(...ys))), f = (x) => (x * k).toFixed(3);
+  const c = ([x, y]) => `(${f(x)},${f(y)})`, cyc = (arr) => arr.map(c).join(" -- ") + " -- cycle";
+  const lin = [
+    L`\filldraw[fill=gray!8,draw=black] ${cyc(D.columna)};`, L`\filldraw[fill=gray!8,draw=black] ${cyc(D.viga)};`,
+    L`\filldraw[fill=gray!15,draw=black,thick] ${cyc(D.nodal)};`,
+    L`\filldraw[fill=gray!45,draw=black,thick,fill opacity=0.85] ${cyc(D.placa)};`,
+    L`\filldraw[fill=gray!20,draw=black,thick,fill opacity=0.9] ${cyc(D.tubo)};`,
+    ...D.paredes.map(p => L`\draw[dashed] ${c(p[0])} -- ${c(p[1])};`),
+    ...D.soldTubo.map(p => L`\draw[line width=2pt] ${c(p[0])} -- ${c(p[1])};`),
+    L`\draw[dash dot,blue!60!black] ${c(D.eje[0])} -- ${c(D.eje[1])};`,
+    ...D.pernos.map(p => L`\filldraw[fill=white,draw=black] ${c(p)} circle (${(G.dh / 2 * k).toFixed(3)});`),
+    L`\draw[-latex,thick,red!70!black] ${c(D.flecha[0])} -- node[below right,font=\small] {$P_u$} ${c(D.flecha[1])};`,
+  ];
+  if (d.apoyo !== "viga") lin.push(L`\draw[line width=2pt] ${c([0, 0])} -- ${c([0, -G.Lc])};`);
+  if (d.apoyo !== "columna") lin.push(L`\draw[line width=2pt] ${c([0, 0])} -- ${c([G.Lv, 0])};`);
+  return L`\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+${lin.join("\n")}
+\end{tikzpicture}
+\caption{Elevación de la conexión: tubo ${tn(G.H, 0)} $\times$ ${tn(G.B, 0)} $\times$ ${tn(G.t, 1)} mm, placa de conexión ${tn(G.bp, 0)} $\times$ ${tn(G.tp, 0)} mm con ${d.nf * d.nc} pernos y placa nodal de ${tn(G.tn, 0)} mm (columna y viga referenciales; soldaduras en trazo grueso).}
+\end{figure}
+`;
+}
+
+// ---------------------------------------------------------------------------
+// Memoria LaTeX
+// ---------------------------------------------------------------------------
+function documentoTex(d, r, cuerpo) {
+  const fecha = new Date().toLocaleDateString("es-CL", { day: "numeric", month: "long", year: "numeric" });
+  const fila = (a, b) => `${a} & ${b}\\\\`;
+  const datos = [
+    fila("Diagonal", L`Tubo rectangular $H \times B \times t = ${tn(MM(d.H), 0)} \times ${tn(MM(d.B), 0)} \times ${tn(MM(d.t), 1)}$ mm, ${ACEROS[d.aceroT].nombre}`),
+    fila("Placa de conexión", L`${tn(MM(d.bp), 0)} $\times$ ${tn(MM(d.tp), 0)} mm, ranura con holgura de ${tn(MM(d.hr), 1)} mm, 4 filetes de ${tn(MM(d.w), 1)} mm y ${tn(MM(d.lw), 0)} mm de largo`),
+    fila("Pernos", L`${d.nf * d.nc} pernos ø${d.dbTxt}'' ${GRADOS[d.grado].nombre} (${d.nf} filas $\times$ ${d.nc} líneas), $s = ${tn(MM(d.s), 0)}$ mm${d.nc === 2 ? L`, $g = ${tn(MM(d.g), 0)}$ mm` : ""}`),
+    fila("Placa nodal", L`$t_n = ${tn(MM(d.tn), 0)}$ mm, ${tn(MM(d.Lv), 0)} $\times$ ${tn(MM(d.Lc), 0)} mm, soldada a ${APOYOS[d.apoyo]} con filetes de ${tn(MM(d.wn), 1)} mm`),
+    fila("Placas y electrodo", `${ACEROS[d.aceroP].nombre}; electrodo ${d.fexx >= 4900 ? "E70" : "E60"}`),
+    fila("Solicitación mayorada", L`$P_u = ${tn(T(d.Pu), 2)}$ tf (tracción), $\alpha = ${tn(d.alfa, 2)}^\circ$`),
+  ].join("\n");
+  const tnT = (x) => (Number.isFinite(x) ? tn(x, 3) : "$\\infty$");
+  const resumen = r.checks.map(x => `${x.k} & ${x.dem} & ${x.cap} & ${tnT(x.dc)} & ${estado(x.dc)}\\\\`).join("\n");
+  const alcance = [
+    L`\textbf{Versión de prueba}: la herramienta está en desarrollo y sus resultados aún no se han validado contra ejemplos publicados.`,
+    L`Solo tracción con la fuerza mayorada ingresada (LRFD). No se verifica la diagonal ni la placa nodal en compresión (pandeo), ni el diseño por capacidad de arriostramientos sísmicos (AISC 341, NCh 2369).`,
+    L`Conexión tipo aplastamiento con perforaciones estándar; la deformación de la perforación es una consideración de diseño. No se verifica el deslizamiento crítico.`,
+    L`El eje de la diagonal pasa por la esquina de la placa nodal; cada borde soldado de la placa nodal toma la fuerza completa (criterio de AURA). No se verifican los efectos locales en el ala de la columna ni en la viga.`,
+    L`La sección de Whitmore es un criterio del Manual AISC (Parte 9), que no está en el proyecto.`,
+  ].map(x => `\\item ${x}`).join("\n");
+  const concl = L`Por lo tanto, como la relación demanda-capacidad máxima es $D/C = ${tn(r.dcMax, 3)}$ ${r.dcMax <= 1 + 1e-9 ? L`$\le 1.0$` : L`$> 1.0$`}${r.motivos.length ? ` y ${r.motivos.join(", ")}` : ""}, la conexión \textbf{${r.falla ? "no cumple" : r.ok ? "cumple" : "queda sin verificar"}} con las verificaciones indicadas.`;
+  return L`\documentclass[11pt,letterpaper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-tabla,es-noshorthands,es-nolists]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+${TEX_ESTILO}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{tikz}
+\usepackage{fancyhdr}
+\setlength{\headheight}{14pt}
+\pagestyle{fancy}
+\fancyhf{}
+\chead{Conexión de diagonal a tracción (versión de prueba)}
+\lfoot{Memoria de cálculo --- Conexión de diagonal, AISC 360-16}
+\rfoot{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+\allowdisplaybreaks
+
+\begin{document}
+
+\begin{center}
+{\Large\bfseries Memoria de Cálculo}\\[4pt]
+{\large Conexión de diagonal a tracción}\\[2pt]
+{\small\bfseries VERSIÓN DE PRUEBA}\\[2pt]
+Tubo ${tn(MM(d.H), 0)} $\times$ ${tn(MM(d.B), 0)} $\times$ ${tn(MM(d.t), 1)} --- $P_u = ${tn(T(d.Pu), 2)}$ tf\\[2pt]
+{\small ${fecha}}
+\end{center}
+
+\section{Datos de diseño}
+\begin{table}[H]
+\centering
+\caption{Datos de la conexión.}
+\begin{tabular}{lp{10cm}}
+\toprule
+Parámetro & Valor\\
+\midrule
+${datos}
+\bottomrule
+\end{tabular}
+\end{table}
+
+${tikzDiagonal(d)}
+
+${cuerpo}
+
+\section{Alcance, hipótesis y limitaciones}
+\begin{itemize}
+${alcance}
+\end{itemize}
+
+\section{Resumen de resultados}
+\begin{table}[H]
+\centering
+\small
+\caption{Comparación demanda versus capacidad.}
+\begin{tabular}{lllcc}
+\toprule
+Verificación & Demanda & Capacidad & D/C & Estado\\
+\midrule
+${resumen}
+\bottomrule
+\end{tabular}
+\end{table}
+
+${concl}
+
+\end{document}
+`;
+}
+
+// ---------------------------------------------------------------------------
+// Cálculo e interfaz
+// ---------------------------------------------------------------------------
+function visibilidad() {
+  const dos = $("nc").value === "2";
+  $("g").disabled = !dos;
+}
+function calcular() {
+  visibilidad();
+  limpiarInvalidos($("inputs"));
+  let malos = datosInvalidos(reglasDatos());
+  if (!malos.length) malos = datosSobreMaximo(reglasMaximos());
+  if (!malos.length) { const x = Number($("nf").value); if (!(Number.isInteger(x) && x >= 1)) { $("nf").classList.add("invalido"); malos.push("Filas de pernos: debe ser un número entero mayor o igual a 1"); } }
+  const limpiar = (msg) => {
+    $("resTitle").textContent = "Resultados";
+    $("summary").innerHTML = ""; $("memo").innerHTML = ""; $("dibujo").innerHTML = "";
+    $("verdict").innerHTML = msg;
+    ultimoTex = ""; ultimoR = null; ultimoD = null;
+  };
+  if (malos.length) { limpiar(avisoInvalidos(malos)); return; }
+  const d = leerDatos();
+  if (d.nc === 2 && d.g >= d.bp) { $("g").classList.add("invalido"); limpiar(avisoInvalidos(["El gramil g debe ser menor que el ancho de la placa"])); return; }
+  const m = new Memo();
+  const r = verificar(d, m);
+
+  const peor = (g) => r.checks.filter(x => x.grupo === g).reduce((a, x) => (x.dc > (a?.dc ?? -1) ? x : a), null);
+  const card = (t, x, s) => {
+    if (!x) return `<div class="card"><div class="t">${t}</div><div class="v">—</div><div class="s">${s}</div></div>`;
+    const wd = Math.min(100, Math.max(0, x.dc * 100));
+    return `<div class="card"><div class="t">${t}</div><div class="v">${fmt(x.dc, 3)}</div><div class="bar ${x.dc > 1 + 1e-9 ? "bad" : ""}"><i style="width:${wd}%"></i></div><div class="s">${s}</div></div>`;
+  };
+  const sub = (x) => (x ? `más exigido: ${x.k.toLowerCase()}` : "");
+  $("summary").innerHTML = [
+    card("Diagonal", peor("d"), sub(peor("d"))),
+    card("Soldaduras", peor("w"), sub(peor("w"))),
+    card("Pernos", peor("pe"), `${d.nf * d.nc} ø${d.dbTxt}" ${GRADOS[d.grado].nombre}`),
+    card("Placa de conexión", peor("pl"), sub(peor("pl"))),
+    card("Placa nodal", peor("n"), sub(peor("n"))),
+  ].join("");
+
+  $("resTitle").textContent = `Resultados — Conexión de diagonal · tubo ${fmt(MM(d.H), 0)}×${fmt(MM(d.B), 0)}×${fmt(MM(d.t), 1)} · P_u = ${fmt(T(d.Pu), 2)} tf`;
+  const rm = Number.isFinite(r.dcMax) ? fmt(r.dcMax, 3) : "∞";
+  const fallas = [...r.checks.filter(x => x.dc > 1 + 1e-9).map(x => x.k.toLowerCase()), ...r.motivos];
+  const txt = r.ok ? "✔ La conexión CUMPLE" : `✘ La conexión NO CUMPLE (${fallas.join(", ")})`;
+  $("verdict").innerHTML = `<div class="verdict ${r.ok ? "ok" : "bad"}">${txt} — razón máxima = ${rm}</div>`
+    + `<div class="note">Versión de prueba: compruebe el resultado a mano antes de usarlo. Solo tracción: el pandeo en compresión no se verifica.${r.avisos.length ? ` Criterio no cumplido (no entra en la razón D/C): ${r.avisos.join(", ")}.` : ""}</div>`;
+  $("dibujo").innerHTML = svgDiagonal(d, r);
+  $("memo").innerHTML = m.html();
+
+  ultimoR = r; ultimoD = d;
+  ultimoTex = documentoTex(d, r, m.texto());
+  ultimoNombre = `memoria_diagonal_${fmt(MM(d.H), 0)}x${fmt(MM(d.B), 0)}.tex`.replace(/\s/g, "");
+}
+
+// ---------------------------------------------------------------------------
+// Plano DXF en lámina con viñeta (dxf.js)
+// ---------------------------------------------------------------------------
+function descargarDXF() {
+  if (!ultimoTex || !ultimoR) { alert("Corrija los datos inválidos antes de descargar el plano."); return; }
+  const d = ultimoD, r = ultimoR, D = partesDibujo(d), G = D.G;
+  const todos = [...D.columna, ...D.viga, ...D.nodal, ...D.placa, ...D.tubo, D.flecha[1]];
+  const xs = todos.map(p => p[0]), ys = todos.map(p => p[1]);
+  const pl = new PlanoDXF({ titulo: `CONEXION DIAGONAL TUBO ${fmt(G.H, 0)}x${fmt(G.B, 0)}x${fmt(G.t, 1)}`, contenido: "elevación y especificaciones (versión de prueba)" });
+  pl.vista({
+    titulo: "Elevación", bbox: [Math.min(...xs) - 30, Math.min(...ys) - 40, Math.max(...xs) + 40, Math.max(...ys) + 30], objetivo: [260, 180], margen: [16, 16, 30, 10],
+    dibujar: (v) => {
+      v.poly("CONTORNO", D.columna); v.poly("CONTORNO", D.viga);
+      v.line("CONTORNO", -16, -G.Lc - 90, -16, 220); v.line("CONTORNO", 0, 16, G.Lv + 160, 16);
+      v.poly("SECCION", D.nodal); v.poly("SECCION", D.placa); v.poly("CONTORNO", D.tubo);
+      for (const p of D.paredes) v.line("OCULTO", p[0][0], p[0][1], p[1][0], p[1][1]);
+      v.line("EJES", D.eje[0][0], D.eje[0][1], D.eje[1][0], D.eje[1][1]);
+      for (const [x, y] of D.pernos) { v.circle("OCULTO", x, y, G.dh / 2); v.circle("ARMADURA", x, y, G.db / 2); }
+      for (const p of D.soldTubo) v.line("ARMADURA", p[0][0], p[0][1], p[1][0], p[1][1]);
+      if (d.apoyo !== "viga") v.line("ARMADURA", 0, 0, 0, -G.Lc);
+      if (d.apoyo !== "columna") v.line("ARMADURA", 0, 0, G.Lv, 0);
+      v.cotaV(-G.Lc, 0, -140, -6, `${fmtCota(G.Lc)}`); v.cotaH(0, G.Lv, -G.Lc, -8, `${fmtCota(G.Lv)}`);
+      const [px, py] = D.pernos[D.pernos.length - 1];
+      v.referencia(px, py, G.Lv + v.pp(6), -G.Lc * 0.25, `PL ${fmt(G.bp, 0)}x${fmt(G.uP1 - G.uP0, 0)}x${fmt(G.tp, 0)} - ${d.nf * d.nc} pernos %%c${d.dbTxt}"`, "TEXTOS");
+      const [tx, ty] = G.P(G.uT0 + G.Lt * 0.6, G.H / 2);
+      v.referencia(tx, ty, tx, ty + v.pp(12), `Tubo ${fmt(G.H, 0)}x${fmt(G.B, 0)}x${fmt(G.t, 1)}`, "TEXTOS");
+      v.text("TEXTOS", -70, -G.Lc - 80, 2.2, "Columna (referencial)", 1, 0);
+      v.text("TEXTOS", G.Lv + 80, 200, 2.2, "Viga (referencial)", 1, 0);
+      v.text("TEXTOS", G.Lv / 2, -G.Lc + v.pp(4), 2.2, `PL nodal e = ${fmt(G.tn, 0)}`, 1, 0);
+      v.text("TEXTOS", D.flecha[1][0], D.flecha[1][1] - v.pp(4), 2.5, `Pu = ${fmt(T(d.Pu), 2)} tf`, 1, 0);
+    },
+  });
+  const el = d.fexx >= 4900 ? "E70XX" : "E60XX";
+  pl.tabla({
+    titulo: "Cuadro de elementos", columnas: [["Elemento", 40], ["Descripción", 76], ["Cant.", 12]],
+    filas: [
+      ["Diagonal", `Tubo ${fmt(G.H, 0)}x${fmt(G.B, 0)}x${fmt(G.t, 1)} mm, ${ACEROS[d.aceroT].nombre}`, "1"],
+      ["Placa de conexión", `PL ${fmt(G.bp, 0)} x ${fmt(G.uP1 - G.uP0, 0)} x ${fmt(G.tp, 0)} mm, ${ACEROS[d.aceroP].nombre}`, "1"],
+      ["Soldadura placa-tubo", `4 filetes ${fmt(MM(d.w), 1)} mm x ${fmt(G.lw, 0)} mm, ${el}`, "-"],
+      ["Pernos", `%%c${d.dbTxt}" ${GRADOS[d.grado].nombre}, perf. %%c${fmt(G.dh, 1)} mm`, `${d.nf * d.nc}`],
+      ["Placa nodal", `PL ${fmt(G.Lv, 0)} x ${fmt(G.Lc, 0)} x ${fmt(G.tn, 0)} mm, ${ACEROS[d.aceroP].nombre}`, "1"],
+      ["Soldadura placa nodal", `Filete ${fmt(MM(d.wn), 1)} mm por ambas caras a ${APOYOS[d.apoyo]}, ${el}`, "-"],
+    ],
+  });
+  pl.notas([
+    "VERSION DE PRUEBA: verificar el cálculo a mano antes de construir.",
+    "Cotas en mm. No medir sobre el plano.",
+    "Perforaciones estándar (AISC 360-16 Tabla J3.3). Conexión tipo aplastamiento; fabricación y montaje según NCh 428.",
+    `Diseño a tracción: AISC 360-16 Cap. D y J. Razón D/C máxima ${Number.isFinite(r.dcMax) ? fmt(r.dcMax, 3) : "infinita"}${r.ok ? " (cumple)" : " (NO CUMPLE)"}.`,
+    "Solo tracción: no se verifica la compresión de la diagonal ni de la placa nodal. No es un arriostramiento sísmico diseñado por capacidad.",
+  ]);
+  descargarPlano(pl, `plano_diagonal_${fmt(G.H, 0)}x${fmt(G.B, 0)}.dxf`.replace(/\s/g, ""));
+}
+
+function init() {
+  $("inputs").addEventListener("input", (e) => { if (e.target.tagName === "INPUT" && e.target.type !== "checkbox") calcular(); });
+  $("inputs").addEventListener("change", () => calcular());
+  calcular();
+}
+init();
+
+// ---------------------------------------------------------------------------
+// Vista 2D / 3D (modelo3d.js): placa nodal, placa de conexión, pernos y tubo (mm; z normal al plano de la conexión)
+// ---------------------------------------------------------------------------
+window.Zona2D3D?.montar({
+  antes: document.querySelector(".toolbar"),
+  fuente2D: () => $("dibujo").querySelector("svg"),
+  observar: [$("verdict"), $("dibujo")],
+  nota: "columna y viga referenciales; en naranja lo que no cumple",
+  construir: () => {
+    if (!ultimoTex || !ultimoR) return null;
+    const d = ultimoD, r = ultimoR, G = geometria(d), cr = r.criticos, e = new Geo3D.Escena();
+    const [ex, ey] = G.e, [nx, ny] = G.n;
+    // (u, v, z) → (x, y, z): u a lo largo de la diagonal, v normal en el plano
+    const A = (u, v, z) => [u * ex + v * nx, u * ey + v * ny, z];
+    const zP = G.tn, zc = G.tn + G.tp / 2;
+    e.caja({ mat: "acero", alfa: 0.35, grupo: "referencia" }, -140, -16, -G.Lc - 90, 220, -120, 120);
+    e.caja({ mat: "acero", alfa: 0.35, grupo: "referencia" }, 0, G.Lv + 160, 0, 16, -90, 90);
+    e.extruir({ mat: cr.nodal ? "critico" : "placa" }, G.nodal, 0, G.tn, (u, v, w) => [u, v, w]);
+    e.extruir({ mat: cr.placa ? "critico" : "placa" }, [[-G.bp / 2, zP], [G.bp / 2, zP], [G.bp / 2, zP + G.tp], [-G.bp / 2, zP + G.tp]], G.uP0, G.uP1, (u, v, w) => A(w, u, v));
+    const H2 = G.H / 2, B2 = G.B / 2, t = G.t;
+    const paredes = [[[-H2, zc - B2], [H2, zc - B2], [H2, zc - B2 + t], [-H2, zc - B2 + t]], [[-H2, zc + B2 - t], [H2, zc + B2 - t], [H2, zc + B2], [-H2, zc + B2]],
+      [[-H2, zc - B2 + t], [-H2 + t, zc - B2 + t], [-H2 + t, zc + B2 - t], [-H2, zc + B2 - t]], [[H2 - t, zc - B2 + t], [H2, zc - B2 + t], [H2, zc + B2 - t], [H2 - t, zc + B2 - t]]];
+    for (const p of paredes) e.extruir({ mat: cr.diagonal ? "critico" : "acero" }, p, G.uT0, G.uT0 + G.Lt, (u, v, w) => A(w, u, v));
+    for (const [u, v] of G.pernos) e.tubo({ mat: cr.pernos ? "critico" : "armadura" }, A(u, v, -12), A(u, v, zP + G.tp + 12), G.db / 2);
+    return e;
+  },
+});
+// Integración con proyectos (proyectos.js): datos para guardar y restaurar este cálculo
+window.AURA_MEMO = {
+  tipo: "Conexión de diagonal (prueba)",
+  elemento: () => "Tracción",
+  tex: () => ultimoTex, nombre: () => ultimoNombre,
+  recalcular: () => calcular(),
+};
+
+</script>
+<script src="proyectos.js?v=42"></script>
+<script>
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
+</script>
+</body>
+</html>
