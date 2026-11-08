@@ -122,7 +122,7 @@
   <a class="marca" href="index.html" aria-label="Inicio"><span class="logo-tile"><span class="logo"><img src="icons/logo-mmp.webp" alt="MMP"></span></span></a>
   <a class="home" href="index.html">← Inicio</a>
   <h1>Conexión viga–columna <span class="chipPrueba">VERSIÓN DE PRUEBA</span></h1>
-  <span>Placa de corte en el alma y placas de ala apernadas · Pernos, aplastamiento, bloque de corte, soldaduras y alas y alma de la columna · AISC 360-16 Cap. J y Manual ICHA</span>
+  <span>Placa de corte simple o doble en el alma y placas de ala apernadas · Pernos, aplastamiento, bloque de corte, soldaduras y alas y alma de la columna · AISC 360-16 Cap. J y Manual ICHA</span>
 </header>
 <div class="prueba"><div>⚠ <b>Versión de prueba.</b> Esta herramienta está en desarrollo y sus resultados aún no se han validado contra ejemplos publicados. Úsela como apoyo y compruebe el cálculo a mano. Diseña la conexión con las solicitaciones ingresadas (diseño por resistencia): no es una conexión precalificada para marcos sísmicos (AISC 358, AISC 341, NCh 2369).</div></div>
 
@@ -133,8 +133,8 @@
     <div class="body">
       <label for="tipo">Tipo de conexión</label>
       <select id="tipo">
-        <option value="corte" selected>Corte: placa simple en el alma</option>
-        <option value="momento">Corte y momento: placa en el alma y placas de ala apernadas</option>
+        <option value="corte" selected>Corte: placa de corte en el alma</option>
+        <option value="momento">Corte y momento: placa de corte en el alma y placas de ala apernadas</option>
       </select>
       <svg class="esquema" viewBox="0 0 330 190" aria-label="Esquema de la conexión">
         <rect x="30" y="10" width="14" height="170" fill="#c3c9d1" stroke="#3d4450"/>
@@ -224,6 +224,11 @@
 
       <fieldset>
         <legend>5. Placa de corte en el alma</legend>
+        <label for="nPl">Placas de corte</label>
+        <select id="nPl">
+          <option value="1" selected>Una, a un lado del alma (placa simple)</option>
+          <option value="2">Dos, una a cada lado del alma (pernos a corte doble)</option>
+        </select>
         <div class="row3">
           <div><label for="nb">N.º de pernos</label><input id="nb" type="number" step="1" value="2"></div>
           <div><label for="s">Paso s <span class="unit">[mm]</span></label><input id="s" type="number" step="5" value="55"></div>
@@ -235,7 +240,7 @@
           <div><label for="w">Filete placa–col. <span class="unit">[mm]</span></label><input id="w" type="number" step="1" value="4"></div>
           <div><label for="ePer">Excentricidad pernos <span class="unit">[mm]</span></label><input id="ePer" type="number" step="5" value="0"></div>
         </div>
-        <div class="unit" style="margin-top:4px">a: desde la cara de la columna (soldadura) a la línea de pernos. Largo de la placa L<sub>p</sub> = 2l<sub>ev</sub> + (n − 1)s; ancho a + l<sub>eh</sub>. Los pernos quedan centrados en el alto de la viga. Con excentricidad 0 el grupo toma solo corte; con un valor, se usa el método elástico.</div>
+        <div class="unit" style="margin-top:4px">a: desde la cara de la columna (soldadura) a la línea de pernos. Largo de la placa L<sub>p</sub> = 2l<sub>ev</sub> + (n − 1)s; ancho a + l<sub>eh</sub>. Los pernos quedan centrados en el alto de la viga. Con excentricidad 0 el grupo toma solo corte; con un valor, se usa el método elástico. Con dos placas, ambas son iguales (mismo espesor, filete y pernos) y el alma de la viga queda entre ellas.</div>
       </fieldset>
 
       <fieldset class="soloMom">
@@ -277,7 +282,7 @@
 
 <script src="memo.js?v=39"></script>
 <script src="tablero.js?v=5"></script>
-<script src="guia.js?v=1"></script>
+<script src="guia.js?v=2"></script>
 <script src="dxf.js?v=2"></script>
 <script src="modelo3d.js?v=6"></script>
 <script>
@@ -473,6 +478,7 @@ function leerDatos() {
     Vu: Math.abs(num("Vu")) * 1000, Mu: $("tipo").value === "momento" ? Math.abs(num("Mu")) * 1e5 : 0,
     grado: $("grado").value, Fnv: g.Fnv, Fnt: g.Fnt, dbTxt: $("db").value, db, dh, dhn: dh + 0.16, emin: pb.emin * PULG, Ab: Math.PI / 4 * db * db,
     fexx: parseFloat($("fexx").value), crit: $("critBloque").value,
+    nPl: $("nPl").value === "2" ? 2 : 1,
     nb: Math.round(num("nb")), s: c("s"), lev: c("lev"), a: c("a"), leh: c("leh"), lehV: c("lehV"), tp: c("tp"), w: c("w"), ePer: c("ePer"),
     bp: c("bp"), tfp: c("tfp"), nf: Math.round(num("nf")), sf: c("sf"), gf: c("gf"), lef: c("lef"), lebf: c("lebf"),
     modoW: $("modoW").value, wf: c("wf"), direccional: $("direccional").checked,
@@ -551,36 +557,45 @@ function verificar(d, m) {
   // ---------- 1. Datos ----------
   m.h("Datos y alcance de la verificación");
   m.p(L`\textbf{Versión de prueba:} esta herramienta está en desarrollo y sus resultados aún no se han validado contra ejemplos publicados; el cálculo debe comprobarse a mano.`);
+  const dos = d.nPl === 2, nP = d.nPl;
+  const txtPl = dos ? "dos placas, una a cada lado del alma, apernadas al alma y soldadas a la columna" : "una placa simple apernada al alma y soldada a la columna";
   m.p(d.mom
-    ? L`Conexión de corte y momento de una viga al ala de una columna: el corte $V_u$ lo toma una placa simple apernada al alma y soldada a la columna; el momento $M_u$ se transmite como un par de fuerzas por placas apernadas a las alas de la viga y soldadas al ala de la columna. Se verifica con la AISC 360-16 (LRFD), Capítulo J, con las solicitaciones ingresadas (diseño por resistencia).`
-    : L`Conexión simple (de corte) de una viga al ala de una columna: una placa soldada a la columna y apernada al alma de la viga transmite la reacción $V_u$. Se verifica con la AISC 360-16 (LRFD), Capítulo J.`);
+    ? L`Conexión de corte y momento de una viga al ala de una columna: el corte $V_u$ lo toman ${txtPl}; el momento $M_u$ se transmite como un par de fuerzas por placas apernadas a las alas de la viga y soldadas al ala de la columna. Se verifica con la AISC 360-16 (LRFD), Capítulo J, con las solicitaciones ingresadas (diseño por resistencia).`
+    : L`Conexión simple (de corte) de una viga al ala de una columna: ${dos ? "dos placas, una a cada lado del alma, soldadas a la columna y apernadas al alma de la viga, transmiten" : "una placa soldada a la columna y apernada al alma de la viga transmite"} la reacción $V_u$. Se verifica con la AISC 360-16 (LRFD), Capítulo J.`);
   m.row("Viga", `${v.nombre} · d = ${fmt(MM(v.d), 0)} · b<sub>f</sub> = ${fmt(MM(v.bf), 0)} · t<sub>f</sub> = ${fmt(MM(v.tf), 1)} · t<sub>w</sub> = ${fmt(MM(v.tw), 1)} mm · ${ACEROS[d.aceroV].nombre}`);
   m.row("Columna", `${c.nombre} · d<sub>c</sub> = ${fmt(MM(c.d), 0)} · b<sub>fc</sub> = ${fmt(MM(c.bf), 0)} · t<sub>fc</sub> = ${fmt(MM(c.tf), 1)} · t<sub>wc</sub> = ${fmt(MM(c.tw), 1)} mm · ${ACEROS[d.aceroC].nombre}`);
   m.row("Pernos", `ø${d.dbTxt}" (${fmt(MM(d.db), 2)} mm) ${GRADOS[d.grado].nombre} · perforación ø${fmt(MM(d.dh), 1)} mm`, "AISC 360-16 Tabla J3.3");
   m.row("Solicitaciones mayoradas: V<sub>u</sub>" + (d.mom ? " ; M<sub>u</sub>" : ""), `${fmt(T(d.Vu), 2)} tf${d.mom ? ` ; ${fmt(d.Mu / 1e5, 2)} tf·m` : ""}`);
   m.p(L`Pernos en conexión tipo aplastamiento con perforaciones estándar: $F_{nv} = ${tn(d.Fnv, 0)}$ kgf/cm$^2$ (Tabla J3.2) y $A_b = \pi d^2/4 = ${tn(d.Ab, 3)}$ cm$^2$. En las áreas netas el ancho de la perforación es $d_h + 1.6$ mm $= ${tn(MM(d.dhn), 1)}$ mm (B4.3b).`);
-  const rv1 = EL.cortePerno(d);
+  m.row("Placa de corte", dos ? "doble: una a cada lado del alma de la viga (pernos a corte doble)" : "simple: a un lado del alma de la viga (pernos a corte simple)");
+  const rv1 = nP * EL.cortePerno(d);                    // un perno, con n_s = n.º de placas planos de corte
 
   // ---------- 2. Placa de corte: pernos ----------
-  m.h("Placa de corte: pernos, aplastamiento y desgarre");
+  m.h(dos ? "Placas de corte: pernos, aplastamiento y desgarre" : "Placa de corte: pernos, aplastamiento y desgarre");
   const Lp = 2 * d.lev + (d.nb - 1) * d.s, Bpc = d.a + d.leh;
   const hLibre = v.d - 2 * (v.tf + v.r);
   const yTop = (d.nb - 1) * d.s / 2;                    // perno superior respecto al eje de la viga
   const lcPlBorde = d.lev - d.dh / 2, lcEntre = d.s - d.dh;
   const lcAlmaTop = (v.d / 2 - v.tf) - yTop - d.dh / 2;   // del perno superior a la cara interior del ala superior
-  m.p(L`La placa (${tn(MM(Lp), 0)} $\times$ ${tn(MM(Bpc), 0)} $\times$ ${tn(MM(d.tp), 0)} mm) lleva ${d.nb} pernos en una línea vertical a $a = ${tn(MM(d.a), 0)}$ mm de la cara de la columna. La reacción baja por la viga: el perno apoya hacia abajo en la placa (desgarre hacia su borde inferior) y hacia arriba en el alma de la viga (hacia el ala superior). La resistencia del grupo es la suma, perno a perno, del menor valor entre el corte del perno y el aplastamiento o desgarre en cada parte conectada.`);
-  m.row("Corte de un perno: φr<sub>nv</sub>", `${fmt(T(rv1), 2)} tf`, "AISC 360-16 J3-1");
-  m.eq(L`\phi r_{nv} = \phi\,F_{nv}A_b = 0.75\cdot ${tn(d.Fnv, 0)}\cdot ${tn(d.Ab, 3)} = ${tn(rv1, 0)}\ \mathrm{kgf}`, "J3-1");
+  m.p(dos
+    ? L`Cada placa (${tn(MM(Lp), 0)} $\times$ ${tn(MM(Bpc), 0)} $\times$ ${tn(MM(d.tp), 0)} mm) va a un lado del alma, y los ${d.nb} pernos de la línea vertical, a $a = ${tn(MM(d.a), 0)}$ mm de la cara de la columna, atraviesan las dos placas y el alma. Cada perno tiene dos planos de corte ($n_s = 2$). La reacción baja por la viga: el perno apoya hacia abajo en ambas placas (desgarre hacia su borde inferior) y hacia arriba en el alma de la viga (hacia el ala superior). La resistencia del grupo es la suma, perno a perno, del menor valor entre el corte del perno, el aplastamiento o desgarre en las dos placas y en el alma.`
+    : L`La placa (${tn(MM(Lp), 0)} $\times$ ${tn(MM(Bpc), 0)} $\times$ ${tn(MM(d.tp), 0)} mm) lleva ${d.nb} pernos en una línea vertical a $a = ${tn(MM(d.a), 0)}$ mm de la cara de la columna. La reacción baja por la viga: el perno apoya hacia abajo en la placa (desgarre hacia su borde inferior) y hacia arriba en el alma de la viga (hacia el ala superior). La resistencia del grupo es la suma, perno a perno, del menor valor entre el corte del perno y el aplastamiento o desgarre en cada parte conectada.`);
+  m.row(dos ? "Corte de un perno, dos planos: φr<sub>nv</sub>" : "Corte de un perno: φr<sub>nv</sub>", `${fmt(T(rv1), 2)} tf`, "AISC 360-16 J3-1");
+  m.eq(dos
+    ? L`\phi r_{nv} = \phi\,n_s\,F_{nv}A_b = 0.75\cdot 2\cdot ${tn(d.Fnv, 0)}\cdot ${tn(d.Ab, 3)} = ${tn(rv1, 0)}\ \mathrm{kgf}`
+    : L`\phi r_{nv} = \phi\,F_{nv}A_b = 0.75\cdot ${tn(d.Fnv, 0)}\cdot ${tn(d.Ab, 3)} = ${tn(rv1, 0)}\ \mathrm{kgf}`, "J3-1");
   const filasPl = [], filasAl = [];
   for (let i = 0; i < d.nb; i++) {
     const lcP = i === 0 ? lcPlBorde : lcEntre;            // i = 0: perno inferior (borde de la placa)
     const lcA = i === d.nb - 1 ? lcAlmaTop : lcEntre;     // último: perno superior (hacia el ala de la viga)
-    filasPl.push(EL.aplast(lcP, d.tp, d, d.FuP)); filasAl.push(EL.aplast(lcA, v.tw, d, d.FuV));
+    filasPl.push(nP * EL.aplast(lcP, d.tp, d, d.FuP)); filasAl.push(EL.aplast(lcA, v.tw, d, d.FuV));
   }
-  const rbP = (lc) => EL.aplast(lc, d.tp, d, d.FuP), rbA = (lc) => EL.aplast(lc, v.tw, d, d.FuV);
-  m.row("Placa: l<sub>c</sub> borde ; l<sub>c</sub> entre pernos", `${fmt(MM(lcPlBorde), 1)} ; ${d.nb > 1 ? fmt(MM(lcEntre), 1) : "—"} mm`);
+  const rbP = (lc) => nP * EL.aplast(lc, d.tp, d, d.FuP), rbA = (lc) => EL.aplast(lc, v.tw, d, d.FuV);
+  m.row(dos ? "Placas: l<sub>c</sub> borde ; l<sub>c</sub> entre pernos" : "Placa: l<sub>c</sub> borde ; l<sub>c</sub> entre pernos", `${fmt(MM(lcPlBorde), 1)} ; ${d.nb > 1 ? fmt(MM(lcEntre), 1) : "—"} mm`);
   m.eq(L`l_c = l_{ev} - d_h/2 = ${tn(MM(d.lev), 1)} - ${tn(MM(d.dh) / 2, 2)} = ${tn(MM(lcPlBorde), 2)}\ \mathrm{mm} \qquad l_c = s - d_h = ${tn(MM(d.s), 1)} - ${tn(MM(d.dh), 2)} = ${tn(MM(lcEntre), 2)}\ \mathrm{mm}`);
-  m.eq(L`\phi r_n = 0.75\min\left(1.2\,l_c\,t\,F_u;\ 2.4\,d\,t\,F_u\right):\ \text{borde } ${tn(rbP(lcPlBorde), 0)}\ \mathrm{kgf};\ \text{entre pernos } ${tn(rbP(lcEntre), 0)}\ \mathrm{kgf}\ (t_p = ${tn(d.tp, 2)}\ \mathrm{cm})`, "J3-6a, J3-6c");
+  m.eq(dos
+    ? L`\phi r_n = 2\cdot 0.75\min\left(1.2\,l_c\,t_p\,F_u;\ 2.4\,d\,t_p\,F_u\right):\\text{borde } ${tn(rbP(lcPlBorde), 0)}\ \mathrm{kgf};\ \text{entre pernos } ${tn(rbP(lcEntre), 0)}\ \mathrm{kgf}\ (t_p = ${tn(d.tp, 2)}\ \mathrm{cm})`
+    : L`\phi r_n = 0.75\min\left(1.2\,l_c\,t\,F_u;\ 2.4\,d\,t\,F_u\right):\ \text{borde } ${tn(rbP(lcPlBorde), 0)}\ \mathrm{kgf};\ \text{entre pernos } ${tn(rbP(lcEntre), 0)}\ \mathrm{kgf}\ (t_p = ${tn(d.tp, 2)}\ \mathrm{cm})`, "J3-6a, J3-6c");
   m.row("Alma de la viga: l<sub>c</sub> perno superior ; entre pernos", `${fmt(MM(lcAlmaTop), 1)} ; ${d.nb > 1 ? fmt(MM(lcEntre), 1) : "—"} mm`);
   m.eq(L`\phi r_n:\ \text{perno superior } ${tn(rbA(lcAlmaTop), 0)}\ \mathrm{kgf};\ \text{entre pernos } ${tn(rbA(lcEntre), 0)}\ \mathrm{kgf}\ (t_w = ${tn(v.tw, 2)}\ \mathrm{cm})`, "J3-6a, J3-6c");
   let phiGrupo, demPerno, dcPA;
@@ -594,7 +609,7 @@ function verificar(d, m) {
     m.p(L`El grupo se verifica con el método elástico, con la excentricidad $e = ${tn(MM(d.ePer), 0)}$ mm: la fuerza del perno más alejado se compara con la menor resistencia de un perno (conservador).`);
     m.eq(L`R_v = \frac{V_u}{n} = ${tn(Rv, 0)}\ \mathrm{kgf} \qquad R_h = \frac{V_u\,e\,y_{m\acute{a}x}}{\sum y^2} = \frac{${tn(d.Vu, 0)}\cdot ${tn(d.ePer, 1)}\cdot ${tn(yTop, 2)}}{${tn(Sy2, 2)}} = ${tn(Rh, 0)}\ \mathrm{kgf} \qquad R = \sqrt{R_v^2 + R_h^2} = ${tn(demPerno, 0)}\ \mathrm{kgf}`);
     m.row("Perno más exigido: R ≤ φr<sub>n,mín</sub>", `${fmt(T(demPerno), 2)} ≤ ${fmt(T(phiGrupo), 2)} tf ${tagDC(dcPA)}`, "AISC 360-16 J3.6, J3.10");
-    ck("Pernos de la placa de corte", L`$R = ${tn(T(demPerno), 2)}$ tf`, L`$\phi r_n = ${tn(T(phiGrupo), 2)}$ tf`, dcPA, "pa");
+    ck(dos ? "Pernos de las placas de corte" : "Pernos de la placa de corte", L`$R = ${tn(T(demPerno), 2)}$ tf`, L`$\phi r_n = ${tn(T(phiGrupo), 2)}$ tf`, dcPA, "pa");
   } else {
     phiGrupo = filasPl.reduce((s, x, i) => s + Math.min(rv1, x, filasAl[i]), 0);
     dcPA = d.Vu / phiGrupo;
@@ -602,7 +617,7 @@ function verificar(d, m) {
     else m.p(L`Sin excentricidad en el grupo: todos los pernos toman la misma fuerza $V_u/n$.`);
     m.row("Resistencia del grupo: φR<sub>n</sub> ≥ V<sub>u</sub>", `${fmt(T(phiGrupo), 2)} tf ${tagDC(dcPA)}`, "AISC 360-16 J3.6, J3.10");
     m.eq(L`\phi R_n = \sum_i \min\left(\phi r_{nv};\ \phi r_{n,placa,i};\ \phi r_{n,alma,i}\right) = ${tn(phiGrupo, 0)}\ \mathrm{kgf} \qquad \frac{V_u}{\phi R_n} = \frac{${tn(T(d.Vu), 2)}}{${tn(T(phiGrupo), 2)}} = ${tn(dcPA, 3)} ${cmp(dcPA)} 1.0`);
-    ck("Pernos de la placa de corte", L`$V_u = ${tn(T(d.Vu), 2)}$ tf`, L`$\phi R_n = ${tn(T(phiGrupo), 2)}$ tf`, dcPA, "pa");
+    ck(dos ? "Pernos de las placas de corte" : "Pernos de la placa de corte", L`$V_u = ${tn(T(d.Vu), 2)}$ tf`, L`$\phi R_n = ${tn(T(phiGrupo), 2)}$ tf`, dcPA, "pa");
   }
   // Disposición (J3.3, J3.4, J3.5)
   m.sub("Disposición de los pernos");
@@ -627,48 +642,62 @@ function verificar(d, m) {
   m.p(L`Distancias mínimas usuales del Manual ICHA (Tabla 3-1): $3d$ entre pernos y entre $1.25d$ y $1.75d$ al borde, según el tipo de canto.`, true);
 
   // ---------- 3. Placa de corte: elemento ----------
-  m.h("Placa de corte: fluencia, ruptura, bloque y flexión");
-  const Agv = Lp * d.tp, Anv = (Lp - d.nb * d.dhn) * d.tp;
+  // Con dos placas, cada una toma V_u/2: se suman sus resistencias (n_p = 2) y se compara con V_u
+  const npTxt = dos ? L`n_p\,` : "", npNum = dos ? L`2\cdot ` : "", dePl = dos ? "de las placas" : "de la placa";
+  m.h(dos ? "Placas de corte: fluencia, ruptura, bloque y flexión" : "Placa de corte: fluencia, ruptura, bloque y flexión");
+  if (dos) m.p(L`Las dos placas son iguales y cada una toma la mitad del corte: sus resistencias se suman ($n_p = 2$) y se comparan con $V_u$.`);
+  const Agv = nP * Lp * d.tp, Anv = nP * (Lp - d.nb * d.dhn) * d.tp;
   const phiVy = EL.fluCorte(Agv, d.FyP), dcVy = d.Vu / phiVy;
   m.row("Fluencia por corte: φR<sub>n</sub> ≥ V<sub>u</sub>", `${fmt(T(phiVy), 2)} tf ${tagDC(dcVy)}`, "AISC 360-16 J4-3");
-  m.eq(L`\phi R_n = 1.00\cdot 0.60\,F_y\,L_p\,t_p = 0.60\cdot ${tn(d.FyP, 0)}\cdot ${tn(Lp, 1)}\cdot ${tn(d.tp, 2)} = ${tn(T(phiVy), 2)}\ \mathrm{tf} \qquad \frac{V_u}{\phi R_n} = ${tn(dcVy, 3)} ${cmp(dcVy)} 1.0`, "J4-3");
+  m.eq(L`\phi R_n = 1.00\cdot 0.60\,F_y\,${npTxt}L_p\,t_p = 0.60\cdot ${tn(d.FyP, 0)}\cdot ${npNum}${tn(Lp, 1)}\cdot ${tn(d.tp, 2)} = ${tn(T(phiVy), 2)}\ \mathrm{tf} \qquad \frac{V_u}{\phi R_n} = ${tn(dcVy, 3)} ${cmp(dcVy)} 1.0`, "J4-3");
   m.p(L`La Especificación ICHA (13.5.3) usa $\phi = 0.90$ para el corte de elementos de conexión; la AISC 360-16 usa $\phi = 1.00$.`);
-  ck("Fluencia por corte de la placa", L`$V_u = ${tn(T(d.Vu), 2)}$ tf`, L`$\phi R_n = ${tn(T(phiVy), 2)}$ tf`, dcVy, "pl");
+  ck(`Fluencia por corte ${dePl}`, L`$V_u = ${tn(T(d.Vu), 2)}$ tf`, L`$\phi R_n = ${tn(T(phiVy), 2)}$ tf`, dcVy, "pl");
   const phiVr = EL.rupCorte(Anv, d.FuP), dcVr = d.Vu / phiVr;
   m.row("Ruptura por corte: φR<sub>n</sub> ≥ V<sub>u</sub>", `${fmt(T(phiVr), 2)} tf ${tagDC(dcVr)}`, "AISC 360-16 J4-4");
-  m.eq(L`\phi R_n = 0.75\cdot 0.60\,F_u\,(L_p - n\,d_h')\,t_p = 0.45\cdot ${tn(d.FuP, 0)}\cdot (${tn(Lp, 1)} - ${d.nb}\cdot ${tn(d.dhn, 3)})\cdot ${tn(d.tp, 2)} = ${tn(T(phiVr), 2)}\ \mathrm{tf} \qquad \frac{V_u}{\phi R_n} = ${tn(dcVr, 3)} ${cmp(dcVr)} 1.0`, "J4-4");
-  ck("Ruptura por corte de la placa", L`$V_u = ${tn(T(d.Vu), 2)}$ tf`, L`$\phi R_n = ${tn(T(phiVr), 2)}$ tf`, dcVr, "pl");
-  // Bloque: corte a lo largo de la línea de pernos desde el borde superior, tracción hacia el borde libre de la placa
+  m.eq(L`\phi R_n = 0.75\cdot 0.60\,F_u\,${npTxt}(L_p - n\,d_h')\,t_p = 0.45\cdot ${tn(d.FuP, 0)}\cdot ${npNum}(${tn(Lp, 1)} - ${d.nb}\cdot ${tn(d.dhn, 3)})\cdot ${tn(d.tp, 2)} = ${tn(T(phiVr), 2)}\ \mathrm{tf} \qquad \frac{V_u}{\phi R_n} = ${tn(dcVr, 3)} ${cmp(dcVr)} 1.0`, "J4-4");
+  ck(`Ruptura por corte ${dePl}`, L`$V_u = ${tn(T(d.Vu), 2)}$ tf`, L`$\phi R_n = ${tn(T(phiVr), 2)}$ tf`, dcVr, "pl");
+  // Bloque: corte a lo largo de la línea de pernos desde el borde superior, tracción hacia el borde libre de la placa (por placa)
   const bAgv = (d.lev + (d.nb - 1) * d.s) * d.tp, bAnv = bAgv - (d.nb - 0.5) * d.dhn * d.tp;
   const bAgt = d.leh * d.tp, bAnt = (d.leh - d.dhn / 2) * d.tp;
-  const phiBl = EL.bloque(bAgv, bAnv, bAgt, bAnt, d.FyP, d.FuP, d.crit), dcBl = d.Vu / phiBl;
-  m.p(L`Bloque de corte en forma de L: plano de corte a lo largo de la línea de pernos hasta el borde de la placa y plano de tracción hacia su borde libre ($U_{bs} = 1$, una línea de pernos).`);
+  const phiBl1 = EL.bloque(bAgv, bAnv, bAgt, bAnt, d.FyP, d.FuP, d.crit), phiBl = nP * phiBl1, dcBl = d.Vu / phiBl;
+  m.p(L`Bloque de corte en forma de L${dos ? " en cada placa" : ""}: plano de corte a lo largo de la línea de pernos hasta el borde de la placa y plano de tracción hacia su borde libre ($U_{bs} = 1$, una línea de pernos).`);
   m.eq(L`A_{gv} = (l_{ev} + (n-1)s)\,t_p = ${tn(bAgv, 2)} \qquad A_{nv} = A_{gv} - (n - 0.5)\,d_h'\,t_p = ${tn(bAnv, 2)} \qquad A_{gt} = l_{eh}t_p = ${tn(bAgt, 2)} \qquad A_{nt} = (l_{eh} - d_h'/2)\,t_p = ${tn(bAnt, 2)}\ \mathrm{cm^2}`);
-  m.row("Bloque de corte de la placa: φR<sub>n</sub> ≥ V<sub>u</sub>", `${fmt(T(phiBl), 2)} tf ${tagDC(dcBl)}`, refBloque(d.crit));
-  m.eq(L`${texBloque(bAgv, bAnv, bAgt, bAnt, d.FyP, d.FuP, d.crit)} = ${tn(T(phiBl), 2)}\ \mathrm{tf} \qquad \frac{V_u}{\phi R_n} = ${tn(dcBl, 3)} ${cmp(dcBl)} 1.0`, d.crit === "icha" ? "13.4.3" : "J4-5");
-  ck("Bloque de corte de la placa", L`$V_u = ${tn(T(d.Vu), 2)}$ tf`, L`$\phi R_n = ${tn(T(phiBl), 2)}$ tf`, dcBl, "pl");
+  m.row(dos ? "Bloque de corte de las dos placas: φR<sub>n</sub> ≥ V<sub>u</sub>" : "Bloque de corte de la placa: φR<sub>n</sub> ≥ V<sub>u</sub>", `${fmt(T(phiBl), 2)} tf ${tagDC(dcBl)}`, refBloque(d.crit));
+  m.eq(dos
+    ? L`\text{Por placa: } ${texBloque(bAgv, bAnv, bAgt, bAnt, d.FyP, d.FuP, d.crit)} = ${tn(T(phiBl1), 2)}\ \mathrm{tf} \qquad \phi R_n = 2\cdot ${tn(T(phiBl1), 2)} = ${tn(T(phiBl), 2)}\ \mathrm{tf} \qquad \frac{V_u}{\phi R_n} = ${tn(dcBl, 3)} ${cmp(dcBl)} 1.0`
+    : L`${texBloque(bAgv, bAnv, bAgt, bAnt, d.FyP, d.FuP, d.crit)} = ${tn(T(phiBl), 2)}\ \mathrm{tf} \qquad \frac{V_u}{\phi R_n} = ${tn(dcBl, 3)} ${cmp(dcBl)} 1.0`, d.crit === "icha" ? "13.4.3" : "J4-5");
+  ck(`Bloque de corte ${dePl}`, L`$V_u = ${tn(T(d.Vu), 2)}$ tf`, L`$\phi R_n = ${tn(T(phiBl), 2)}$ tf`, dcBl, "pl");
   // Flexión de la placa con la excentricidad a
-  const MuP = d.Vu * d.a, phiMp = 0.90 * d.FyP * d.tp * Lp * Lp / 4, dcMp = MuP / phiMp;
-  m.p(L`Flexión de la placa en la soldadura con la excentricidad $a$ (criterio de AURA, como en la práctica del Manual AISC para placas simples; no es una cláusula de la AISC 360-16): $M_u = V_u\,a$ y $\phi M_n = 0.90\,F_y\,Z$ con $Z = t_pL_p^2/4$.`);
-  m.row("Flexión de la placa: φM<sub>n</sub> ≥ V<sub>u</sub>·a", `${fmt(MuP / 1e5, 3)} ≤ ${fmt(phiMp / 1e5, 3)} tf·m ${tagDC(dcMp)}`);
-  m.eq(L`M_u = ${tn(d.Vu, 0)}\cdot ${tn(d.a, 1)} = ${tn(MuP, 0)}\ \mathrm{kgf\,cm} \qquad \phi M_n = 0.90\cdot ${tn(d.FyP, 0)}\cdot\frac{${tn(d.tp, 2)}\cdot ${tn(Lp, 1)}^2}{4} = ${tn(phiMp, 0)}\ \mathrm{kgf\,cm} \qquad \frac{M_u}{\phi M_n} = ${tn(dcMp, 3)} ${cmp(dcMp)} 1.0`);
-  ck("Flexión de la placa de corte", L`$M_u = ${tn(MuP / 1e5, 3)}$ tf·m`, L`$\phi M_n = ${tn(phiMp / 1e5, 3)}$ tf·m`, dcMp, "pl");
+  const MuP = d.Vu * d.a, phiMp = nP * 0.90 * d.FyP * d.tp * Lp * Lp / 4, dcMp = MuP / phiMp;
+  m.p(L`Flexión ${dePl} en la soldadura con la excentricidad $a$ (criterio de AURA, como en la práctica del Manual AISC para placas simples; no es una cláusula de la AISC 360-16): $M_u = V_u\,a$ y $\phi M_n = 0.90\,F_y\,${npTxt}Z$ con $Z = t_pL_p^2/4$.`);
+  m.row(dos ? "Flexión de las placas: φM<sub>n</sub> ≥ V<sub>u</sub>·a" : "Flexión de la placa: φM<sub>n</sub> ≥ V<sub>u</sub>·a", `${fmt(MuP / 1e5, 3)} ≤ ${fmt(phiMp / 1e5, 3)} tf·m ${tagDC(dcMp)}`);
+  m.eq(L`M_u = ${tn(d.Vu, 0)}\cdot ${tn(d.a, 1)} = ${tn(MuP, 0)}\ \mathrm{kgf\,cm} \qquad \phi M_n = 0.90\cdot ${tn(d.FyP, 0)}\cdot ${npNum}\frac{${tn(d.tp, 2)}\cdot ${tn(Lp, 1)}^2}{4} = ${tn(phiMp, 0)}\ \mathrm{kgf\,cm} \qquad \frac{M_u}{\phi M_n} = ${tn(dcMp, 3)} ${cmp(dcMp)} 1.0`);
+  ck(dos ? "Flexión de las placas de corte" : "Flexión de la placa de corte", L`$M_u = ${tn(MuP / 1e5, 3)}$ tf·m`, L`$\phi M_n = ${tn(phiMp / 1e5, 3)}$ tf·m`, dcMp, "pl");
 
   // ---------- 4. Soldadura de la placa de corte ----------
-  m.h("Soldadura placa de corte – columna");
-  const rnW = EL.filete(d.w, d.fexx), phiW = 2 * Lp * rnW, dcW = d.Vu / phiW;
-  m.p(L`Dos filetes de tamaño $w$ en todo el largo $L_p$, uno por cada cara de la placa, cargados en su dirección (corte longitudinal).`);
+  m.h(dos ? "Soldadura placas de corte – columna" : "Soldadura placa de corte – columna");
+  const nW = 2 * nP, rnW = EL.filete(d.w, d.fexx), phiW = nW * Lp * rnW, dcW = d.Vu / phiW;
+  m.p(dos
+    ? L`Dos filetes de tamaño $w$ en todo el largo $L_p$ en cada placa, uno por cada cara (cuatro en total), cargados en su dirección (corte longitudinal).`
+    : L`Dos filetes de tamaño $w$ en todo el largo $L_p$, uno por cada cara de la placa, cargados en su dirección (corte longitudinal).`);
   m.row("Resistencia por unidad de largo: φr<sub>n</sub>", `${fmt(rnW, 1)} kgf/cm`, "AISC 360-16 J2-4");
   m.eq(L`\phi r_n = 0.75\cdot 0.60\,F_{EXX}\cdot 0.707\,w = 0.75\cdot 0.60\cdot ${tn(d.fexx, 0)}\cdot 0.707\cdot ${tn(d.w, 2)} = ${tn(rnW, 1)}\ \mathrm{kgf/cm}`, "J2-4");
-  m.row("Soldadura: φR<sub>n</sub> = 2L<sub>p</sub>φr<sub>n</sub> ≥ V<sub>u</sub>", `${fmt(T(phiW), 2)} tf ${tagDC(dcW)}`, "AISC 360-16 J2.4");
-  m.eq(L`\phi R_n = 2\cdot ${tn(Lp, 1)}\cdot ${tn(rnW, 1)} = ${tn(T(phiW), 2)}\ \mathrm{tf} \qquad \frac{V_u}{\phi R_n} = ${tn(dcW, 3)} ${cmp(dcW)} 1.0`);
-  ck("Soldadura de la placa de corte", L`$V_u = ${tn(T(d.Vu), 2)}$ tf`, L`$\phi R_n = ${tn(T(phiW), 2)}$ tf`, dcW, "w");
+  m.row(`Soldadura: φR<sub>n</sub> = ${nW}L<sub>p</sub>φr<sub>n</sub> ≥ V<sub>u</sub>`, `${fmt(T(phiW), 2)} tf ${tagDC(dcW)}`, "AISC 360-16 J2.4");
+  m.eq(L`\phi R_n = ${nW}\cdot ${tn(Lp, 1)}\cdot ${tn(rnW, 1)} = ${tn(T(phiW), 2)}\ \mathrm{tf} \qquad \frac{V_u}{\phi R_n} = ${tn(dcW, 3)} ${cmp(dcW)} 1.0`);
+  ck(dos ? "Soldadura de las placas de corte" : "Soldadura de la placa de corte", L`$V_u = ${tn(T(d.Vu), 2)}$ tf`, L`$\phi R_n = ${tn(T(phiW), 2)}$ tf`, dcW, "w");
   const wMin = wMinTabla(Math.min(d.tp, c.tf)), okWm = geo(d.w >= wMin - 1e-9, `filete de la placa de corte menor que el mínimo (${fmt(MM(wMin), 0)} mm)`);
   m.row("Tamaño mínimo del filete (parte más delgada)", `${fmt(MM(d.w), 0)} ≥ ${fmt(MM(wMin), 0)} mm ${tagG(okWm)}`, "AISC 360-16 Tabla J2.4");
   const wDuct = 5 / 8 * d.tp, okWd = d.w >= wDuct - 1e-9;
   m.row("Filete ≥ ⅝ t<sub>p</sub> (la placa fluye antes que la soldadura)", `${fmt(MM(d.w), 0)} ${okWd ? "≥" : "<"} ${fmt(MM(wDuct), 1)} mm ${tagW(okWd, okWd ? "Cumple" : "criterio no cumplido")}`);
   if (!okWd) avisos.push("filete de la placa de corte menor que ⅝ t<sub>p</sub>");
   m.p(L`El criterio $w \ge \tfrac{5}{8}\,t_p$ (dos filetes de electrodo E70 sobre placa de hasta 50 ksi) es de la práctica del Manual AISC para que la placa fluya antes que la soldadura; se informa y no entra en la razón D/C.`);
+  if (dos) {
+    // Los filetes interiores quedan en la ranura de ancho t_w entre las dos placas
+    const okRan = 2 * d.w <= v.tw + 1e-9;
+    m.row("Filetes interiores en la ranura entre placas: 2w ≤ t<sub>w</sub>", `${fmt(MM(2 * d.w), 0)} ${okRan ? "≤" : ">"} ${fmt(MM(v.tw), 1)} mm ${tagW(okRan, okRan ? "Cumple" : "criterio no cumplido")}`);
+    if (!okRan) avisos.push("los filetes interiores de las placas de corte no caben en la ranura de ancho t<sub>w</sub>");
+    m.p(L`Los filetes interiores quedan en una ranura de ancho $t_w = ${tn(MM(v.tw), 1)}$ mm entre las dos placas, con acceso muy limitado para soldar: revise con el fabricante cómo se ejecutan (por ejemplo, soldar una placa antes de presentar la otra). Criterio de AURA: se informa y no entra en la razón D/C.`);
+  }
 
   // ---------- 5. Viga ----------
   m.h("Viga: corte" + (d.mom ? " y flexión" : ""));
@@ -686,7 +715,7 @@ function verificar(d, m) {
   ck("Corte de la viga", L`$V_u = ${tn(T(d.Vu), 2)}$ tf`, L`$\phi_vV_n = ${tn(T(phiVn), 2)}$ tf`, dcVn, "v");
   m.p(L`No se verifica el bloque de corte en el alma de la viga: el ala superior no está destajada, y los bordes de la viga quedan lejos de los pernos.`);
 
-  const r = { Lp, Bpc, gap, hLibre, yTop, rv1, phiGrupo, phiVy, phiVr, phiBl, phiMp, rnW, phiW, phiVn, wMin };
+  const r = { nPl: nP, Lp, Bpc, gap, hLibre, yTop, rv1, phiGrupo, phiVy, phiVr, phiBl, phiMp, rnW, phiW, phiVn, wMin };
 
   // ---------- 6. Momento ----------
   if (d.mom) {
@@ -851,8 +880,8 @@ function verificar(d, m) {
 function geometria(d, r) {
   const v = d.v, c = d.c;
   const G = {
-    dV: MM(v.d), tfV: MM(v.tf), bfV: MM(v.bf), dC: MM(c.d), tfC: MM(c.tf), gap: MM(r.gap), largoV: 0,
-    Lp: MM(r.Lp), Bp: MM(r.Bpc), a: MM(d.a), tp: MM(d.tp), dh: MM(d.dh), db: MM(d.db),
+    dV: MM(v.d), tfV: MM(v.tf), bfV: MM(v.bf), twV: MM(v.tw), dC: MM(c.d), tfC: MM(c.tf), gap: MM(r.gap), largoV: 0,
+    Lp: MM(r.Lp), Bp: MM(r.Bpc), a: MM(d.a), tp: MM(d.tp), dh: MM(d.dh), db: MM(d.db), nPl: d.nPl,
     pernosAlma: [], pernosAla: [], mom: d.mom,
   };
   for (let i = 0; i < d.nb; i++) G.pernosAlma.push([G.a, MM(i * d.s - r.yTop)]);
@@ -861,72 +890,120 @@ function geometria(d, r) {
     for (let i = 0; i < d.nf; i++) G.pernosAla.push(G.gap + MM(d.lebf) + i * MM(d.sf));
   }
   G.largoV = Math.max(G.a + MM(d.leh) + 150, (G.Lpf || 0) + 120, 1.6 * G.dV);
+  // Corte A-A por la línea de pernos del alma (z normal al alma): placas a z ∈ [t_w/2, t_w/2 + t_p] y, con dos, también al otro lado
+  G.zPl = (d.nPl === 2 ? [1, -1] : [1]).map(sg => [sg * G.twV / 2, sg * (G.twV / 2 + G.tp)]);
+  G.zIzq = -G.twV / 2 - (d.nPl === 2 ? G.tp : 0); G.zDer = G.twV / 2 + G.tp;   // caras exteriores del paquete apernado
+  G.secW = Math.max(G.bfV, G.bp || 0, 2 * (Math.max(-G.zIzq, G.zDer) + 1.6 * G.db)) + 40;
   return G;
+}
+// Pernos del corte A-A: [z0, z1, y0, y1] de vástago, cabeza y tuerca (cabeza a la izquierda)
+function piezasPerno(G, zIzq, zDer, y) {
+  const db = G.db, h = 0.8 * db;
+  return [[zIzq - 0.65 * db, zIzq, y - h, y + h], [zIzq, zDer + 0.9 * db + 3, y - db / 2, y + db / 2], [zDer, zDer + 0.9 * db, y - h, y + h]];
 }
 function svgConexion(d, r) {
   const G = geometria(d, r), NAR = "#e65c00", cc = "#3d4450", cr = r.criticos;
-  const H = G.dV + 2 * (G.tfp || 0) + 160, Wm = G.dC + G.largoV + 60, k = Math.min(380 / H, 560 / Wm);
+  const H = G.dV + 2 * (G.tfp || 0) + 160, k = Math.min(380 / H, 640 / (G.dC + G.largoV + G.secW + 110));
   const ox = 30 + G.dC * k, oy = 30 + H / 2 * k, X = (x) => ox + x * k, Y = (y) => oy - y * k;
   const t = (x, y, s, a = "start", fs = 10.5, col = cc) => `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" font-size="${fs}" fill="${col}" text-anchor="${a}">${s}</text>`;
   const rect = (x1, y1, x2, y2, fill, extra = "") => `<rect x="${X(Math.min(x1, x2)).toFixed(1)}" y="${Y(Math.max(y1, y2)).toFixed(1)}" width="${(Math.abs(x2 - x1) * k).toFixed(1)}" height="${(Math.abs(y2 - y1) * k).toFixed(1)}" fill="${fill}" stroke="${cc}" ${extra}/>`;
   const yC = H / 2 - 10;
+  const colPl = cr.placa ? NAR : "#9aa4b1", colPer = cr.pernos ? NAR : "#c62828", colVi = cr.viga ? NAR : "#c3c9d1", colAl = cr.alas ? NAR : "#7d8796";
   // Columna (vista lateral: ala a la que llega la viga y ala opuesta)
   let s = rect(-G.dC, -yC, 0, yC, cr.columna ? "#f6d2bb" : "#eef0f2");
   s += rect(-G.tfC, -yC, 0, yC, cr.columna ? NAR : "#c3c9d1") + rect(-G.dC, -yC, -G.dC + G.tfC, yC, "#c3c9d1");
   // Viga
   const x0 = G.gap, x1 = G.gap + G.largoV;
   s += rect(x0, -G.dV / 2, x1, G.dV / 2, cr.viga ? "#f6d2bb" : "#eef0f2");
-  s += rect(x0, G.dV / 2 - G.tfV, x1, G.dV / 2, cr.viga ? NAR : "#c3c9d1") + rect(x0, -G.dV / 2, x1, -G.dV / 2 + G.tfV, cr.viga ? NAR : "#c3c9d1");
-  // Placa de corte
-  s += rect(0, -G.Lp / 2, G.Bp, G.Lp / 2, cr.placa ? NAR : "#9aa4b1", `fill-opacity="0.75" stroke-width="1.3"`);
+  s += rect(x0, G.dV / 2 - G.tfV, x1, G.dV / 2, colVi) + rect(x0, -G.dV / 2, x1, -G.dV / 2 + G.tfV, colVi);
+  // Placa de corte (con dos, la segunda queda detrás del alma, con el mismo contorno)
+  s += rect(0, -G.Lp / 2, G.Bp, G.Lp / 2, colPl, `fill-opacity="0.75" stroke-width="1.3"`);
   s += `<path d="M${X(0) + 1} ${Y(G.Lp / 2)} l5 0 l-5 6 z M${X(0) + 1} ${Y(-G.Lp / 2) - 6} l5 6 l-5 0 z" fill="${cr.soldadura ? NAR : cc}"/>`;
-  for (const [x, y] of G.pernosAlma) s += `<circle cx="${X(x).toFixed(1)}" cy="${Y(y).toFixed(1)}" r="${(G.dh / 2 * k).toFixed(1)}" fill="#fff" stroke="${cc}"/><circle cx="${X(x).toFixed(1)}" cy="${Y(y).toFixed(1)}" r="${(G.db / 2 * k).toFixed(1)}" fill="${cr.pernos ? NAR : "#c62828"}"/>`;
+  for (const [x, y] of G.pernosAlma) s += `<circle cx="${X(x).toFixed(1)}" cy="${Y(y).toFixed(1)}" r="${(G.dh / 2 * k).toFixed(1)}" fill="#fff" stroke="${cc}"/><circle cx="${X(x).toFixed(1)}" cy="${Y(y).toFixed(1)}" r="${(G.db / 2 * k).toFixed(1)}" fill="${colPer}"/>`;
   // Placas de ala
   if (G.mom) {
     for (const sg of [1, -1]) {
       const y1 = sg * G.dV / 2, y2 = sg * (G.dV / 2 + G.tfp);
-      s += rect(0, y1, G.Lpf, y2, cr.alas ? NAR : "#7d8796", `stroke-width="1.3"`);
-      for (const x of G.pernosAla) s += `<rect x="${(X(x) - G.db / 2 * k).toFixed(1)}" y="${Y(Math.max(y2, sg * (G.dV / 2 - G.tfV))).toFixed(1)}" width="${(G.db * k).toFixed(1)}" height="${((G.tfp + G.tfV) * k).toFixed(1)}" fill="${cr.alas ? NAR : "#c62828"}"/>`;
+      s += rect(0, y1, G.Lpf, y2, colAl, `stroke-width="1.3"`);
+      for (const x of G.pernosAla) s += `<rect x="${(X(x) - G.db / 2 * k).toFixed(1)}" y="${Y(Math.max(y2, sg * (G.dV / 2 - G.tfV))).toFixed(1)}" width="${(G.db * k).toFixed(1)}" height="${((G.tfp + G.tfV) * k).toFixed(1)}" fill="${colAl === NAR ? NAR : "#c62828"}"/>`;
     }
+  }
+  // Línea de corte A-A por la línea de pernos del alma
+  const yA = Math.max(G.dV / 2 + (G.tfp || 0), G.Lp / 2) + 28;
+  // Trazos cortos fuera de la pieza, con flecha hacia la columna (sentido de la vista)
+  for (const sg of [1, -1]) {
+    const ya = Y(sg * yA), yi = Y(sg * (yA - 20)), xa = X(G.a);
+    s += `<path d="M${xa.toFixed(1)} ${yi.toFixed(1)} L${xa.toFixed(1)} ${ya.toFixed(1)} L${(xa - 10).toFixed(1)} ${ya.toFixed(1)}" fill="none" stroke="#5b7c99" stroke-width="1.6"/><path d="M${(xa - 16).toFixed(1)} ${ya.toFixed(1)} l7 -3.5 l0 7 z" fill="#5b7c99"/>`;
+    s += t(xa + 4, ya + (sg > 0 ? 4 : 8), "A", "start", 10.5, "#5b7c99");
   }
   // Cotas
   const cota = (x1, y1, x2, y2, txt, tx, ty, a = "middle") => `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#8a93a0"/>${t(tx, ty, txt, a, 9.5)}`;
   const yb = Y(-G.Lp / 2) + 16;
   s += cota(X(0), yb, X(G.a), yb, `a = ${fmt(G.a, 0)}`, (X(0) + X(G.a)) / 2, yb + 12);
   if (d.nb > 1) s += cota(X(G.a) + 16, Y(G.pernosAlma[0][1]), X(G.a) + 16, Y(G.pernosAlma[1][1]), `s = ${fmt(MM(d.s), 0)}`, X(G.a) + 20, (Y(G.pernosAlma[0][1]) + Y(G.pernosAlma[1][1])) / 2 + 4, "start");
-  s += t(X(G.Bp) + 6, Y(-G.Lp / 2) - 3, `PL ${fmt(G.Lp, 0)}×${fmt(G.Bp, 0)}×${fmt(G.tp, 0)}`, "start", 9.5);
+  s += t(X(G.Bp) + 6, Y(-G.Lp / 2) - 3, `${G.nPl === 2 ? "2 PL" : "PL"} ${fmt(G.Lp, 0)}×${fmt(G.Bp, 0)}×${fmt(G.tp, 0)}${G.nPl === 2 ? " (una a cada lado)" : ""}`, "start", 9.5);
   if (G.mom) s += t(X(G.Lpf) + 6, Y(G.dV / 2 + G.tfp) - 3, `PL ${fmt(G.Lpf, 0)}×${fmt(G.bp, 0)}×${fmt(G.tfp, 0)} · ${2 * d.nf} pernos por ala`, "start", 9.5);
   s += t(X(x1) - 6, Y(0) + 4, d.v.nombre, "end", 10.5) + t(X(-G.dC / 2), Y(yC) - 6, d.c.nombre, "middle", 10.5);
   // Cargas
   s += `<path d="M${X(x1 - 40)} ${Y(G.dV / 2 + 70)} L${X(x1 - 40)} ${Y(G.dV / 2 + 20)}" stroke="#c0392b" stroke-width="1.6" marker-end="url(#flc)"/>${t(X(x1 - 40) + 5, Y(G.dV / 2 + 50), "V<tspan font-size=\"8\" dy=\"2\">u</tspan>", "start", 10.5, "#c0392b")}`;
   if (G.mom) s += `<path d="M${X(x1 - 90)} ${Y(-30)} A ${30 * k} ${30 * k} 0 1 1 ${X(x1 - 90)} ${Y(30)}" fill="none" stroke="#c0392b" stroke-width="1.4" marker-end="url(#flc)"/>${t(X(x1 - 90) - 36 * k, Y(0) + 4, "M<tspan font-size=\"8\" dy=\"2\">u</tspan>", "end", 10.5, "#c0392b")}`;
-  const Wt = X(x1) + 20, Ht = Y(-H / 2) + 30;
-  return `<svg viewBox="0 0 ${Wt.toFixed(0)} ${Ht.toFixed(0)}" role="img" aria-label="Elevación de la conexión">
+
+  // ---- Corte A-A (mirando hacia la columna): viga, placas de corte y pernos que las atraviesan ----
+  const cx = X(x1) + 50 + G.secW / 2 * k, Z = (z) => cx + z * k;
+  const rz = (z1, y1, z2, y2, fill, extra = "") => `<rect x="${Z(Math.min(z1, z2)).toFixed(1)}" y="${Y(Math.max(y1, y2)).toFixed(1)}" width="${(Math.abs(z2 - z1) * k).toFixed(1)}" height="${(Math.abs(y2 - y1) * k).toFixed(1)}" fill="${fill}" stroke="${cc}" ${extra}/>`;
+  let sc = rz(-G.bfV / 2, G.dV / 2 - G.tfV, G.bfV / 2, G.dV / 2, colVi) + rz(-G.bfV / 2, -G.dV / 2, G.bfV / 2, -G.dV / 2 + G.tfV, colVi)
+    + rz(-G.twV / 2, -G.dV / 2 + G.tfV, G.twV / 2, G.dV / 2 - G.tfV, colVi);
+  for (const [za, zb] of G.zPl) sc += rz(za, -G.Lp / 2, zb, G.Lp / 2, colPl, `stroke-width="1.3"`);
+  for (const [, y] of G.pernosAlma) for (const [a1, a2, b1, b2] of piezasPerno(G, G.zIzq, G.zDer, y)) sc += rz(a1, b1, a2, b2, colPer, `stroke-width="0.6"`);
+  if (G.mom) for (const sg of [1, -1]) {
+    sc += rz(-G.bp / 2, sg * G.dV / 2, G.bp / 2, sg * (G.dV / 2 + G.tfp), colAl, `stroke-width="1.3"`);
+    for (const zz of [-G.g / 2, G.g / 2]) sc += rz(zz - G.db / 2, sg * (G.dV / 2 - G.tfV - 0.6 * G.db), zz + G.db / 2, sg * (G.dV / 2 + G.tfp + 0.6 * G.db), colAl === NAR ? NAR : "#c62828", `stroke-width="0.6"`);
+  }
+  const yPie = Y(-G.dV / 2 - (G.tfp || 0)) + 16;
+  sc += t(cx, yPie, `${G.nPl === 2 ? "2 PL" : "PL"} t<tspan font-size="7" dy="2">p</tspan><tspan dy="-2"> = ${fmt(G.tp, 0)} · t</tspan><tspan font-size="7" dy="2">w</tspan><tspan dy="-2"> = ${fmt(G.twV, 1)}</tspan>`, "middle", 9.5);
+  sc += t(cx, yPie + 13, G.nPl === 2 ? "pernos a corte doble" : "pernos a corte simple", "middle", 9.5);
+
+  const Wt = cx + G.secW / 2 * k + 20, Ht = Y(-H / 2) + 30;
+  return `<svg viewBox="0 0 ${Wt.toFixed(0)} ${Ht.toFixed(0)}" role="img" aria-label="Elevación y corte A-A de la conexión">
     <defs><marker id="flc" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#c0392b"/></marker></defs>
-    ${t(Wt / 2, 18, "ELEVACIÓN", "middle", 11)}${s}
+    ${t((30 + X(x1)) / 2, 18, "ELEVACIÓN", "middle", 11)}${t(cx, 18, "CORTE A-A", "middle", 11)}${s}${sc}
     <text x="4" y="${(Ht - 6).toFixed(0)}" font-size="10" fill="#8a93a0">Cotas en mm · tramo de viga y de columna referenciales · en naranja lo que no cumple</text>
   </svg>`;
 }
 function tikzConexion(d, r) {
-  const G = geometria(d, r), H = G.dV + 2 * (G.tfp || 0) + 160, k = Math.min(9 / (G.dC + G.largoV), 7 / H), f = (x) => (x * k).toFixed(3);
-  const yC = H / 2 - 10, x0 = G.gap, x1 = G.gap + G.largoV;
+  const G = geometria(d, r), H = G.dV + 2 * (G.tfp || 0) + 160, k = Math.min(14 / (G.dC + G.largoV + G.secW + 80), 7 / H), f = (x) => (x * k).toFixed(3);
+  const yC = H / 2 - 10, x0 = G.gap, x1 = G.gap + G.largoV, sx = x1 + 80 + G.secW / 2;
   const R = (a, b, c2, e, op = "") => L`\filldraw[${op}] (${f(a)},${f(b)}) rectangle (${f(c2)},${f(e)});`;
+  const yA = Math.max(G.dV / 2 + (G.tfp || 0), G.Lp / 2) + 28;
   const lin = [
     R(-G.dC, -yC, 0, yC, "fill=gray!8,draw=black"), R(-G.tfC, -yC, 0, yC, "fill=gray!30,draw=black"), R(-G.dC, -yC, -G.dC + G.tfC, yC, "fill=gray!30,draw=black"),
     R(x0, -G.dV / 2, x1, G.dV / 2, "fill=gray!8,draw=black"), R(x0, G.dV / 2 - G.tfV, x1, G.dV / 2, "fill=gray!30,draw=black"), R(x0, -G.dV / 2, x1, -G.dV / 2 + G.tfV, "fill=gray!30,draw=black"),
     R(0, -G.Lp / 2, G.Bp, G.Lp / 2, "fill=gray!45,draw=black,thick,fill opacity=0.8"),
     ...G.pernosAlma.map(([x, y]) => L`\draw[fill=white] (${f(x)},${f(y)}) circle (${f(G.dh / 2)});`),
+    ...[1, -1].map(sg => L`\draw[thick,-latex] (${f(G.a)},${f(sg * (yA - 20))}) -- (${f(G.a)},${f(sg * yA)}) -- (${f(G.a - 18)},${f(sg * yA)});`),
+    L`\node[right,font=\small] at (${f(G.a)},${f(yA)}) {A};`, L`\node[right,font=\small] at (${f(G.a)},${f(-yA)}) {A};`,
   ];
   if (G.mom) for (const sg of [1, -1]) {
     lin.push(R(0, sg * G.dV / 2, G.Lpf, sg * (G.dV / 2 + G.tfp), "fill=gray!60,draw=black,thick"));
     for (const x of G.pernosAla) lin.push(L`\draw[very thick] (${f(x)},${f(sg * (G.dV / 2 - G.tfV))}) -- (${f(x)},${f(sg * (G.dV / 2 + G.tfp))});`);
   }
+  // Corte A-A
+  const S = (z) => sx + z;
+  lin.push(R(S(-G.bfV / 2), G.dV / 2 - G.tfV, S(G.bfV / 2), G.dV / 2, "fill=gray!30,draw=black"), R(S(-G.bfV / 2), -G.dV / 2, S(G.bfV / 2), -G.dV / 2 + G.tfV, "fill=gray!30,draw=black"),
+    R(S(-G.twV / 2), -G.dV / 2 + G.tfV, S(G.twV / 2), G.dV / 2 - G.tfV, "fill=gray!30,draw=black"));
+  for (const [za, zb] of G.zPl) lin.push(R(S(za), -G.Lp / 2, S(zb), G.Lp / 2, "fill=gray!45,draw=black,thick"));
+  for (const [, y] of G.pernosAlma) for (const [a1, a2, b1, b2] of piezasPerno(G, G.zIzq, G.zDer, y)) lin.push(R(S(a1), b1, S(a2), b2, "fill=black!70,draw=black"));
+  if (G.mom) for (const sg of [1, -1]) {
+    lin.push(R(S(-G.bp / 2), sg * G.dV / 2, S(G.bp / 2), sg * (G.dV / 2 + G.tfp), "fill=gray!60,draw=black,thick"));
+    for (const zz of [-G.g / 2, G.g / 2]) lin.push(R(S(zz - G.db / 2), sg * (G.dV / 2 - G.tfV - 0.6 * G.db), S(zz + G.db / 2), sg * (G.dV / 2 + G.tfp + 0.6 * G.db), "fill=black!70,draw=black"));
+  }
+  lin.push(L`\node[font=\small\bfseries] at (${f((-G.dC + x1) / 2)},${f(H / 2 + 10)}) {Elevación};`, L`\node[font=\small\bfseries] at (${f(sx)},${f(H / 2 + 10)}) {Corte A-A};`);
   return L`\begin{figure}[H]
 \centering
 \begin{tikzpicture}
 ${lin.join("\n")}
 \end{tikzpicture}
-\caption{Elevación de la conexión: columna ${d.c.nombre}, viga ${d.v.nombre}, placa de corte ${tn(G.Lp, 0)} $\times$ ${tn(G.Bp, 0)} $\times$ ${tn(G.tp, 0)} mm${G.mom ? L` y placas de ala ${tn(G.Lpf, 0)} $\times$ ${tn(G.bp, 0)} $\times$ ${tn(G.tfp, 0)} mm` : ""}.}
+\caption{Elevación y corte A-A de la conexión: columna ${d.c.nombre}, viga ${d.v.nombre}, ${G.nPl === 2 ? "dos placas de corte, una a cada lado del alma," : "placa de corte"} ${tn(G.Lp, 0)} $\times$ ${tn(G.Bp, 0)} $\times$ ${tn(G.tp, 0)} mm${G.mom ? L` y placas de ala ${tn(G.Lpf, 0)} $\times$ ${tn(G.bp, 0)} $\times$ ${tn(G.tfp, 0)} mm` : ""}.}
 \end{figure}
 `;
 }
@@ -939,11 +1016,11 @@ function documentoTex(d, r, cuerpo) {
   const fila = (a, b) => `${a} & ${b}\\\\`;
   const v = d.v, c = d.c;
   const datos = [
-    fila("Tipo", d.mom ? "Corte y momento: placa de corte en el alma y placas de ala apernadas" : "Corte: placa simple en el alma"),
+    fila("Tipo", `${d.mom ? "Corte y momento" : "Corte"}: ${d.nPl === 2 ? "dos placas de corte, una a cada lado del alma" : "placa simple de corte en el alma"}${d.mom ? " y placas de ala apernadas" : ""}`),
     fila("Viga", L`${v.nombre}: $d = ${tn(MM(v.d), 0)}$, $b_f = ${tn(MM(v.bf), 0)}$, $t_f = ${tn(MM(v.tf), 1)}$, $t_w = ${tn(MM(v.tw), 1)}$ mm, ${ACEROS[d.aceroV].nombre}`),
     fila("Columna", L`${c.nombre}: $d_c = ${tn(MM(c.d), 0)}$, $t_{fc} = ${tn(MM(c.tf), 1)}$, $t_{wc} = ${tn(MM(c.tw), 1)}$ mm, ${ACEROS[d.aceroC].nombre}`),
     fila("Pernos", L`ø${d.dbTxt}'' ${GRADOS[d.grado].nombre}, perforación estándar ø${tn(MM(d.dh), 1)} mm`),
-    fila("Placa de corte", L`${tn(MM(r.Lp), 0)} $\times$ ${tn(MM(r.Bpc), 0)} $\times$ ${tn(MM(d.tp), 0)} mm, ${d.nb} pernos, $s = ${tn(MM(d.s), 0)}$ mm, filete ${tn(MM(d.w), 0)} mm`),
+    fila(d.nPl === 2 ? "Placas de corte (2)" : "Placa de corte", L`${tn(MM(r.Lp), 0)} $\times$ ${tn(MM(r.Bpc), 0)} $\times$ ${tn(MM(d.tp), 0)} mm, ${d.nb} pernos, $s = ${tn(MM(d.s), 0)}$ mm, filete ${tn(MM(d.w), 0)} mm`),
     d.mom ? fila("Placas de ala", L`${tn(MM(r.Lpf), 0)} $\times$ ${tn(MM(d.bp), 0)} $\times$ ${tn(MM(d.tfp), 0)} mm, ${2 * d.nf} pernos por ala, ${d.modoW === "filete" ? L`filete ${tn(MM(d.wf), 0)} mm` : "penetración completa"}`) : "",
     fila("Placas", `${ACEROS[d.aceroP].nombre}; electrodo ${d.fexx >= 4900 ? "E70" : "E60"}`),
     fila("Solicitaciones mayoradas", L`$V_u = ${tn(T(d.Vu), 2)}$ tf${d.mom ? L`, $M_u = ${tn(d.Mu / 1e5, 2)}$ tf$\cdot$m` : ""}`),
@@ -953,7 +1030,7 @@ function documentoTex(d, r, cuerpo) {
     L`\textbf{Versión de prueba}: la herramienta está en desarrollo y sus resultados aún no se han validado contra ejemplos publicados.`,
     L`Diseño por resistencia con las solicitaciones ingresadas (LRFD). No es una conexión precalificada para marcos sísmicos: no se aplican AISC 358, AISC 341 ni NCh 2369 (diseño por capacidad, momento probable de la viga).`,
     L`Conexión tipo aplastamiento con perforaciones estándar; la deformación de la perforación es una consideración de diseño. No se verifica el deslizamiento crítico.`,
-    L`La placa de corte toma solo el corte; ${d.ePer > 0 ? L`el grupo de pernos considera la excentricidad $e = ${tn(MM(d.ePer), 0)}$ mm con el método elástico` : "no se considera excentricidad en el grupo de pernos"}. La flexión de la placa con la excentricidad $a$ es un criterio de AURA.`,
+    L`${d.nPl === 2 ? "Las dos placas de corte, iguales y una a cada lado del alma, toman solo el corte, con los pernos a corte doble" : "La placa de corte toma solo el corte"}; ${d.ePer > 0 ? L`el grupo de pernos considera la excentricidad $e = ${tn(MM(d.ePer), 0)}$ mm con el método elástico` : "no se considera excentricidad en el grupo de pernos"}. La flexión de la placa con la excentricidad $a$ es un criterio de AURA.`,
     d.mom ? L`Las placas de ala toman el momento como un par de fuerzas $M_u/(d + t_{fp})$; la flexión de la viga supone sección compacta y arriostramiento lateral suficiente. En la columna se verifican J10.1, J10.2, J10.3 y J10.6 (con $P_r \le 0.4P_c$); no se diseñan atiesadores ni planchas de refuerzo.` : "",
     L`No se verifican la estabilidad del ala comprimida de la viga en el voladizo de la placa, la interacción con la carga axial de la columna ni las tolerancias de montaje.`,
   ].filter(Boolean).map(x => `\\item ${x}`).join("\n");
@@ -1068,8 +1145,8 @@ function calcular() {
   };
   const sub = (x) => (x ? `más exigido: ${x.k.toLowerCase()}` : "");
   const tarjetas = [
-    card("Pernos del alma", peor("pa"), `${d.nb} ø${d.dbTxt}" ${GRADOS[d.grado].nombre}`),
-    card("Placa de corte", peor("pl"), sub(peor("pl"))),
+    card("Pernos del alma", peor("pa"), `${d.nb} ø${d.dbTxt}" ${GRADOS[d.grado].nombre}${d.nPl === 2 ? " · corte doble" : ""}`),
+    card(d.nPl === 2 ? "Placas de corte (2)" : "Placa de corte", peor("pl"), sub(peor("pl"))),
     card("Soldaduras", peor("w"), sub(peor("w"))),
     card("Viga", peor("v"), sub(peor("v"))),
   ];
@@ -1097,8 +1174,8 @@ function descargarDXF() {
   if (!ultimoTex || !ultimoR) { alert("Corrija los datos inválidos antes de descargar el plano."); return; }
   const d = ultimoD, r = ultimoR, G = geometria(d, r);
   const yC = Math.max(G.dV / 2 + (G.tfp || 0) + 100, G.Lp / 2 + 100), x1 = G.gap + G.largoV;
-  const pl = new PlanoDXF({ titulo: `CONEXION ${d.mom ? "CORTE-MOMENTO" : "DE CORTE"} ${d.v.nombre} - ${d.c.nombre}`, contenido: "elevación y especificaciones (versión de prueba)" });
-  pl.vista({
+  const pl = new PlanoDXF({ titulo: `CONEXION ${d.mom ? "CORTE-MOMENTO" : "DE CORTE"} ${d.v.nombre} - ${d.c.nombre}`, contenido: "elevación, corte A-A y especificaciones (versión de prueba)" });
+  const Eel = pl.vista({
     titulo: "Elevación", bbox: [-G.dC - 60, -yC - 60, x1 + 60, yC + 60], objetivo: [220, 170], margen: [22, 20, 40, 10],
     dibujar: (v) => {
       v.poly("CONTORNO", [[-G.dC, -yC], [0, -yC], [0, yC], [-G.dC, yC]]);
@@ -1108,7 +1185,13 @@ function descargarDXF() {
       v.line("EJES", -G.dC - 40, 0, x1 + 40, 0); v.line("EJES", -G.dC / 2, -yC - 40, -G.dC / 2, yC + 40);
       v.poly("SECCION", [[0, -G.Lp / 2], [G.Bp, -G.Lp / 2], [G.Bp, G.Lp / 2], [0, G.Lp / 2]]);
       for (const [x, y] of G.pernosAlma) { v.circle("OCULTO", x, y, G.dh / 2); v.circle("ARMADURA", x, y, G.db / 2); }
-      v.referencia(G.a, G.pernosAlma[G.pernosAlma.length - 1][1], G.Bp + v.pp(14), G.Lp / 2 + v.pp(6), `PL ${fmt(G.Lp, 0)}x${fmt(G.Bp, 0)}x${fmt(G.tp, 0)} - ${d.nb} pernos %%c${d.dbTxt}"`, "TEXTOS");
+      v.referencia(G.a, G.pernosAlma[G.pernosAlma.length - 1][1], G.Bp + v.pp(14), G.Lp / 2 + v.pp(6), `${G.nPl === 2 ? "2 PL" : "PL"} ${fmt(G.Lp, 0)}x${fmt(G.Bp, 0)}x${fmt(G.tp, 0)}${G.nPl === 2 ? " (una a cada lado del alma)" : ""} - ${d.nb} pernos %%c${d.dbTxt}"`, "TEXTOS");
+      const yA = Math.max(G.dV / 2 + (G.tfp || 0), G.Lp / 2) + 28;
+      for (const sg of [1, -1]) {
+        v.line("COTAS", G.a, sg * (yA - 20), G.a, sg * yA); v.line("COTAS", G.a, sg * yA, G.a - v.pp(4), sg * yA);
+        v.poly("COTAS", [[G.a - v.pp(4), sg * yA], [G.a - v.pp(2.5), sg * yA + v.pp(0.7)], [G.a - v.pp(2.5), sg * yA - v.pp(0.7)]]);
+      }
+      v.text("TEXTOS", G.a + v.pp(1.5), yA, 3, "A", 0, 2); v.text("TEXTOS", G.a + v.pp(1.5), -yA, 3, "A", 0, 2);
       v.cotaH(0, G.a, -G.Lp / 2, -8, `a = ${fmtCota(G.a)}`);
       if (d.nb > 1) v.cotaV(G.pernosAlma[0][1], G.pernosAlma[1][1], G.Bp, 8, `s = ${fmtCota(MM(d.s))}`);
       v.cotaV(-G.Lp / 2, G.Lp / 2, 0, -6, `Lp = ${fmtCota(G.Lp)}`);
@@ -1122,10 +1205,28 @@ function descargarDXF() {
       v.text("TEXTOS", -G.dC / 2, yC + v.pp(3), 2.2, `Columna ${d.c.nombre}`, 1, 0);
     },
   });
+  // Corte A-A por la línea de pernos del alma, a la escala de la elevación
+  pl.vista({
+    titulo: "Corte A-A", bbox: [-G.secW / 2, -yC - 60, G.secW / 2, yC + 60], escala: Eel, margen: [10, 20, 10, 10],
+    dibujar: (v) => {
+      const caja = (z0, y0, z1, y1, ly = "SECCION") => v.poly(ly, [[z0, y0], [z1, y0], [z1, y1], [z0, y1]]);
+      caja(-G.bfV / 2, G.dV / 2 - G.tfV, G.bfV / 2, G.dV / 2, "CONTORNO"); caja(-G.bfV / 2, -G.dV / 2, G.bfV / 2, -G.dV / 2 + G.tfV, "CONTORNO");
+      caja(-G.twV / 2, -G.dV / 2 + G.tfV, G.twV / 2, G.dV / 2 - G.tfV, "CONTORNO");
+      for (const [za, zb] of G.zPl) caja(Math.min(za, zb), -G.Lp / 2, Math.max(za, zb), G.Lp / 2);
+      for (const [, y] of G.pernosAlma) for (const [a1, a2, b1, b2] of piezasPerno(G, G.zIzq, G.zDer, y)) caja(a1, b1, a2, b2, "ARMADURA");
+      if (G.mom) for (const sg of [1, -1]) {
+        caja(-G.bp / 2, Math.min(sg * G.dV / 2, sg * (G.dV / 2 + G.tfp)), G.bp / 2, Math.max(sg * G.dV / 2, sg * (G.dV / 2 + G.tfp)));
+        for (const zz of [-G.g / 2, G.g / 2]) { const ya = sg * (G.dV / 2 - G.tfV - 0.6 * G.db), yb = sg * (G.dV / 2 + G.tfp + 0.6 * G.db); caja(zz - G.db / 2, Math.min(ya, yb), zz + G.db / 2, Math.max(ya, yb), "ARMADURA"); }
+      }
+      v.line("EJES", 0, -yC - 40, 0, yC + 40);
+      v.referencia(G.zDer, G.Lp / 2 - v.pp(3), G.bfV / 2 + v.pp(4), G.Lp / 2 + v.pp(10), `${G.nPl === 2 ? "2 PL" : "PL"} e = ${fmt(G.tp, 0)}`, "TEXTOS");
+      v.text("TEXTOS", 0, -G.dV / 2 - (G.tfp || 0) - v.pp(6), 2.2, G.nPl === 2 ? "Pernos a corte doble" : "Pernos a corte simple", 1, 0);
+    },
+  });
   const filas = [
-    ["Placa de corte", `PL ${fmt(G.Lp, 0)} x ${fmt(G.Bp, 0)} x ${fmt(G.tp, 0)} mm, ${ACEROS[d.aceroP].nombre}`, "1"],
-    ["Pernos del alma", `%%c${d.dbTxt}" ${GRADOS[d.grado].nombre}, perf. %%c${fmt(G.dh, 1)} mm`, `${d.nb}`],
-    ["Soldadura placa de corte", `Filete ${fmt(MM(d.w), 0)} mm por ambas caras, ${d.fexx >= 4900 ? "E70XX" : "E60XX"}`, "-"],
+    [G.nPl === 2 ? "Placas de corte" : "Placa de corte", `PL ${fmt(G.Lp, 0)} x ${fmt(G.Bp, 0)} x ${fmt(G.tp, 0)} mm, ${ACEROS[d.aceroP].nombre}${G.nPl === 2 ? ", una a cada lado del alma" : ""}`, `${G.nPl}`],
+    ["Pernos del alma", `%%c${d.dbTxt}" ${GRADOS[d.grado].nombre}, perf. %%c${fmt(G.dh, 1)} mm${G.nPl === 2 ? ", corte doble" : ""}`, `${d.nb}`],
+    [G.nPl === 2 ? "Soldadura placas de corte" : "Soldadura placa de corte", `Filete ${fmt(MM(d.w), 0)} mm por ambas caras${G.nPl === 2 ? " de cada placa" : ""}, ${d.fexx >= 4900 ? "E70XX" : "E60XX"}`, "-"],
   ];
   if (G.mom) filas.push(
     ["Placas de ala", `PL ${fmt(G.Lpf, 0)} x ${fmt(G.bp, 0)} x ${fmt(G.tfp, 0)} mm, ${ACEROS[d.aceroP].nombre}`, "2"],
@@ -1170,9 +1271,8 @@ window.Zona2D3D?.montar({
     const hC = G.dV + 2 * (G.tfp || 0) + 400;
     e.extruir({ mat: cr.columna ? "critico" : "acero" }, Geo3D.dobleT(MM(c.bf), MM(c.d), MM(c.tw), MM(c.tf), MM(c.r)), -hC / 2, hC / 2, (u, vv, w) => [vv - MM(c.d) / 2, w, u]);
     e.extruir({ mat: cr.viga ? "critico" : "acero" }, Geo3D.dobleT(MM(v.bf), MM(v.d), MM(v.tw), MM(v.tf), MM(v.r)), G.gap, G.gap + G.largoV, (u, vv, w) => [w, vv, u]);
-    const zp = MM(v.tw) / 2;
-    e.caja({ mat: cr.placa ? "critico" : "placa" }, 0, G.Bp, -G.Lp / 2, G.Lp / 2, zp, zp + G.tp);
-    for (const [x, y] of G.pernosAlma) e.tubo({ mat: cr.pernos ? "critico" : "armadura" }, [x, y, -zp - 12], [x, y, zp + G.tp + 12], G.db / 2);
+    for (const [za, zb] of G.zPl) e.caja({ mat: cr.placa ? "critico" : "placa" }, 0, G.Bp, -G.Lp / 2, G.Lp / 2, Math.min(za, zb), Math.max(za, zb));
+    for (const [x, y] of G.pernosAlma) e.tubo({ mat: cr.pernos ? "critico" : "armadura" }, [x, y, G.zIzq - 12], [x, y, G.zDer + 12], G.db / 2);
     if (G.mom) for (const sg of [1, -1]) {
       const y1 = sg * G.dV / 2, y2 = sg * (G.dV / 2 + G.tfp);
       e.caja({ mat: cr.alas ? "critico" : "placa" }, 0, G.Lpf, Math.min(y1, y2), Math.max(y1, y2), -G.bp / 2, G.bp / 2);
@@ -1184,7 +1284,7 @@ window.Zona2D3D?.montar({
 // Integración con proyectos (proyectos.js): datos para guardar y restaurar este cálculo
 window.AURA_MEMO = {
   tipo: "Conexión viga–columna (prueba)",
-  elemento: () => ($("tipo").value === "momento" ? "Corte y momento" : "Corte"),
+  elemento: () => ($("tipo").value === "momento" ? "Corte y momento" : "Corte") + ($("nPl").value === "2" ? ", doble placa" : ""),
   tex: () => ultimoTex, nombre: () => ultimoNombre,
   recalcular: (vals) => {
     llenarPerfiles("perfilV", "otroV", DEF_V); llenarPerfiles("perfilC", "otroC", DEF_C);

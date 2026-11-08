@@ -108,7 +108,7 @@ const Guia = (() => {
       { en: "t:2. Columna", titulo: "2 · Columna", texto: "Perfil de la columna; la viga llega a su ala, cuyas alas y alma también se verifican." },
       { en: "t:3. Solicitaciones", titulo: "3 · Solicitaciones", texto: "Corte y, si la conexión es de momento, el momento mayorados (LRFD)." },
       { en: "t:4. Pernos", titulo: "4 · Pernos y soldadura", texto: "Diámetro y calidad de los pernos y tamaño de las soldaduras (AISC 360-16 capítulo J)." },
-      { en: "t:5. Placa de corte", titulo: "5 · Placa de corte", texto: "Placa en el alma que toma el corte: se verifican pernos, aplastamiento, bloque de corte y soldadura." },
+      { en: "t:5. Placa de corte", titulo: "5 · Placa de corte", texto: "Placa en el alma que toma el corte: simple, a un lado del alma, o doble, una a cada lado, con los pernos a corte doble. Se verifican pernos, aplastamiento, bloque de corte y soldadura. El corte A-A del dibujo muestra las placas y los pernos." },
       { en: "t:6. Placas de ala", titulo: "6 · Placas de ala", texto: "Placas apernadas a las alas que transmiten el momento como un par de fuerzas." },
     ],
     "piers.html": [

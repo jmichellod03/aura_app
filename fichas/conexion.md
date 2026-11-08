@@ -2,7 +2,7 @@
 
 Conexión de una viga de sección I al ala de una columna I. Dos programas en la misma página (`?tipo=corte` y `?tipo=momento`):
 
-- **Corte:** placa simple soldada a la columna y apernada al alma de la viga.
+- **Corte:** placa de corte soldada a la columna y apernada al alma de la viga. Puede ser simple (a un lado del alma, pernos a corte simple) o doble (una placa a cada lado del alma, pernos a corte doble).
 - **Corte y momento:** la misma placa de corte más placas de ala por fuera de las alas, apernadas a la viga y soldadas a la columna (el momento se transmite como el par M<sub>u</sub>/(d + t<sub>fp</sub>)).
 
 Sigue la AISC 360-16 LRFD, Capítulo J, con apoyo del Manual de Diseño ICHA 2000 (distancias, perforaciones y el criterio anterior del bloque de corte). Es una **versión de prueba**: los resultados aún no se han validado contra ejemplos publicados.
@@ -15,6 +15,7 @@ Documentos: AISC 360-16 (español, archivo AISC360-16.pdf); Manual de Diseño IC
 - Pernos en conexión tipo aplastamiento, perforaciones estándar (Tabla J3.3), deformación de la perforación como consideración de diseño (J3-6a y J3-6c). No se verifica el deslizamiento crítico.
 - La resistencia de cada grupo de pernos es la suma, perno a perno, del menor valor entre el corte del perno y el aplastamiento o desgarre en cada parte conectada. Con excentricidad en el grupo de la placa de corte se usa el método elástico con la menor resistencia de un perno (conservador).
 - En las áreas netas el ancho de la perforación se aumenta en 1.6 mm (B4.3b).
+- Con doble placa de corte, cada perno tiene dos planos de corte (J3-1 con n<sub>s</sub> = 2) y apoya en las dos placas; la fluencia, la ruptura, el bloque de corte, la flexión y la soldadura de las placas se suman para las dos (cada una toma V<sub>u</sub>/2). Los filetes interiores quedan en una ranura de ancho t<sub>w</sub>: si 2w > t<sub>w</sub> se avisa (criterio de AURA, sin razón D/C), y su ejecución debe revisarse con el fabricante.
 - Bloque de corte: por defecto la AISC 360-16 J4-5 con U<sub>bs</sub> = 1; como opción, el criterio anterior de la Especificación ICHA (13.4.3 y 13.4.4), que usan las planillas del curso.
 - La flexión de la placa de corte con la excentricidad a (M<sub>u</sub> = V<sub>u</sub>·a, φM<sub>n</sub> = 0.90 F<sub>y</sub> t<sub>p</sub> L<sub>p</sub>²/4) y el filete ≥ ⅝ t<sub>p</sub> son criterios de AURA tomados de la práctica del Manual AISC; el segundo se informa y no entra en la razón D/C.
 - La flexión de la viga supone sección compacta y arriostramiento lateral suficiente.
