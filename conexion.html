@@ -96,6 +96,8 @@
   .esquema { display: block; width: 100%; max-width: 330px; margin: 8px auto 4px; }
   .dibujo { display: flex; justify-content: center; padding: 6px 16px 4px; }
   .dibujo svg { width: 760px; }
+  .figBloque { display: flex; justify-content: center; margin: 8px 0 4px; }
+  .figBloque svg { max-width: 100%; height: auto; background: #fff; border-radius: 6px; }
   .toolbar { display: flex; justify-content: flex-end; padding: 10px 16px 0; gap: 8px; flex-wrap: wrap; }
   .btn { padding: 7px 14px; border-radius: 5px; border: 1px solid var(--head); background: var(--head); color: #fff; font: inherit; font-size: 13px; cursor: pointer; }
   .btn.sec { background: #fff; color: var(--head); }
@@ -432,6 +434,7 @@ class Memo {
   eq(s, ref) { this.tex.push(texDisplay(s, ref)); this.out.push({ tex: s + (ref ? `\\tag*{(${ref})}` : ""), eq: true }); }
   p(s, soloTex) { memoTexP(this, s); if (!soloTex) this.out.push({ tex: s }); }
   raw(t) { memoTexCerrar(this); this.tex.push(t); }
+  fig(svg, tikz) { this.out.push(`<div class="figBloque">${svg}</div>`); memoTexCerrar(this); this.tex.push(tikz); }
   texto() { memoTexCerrar(this); return this.tex.join("\n"); }
   html() { return memoHTML(this.out); }
 }
@@ -540,6 +543,143 @@ function texBloque(Agv, Anv, Agt, Ant, Fy, Fu, crit) {
   return L`\phi R_n = 0.75\left[\min\left(0.6F_uA_{nv};\ 0.6F_yA_{gv}\right) + U_{bs}F_uA_{nt}\right] = 0.75\left[\min\left(${tn(0.6 * Fu * Anv, 0)};\ ${tn(0.6 * Fy * Agv, 0)}\right) + 1.0\cdot ${tn(Fu, 0)}\cdot ${tn(Ant, 2)}\right]`;
 }
 const refBloque = (crit) => (crit === "icha" ? "ICHA 13.4.3" : "AISC 360-16 J4-5");
+
+// ---------------------------------------------------------------------------
+// Dibujos del bloque de corte (pantalla y memoria). Cada panel es una vista en mm (x a la derecha, y hacia arriba) con:
+// rect (placa, perfil o columna), poly (bloque que se desprende), hole, lin (corte, trac u oculta), flecha y txt.
+// ---------------------------------------------------------------------------
+const COL_BLOQUE = { corte: "#c0392b", trac: "#1f5fa8", bloque: "#e65c00", placa: "#c9ced6", perfil: "#dde1e6", col: "#aab2bd" };
+function cajaPanel(p) {
+  let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+  const ext = (x, y) => { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); };
+  for (const it of p.items) {
+    if (it.t === "rect") { ext(it.x0, it.y0); ext(it.x1, it.y1); }
+    else if (it.t === "poly") it.pts.forEach(([x, y]) => ext(x, y));
+    else if (it.t === "hole") { ext(it.x - it.r, it.y - it.r); ext(it.x + it.r, it.y + it.r); }
+    else if (it.t === "lin") { ext(it.x1, it.y1); ext(it.x2, it.y2); }
+    else if (it.t === "flecha") { ext(it.x, it.y); ext(it.x + it.dx, it.y + it.dy); }
+  }
+  return [x0, y0, x1, y1];
+}
+// Pantalla: paneles lado a lado, con título, resistencia y leyenda común
+function svgBloques(paneles, aria) {
+  const PX = 200, PY = 165, SEP = 36, TOP = 44, PIE = 50;
+  const NAR = "#e65c00", cc = "#3d4450";
+  const t = (x, y, s, a = "middle", fs = 10.5, col = cc, extra = "") => `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" font-size="${fs}" fill="${col}" text-anchor="${a}" ${extra}>${s}</text>`;
+  let x = 18, s = "";
+  for (const p of paneles) {
+    const [bx0, by0, bx1, by1] = cajaPanel(p), k = Math.min(PX / (bx1 - bx0), PY / (by1 - by0));
+    const w = (bx1 - bx0) * k, h = (by1 - by0) * k, ancho = Math.max(w, 150);
+    const ox = x + (ancho - w) / 2 - bx0 * k, oy = TOP + (PY - h) / 2 + h + by0 * k;
+    const X = (u) => ox + u * k, Y = (v) => oy - v * k;
+    for (const it of p.items) {
+      if (it.t === "rect") s += `<rect x="${X(Math.min(it.x0, it.x1)).toFixed(1)}" y="${Y(Math.max(it.y0, it.y1)).toFixed(1)}" width="${(Math.abs(it.x1 - it.x0) * k).toFixed(1)}" height="${(Math.abs(it.y1 - it.y0) * k).toFixed(1)}" fill="${COL_BLOQUE[it.tipo]}" stroke="${cc}"/>`;
+      else if (it.t === "poly") s += `<polygon points="${it.pts.map(([u, v]) => `${X(u).toFixed(1)},${Y(v).toFixed(1)}`).join(" ")}" fill="${p.falla ? NAR : COL_BLOQUE.bloque}" fill-opacity="${p.falla ? 0.5 : 0.22}" stroke="none"/>`;
+      else if (it.t === "hole") s += `<circle cx="${X(it.x).toFixed(1)}" cy="${Y(it.y).toFixed(1)}" r="${Math.max(it.r * k, 2).toFixed(1)}" fill="#fff" stroke="${cc}"/>`;
+      else if (it.t === "lin") s += `<line x1="${X(it.x1).toFixed(1)}" y1="${Y(it.y1).toFixed(1)}" x2="${X(it.x2).toFixed(1)}" y2="${Y(it.y2).toFixed(1)}" ${it.tipo === "oculta" ? `stroke="${cc}" stroke-dasharray="5 3"` : `stroke="${COL_BLOQUE[it.tipo]}" stroke-width="2.6"`}/>`;
+      else if (it.t === "flecha") {
+        const x1 = X(it.x), y1 = Y(it.y), x2 = X(it.x + it.dx), y2 = Y(it.y + it.dy);
+        s += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${cc}" stroke-width="1.6" marker-end="url(#flBl)"/>`;
+        s += it.dx ? t((x1 + x2) / 2, y2 + 15, it.txt, "middle", 10.5) : t(x2 + 6, y2 + 4, it.txt, "start", 10.5);
+      }
+    }
+    s += t(x + ancho / 2, 16, p.titulo, "middle", 11, cc, `font-weight="600"`) + t(x + ancho / 2, 31, p.sub, "middle", 10, p.falla ? NAR : "#5b6472");
+    x += ancho + SEP;
+  }
+  const W = Math.max(x - SEP + 18, 460), H = TOP + PY + PIE;
+  const yl = H - 14, lx = W / 2 - 215;
+  const ley = `<rect x="${lx}" y="${yl - 9}" width="16" height="10" fill="${COL_BLOQUE.bloque}" fill-opacity="0.22" stroke="none"/>${t(lx + 21, yl, "bloque que se desprende", "start", 9.5)}`
+    + `<line x1="${lx + 150}" y1="${yl - 4}" x2="${lx + 170}" y2="${yl - 4}" stroke="${COL_BLOQUE.corte}" stroke-width="2.6"/>${t(lx + 175, yl, "planos de corte (A<tspan font-size=\"7\" dy=\"2\">gv</tspan><tspan dy=\"-2\">, A</tspan><tspan font-size=\"7\" dy=\"2\">nv</tspan><tspan dy=\"-2\">)</tspan>", "start", 9.5)}`
+    + `<line x1="${lx + 300}" y1="${yl - 4}" x2="${lx + 320}" y2="${yl - 4}" stroke="${COL_BLOQUE.trac}" stroke-width="2.6"/>${t(lx + 325, yl, "tracción (A<tspan font-size=\"7\" dy=\"2\">gt</tspan><tspan dy=\"-2\">, A</tspan><tspan font-size=\"7\" dy=\"2\">nt</tspan><tspan dy=\"-2\">)</tspan>", "start", 9.5)}`;
+  const desplaz = (W - (x - SEP + 18)) / 2;
+  return `<svg viewBox="0 0 ${W.toFixed(0)} ${H}" role="img" aria-label="${aria}" style="width:${Math.min(W, 760).toFixed(0)}px">
+    <defs><marker id="flBl" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="${cc}"/></marker></defs>
+    <g transform="translate(${desplaz.toFixed(1)},0)">${s}</g>${ley}
+  </svg>`;
+}
+// Memoria: la misma figura en TikZ (al bajar el .zip se reemplaza por el PNG del dibujo de pantalla, en el mismo orden)
+function tikzBloques(paneles, caption) {
+  const PX = 4.2, PY = 3.4, SEP = 0.9;
+  const lin = [];
+  let x = 0;
+  for (const p of paneles) {
+    const [bx0, by0, bx1, by1] = cajaPanel(p), k = Math.min(PX / (bx1 - bx0), PY / (by1 - by0));
+    const w = (bx1 - bx0) * k, h = (by1 - by0) * k, ancho = Math.max(w, 3);
+    const X = (u) => (x + (ancho - w) / 2 + (u - bx0) * k).toFixed(3), Y = (v) => ((PY - h) / 2 + (v - by0) * k).toFixed(3);
+    const relleno = { placa: "gray!25", perfil: "gray!12", col: "gray!45" };
+    for (const it of p.items) {
+      if (it.t === "rect") lin.push(L`\filldraw[fill=${relleno[it.tipo]},draw=black] (${X(it.x0)},${Y(it.y0)}) rectangle (${X(it.x1)},${Y(it.y1)});`);
+      else if (it.t === "poly") lin.push(L`\fill[orange!${p.falla ? 55 : 30}] ${it.pts.map(([u, v]) => `(${X(u)},${Y(v)})`).join(" -- ")} -- cycle;`);
+      else if (it.t === "hole") lin.push(L`\filldraw[fill=white,draw=black] (${X(it.x)},${Y(it.y)}) circle (${Math.max(it.r * k, 0.04).toFixed(3)});`);
+      else if (it.t === "lin") lin.push(it.tipo === "oculta" ? L`\draw[dashed] (${X(it.x1)},${Y(it.y1)}) -- (${X(it.x2)},${Y(it.y2)});` : L`\draw[${it.tipo === "corte" ? "red!75!black" : "blue!70!black"},line width=1.4pt] (${X(it.x1)},${Y(it.y1)}) -- (${X(it.x2)},${Y(it.y2)});`);
+      else if (it.t === "flecha") lin.push(L`\draw[-latex,thick] (${X(it.x)},${Y(it.y)}) -- node[${it.dx ? "below" : "right"},font=\small] {${it.tex}} (${X(it.x + it.dx)},${Y(it.y + it.dy)});`);
+    }
+    lin.push(L`\node[font=\small\bfseries,align=center] at (${(x + ancho / 2).toFixed(3)},${(PY + 0.55).toFixed(3)}) {${p.titulo}};`);
+    lin.push(L`\node[font=\footnotesize] at (${(x + ancho / 2).toFixed(3)},${(PY + 0.15).toFixed(3)}) {${p.subTex}};`);
+    x += ancho + SEP;
+  }
+  const xm = (x - SEP) / 2;
+  lin.push(L`\fill[orange!30] (${(xm - 6.2).toFixed(2)},-0.65) rectangle ++(0.4,0.25); \node[right,font=\footnotesize] at (${(xm - 5.75).toFixed(2)},-0.52) {bloque que se desprende};`);
+  lin.push(L`\draw[red!75!black,line width=1.4pt] (${(xm - 1.9).toFixed(2)},-0.52) -- ++(0.5,0); \node[right,font=\footnotesize] at (${(xm - 1.35).toFixed(2)},-0.52) {corte ($A_{gv}$, $A_{nv}$)};`);
+  lin.push(L`\draw[blue!70!black,line width=1.4pt] (${(xm + 2.0).toFixed(2)},-0.52) -- ++(0.5,0); \node[right,font=\footnotesize] at (${(xm + 2.55).toFixed(2)},-0.52) {tracción ($A_{gt}$, $A_{nt}$)};`);
+  return L`\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+${lin.join("\n")}
+\end{tikzpicture}
+\caption{${caption}}
+\end{figure}
+`;
+}
+const subBloque = (p, phi, dc) => Object.assign(p, {
+  sub: `φR<tspan font-size="7" dy="2">n</tspan><tspan dy="-2"> = ${fmt(T(phi), 2)} tf · D/C = ${fmt(dc, 3)}</tspan>`,
+  subTex: L`$\phi R_n =${tn(T(phi), 2)}$ tf, $D/C = ${tn(dc, 3)}$`,
+});
+// Panel de la placa de corte (elevación): bloque en L entre la línea de pernos y el borde libre, desde el perno superior al borde inferior
+function panelBloquePlaca(d, r, dc, fuerza, fuerzaTex) {
+  const Bp = MM(r.Bpc), Lp = MM(r.Lp), a = MM(d.a), lev = MM(d.lev), s = MM(d.s), rr = MM(d.dh) / 2;
+  const yT = lev + (d.nb - 1) * s;
+  const items = [
+    { t: "rect", x0: -14, y0: -12, x1: 0, y1: Lp + 12, tipo: "col" },
+    { t: "rect", x0: 0, y0: 0, x1: Bp, y1: Lp, tipo: "placa" },
+    { t: "poly", pts: [[a, 0], [Bp, 0], [Bp, yT], [a, yT]] },
+    { t: "lin", x1: a, y1: 0, x2: a, y2: yT, tipo: "corte" },
+    { t: "lin", x1: a, y1: yT, x2: Bp, y2: yT, tipo: "trac" },
+  ];
+  for (let i = 0; i < d.nb; i++) items.push({ t: "hole", x: a, y: lev + i * s, r: rr });
+  const lf = Math.max(0.35 * Lp, 30);
+  items.push({ t: "flecha", x: Bp + 16, y: yT, dx: 0, dy: -lf, txt: fuerza, tex: fuerzaTex });
+  return { items, falla: dc > 1 + 1e-9 };
+}
+// Paneles del momento (planta): placa de ala (bloques exteriores y central) y ala de la viga (bloques exteriores)
+function panelesBloqueAla(d, r, tipo, dc) {
+  const v = d.v, gap = MM(r.gap), g = MM(d.gf), rr = MM(d.dh) / 2, sf = MM(d.sf), lebf = MM(d.lebf);
+  const xs = []; for (let i = 0; i < d.nf; i++) xs.push(gap + lebf + i * sf);
+  const holes = xs.flatMap((x) => [{ t: "hole", x, y: g / 2, r: rr }, { t: "hole", x, y: -g / 2, r: rr }]);
+  const P = (fuerzaDx, x0Bl, x1Bl, xTr, zIn, zOut) => [
+    ...[1, -1].flatMap((sg) => zOut ? [{ t: "poly", pts: [[x0Bl, sg * zIn], [x1Bl, sg * zIn], [x1Bl, sg * zOut], [x0Bl, sg * zOut]] }] : []),
+  ];
+  if (tipo === "viga") {
+    const bf = MM(v.bf), tw = MM(v.tw), xL = xs[xs.length - 1], xF = MM(r.Lpf) + 40;
+    const items = [
+      { t: "rect", x0: gap, y0: -bf / 2, x1: xF, y1: bf / 2, tipo: "perfil" },
+      { t: "lin", x1: gap, y1: tw / 2, x2: xF, y2: tw / 2, tipo: "oculta" }, { t: "lin", x1: gap, y1: -tw / 2, x2: xF, y2: -tw / 2, tipo: "oculta" },
+      ...P(-1, gap, xL, xL, g / 2, bf / 2),
+      ...[1, -1].flatMap((sg) => [{ t: "lin", x1: gap, y1: sg * g / 2, x2: xL, y2: sg * g / 2, tipo: "corte" }, { t: "lin", x1: xL, y1: sg * g / 2, x2: xL, y2: sg * bf / 2, tipo: "trac" }]),
+      ...holes,
+      { t: "flecha", x: gap + 0.5 * (xL - gap) + 18, y: -bf / 2 - 14, dx: -36, dy: 0, txt: "P<tspan font-size=\"7\" dy=\"2\">uf</tspan>", tex: "$P_{uf}$" },
+    ];
+    return { items, falla: dc > 1 + 1e-9 };
+  }
+  const bp = MM(d.bp), Lpf = MM(r.Lpf), x1 = xs[0];
+  const base = [{ t: "rect", x0: -14, y0: -bp / 2 - 12, x1: 0, y1: bp / 2 + 12, tipo: "col" }, { t: "rect", x0: 0, y0: -bp / 2, x1: Lpf, y1: bp / 2, tipo: "placa" }];
+  const corte = [1, -1].map((sg) => ({ t: "lin", x1: x1, y1: sg * g / 2, x2: Lpf, y2: sg * g / 2, tipo: "corte" }));
+  const flecha = { t: "flecha", x: x1 + 0.5 * (Lpf - x1) - 18, y: -bp / 2 - 14, dx: 36, dy: 0, txt: "P<tspan font-size=\"7\" dy=\"2\">uf</tspan>", tex: "$P_{uf}$" };
+  const items = tipo === "ext"
+    ? [...base, ...P(1, x1, Lpf, x1, g / 2, bp / 2), ...corte, ...[1, -1].map((sg) => ({ t: "lin", x1: x1, y1: sg * g / 2, x2: x1, y2: sg * bp / 2, tipo: "trac" })), ...holes, flecha]
+    : [...base, { t: "poly", pts: [[x1, -g / 2], [Lpf, -g / 2], [Lpf, g / 2], [x1, g / 2]] }, ...corte, { t: "lin", x1: x1, y1: -g / 2, x2: x1, y2: g / 2, tipo: "trac" }, ...holes, flecha];
+  return { items, falla: dc > 1 + 1e-9 };
+}
 
 // ---------------------------------------------------------------------------
 // Cálculo
@@ -666,6 +806,11 @@ function verificar(d, m) {
   m.eq(dos
     ? L`\text{Por placa: } ${texBloque(bAgv, bAnv, bAgt, bAnt, d.FyP, d.FuP, d.crit)} = ${tn(T(phiBl1), 2)}\ \mathrm{tf} \qquad \phi R_n = 2\cdot ${tn(T(phiBl1), 2)} = ${tn(T(phiBl), 2)}\ \mathrm{tf} \qquad \frac{V_u}{\phi R_n} = ${tn(dcBl, 3)} ${cmp(dcBl)} 1.0`
     : L`${texBloque(bAgv, bAnv, bAgt, bAnt, d.FyP, d.FuP, d.crit)} = ${tn(T(phiBl), 2)}\ \mathrm{tf} \qquad \frac{V_u}{\phi R_n} = ${tn(dcBl, 3)} ${cmp(dcBl)} 1.0`, d.crit === "icha" ? "13.4.3" : "J4-5");
+  {
+    const fz = `V<tspan font-size="7" dy="2">u</tspan>${dos ? "<tspan dy=\"-2\">/2</tspan>" : ""}`, fzTex = dos ? "$V_u/2$" : "$V_u$";
+    const pn = subBloque(Object.assign(panelBloquePlaca(d, { Bpc, Lp }, dcBl, fz, fzTex), { titulo: dos ? "Cada placa de corte" : "Placa de corte" }), phiBl1, dcBl);
+    m.fig(svgBloques([pn], "Bloque de corte de la placa de corte"), tikzBloques([pn], L`Bloque de corte ${dos ? "en cada placa de corte" : "de la placa de corte"}: plano de corte a lo largo de la línea de pernos, desde el perno superior hasta el borde inferior, y plano de tracción desde ese perno hasta el borde libre.`));
+  }
   ck(`Bloque de corte ${dePl}`, L`$V_u = ${tn(T(d.Vu), 2)}$ tf`, L`$\phi R_n = ${tn(T(phiBl), 2)}$ tf`, dcBl, "pl");
   // Flexión de la placa con la excentricidad a
   const MuP = d.Vu * d.a, phiMp = nP * 0.90 * d.FyP * d.tp * Lp * Lp / 4, dcMp = MuP / phiMp;
@@ -812,6 +957,13 @@ function verificar(d, m) {
     const phiBv = EL.bloque(vAgv * v.tf, vAnv * v.tf, 2 * eLatV * v.tf, 2 * (eLatV - d.dhn / 2) * v.tf, d.FyV, d.FuV, d.crit), dcBv = Puf / phiBv;
     m.row("Bloque de corte del ala de la viga: φR<sub>n</sub> ≥ P<sub>uf</sub>", `${fmt(T(phiBv), 2)} tf ${tagDC(dcBv)}`, refBloque(d.crit));
     m.eq(L`A_{gv} = 2\,(l_{e,ala} + (n_f - 1)s_f)\,t_f = ${tn(vAgv * v.tf, 2)} \qquad A_{nv} = ${tn(vAnv * v.tf, 2)} \qquad A_{nt} = 2\left(\frac{b_f - g}{2} - \frac{d_h'}{2}\right)t_f = ${tn(2 * (eLatV - d.dhn / 2) * v.tf, 2)}\ \mathrm{cm^2} \Rightarrow \phi R_n = ${tn(T(phiBv), 2)}\ \mathrm{tf}`, d.crit === "icha" ? "13.4.3" : "J4-5");
+    {
+      const rr = { gap, Lpf: gap + d.lebf + (d.nf - 1) * d.sf + d.lef };
+      const pe = subBloque(Object.assign(panelesBloqueAla(d, rr, "ext", Puf / pExt), { titulo: "Placa de ala: exteriores" }), pExt, Puf / pExt);
+      const pc = subBloque(Object.assign(panelesBloqueAla(d, rr, "cen", Puf / pInt), { titulo: "Placa de ala: central" }), pInt, Puf / pInt);
+      const pv = subBloque(Object.assign(panelesBloqueAla(d, rr, "viga", dcBv), { titulo: "Ala de la viga: exteriores" }), phiBv, dcBv);
+      m.fig(svgBloques([pe, pc, pv], "Bloques de corte de la placa de ala y del ala de la viga"), tikzBloques([pe, pc, pv], L`Bloques de corte en planta: en la placa de ala, bloques exteriores y bloque central desde la primera fila de pernos hasta su extremo libre; en el ala de la viga, bloques exteriores desde la última fila hasta el extremo de la viga (entre las líneas de pernos está el alma, en línea de trazos).`));
+    }
     ck("Bloque de corte del ala de la viga", L`$P_{uf} = ${tn(T(Puf), 2)}$ tf`, L`$\phi R_n = ${tn(T(phiBv), 2)}$ tf`, dcBv, "v");
 
     // Soldadura de las placas de ala a la columna
