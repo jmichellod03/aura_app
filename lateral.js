@@ -71,8 +71,10 @@
       E("reticulada.html", "Vigas reticuladas", "reticulada"),
       E("placa.html", "Placa colaborante", "placa"),
       E("base.html", "Placa base (prueba)", "base"),
-      E("conexion.html?tipo=corte", "Conexión de corte (prueba)", "conexion", { sel: "tipo", val: "corte" }),
-      E("conexion.html?tipo=momento", "Conexión de momento (prueba)", "conexion", { sel: "tipo", val: "momento" }),
+      R("conexiones", "Conexiones", "conexion", [
+        E("conexion.html?tipo=corte", "De corte (prueba)", null, { sel: "tipo", val: "corte" }),
+        E("conexion.html?tipo=momento", "De momento (prueba)", null, { sel: "tipo", val: "momento" }),
+      ]),
     ]),
     R("hormigon", "Hormigón", "secHormigon", [
       E("hormigon.html?elemento=viga", "Vigas", "hormigon"),
@@ -209,7 +211,7 @@
       const t = nodo.vista?.tab && document.getElementById(nodo.vista.tab);
       if (t) new MutationObserver(marcarActual).observe(t, { attributes: true, attributeFilter: ["class"] });
     }
-    document.getElementById("norma")?.addEventListener("change", marcarActual);
+    for (const id of new Set(enlaces.map(({ nodo }) => nodo.vista?.sel).filter(Boolean))) document.getElementById(id)?.addEventListener("change", marcarActual);
 
     // Una vista de la página abierta se cambia ahí mismo; Ctrl o Mayús + clic siguen abriendo otra pestaña o ventana
     nav.addEventListener("click", (e) => {
