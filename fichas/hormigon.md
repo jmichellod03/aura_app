@@ -23,6 +23,7 @@ Documentos: ACI 318-08 (español); Manual ICH (hormigón).
 |  | Deformación del acero en tracción ; factor de reducción: εt ; φ | 9.3.2 | ACI 318-08 (español) | 126 |
 |  | Altura útil ; factor de reducción por corte: d ; φ | 9.3.2.3 | ACI 318-08 (español) | 127 |
 |  | Resistencia al corte del hormigón: Vc ; φVc | 11.2.1.1 | ACI 318-08 (español) | 168 |
+|  | Criterio sísmico: Vc = 0 (Vu debe ser el corte Ve de 21.5.4.1) | 21.5.4.2 | ACI 318-08 (español) | 355 |
 |  | Corte requerido al acero: Vs | 11.4.7.1 | ACI 318-08 (español) | 177 |
 |  | Límite del corte resistido por el acero: Vs ≤ Vs,máx | 11.4.7.9 | ACI 318-08 (español) | 179 |
 |  | Armadura de corte requerida: Av/s | 11-15 | ACI 318-08 (español) | 177 |

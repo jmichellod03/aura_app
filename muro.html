@@ -119,7 +119,7 @@
 </style>
 <link rel="stylesheet" href="aura.css?v=13">
 <script src="lateral.js?v=11"></script>
-<script src="asistente.js?v=4" defer></script>
+<script src="asistente.js?v=5" defer></script>
 </head>
 <body>
 <header>
@@ -282,7 +282,7 @@
 <footer>Herramienta de apoyo académico basada en el procedimiento del curso Diseño de Proyectos de Ingeniería (muros de contención). No reemplaza la memoria de cálculo del ingeniero del proyecto. Verifique siempre los resultados.</footer>
 
 <script src="memo.js?v=39"></script>
-<script src="tablero.js?v=5"></script>
+<script src="tablero.js?v=6"></script>
 <script src="guia.js?v=2"></script>
 <script src="dxf.js?v=2"></script>
 <script src="modelo3d.js?v=6"></script>
@@ -1311,7 +1311,10 @@ function calcular() {
   $("resTitle").textContent = `Resultados — Muro de contención · H = ${fmt(M(r.H), 2)} m · B = ${fmt(M(r.B), 2)} m`;
   const rm = Number.isFinite(r.dcMax) ? fmt(r.dcMax, 3) : "∞";
   const fallas = r.checks.filter(c => c.dc > 1 + 1e-9).map(c => c.html.toLowerCase());
-  $("verdict").innerHTML = r.sinVerificar.length
+  // NO CUMPLE manda sobre SIN VERIFICAR: lo que falla se informa como falla y lo no verificado se agrega
+  $("verdict").innerHTML = r.sinVerificar.length && fallas.length
+    ? `<div class="verdict bad">✘ El muro NO CUMPLE (${fallas.join(", ")}; además SIN VERIFICAR: ${r.sinVerificar.join("; ")}) — razón máxima = ${rm}</div>`
+    : r.sinVerificar.length
     ? `<div class="verdict bad">✘ El muro queda SIN VERIFICAR — ${r.sinVerificar.join("; ")} · razón máxima = ${rm}</div>`
     : `<div class="verdict ${r.ok ? "ok" : "bad"}">${r.ok ? "✔ El muro CUMPLE" : `✘ El muro NO CUMPLE (${fallas.join(", ")})`} — razón máxima = ${rm}</div>`;
   $("dibujo").innerHTML = svgMuro(d, r);
@@ -1486,7 +1489,7 @@ window.AURA_MEMO = {
   recalcular: () => calcular(),
 };
 </script>
-<script src="proyectos.js?v=40"></script>
+<script src="proyectos.js?v=41"></script>
 <script>
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
 </script>

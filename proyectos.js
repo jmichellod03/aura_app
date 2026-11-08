@@ -167,6 +167,8 @@ function estadoActual() {
   const m = ver.textContent.match(/razón máxima = ([\d.,\u00a0∞]+)/);
   const razon = m ? `razón máx. ${m[1]}` : "";
   // "Sin verificar" no es cumple ni no cumple: el panel y la memoria no muestran ninguno de los dos
+  // "NO CUMPLE" manda sobre "SIN VERIFICAR" (un elemento que falla se guarda como no cumple)
+  if (/NO CUMPLE/.test(ver.textContent)) return { ok: false, texto: razon };
   if (/SIN VERIFICAR/.test(ver.textContent)) return { ok: null, texto: razon ? `sin verificar · ${razon}` : "sin verificar" };
   return { ok: ver.classList.contains("ok"), texto: razon };
 }

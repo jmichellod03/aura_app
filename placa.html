@@ -127,7 +127,7 @@
 </style>
 <link rel="stylesheet" href="aura.css?v=13">
 <script src="lateral.js?v=11"></script>
-<script src="asistente.js?v=4" defer></script>
+<script src="asistente.js?v=5" defer></script>
 </head>
 <body>
 <header>
@@ -255,7 +255,7 @@
 <footer>Herramienta de apoyo académico basada en las tablas del fabricante (Ficha y Manual Técnico Instadeck, Cintac). No reemplaza la memoria de cálculo del ingeniero del proyecto. Verifique siempre los resultados.</footer>
 
 <script src="memo.js?v=39"></script>
-<script src="tablero.js?v=5"></script>
+<script src="tablero.js?v=6"></script>
 <script src="guia.js?v=2"></script>
 <script src="modelo3d.js?v=6"></script>
 <script>
@@ -887,7 +887,11 @@ function calcular() {
 
   $("resTitle").textContent = `Resultados — Losa colaborante Instadeck · L = ${fmt(d.L / 100, 2)} m · e<sub>h</sub> = ${eh} cm`.replace(/<\/?sub>/g, "");
   const rm = Number.isFinite(r.dcMax) ? fmt(r.dcMax, 3) : "∞";
-  $("verdict").innerHTML = r.sinVerificar.length
+  // NO CUMPLE manda sobre SIN VERIFICAR: lo que falla se informa como falla y lo no verificado se agrega
+  const fallasPl = r.checks.filter(c => c.dc > 1 + 1e-9).map(c => c.html.toLowerCase());
+  $("verdict").innerHTML = r.sinVerificar.length && fallasPl.length
+    ? `<div class="verdict bad">✘ La losa NO CUMPLE (${fallasPl.join(", ")}; además SIN VERIFICAR: ${r.sinVerificar.join("; ")}) — razón máxima = ${rm}</div>`
+    : r.sinVerificar.length
     ? `<div class="verdict bad">✘ La losa queda SIN VERIFICAR — ${r.sinVerificar.join("; ")} · razón máxima = ${rm}</div>`
     : `<div class="verdict ${r.ok ? "ok" : "bad"}">${r.ok ? "✔ La losa CUMPLE" : r.okLosa ? `✘ La losa cumple, pero no la viga de apoyo (${r.checks.filter(c => c.viga && c.dc > 1 + 1e-9).map(c => c.html.toLowerCase()).join(", ")})` : "✘ La losa NO CUMPLE"} — razón máxima = ${rm}${r.nAlz ? ` · requiere ${r.nAlz} línea${r.nAlz > 1 ? "s" : ""} de alzaprimas por tramo` : ""}</div>`;
   $("memo").innerHTML = m.html();
@@ -1185,7 +1189,7 @@ window.AURA_MEMO = {
   recalcular: (v) => { llenarPerfilesV(); if (v && v.perfilV) $("perfilV").value = v.perfilV; if ($("perfilV").selectedIndex < 0) $("perfilV").selectedIndex = 0; calcular(); },
 };
 </script>
-<script src="proyectos.js?v=40"></script>
+<script src="proyectos.js?v=41"></script>
 <script>
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
 </script>

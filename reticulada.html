@@ -132,7 +132,7 @@
 </style>
 <link rel="stylesheet" href="aura.css?v=13">
 <script src="lateral.js?v=11"></script>
-<script src="asistente.js?v=4" defer></script>
+<script src="asistente.js?v=5" defer></script>
 </head>
 <body>
 <header>
@@ -244,7 +244,7 @@
 <footer>Herramienta de apoyo académico. Las solicitaciones las calcula AURA con un análisis elástico lineal del modelo plano de la reticulada (o se ingresan desde un modelo externo); el modelo se puede comprobar en SAP2000. Las propiedades de las secciones se calculan con esquinas rectas; para perfiles plegados de pared delgada rige además AISI S100 / NCh 427. Verifique siempre los resultados.</footer>
 
 <script src="memo.js?v=39"></script>
-<script src="tablero.js?v=5"></script>
+<script src="tablero.js?v=6"></script>
 <script src="guia.js?v=2"></script>
 <script src="modelo3d.js?v=6"></script>
 <script>
@@ -271,6 +271,7 @@ const L = String.raw;
 const tn = (x, d = 2) => Number.isFinite(x)
   ? fmt(x, d).replace(/\u00a0/g, "\\,")
   : "\\infty";
+const tnT = (x, d = 2) => (Number.isFinite(x) ? tn(x, d) : "$\\infty$");   // en texto (tablas): ∞ en modo matemático
 const LE = L`\le`;
 const cmp = (a, b) => (a <= b ? LE : ">");
 const KG = L`\ \mathrm{kgf}`, KGCM2 = L`\ \mathrm{kgf/cm^2}`, CM = L`\ \mathrm{cm}`, CM2 = L`\ \mathrm{cm^2}`;
@@ -1575,7 +1576,7 @@ ${pl.map(([, kt, v, dd, u]) => `${kt} & ${v === null ? uTex(u).replace(/\u00a0/g
     if ((g.id === "cs" || g.id === "ci") && modoC === "tramo") fx = flexoCordon(s, Fy, d, c, t, m, sol
       ? { origen: "aura", pares: sol.env[g.id].pares.map(p => ({ ...p, M: p.M * 100 })) }
       : { origen: "ext" }, g.nombre.toLowerCase(), g.id === "cs");
-    const dc = Math.max(t.dc, c.dc, fx ? fx.dc : 0);
+    const dc = Math.max(t.dc, c.dc, fx && !fx.noImpl ? fx.dc : 0);   // flexión no implementada: sin verificar, no ∞
     est[g.id] = dc <= 1 ? "ok" : "bad";
     res.push({ g, s, d, t, c, fx, dc });
   }
@@ -1591,6 +1592,7 @@ ${pl.map(([, kt, v, dd, u]) => `${kt} & ${v === null ? uTex(u).replace(/\u00a0/g
   // Resumen en pantalla
   const peor = res.reduce((a, b) => (b.dc > a.dc ? b : a), res[0]);
   const dcMax = Math.max(peor.dc, dcF);
+  const sinVerFx = res.some(r => r.fx && r.fx.noImpl);
   const ok = dcMax <= 1;
   $("resTitle").textContent = `Resultados — Reticulada ${tipo === "pratt" ? "Pratt" : tipo === "howe" ? "Howe" : "Warren"} L = ${fmt(Lt, 2)} m · ${acero}`;
   $("esquema").innerHTML = svgReticulada(tipo, n, Lt, h, est);
@@ -1607,10 +1609,10 @@ ${pl.map(([, kt, v, dd, u]) => `${kt} & ${v === null ? uTex(u).replace(/\u00a0/g
   // Cordones comprimidos con L_y menor que la luz: dependen de arriostramientos laterales que hay que asegurar
   const sinArr = res.filter(r => r.g.id === "ci" && r.d.Pu > 0 && r.d.Ly < Lt * 100 - 1);
   const avisoArr = sinArr.length ? ` · ⚠ ${sinArr.map(r => r.g.nombre.toLowerCase()).join(" y ")} comprimido con L<sub>y</sub> menor que la luz: verifique que existan arriostramientos laterales cada L<sub>y</sub>` : "";
-  $("verdict").innerHTML = `<div class="verdict ${ok ? "ok" : "bad"}">${ok ? "✔ La reticulada CUMPLE" : "✘ La reticulada NO CUMPLE"} — razón máxima = ${dcTxt(dcMax)} (${ctrl})${res.some(r => r.fx && r.fx.noImpl) ? " · flexión de un cordón sin verificar" : ""}${res.some(r => r.c.e5no) ? " · E5 no aplicable" : ""}${avisoArr}${res.some(r => /plegado/.test(r.s.origen || "")) ? " · perfiles plegados: rige además AISI S100 / NCh 427" : ""}</div>`;
+  $("verdict").innerHTML = `<div class="verdict ${ok && !sinVerFx ? "ok" : "bad"}">${!ok ? "✘ La reticulada NO CUMPLE" : sinVerFx ? "✘ La reticulada queda SIN VERIFICAR (flexión de un cordón: perfil no implementado)" : "✔ La reticulada CUMPLE"} — razón máxima = ${dcTxt(dcMax)} (${ctrl})${!ok && sinVerFx ? " · además, flexión de un cordón SIN VERIFICAR" : ""}${res.some(r => r.c.e5no) ? " · E5 no aplicable" : ""}${avisoArr}${res.some(r => /plegado/.test(r.s.origen || "")) ? " · perfiles plegados: rige además AISI S100 / NCh 427" : ""}</div>`;
   $("memo").innerHTML = m.html();
 
-  ultimoTex = documentoTex({ acero, Fy, Fu, tipo, Lt, h, n, res, D, Dadm, lim, dcF, dcMax, ok, f, modoC, ext }, m.texto());
+  ultimoTex = documentoTex({ acero, Fy, Fu, tipo, Lt, h, n, res, D, Dadm, lim, dcF, dcMax, ok, sinVerFx, f, modoC, ext }, m.texto());
   ultimoRes = { res, D, dcF, lim, acero, Fy, tipo, Lt, h, n, modoC, ext };
   ultimoNombre = `memoria_reticulada_${tipo}_${String(Lt).replace(".", "-")}m_${acero}.tex`;
 }
@@ -1619,8 +1621,8 @@ function documentoTex(o, cuerpo) {
   const nom = o.tipo === "pratt" ? "Pratt" : o.tipo === "howe" ? "Howe" : "Warren";
   const fecha = new Date().toLocaleDateString("es-CL", { day: "numeric", month: "long", year: "numeric" });
   const rel = o.Lt / o.h;
-  const resumen = o.res.map(r => `${r.g.nombre} (${r.s.tipo === "M" ? "manual" : r.s.nombre}) & ${tn(r.d.Tu, 0)} & ${tn(r.t.phiPn, 0)} & ${tn(r.d.Pu, 0)} & ${r.c.e5no ? "E5 no aplica" : tn(r.c.phiPn, 0)} & ${tn(Math.max(r.t.dc, r.c.dc), 3)} & ${estado(Math.max(r.t.dc, r.c.dc))}\\\\`
-    + (r.fx ? `\n\\quad Flexocompresión (H1) & \\multicolumn{4}{c}{${r.fx.noImpl ? "sin verificar (perfil no implementado)" : L`$M_u = ${tn(r.fx.Mu / 100, 1)}$ kgf$\cdot$m ; $\phi_bM_n = ${tn(r.fx.phiMn / 100, 1)}$ kgf$\cdot$m`}} & ${tn(r.fx.dc, 3)} & ${r.fx.noImpl ? "Sin verificar" : estado(r.fx.dc)}\\\\` : "")).join("\n");
+  const resumen = o.res.map(r => `${r.g.nombre} (${r.s.tipo === "M" ? "manual" : r.s.nombre}) & ${tn(r.d.Tu, 0)} & ${tn(r.t.phiPn, 0)} & ${tn(r.d.Pu, 0)} & ${r.c.e5no ? "E5 no aplica" : tn(r.c.phiPn, 0)} & ${tnT(Math.max(r.t.dc, r.c.dc), 3)} & ${estado(Math.max(r.t.dc, r.c.dc))}\\\\`
+    + (r.fx ? `\n\\quad Flexocompresión (H1) & \\multicolumn{4}{c}{${r.fx.noImpl ? "sin verificar (perfil no implementado)" : L`$M_u = ${tn(r.fx.Mu / 100, 1)}$ kgf$\cdot$m ; $\phi_bM_n = ${tn(r.fx.phiMn / 100, 1)}$ kgf$\cdot$m`}} & ${r.fx.noImpl ? "---" : tnT(r.fx.dc, 3)} & ${r.fx.noImpl ? "Sin verificar" : estado(r.fx.dc)}\\\\` : "")).join("\n");
   return L`\documentclass[11pt,letterpaper]{article}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
@@ -1685,7 +1687,7 @@ Flecha (L/${o.lim}) & \multicolumn{4}{c}{$\Delta = ${tn(o.D, 2)}$ cm ; $\Delta_{
 \end{tabular}
 \end{table}
 
-Por lo tanto, como la razón demanda-capacidad máxima es $D/C = ${tn(o.dcMax, 3)}$ ${o.dcMax <= 1 ? L`$\le 1.0$` : L`$> 1.0$`}, la viga reticulada \textbf{${o.ok ? "cumple" : "no cumple"}} con las verificaciones de resistencia del AISC 360-16 incluidas en esta memoria y con el criterio de deformación L/${o.lim} adoptado, bajo las hipótesis y limitaciones indicadas.${o.res.some(r => r.fx && r.fx.noImpl) ? " La flexión de al menos un cordón no fue verificada." : ""}
+Por lo tanto, como la razón demanda-capacidad máxima es $D/C = ${tn(o.dcMax, 3)}$ ${o.dcMax <= 1 ? L`$\le 1.0$` : L`$> 1.0$`}, la viga reticulada \textbf{${!o.ok ? "no cumple" : o.sinVerFx ? "queda sin verificar" : "cumple"}} con las verificaciones de resistencia del AISC 360-16 incluidas en esta memoria y con el criterio de deformación L/${o.lim} adoptado, bajo las hipótesis y limitaciones indicadas.${o.res.some(r => r.fx && r.fx.noImpl) ? " La flexión de al menos un cordón no fue verificada." : ""}
 
 \end{document}
 `;
@@ -2317,7 +2319,7 @@ window.AURA_MEMO = {
   recalcular: () => { marcarManuales(); GRUPOS.forEach(g => mostrarTipo(g.id)); mostrarGrupo(grupoVisible); actualizarUnidades(); calcular(); },
 };
 </script>
-<script src="proyectos.js?v=40"></script>
+<script src="proyectos.js?v=41"></script>
 <script>
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
 </script>

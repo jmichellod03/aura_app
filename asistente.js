@@ -148,6 +148,12 @@
         conversacion.push({ rol: "model", texto: acumulado.slice(0, 8000) }); guardar();
       } catch (err) {
         const agotado = err.name === "TimeoutError" || err.name === "AbortError";
+        if (agotado && acumulado.trim()) {       // se cortó a mitad de la respuesta: se conserva lo recibido, con aviso
+          acumulado += "\n\n[La respuesta quedó incompleta porque superó el tiempo de espera.]";
+          r.innerHTML = formato(acumulado);
+          conversacion.push({ rol: "model", texto: acumulado.slice(0, 8000) }); guardar();
+          return;
+        }
         fallar(err.visible ? err.message : agotado ? "Hormi no pudo responder a tiempo. Intente en unos minutos." : navigator.onLine ? "Hormi todavía no está activado o no responde." : "Sin conexión. Hormi requiere internet.");
       } finally {
         ocupado = false; enviar.disabled = false; texto.focus();

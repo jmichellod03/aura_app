@@ -115,7 +115,7 @@
 </style>
 <link rel="stylesheet" href="aura.css?v=13">
 <script src="lateral.js?v=11"></script>
-<script src="asistente.js?v=4" defer></script>
+<script src="asistente.js?v=5" defer></script>
 </head>
 <body>
 <header>
@@ -276,7 +276,7 @@
 <footer>Versión de prueba. Herramienta de apoyo para bases articuladas de columnas de acero (AISC 360-16, AISC Design Guide 1 y ACI 318-08). No reemplaza la memoria de cálculo del ingeniero del proyecto. Verifique siempre los resultados.</footer>
 
 <script src="memo.js?v=39"></script>
-<script src="tablero.js?v=5"></script>
+<script src="tablero.js?v=6"></script>
 <script src="guia.js?v=2"></script>
 <script src="dxf.js?v=2"></script>
 <script src="modelo3d.js?v=6"></script>
@@ -402,12 +402,13 @@ const CATALOGO = {
 // Utilidades de formato
 // ---------------------------------------------------------------------------
 const fmt = (x, d = 2) => Number.isFinite(x)
-  ? x.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d }).replace(/,/g, " ")
+  ? x.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d }).replace(/,/g, "\u00a0")
   : "—";
 const $ = (id) => document.getElementById(id);
 const num = (id) => { const v = parseFloat($(id).value); return Number.isFinite(v) ? v : 0; };
 const L = String.raw;
-const tn = (x, d = 2) => Number.isFinite(x) ? fmt(x, d).replace(/ /g, "\\,") : "\\infty";
+const tn = (x, d = 2) => Number.isFinite(x) ? fmt(x, d).replace(/\u00a0/g, "\\,") : "\\infty";
+const tnT = (x, d = 2) => (Number.isFinite(x) ? tn(x, d) : "$\\infty$");   // en texto (tablas): ∞ en modo matemático
 const LE = L`\le`;
 const texTxt = (t) => t.replace(/—/g, "---").replace(/%/g, "\\%");
 const estado = (dc) => (dc <= 1 + 1e-9 ? "Cumple" : "No cumple");
@@ -1014,7 +1015,7 @@ function documentoTex(d, r, cuerpo) {
     fila("Cargas mayoradas", L`$P_u = ${tn(T(d.Pu), 2)}$ tf, $P_{u,min} = ${tn(T(d.Pmin), 2)}$ tf, $V_u = ${tn(T(d.Vu), 2)}$ tf, $T_u = ${tn(T(d.Tu), 2)}$ tf`),
     fila("Transferencia del corte", { pernos: "pernos de anclaje", roce: "roce placa--grout", llave: L`llave de corte ${tn(MM(d.bL), 0)} $\times$ ${tn(MM(d.tL), 0)} mm, $H_L = ${tn(MM(d.HL), 0)}$ mm` }[d.modoV]),
   ].join("\n");
-  const resumen = r.checks.map(c => `${c.k} & ${c.dem} & ${c.cap} & ${tn(c.dc, 3)} & ${estado(c.dc)}\\\\`).join("\n");
+  const resumen = r.checks.map(c => `${c.k} & ${c.dem} & ${c.cap} & ${tnT(c.dc, 3)} & ${estado(c.dc)}\\\\`).join("\n");
   const alcance = [
     L`\textbf{Versión de prueba}: la herramienta está en desarrollo y sus resultados aún no se han validado contra ejemplos publicados.`,
     L`Base articulada: compresión o tracción concéntrica y corte, sin momento. La tracción se reparte por igual entre los ${N_PERNOS} pernos y se supone concomitante con todo el corte; no se considera el efecto de palanca en la placa.`,
@@ -1295,7 +1296,7 @@ window.AURA_MEMO = {
   recalcular: (v) => { llenarPerfiles(); if (v && v.perfil) $("perfil").value = v.perfil; calcular(); },
 };
 </script>
-<script src="proyectos.js?v=40"></script>
+<script src="proyectos.js?v=41"></script>
 <script>
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
 </script>

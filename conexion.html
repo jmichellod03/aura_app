@@ -117,7 +117,7 @@
 </style>
 <link rel="stylesheet" href="aura.css?v=13">
 <script src="lateral.js?v=11"></script>
-<script src="asistente.js?v=4" defer></script>
+<script src="asistente.js?v=5" defer></script>
 </head>
 <body>
 <header>
@@ -283,7 +283,7 @@
 <footer>Versión de prueba. Herramienta de apoyo para conexiones viga–columna de acero (AISC 360-16 y Manual ICHA). No reemplaza la memoria de cálculo del ingeniero del proyecto. Verifique siempre los resultados.</footer>
 
 <script src="memo.js?v=39"></script>
-<script src="tablero.js?v=5"></script>
+<script src="tablero.js?v=6"></script>
 <script src="guia.js?v=2"></script>
 <script src="dxf.js?v=2"></script>
 <script src="modelo3d.js?v=6"></script>
@@ -410,12 +410,13 @@ const CATALOGO = {
 // Utilidades de formato
 // ---------------------------------------------------------------------------
 const fmt = (x, d = 2) => Number.isFinite(x)
-  ? x.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d }).replace(/,/g, " ")
+  ? x.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d }).replace(/,/g, "\u00a0")
   : "—";
 const $ = (id) => document.getElementById(id);
 const num = (id) => { const v = parseFloat($(id).value); return Number.isFinite(v) ? v : 0; };
 const L = String.raw;
-const tn = (x, d = 2) => Number.isFinite(x) ? fmt(x, d).replace(/ /g, "\\,") : "\\infty";
+const tn = (x, d = 2) => Number.isFinite(x) ? fmt(x, d).replace(/\u00a0/g, "\\,") : "\\infty";
+const tnT = (x, d = 2) => (Number.isFinite(x) ? tn(x, d) : "$\\infty$");   // en texto (tablas): ∞ en modo matemático
 const LE = L`\le`;
 const texTxt = (t) => t.replace(/—/g, "---").replace(/%/g, "\\%");
 const estado = (dc) => (dc <= 1 + 1e-9 ? "Cumple" : "No cumple");
@@ -687,12 +688,14 @@ function panelesBloqueAla(d, r, tipo, dc) {
 let ultimoTex = "", ultimoNombre = "memoria.tex", ultimoR = null, ultimoD = null;
 
 function verificar(d, m) {
-  const checks = [], motivos = [], avisos = [];
+  const checks = [], motivos = [], avisos = [], sinVer = [];
   const ck = (k, dem, cap, dc, grupo) => { checks.push({ k, dem, cap, dc, grupo }); return dc; };
   const v = d.v, c = d.c, dcT = (dem, cap) => dem / cap;
   const geo = (ok, txt) => { if (!ok) motivos.push(txt); return ok; };
   const tagG = (ok, si = "Cumple", no = "No cumple") => tag(ok, ok ? si : no);
   const tagW = (ok, txt) => `<span class="tag ${ok ? "ok" : "warn"}">${txt}</span>`;
+  // Verificaciones geométricas también en la memoria (las filas de pantalla no pasan al .tex)
+  const texGeo = (ok, t, info = false) => m.p(t + (ok ? " (cumple)." : info ? " (criterio no cumplido)." : " (\\textbf{no cumple})."), true);
 
   // ---------- 1. Datos ----------
   m.h("Datos y alcance de la verificación");
@@ -765,20 +768,26 @@ function verificar(d, m) {
   if (d.nb > 1) {
     const okS = geo(d.s >= sMin - 1e-9, "paso de los pernos del alma menor que 2⅔d");
     m.row("Paso mínimo: s ≥ 2⅔ d (se prefiere 3d)", `${fmt(MM(d.s), 0)} ≥ ${fmt(MM(sMin), 1)} mm ${tagG(okS)}${okS && d.s < 3 * d.db ? " " + tagW(false, "menor que 3d") : ""}`, "AISC 360-16 J3.3");
+    texGeo(okS, L`Paso mínimo (J3.3): $s = ${tn(MM(d.s), 0)} \ge \tfrac{8}{3}d = ${tn(MM(sMin), 1)}$ mm${okS && d.s < 3 * d.db ? " (menor que el preferido $3d$)" : ""}`);
     const sMax = Math.min(24 * Math.min(d.tp, v.tw), 30);
     const okSM = geo(d.s <= sMax + 1e-9, "paso de los pernos del alma mayor que el máximo");
     m.row("Paso máximo: s ≤ mín(24t ; 300 mm)", `${fmt(MM(d.s), 0)} ≤ ${fmt(MM(sMax), 0)} mm ${tagG(okSM)}`, "AISC 360-16 J3.5");
+    texGeo(okSM, L`Paso máximo (J3.5): $s = ${tn(MM(d.s), 0)} \le \min(24t;\ 300) = ${tn(MM(sMax), 0)}$ mm`);
   }
   const bordeMin = Math.min(d.lev, d.leh, d.lehV);
   const okE = geo(bordeMin >= d.emin - 1e-9, "distancia al borde menor que la de la Tabla J3.4");
   m.row("Borde mínimo: mín(l<sub>ev</sub> ; l<sub>eh</sub> ; borde en la viga) ≥ l<sub>e,mín</sub>", `${fmt(MM(bordeMin), 0)} ≥ ${fmt(MM(d.emin), 1)} mm ${tagG(okE)}`, "AISC 360-16 Tabla J3.4");
+  texGeo(okE, L`Borde mínimo (Tabla J3.4): $\min(l_{ev};\ l_{eh};\ l_{e,viga}) = ${tn(MM(bordeMin), 0)} \ge ${tn(MM(d.emin), 1)}$ mm`);
   const eMax = Math.min(12 * d.tp, 15);
   const okEM = geo(Math.max(d.lev, d.leh) <= eMax + 1e-9, "distancia al borde de la placa mayor que 12t o 150 mm");
   m.row("Borde máximo en la placa: ≤ mín(12t<sub>p</sub> ; 150 mm)", `${fmt(MM(Math.max(d.lev, d.leh)), 0)} ≤ ${fmt(MM(eMax), 0)} mm ${tagG(okEM)}`, "AISC 360-16 J3.5");
+  texGeo(okEM, L`Borde máximo en la placa (J3.5): $\max(l_{ev};\ l_{eh}) = ${tn(MM(Math.max(d.lev, d.leh)), 0)} \le \min(12t_p;\ 150) = ${tn(MM(eMax), 0)}$ mm`);
   const okL = geo(Lp <= hLibre + 1e-9, "la placa de corte no cabe en el alma libre de la viga");
   m.row("La placa cabe en el alma libre: L<sub>p</sub> ≤ d − 2(t<sub>f</sub> + r)", `${fmt(MM(Lp), 0)} ≤ ${fmt(MM(hLibre), 0)} mm ${tagG(okL)}`);
+  texGeo(okL, L`La placa cabe en el alma libre: $L_p = ${tn(MM(Lp), 0)} \le d - 2(t_f + r) = ${tn(MM(hLibre), 0)}$ mm`);
   const gap = d.a - d.lehV;
   m.row("Holgura entre la viga y la columna", `${fmt(MM(gap), 0)} mm${gap < 1 - 1e-9 ? " " + tagW(false, "menor que 10 mm") : ""}`);
+  m.p(L`Holgura entre la viga y la columna: ${tn(MM(gap), 0)} mm${gap < 1 - 1e-9 ? " (menor que 10 mm)" : ""}.`, true);
   m.p(L`Distancias mínimas usuales del Manual ICHA (Tabla 3-1): $3d$ entre pernos y entre $1.25d$ y $1.75d$ al borde, según el tipo de canto.`, true);
 
   // ---------- 3. Placa de corte: elemento ----------
@@ -832,14 +841,17 @@ function verificar(d, m) {
   ck(dos ? "Soldadura de las placas de corte" : "Soldadura de la placa de corte", L`$V_u = ${tn(T(d.Vu), 2)}$ tf`, L`$\phi R_n = ${tn(T(phiW), 2)}$ tf`, dcW, "w");
   const wMin = wMinTabla(Math.min(d.tp, c.tf)), okWm = geo(d.w >= wMin - 1e-9, `filete de la placa de corte menor que el mínimo (${fmt(MM(wMin), 0)} mm)`);
   m.row("Tamaño mínimo del filete (parte más delgada)", `${fmt(MM(d.w), 0)} ≥ ${fmt(MM(wMin), 0)} mm ${tagG(okWm)}`, "AISC 360-16 Tabla J2.4");
+  texGeo(okWm, L`Tamaño mínimo del filete (Tabla J2.4): $w = ${tn(MM(d.w), 0)} \ge ${tn(MM(wMin), 0)}$ mm`);
   const wDuct = 5 / 8 * d.tp, okWd = d.w >= wDuct - 1e-9;
   m.row("Filete ≥ ⅝ t<sub>p</sub> (la placa fluye antes que la soldadura)", `${fmt(MM(d.w), 0)} ${okWd ? "≥" : "<"} ${fmt(MM(wDuct), 1)} mm ${tagW(okWd, okWd ? "Cumple" : "criterio no cumplido")}`);
+  texGeo(okWd, L`Filete $w = ${tn(MM(d.w), 0)} \ge \tfrac{5}{8}t_p = ${tn(MM(wDuct), 1)}$ mm (criterio informativo, sin razón D/C)`, true);
   if (!okWd) avisos.push("filete de la placa de corte menor que ⅝ t<sub>p</sub>");
   m.p(L`El criterio $w \ge \tfrac{5}{8}\,t_p$ (dos filetes de electrodo E70 sobre placa de hasta 50 ksi) es de la práctica del Manual AISC para que la placa fluya antes que la soldadura; se informa y no entra en la razón D/C.`);
   if (dos) {
     // Los filetes interiores quedan en la ranura de ancho t_w entre las dos placas
     const okRan = 2 * d.w <= v.tw + 1e-9;
     m.row("Filetes interiores en la ranura entre placas: 2w ≤ t<sub>w</sub>", `${fmt(MM(2 * d.w), 0)} ${okRan ? "≤" : ">"} ${fmt(MM(v.tw), 1)} mm ${tagW(okRan, okRan ? "Cumple" : "criterio no cumplido")}`);
+    texGeo(okRan, L`Filetes interiores en la ranura entre placas: $2w = ${tn(MM(2 * d.w), 0)} \le t_w = ${tn(MM(v.tw), 1)}$ mm (criterio informativo, sin razón D/C)`, true);
     if (!okRan) avisos.push("los filetes interiores de las placas de corte no caben en la ranura de ancho t<sub>w</sub>");
     m.p(L`Los filetes interiores quedan en una ranura de ancho $t_w = ${tn(MM(v.tw), 1)}$ mm entre las dos placas, con acceso muy limitado para soldar: revise con el fabricante cómo se ejecutan (por ejemplo, soldar una placa antes de presentar la otra). Criterio de AURA: se informa y no entra en la razón D/C.`);
   }
@@ -866,11 +878,32 @@ function verificar(d, m) {
   if (d.mom) {
     const dm = v.d + d.tfp, Puf = d.Mu / dm, nfb = 2 * d.nf, largoPat = (d.nf - 1) * d.sf;
     // Flexión de la viga
-    const phiMnV = 0.90 * d.FyV * v.Zx, dcMv = d.Mu / phiMnV;
-    m.row("Flexión de la viga (plastificación): φM<sub>n</sub> ≥ M<sub>u</sub>", `${fmt(phiMnV / 1e5, 2)} tf·m ${tagDC(dcMv)}`, "AISC 360-16 F2-1");
-    m.eq(L`\phi M_n = 0.90\,F_y\,Z_x = 0.90\cdot ${tn(d.FyV, 0)}\cdot ${tn(v.Zx, 1)} = ${tn(phiMnV / 1e5, 2)}\ \mathrm{tf\,m} \qquad \frac{M_u}{\phi M_n} = ${tn(dcMv, 3)} ${cmp(dcMv)} 1.0`, "F2-1");
-    m.p(L`Supone sección compacta y arriostramiento lateral suficiente ($L_b \le L_p$); la verificación completa de la viga se hace en el programa de vigas de acero.`);
-    ck("Flexión de la viga", L`$M_u = ${tn(d.Mu / 1e5, 2)}$ tf·m`, L`$\phi M_n = ${tn(phiMnV / 1e5, 2)}$ tf·m`, dcMv, "v");
+    // Compacidad (Tabla B4.1b): ala, caso 10 (laminados: λp = 0.38√(E/Fy), λr = 1.0√(E/Fy)); alma, λp = 3.76√(E/Fy)
+    const rEF = Math.sqrt(E_AC / d.FyV), lamF = v.bf / (2 * v.tf), lpF = 0.38 * rEF, lrF = 1.0 * rEF;
+    const lamW = (v.soldado ? v.d - 2 * v.tf : v.d - 2 * (v.tf + v.r)) / v.tw, lpW = 3.76 * rEF;
+    const MpV = d.FyV * v.Zx;
+    let phiMnV = 0.90 * MpV, refMv = "F2-1", sinVerFlex = "";
+    if (lamW > lpW + 1e-9) sinVerFlex = "flexión de la viga: alma no compacta (F4 y F5 no implementados)";
+    else if (lamF > lpF + 1e-9) {
+      if (v.soldado) sinVerFlex = "flexión de la viga: ala no compacta en perfil soldado (F3 con k_c no implementado)";
+      else if (lamF > lrF + 1e-9) sinVerFlex = "flexión de la viga: ala esbelta (F3-2 no implementado)";
+      else { phiMnV = 0.90 * (MpV - (MpV - 0.7 * d.FyV * v.Sx) * (lamF - lpF) / (lrF - lpF)); refMv = "F3-1"; }
+    }
+    const dcMv = d.Mu / phiMnV;
+    m.row("Esbeltez del ala: b<sub>f</sub>/2t<sub>f</sub> ; λ<sub>p</sub> ; λ<sub>r</sub>", `${fmt(lamF, 2)} ; ${fmt(lpF, 2)} ; ${fmt(lrF, 2)} · ${lamF <= lpF + 1e-9 ? "compacta" : lamF <= lrF + 1e-9 ? "no compacta" : "esbelta"}`, "AISC 360-16 Tabla B4.1b");
+    m.eq(L`\lambda_f = \frac{b_f}{2t_f} = ${tn(lamF, 2)} \qquad \lambda_{pf} = 0.38\sqrt{E/F_y} = ${tn(lpF, 2)} \qquad \lambda_{rf} = 1.0\sqrt{E/F_y} = ${tn(lrF, 2)} \qquad \frac{h}{t_w} = ${tn(lamW, 2)}\ ${lamW <= lpW + 1e-9 ? LE : ">"}\ 3.76\sqrt{E/F_y} = ${tn(lpW, 2)}`, "Tabla B4.1b");
+    if (sinVerFlex) {
+      sinVer.push(sinVerFlex);
+      m.row("Flexión de la viga: φM<sub>n</sub> ≥ M<sub>u</sub>", tagW(false, "SIN VERIFICAR"));
+      m.p(L`La sección de la viga no cumple las condiciones del estado límite implementado (${texTxt(sinVerFlex.replace("flexión de la viga: ", "").replace("k_c", "$k_c$"))}): la flexión queda sin verificar; verifíquela en el programa de vigas de acero.`);
+    } else {
+      m.row(`Flexión de la viga (${refMv === "F2-1" ? "plastificación" : "pandeo local del ala"}): φM<sub>n</sub> ≥ M<sub>u</sub>`, `${fmt(phiMnV / 1e5, 2)} tf·m ${tagDC(dcMv)}`, `AISC 360-16 ${refMv}`);
+      m.eq(refMv === "F2-1"
+        ? L`\phi M_n = 0.90\,F_y\,Z_x = 0.90\cdot ${tn(d.FyV, 0)}\cdot ${tn(v.Zx, 1)} = ${tn(phiMnV / 1e5, 2)}\ \mathrm{tf\,m} \qquad \frac{M_u}{\phi M_n} = ${tn(dcMv, 3)} ${cmp(dcMv)} 1.0`
+        : L`\phi M_n = 0.90\left[M_p - (M_p - 0.7F_yS_x)\frac{\lambda - \lambda_{pf}}{\lambda_{rf} - \lambda_{pf}}\right] = 0.90\left[${tn(MpV, 0)} - (${tn(MpV, 0)} - 0.7\cdot ${tn(d.FyV, 0)}\cdot ${tn(v.Sx, 1)})\frac{${tn(lamF, 2)} - ${tn(lpF, 2)}}{${tn(lrF, 2)} - ${tn(lpF, 2)}}\right] = ${tn(phiMnV / 1e5, 2)}\ \mathrm{tf\,m} \qquad \frac{M_u}{\phi M_n} = ${tn(dcMv, 3)} ${cmp(dcMv)} 1.0`, refMv);
+      m.p(L`Supone arriostramiento lateral suficiente ($L_b \le L_p$, sin pandeo lateral-torsional); la verificación completa de la viga se hace en el programa de vigas de acero.`);
+      ck("Flexión de la viga", L`$M_u = ${tn(d.Mu / 1e5, 2)}$ tf·m`, L`$\phi M_n = ${tn(phiMnV / 1e5, 2)}$ tf·m`, dcMv, "v");
+    }
     // F13.1: ruptura del ala traccionada perforada
     const Afg = v.bf * v.tf, Afn = (v.bf - 2 * d.dhn) * v.tf, Yt = d.FyV / d.FuV <= 0.8 ? 1.0 : 1.1;
     const aplicaF13 = d.FuV * Afn < Yt * d.FyV * Afg;
@@ -908,13 +941,16 @@ function verificar(d, m) {
     if (d.nf > 1) {
       const okSf = geo(d.sf >= sMin - 1e-9, "paso de los pernos de ala menor que 2⅔d");
       m.row("Paso mínimo: s<sub>f</sub> ≥ 2⅔ d", `${fmt(MM(d.sf), 0)} ≥ ${fmt(MM(sMin), 1)} mm ${tagG(okSf)}`, "AISC 360-16 J3.3");
+      texGeo(okSf, L`Paso mínimo de los pernos de ala (J3.3): $s_f = ${tn(MM(d.sf), 0)} \ge \tfrac{8}{3}d = ${tn(MM(sMin), 1)}$ mm`);
     }
     const okG = geo(d.gf >= sMin - 1e-9, "gramil de las placas de ala menor que 2⅔d");
     m.row("Gramil mínimo: g ≥ 2⅔ d", `${fmt(MM(d.gf), 0)} ≥ ${fmt(MM(sMin), 1)} mm ${tagG(okG)}`, "AISC 360-16 J3.3");
+    texGeo(okG, L`Gramil mínimo (J3.3): $g = ${tn(MM(d.gf), 0)} \ge \tfrac{8}{3}d = ${tn(MM(sMin), 1)}$ mm`);
     const eLatP = (d.bp - d.gf) / 2, eLatV = (v.bf - d.gf) / 2;
     const bMinF = Math.min(d.lef, d.lebf, eLatP, eLatV);
     const okEf = geo(bMinF >= d.emin - 1e-9, "distancia al borde de los pernos de ala menor que la de la Tabla J3.4");
     m.row("Borde mínimo: extremos y bordes laterales de la placa y del ala", `${fmt(MM(bMinF), 1)} ≥ ${fmt(MM(d.emin), 1)} mm ${tagG(okEf)}`, "AISC 360-16 Tabla J3.4");
+    texGeo(okEf, L`Borde mínimo de los pernos de ala (Tabla J3.4): $${tn(MM(bMinF), 1)} \ge ${tn(MM(d.emin), 1)}$ mm`);
     m.eq(L`\min\left(l_{e,placa};\ l_{e,ala};\ \frac{b_p - g}{2};\ \frac{b_f - g}{2}\right) = \min(${tn(MM(d.lef), 0)};\ ${tn(MM(d.lebf), 0)};\ ${tn(MM(eLatP), 1)};\ ${tn(MM(eLatV), 1)}) = ${tn(MM(bMinF), 1)}\ \mathrm{mm}`);
 
     m.h("Placas de ala: tracción, compresión y bloque de corte");
@@ -978,6 +1014,7 @@ function verificar(d, m) {
       ck("Soldadura de las placas de ala", L`$P_{uf} = ${tn(T(Puf), 2)}$ tf`, L`$\phi R_n = ${tn(T(phiWF), 2)}$ tf`, dcWF, "w");
       const wMinF = wMinTabla(Math.min(d.tfp, c.tf)), okWf = geo(d.wf >= wMinF - 1e-9, `filete de las placas de ala menor que el mínimo (${fmt(MM(wMinF), 0)} mm)`);
       m.row("Tamaño mínimo del filete (parte más delgada)", `${fmt(MM(d.wf), 0)} ≥ ${fmt(MM(wMinF), 0)} mm ${tagG(okWf)}`, "AISC 360-16 Tabla J2.4");
+      texGeo(okWf, L`Tamaño mínimo del filete de las placas de ala (Tabla J2.4): $w = ${tn(MM(d.wf), 0)} \ge ${tn(MM(wMinF), 0)}$ mm`);
       r.wMinF = wMinF;
     } else {
       m.p(L`Soldadura de penetración completa: su resistencia la controla el metal base (Tabla J2.5), con electrodo compatible. La tracción en la placa ya se verificó con J4-1. Se informa sin razón D/C.`);
@@ -1022,8 +1059,9 @@ function verificar(d, m) {
     viga: falla("v"), alas: falla("pf") || motivos.some(t => /de ala/.test(t)), columna: falla("c"),
   };
   const dcMax = Math.max(...checks.map(x => x.dc));
-  const ok = dcMax <= 1 + 1e-9 && !motivos.length;
-  return Object.assign(r, { checks, motivos, avisos, criticos, dcMax, ok });
+  const hayFalla = dcMax > 1 + 1e-9 || motivos.length > 0;
+  const ok = !hayFalla && !sinVer.length;
+  return Object.assign(r, { checks, motivos, avisos, sinVer, criticos, dcMax, ok, falla: hayFalla });
 }
 
 // ---------------------------------------------------------------------------
@@ -1177,7 +1215,7 @@ function documentoTex(d, r, cuerpo) {
     fila("Placas", `${ACEROS[d.aceroP].nombre}; electrodo ${d.fexx >= 4900 ? "E70" : "E60"}`),
     fila("Solicitaciones mayoradas", L`$V_u = ${tn(T(d.Vu), 2)}$ tf${d.mom ? L`, $M_u = ${tn(d.Mu / 1e5, 2)}$ tf$\cdot$m` : ""}`),
   ].filter(Boolean).join("\n");
-  const resumen = r.checks.map(x => `${x.k} & ${x.dem} & ${x.cap} & ${tn(x.dc, 3)} & ${estado(x.dc)}\\\\`).join("\n");
+  const resumen = r.checks.map(x => `${x.k} & ${x.dem} & ${x.cap} & ${tnT(x.dc, 3)} & ${estado(x.dc)}\\\\`).join("\n");
   const alcance = [
     L`\textbf{Versión de prueba}: la herramienta está en desarrollo y sus resultados aún no se han validado contra ejemplos publicados.`,
     L`Diseño por resistencia con las solicitaciones ingresadas (LRFD). No es una conexión precalificada para marcos sísmicos: no se aplican AISC 358, AISC 341 ni NCh 2369 (diseño por capacidad, momento probable de la viga).`,
@@ -1186,7 +1224,7 @@ function documentoTex(d, r, cuerpo) {
     d.mom ? L`Las placas de ala toman el momento como un par de fuerzas $M_u/(d + t_{fp})$; la flexión de la viga supone sección compacta y arriostramiento lateral suficiente. En la columna se verifican J10.1, J10.2, J10.3 y J10.6 (con $P_r \le 0.4P_c$); no se diseñan atiesadores ni planchas de refuerzo.` : "",
     L`No se verifican la estabilidad del ala comprimida de la viga en el voladizo de la placa, la interacción con la carga axial de la columna ni las tolerancias de montaje.`,
   ].filter(Boolean).map(x => `\\item ${x}`).join("\n");
-  const concl = L`Por lo tanto, como la relación demanda-capacidad máxima es $D/C = ${tn(r.dcMax, 3)}$ ${r.dcMax <= 1 + 1e-9 ? L`$\le 1.0$` : L`$> 1.0$`}${r.motivos.length ? ` y ${r.motivos.join(", ")}` : ""}, la conexión \textbf{${r.ok ? "cumple" : "no cumple"}} con las verificaciones indicadas.`;
+  const concl = L`Por lo tanto, como la relación demanda-capacidad máxima es $D/C = ${tn(r.dcMax, 3)}$ ${r.dcMax <= 1 + 1e-9 ? L`$\le 1.0$` : L`$> 1.0$`}${r.motivos.length ? ` y ${r.motivos.join(", ")}` : ""}, la conexión \textbf{${r.falla ? "no cumple" : r.ok ? "cumple" : "queda sin verificar"}} con las verificaciones indicadas${r.sinVer.length ? ` (sin verificar: ${texTxt(r.sinVer.join("; ")).replace(/k_c/g, "$k_c$")})` : ""}.`;
   return L`\documentclass[11pt,letterpaper]{article}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
@@ -1283,6 +1321,11 @@ function calcular() {
     $("verdict").innerHTML = msg;
     ultimoTex = ""; ultimoR = null; ultimoD = null;
   };
+  if (!malos.length) {   // pernos y filas: enteros, sin redondear en silencio
+    const enteros = [["nb", "N.º de pernos de la placa de corte"]];
+    if ($("tipo").value === "momento") enteros.push(["nf", "Filas por ala"]);
+    for (const [id, txt] of enteros) { const x = Number($(id).value); if (!(Number.isInteger(x) && x >= 1)) { $(id).classList.add("invalido"); malos.push(`${txt}: debe ser un número entero mayor o igual a 1`); } }
+  }
   if (malos.length) { limpiar(avisoInvalidos(malos)); return; }
   const d = leerDatos();
   if (d.mom && d.gf >= d.v.bf) { $("gf").classList.add("invalido"); limpiar(avisoInvalidos(["El gramil g debe ser menor que el ancho del ala de la viga"])); return; }
@@ -1308,7 +1351,8 @@ function calcular() {
   $("resTitle").textContent = `Resultados — Conexión ${d.mom ? "de corte y momento" : "de corte"} · ${d.v.nombre} a ${d.c.nombre}`;
   const rm = Number.isFinite(r.dcMax) ? fmt(r.dcMax, 3) : "∞";
   const fallas = [...r.checks.filter(x => x.dc > 1 + 1e-9).map(x => x.k.toLowerCase()), ...r.motivos];
-  const txt = r.ok ? "✔ La conexión CUMPLE" : `✘ La conexión NO CUMPLE (${fallas.join(", ")})`;
+  const sv = r.sinVer.length ? `SIN VERIFICAR: ${r.sinVer.join("; ").replace(/k_c/g, "k<sub>c</sub>")}` : "";
+  const txt = r.ok ? "✔ La conexión CUMPLE" : r.falla ? `✘ La conexión NO CUMPLE (${fallas.join(", ")}${sv ? `; además ${sv}` : ""})` : `✘ La conexión queda ${sv}`;
   $("verdict").innerHTML = `<div class="verdict ${r.ok ? "ok" : "bad"}">${txt} — razón máxima = ${rm}</div>`
     + `<div class="note">Versión de prueba: compruebe el resultado a mano antes de usarlo.${r.avisos.length ? ` Criterio no cumplido (no entra en la razón D/C): ${r.avisos.join(", ")}.` : ""}</div>`;
   $("dibujo").innerHTML = svgConexion(d, r);
@@ -1446,7 +1490,7 @@ window.AURA_MEMO = {
   },
 };
 </script>
-<script src="proyectos.js?v=40"></script>
+<script src="proyectos.js?v=41"></script>
 <script>
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
 </script>

@@ -18,7 +18,7 @@ Documentos: AISC 360-16 (español, archivo AISC360-16.pdf); Manual de Diseño IC
 - Con doble placa de corte, cada perno tiene dos planos de corte (J3-1 con n<sub>s</sub> = 2) y apoya en las dos placas; la fluencia, la ruptura, el bloque de corte, la flexión y la soldadura de las placas se suman para las dos (cada una toma V<sub>u</sub>/2). Los filetes interiores quedan en una ranura de ancho t<sub>w</sub>: si 2w > t<sub>w</sub> se avisa (criterio de AURA, sin razón D/C), y su ejecución debe revisarse con el fabricante.
 - Bloque de corte: por defecto la AISC 360-16 J4-5 con U<sub>bs</sub> = 1; como opción, el criterio anterior de la Especificación ICHA (13.4.3 y 13.4.4), que usan las planillas del curso.
 - La flexión de la placa de corte con la excentricidad a (M<sub>u</sub> = V<sub>u</sub>·a, φM<sub>n</sub> = 0.90 F<sub>y</sub> t<sub>p</sub> L<sub>p</sub>²/4) y el filete ≥ ⅝ t<sub>p</sub> son criterios de AURA tomados de la práctica del Manual AISC; el segundo se informa y no entra en la razón D/C.
-- La flexión de la viga supone sección compacta y arriostramiento lateral suficiente.
+- La flexión de la viga revisa la compacidad (Tabla B4.1b): ala compacta con F2-1 y no compacta con F3-1; un ala esbelta, un perfil soldado no compacto o un alma no compacta dejan la flexión SIN VERIFICAR. Supone arriostramiento lateral suficiente.
 - Columna: J10.1 (flexión local del ala), J10.2 (fluencia local del alma), J10.3 (aplastamiento del alma) y J10.6 (zona panel) con P<sub>r</sub> ≤ 0.4P<sub>c</sub>, despreciando el corte de la columna. No se diseñan atiesadores ni planchas de refuerzo; J10.5 no aplica (carga en una sola ala). En perfiles soldados ("otro") k = t<sub>f</sub>.
 - La traducción al español de la AISC 360-16 (pág. 191 del PDF) escribe 2,1 y 2,5 en J3-6c y J3-6d; el original en inglés y la Especificación ICHA (13.3.4, pág. 540) usan 1.2 y 1.5. AURA usa 1.2.
 - La Especificación ICHA usa φ = 0.90 para el corte de elementos de conexión (13.5.3, pág. 544); la AISC 360-16 J4-3 usa φ = 1.00.
@@ -47,7 +47,9 @@ Documentos: AISC 360-16 (español, archivo AISC360-16.pdf); Manual de Diseño IC
 | Soldaduras | Incremento direccional | J2-5 | AISC 360-16 (español) | 177 |
 | Soldaduras | Tamaño mínimo del filete | Tabla J2.4 | AISC 360-16 (español) | 174 |
 | Viga | Corte del alma | G2-1, G2.1 | AISC 360-16 (español) | 121 |
+| Viga | Compacidad del ala (caso 10) y del alma | Tabla B4.1b | AISC 360-16 (español) | 67 |
 | Viga | Flexión (plastificación) | F2-1 | AISC 360-16 (español) | 96 |
+| Viga | Flexión con ala no compacta | F3-1 | AISC 360-16 (español) | 98 |
 | Viga | Ruptura del ala traccionada perforada | F13-1 | AISC 360-16 (español) | 118 |
 | Columna | Flexión local del ala | J10-1 | AISC 360-16 (español) | 198 |
 | Columna | Fluencia local del alma | J10-2, J10-3 | AISC 360-16 (español) | 199 |

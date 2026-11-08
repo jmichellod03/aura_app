@@ -129,7 +129,7 @@
 </style>
 <link rel="stylesheet" href="aura.css?v=13">
 <script src="lateral.js?v=11"></script>
-<script src="asistente.js?v=4" defer></script>
+<script src="asistente.js?v=5" defer></script>
 </head>
 <body>
 <header>
@@ -357,7 +357,7 @@
 <footer>Herramienta de apoyo académico. Las solicitaciones deben corresponder a la envolvente de combinaciones mayoradas. Verifique siempre los resultados.</footer>
 
 <script src="memo.js?v=39"></script>
-<script src="tablero.js?v=5"></script>
+<script src="tablero.js?v=6"></script>
 <script src="guia.js?v=2"></script>
 <script src="dxf.js?v=2"></script>
 <script src="modelo3d.js?v=6"></script>
@@ -539,19 +539,27 @@ function corte(Vu, g, d, dbMin, criterio, m) {
   const { b, fc, fy, de, ramas } = g;
   const phi = 0.75;
   const rf = Math.sqrt(fc);
-  const Vc = 0.53 * rf * b * d;
+  // Criterio sísmico (pórtico especial): ACI 318-08 21.5.4.2 exige diseñar el refuerzo transversal con V_c = 0 cuando el corte
+  // sísmico es la mitad o más del corte requerido y P_u < A_g f'c/20 (vigas). Se adopta V_c = 0, del lado seguro.
+  const sis = criterio === "sismico";
+  const Vc = sis ? 0 : 0.53 * rf * b * d;
   const phiVc = phi * Vc;
   const VsCalc = Vu / phi - Vc;
   const Vs = Math.max(0, VsCalc);
   const VsMax = 2.12 * rf * b * d;
   const okVs = Vs <= VsMax;
   m.row("Altura útil ; factor de reducción por corte: d ; φ", `${fmt(d, 2)} cm ; 0.75`, "9.3.2.3");
-  m.row("Resistencia al corte del hormigón: V<sub>c</sub> ; φV<sub>c</sub>", `${fmt(Vc, 0)} ; ${fmt(phiVc, 0)} kgf`, "11.2.1.1");
+  m.row("Resistencia al corte del hormigón: V<sub>c</sub> ; φV<sub>c</sub>", `${fmt(Vc, 0)} ; ${fmt(phiVc, 0)} kgf${sis ? " (sísmico: V<sub>c</sub> = 0)" : ""}`, sis ? "21.5.4.2" : "11.2.1.1");
+  if (sis) {
+    m.note("Criterio sísmico: se toma V<sub>c</sub> = 0 (ACI 318-08 21.5.4.2). V<sub>u</sub> debe ser el corte de diseño V<sub>e</sub> de 21.5.4.1, con los momentos probables M<sub>pr</sub> (1.25 f<sub>y</sub>) en los extremos más las cargas gravitacionales, que esta página no calcula.",
+      L`Criterio sísmico: se toma $V_c = 0$ (ACI 318-08, 21.5.4.2), lo que corresponde cuando el corte inducido por el sismo es la mitad o más del corte requerido y $P_u < A_gf'_c/20$. $V_u$ debe ser el corte de diseño $V_e$ de 21.5.4.1, calculado con los momentos probables $M_{pr}$ ($1.25f_y$) en los extremos más las cargas gravitacionales mayoradas; esta memoria no lo calcula y usa el $V_u$ ingresado.`);
+  }
   m.row("Corte requerido al acero: V<sub>s</sub>", `${fmt(VsCalc, 0)} kgf`, "11.4.7.1");
   m.row("Límite del corte resistido por el acero: V<sub>s</sub> ≤ V<sub>s,máx</sub>", `${fmt(Vs, 0)} ≤ ${fmt(VsMax, 0)} kgf ${tag(okVs, okVs ? "cumple" : "aumentar sección")}`, "11.4.7.9");
   m.p(L`La capacidad al corte se evalúa considerando la contribución del hormigón $V_c$ y de la armadura transversal $V_s$, exigiendo $V_u \le \phi(V_c + V_s)$ con $\phi = 0.75$ (9.3.2.3) y altura útil $d = ${tn(d)}$ cm.`, true);
   m.p(L`\textbf{Resistencia del hormigón y corte requerido al acero:}`);
-  m.eq(L`V_c = 0.53\sqrt{f'_c}\,b_w\,d = 0.53\sqrt{${tn(fc, 0)}}\cdot ${tn(b, 1)}\cdot ${tn(d)} = ${tn(Vc, 0)}${KG} \qquad \phi V_c = ${tn(phiVc, 0)}${KG}`, "11-3");
+  if (sis) m.eq(L`V_c = 0 \qquad \phi V_c = 0`, "21.5.4.2");
+  else m.eq(L`V_c = 0.53\sqrt{f'_c}\,b_w\,d = 0.53\sqrt{${tn(fc, 0)}}\cdot ${tn(b, 1)}\cdot ${tn(d)} = ${tn(Vc, 0)}${KG} \qquad \phi V_c = ${tn(phiVc, 0)}${KG}`, "11-3");
   m.eq(L`V_s = \frac{V_u}{\phi} - V_c = \frac{${tn(Vu, 0)}}{0.75} - ${tn(Vc, 0)} = ${tn(VsCalc, 0)}${KG}`, "11-2");
   m.p(L`Se verifica que la sección sea adecuada, limitando el corte que puede tomar el acero para prevenir la falla por compresión diagonal del alma:`, true);
   m.eq(L`V_{s,\max} = 2.12\sqrt{f'_c}\,b_w\,d = 2.12\sqrt{${tn(fc, 0)}}\cdot ${tn(b, 1)}\cdot ${tn(d)} = ${tn(VsMax, 0)}${KG}`, "11.4.7.9");
@@ -1956,7 +1964,7 @@ window.AURA_MEMO = {
   recalcular: () => (elActual() === "losa" ? calcularLosa() : calcularViga()),
 };
 </script>
-<script src="proyectos.js?v=40"></script>
+<script src="proyectos.js?v=41"></script>
 <script>
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
 </script>

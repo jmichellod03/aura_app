@@ -8,7 +8,8 @@ const MAX_MENSAJES = 12, MAX_TEXTO = 2000, MAX_CATALOGO = 40000, CACHE_MS = 10 *
 const GEMINI = "https://generativelanguage.googleapis.com/v1beta/models";
 const PAUSAS_MS = [800, 2000];                 // antes de cada reintento de un mismo modelo
 // Tiempos máximos en ms: Supabase corta la función a los 150 s, sin dejar registro de qué quedó esperando
-export const TIEMPOS = { gemini: 30000, total: 100000, flujo: 30000, documento: 5000, supabase: 8000, recaptcha: 8000 };
+// global: plazo de toda la atención, desde que llega el pedido hasta el último fragmento; menor que la espera de asistente.js (120 s)
+export const TIEMPOS = { gemini: 30000, total: 100000, flujo: 30000, documento: 5000, supabase: 8000, recaptcha: 8000, global: 110000 };
 
 type Entorno = { get(nombre: string): string | undefined };
 type Mensaje = { rol: "user" | "model"; texto: string };
@@ -62,9 +63,9 @@ export function textoDeEvento(datos: string): { texto: string; fin?: string; blo
 
 // Llama a Gemini y resiste la saturación: reintenta cuando el modelo está saturado y luego pasa al modelo de respaldo.
 // Un error de cupo (429) o un modelo retirado (404) no mejora reintentando el mismo modelo: pasa directo al respaldo
-export async function llamarGemini(modelos: string[], clave: string, cuerpo: string, pedir: typeof fetch, pausa = (ms: number) => new Promise(r => setTimeout(r, ms))): Promise<Response> {
+export async function llamarGemini(modelos: string[], clave: string, cuerpo: string, pedir: typeof fetch, pausa = (ms: number) => new Promise(r => setTimeout(r, ms)), plazo = Infinity): Promise<Response> {
   let ultima: Response = new Response(null, { status: 503 });
-  const fin = Date.now() + TIEMPOS.total;
+  const fin = Math.min(Date.now() + TIEMPOS.total, plazo);
   for (const modelo of modelos) {
     for (let intento = 0; intento <= PAUSAS_MS.length; intento++) {
       if (intento > 0) await pausa(PAUSAS_MS[intento - 1]);
@@ -141,6 +142,7 @@ export async function atender(req: Request, env: Entorno, pedir: typeof fetch = 
   const error = (status: number, mensaje: string) => new Response(JSON.stringify({ error: mensaje }), { status, headers: { ...cors, "Content-Type": "application/json" } });
 
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
+  const plazo = Date.now() + TIEMPOS.global;      // toda la atención termina antes de que la página deje de esperar
   if (!origenes.includes(origen)) return error(403, "Origen no permitido.");
   if (req.method !== "POST") return error(405, "Método no permitido.");
 
@@ -188,7 +190,7 @@ export async function atender(req: Request, env: Entorno, pedir: typeof fetch = 
     systemInstruction: { parts: [{ text: sistema }] },
     contents: datos.mensajes.map(m => ({ role: m.rol, parts: [{ text: m.texto }] })),
     generationConfig: { maxOutputTokens: 4096 },
-  }), pedir, pausa);
+  }), pedir, pausa, plazo);
   if (respuesta.status === 429) return error(429, "Se agotó por ahora el cupo gratuito de Hormi. Intente más tarde.");
   if (respuesta.status === 503 || respuesta.status === 500) return error(503, "El servicio de IA está saturado. Intente en unos minutos.");
   if (!respuesta.ok || !respuesta.body) return error(502, "El servicio de IA no respondió. Intente más tarde.");
@@ -200,12 +202,15 @@ export async function atender(req: Request, env: Entorno, pedir: typeof fetch = 
       // Sigue leyendo hasta tener texto: si pull termina sin encolar nada, el flujo no vuelve a llamarlo y queda detenido
       for (let enviado = false; !enviado;) {
         let reloj: ReturnType<typeof setTimeout> | undefined;
-        const lectura = await Promise.race([lector.read(), new Promise<null>(r => { reloj = setTimeout(() => r(null), TIEMPOS.flujo); })]);
+        const espera = Math.min(TIEMPOS.flujo, plazo - Date.now()), porPlazo = espera < TIEMPOS.flujo;
+        const lectura = espera <= 0 ? null : await Promise.race([lector.read(), new Promise<null>(r => { reloj = setTimeout(() => r(null), espera); })]);
         clearTimeout(reloj);
         if (lectura === null) {                  // Gemini dejó de enviar: se cierra con aviso en vez de quedar esperando
-          console.error("Gemini sin datos por", TIEMPOS.flujo, "ms");
+          console.error(porPlazo ? "Plazo global agotado:" : "Gemini sin datos por", porPlazo ? TIEMPOS.global : TIEMPOS.flujo, "ms");
           lector.cancel().catch(() => {});
-          ctrl.enqueue(cod.encode("\n\n[La respuesta quedó incompleta porque el servicio de IA dejó de responder. Intente nuevamente.]"));
+          ctrl.enqueue(cod.encode(porPlazo
+            ? "\n\n[La respuesta quedó incompleta porque superó el tiempo máximo. Pida continuar o una respuesta más breve.]"
+            : "\n\n[La respuesta quedó incompleta porque el servicio de IA dejó de responder. Intente nuevamente.]"));
           ctrl.close();
           return;
         }

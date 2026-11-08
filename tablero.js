@@ -66,7 +66,8 @@ const Tablero = (() => {
     const med = t.querySelector(".medidor");
     // Color del tablero según el veredicto de la página, haya o no número (pavimento flexible no informa razón máxima).
     // "Sin verificar" tiene color propio, aunque lo verificado esté bajo 1, para que no se lea como aprobado
-    const sinVerificar = !!v && (v.classList.contains("warn") || /SIN VERIFICAR/.test(txt));
+    // "NO CUMPLE" manda: si algo falla, el tablero va en naranja aunque además haya algo sin verificar
+    const sinVerificar = !!v && !/NO CUMPLE/.test(txt) && (v.classList.contains("warn") || /SIN VERIFICAR/.test(txt));
     t.classList.toggle("warn", sinVerificar);
     t.classList.toggle("ok", !!v && !sinVerificar && v.classList.contains("ok")); t.classList.toggle("bad", !!v && !sinVerificar && v.classList.contains("bad"));
     // Con datos inválidos se despliega el panel de datos para que se vean los campos marcados
