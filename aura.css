@@ -506,6 +506,8 @@ html.lat-corta { --ancho-lat: 64px; }
   .as-msg code { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 12px; background: rgba(10,16,48,.07); padding: 0 3px; border-radius: 2px; }
   .as-user { align-self: flex-end; background: var(--azul-tinte); }
   .as-model { align-self: flex-start; background: #fff; border: 1px solid var(--linea-suave); }
+  .as-msg .katex { font-size: 1.05em; overflow-wrap: normal; }
+  .as-msg .katex-display { margin: 6px 0; overflow-x: auto; overflow-y: hidden; }
   .as-item { display: block; padding-left: 12px; text-indent: -12px; }
   .as-espera { color: var(--tenue); font-style: italic; }
   .as-error { background: #fbe9e9; border-color: #f0c6c6; color: #a32020; }

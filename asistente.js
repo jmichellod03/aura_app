@@ -30,11 +30,27 @@
   };
 
   const esc = (t) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  // Formato mínimo sobre texto ya escapado: negrita, código y listas con guiones
-  const formato = (t) => esc(t).split(/\r?\n/).map(l => {
-    const f = l.replace(/\*\*([^*\n]+)\*\*/g, "<b>$1</b>").replace(/`([^`\n]+)`/g, "<code>$1</code>");
-    return /^\s*[-•]\s+/.test(f) ? `<span class="as-item">• ${f.replace(/^\s*[-•]\s+/, "")}</span>` : f;
-  }).join("<br>").replace(/<\/span><br>/g, "</span>");
+  // Fórmulas de las respuestas: $…$, $$…$$, \(…\) y \[…\]. Un signo $ seguido o precedido de espacio, o un cierre seguido de
+  // un dígito, no abre ni cierra una fórmula ("$5 y $6 pesos" queda como texto).
+  const MATE = /\$\$([^$]+?)\$\$|\\\[([\s\S]+?)\\\]|\\\(([^\n]+?)\\\)|\$(?![\s$])([^$\n]+?)(?<!\s)\$(?!\d)/g;
+  const mate = (tex, bloque) => {
+    try { if (window.katex) return katex.renderToString(tex.trim(), { displayMode: bloque, throwOnError: false, strict: false }); }
+    catch { /* se muestra como código */ }
+    return `<code>${esc(tex.trim())}</code>`;
+  };
+  // Formato mínimo sobre texto ya escapado: negrita, código y listas con guiones. Las fórmulas (solo en las respuestas de Hormi)
+  // se apartan antes de escapar y vuelven al final, ya dibujadas por KaTeX, que escapa su contenido.
+  const formato = (t, conMate = false) => {
+    const piezas = [];
+    const base = conMate ? t.replace(/[]/g, "").replace(MATE, (_, a, b, c, d) => {
+      piezas.push(mate(a ?? b ?? c ?? d, a !== undefined || b !== undefined));
+      return `${piezas.length - 1}`;
+    }) : t;
+    return esc(base).split(/\r?\n/).map(l => {
+      const f = l.replace(/\*\*([^*\n]+)\*\*/g, "<b>$1</b>").replace(/`([^`\n]+)`/g, "<code>$1</code>");
+      return /^\s*[-•]\s+/.test(f) ? `<span class="as-item">• ${f.replace(/^\s*[-•]\s+/, "")}</span>` : f;
+    }).join("<br>").replace(/<\/span><br>/g, "</span>").replace(/(\d+)/g, (_, i) => piezas[+i]);
+  };
   const guardar = () => { try { sessionStorage.setItem(claveHist, JSON.stringify(conversacion.slice(-(MAX_MENSAJES + MAX_MENSAJES % 2)))); } catch { /* sin almacenamiento */ } };
   const cargar = () => {
     try {
@@ -74,7 +90,7 @@
 
     const burbuja = (rol, t, clase = "") => {
       const d = document.createElement("div");
-      d.className = `as-msg as-${rol} ${clase}`.trim(); d.innerHTML = formato(t);
+      d.className = `as-msg as-${rol} ${clase}`.trim(); d.innerHTML = formato(t, rol === "model");
       if (rol === "model") {
         const fila = document.createElement("div");
         fila.className = "as-fila";
@@ -92,7 +108,11 @@
     };
     const abrir = (si) => {
       panel.hidden = !si; boton.hidden = si; boton.setAttribute("aria-expanded", String(si));
-      if (si) { pintar(); texto.focus(); } else boton.focus();
+      if (si) {
+        pintar(); texto.focus();
+        // Si KaTeX llega después de abrir, se redibuja el historial con las fórmulas (no durante una respuesta en curso)
+        if (!window.katex) cargarKatex().then((ok) => { if (ok && !panel.hidden && !ocupado && conversacion.length) pintar(); });
+      } else boton.focus();
     };
     boton.addEventListener("click", () => abrir(true));
     panel.querySelector(".as-cerrar").addEventListener("click", () => abrir(false));
@@ -141,7 +161,7 @@
           acumulado += dec.decode(value, { stream: true });
           if (acumulado) {
             if (r.classList.contains("as-espera")) { r.classList.remove("as-espera"); ponerCara(r, "normal"); }
-            r.innerHTML = formato(acumulado); chat.scrollTop = chat.scrollHeight;
+            r.innerHTML = formato(acumulado, true); chat.scrollTop = chat.scrollHeight;
           }
         }
         if (!acumulado.trim()) throw Object.assign(new Error("Hormi no entregó una respuesta. Intente nuevamente."), { visible: true });
@@ -150,7 +170,7 @@
         const agotado = err.name === "TimeoutError" || err.name === "AbortError";
         if (agotado && acumulado.trim()) {       // se cortó a mitad de la respuesta: se conserva lo recibido, con aviso
           acumulado += "\n\n[La respuesta quedó incompleta porque superó el tiempo de espera.]";
-          r.innerHTML = formato(acumulado);
+          r.innerHTML = formato(acumulado, true);
           conversacion.push({ rol: "model", texto: acumulado.slice(0, 8000) }); guardar();
           return;
         }
