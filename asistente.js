@@ -81,7 +81,7 @@
     const panel = document.createElement("section");
     panel.id = "asPanel"; panel.className = "as-panel"; panel.hidden = true; panel.setAttribute("aria-label", "Hormi, asistente de AURA");
     panel.innerHTML = `<header class="as-cab"><span class="as-cara-cab">${hormi("normal", 30)}</span><b>Hormi</b><button type="button" class="as-limpiar">Limpiar</button><button type="button" class="as-cerrar" aria-label="Cerrar a Hormi">×</button></header>
-      <p class="as-aviso">Resuelve dudas de uso y de cálculo, pero puede equivocarse: compruebe sus respuestas. No ve los datos de su cálculo. <b>No escriba datos de clientes:</b> en el plan gratis, Google puede revisar lo que se envía y usarlo para mejorar sus productos.</p>
+      <p class="as-aviso">Resuelve dudas de uso y de cálculo, pero puede equivocarse: compruebe sus respuestas. No ve los datos de su cálculo. <b>No escriba datos de clientes:</b> las preguntas se envían a servicios de IA externos (Groq y, de respaldo, Google Gemini); en su plan gratis, Google puede revisar lo que recibe y usarlo para mejorar sus productos.</p>
       <div class="as-chat" role="log" aria-live="polite"></div>
       <form class="as-form"><label class="as-oculto" for="asTexto">Su pregunta</label><textarea id="asTexto" rows="2" maxlength="${MAX_TEXTO}" placeholder="Escriba su pregunta"></textarea><button type="submit" class="as-enviar">Enviar</button></form>`;
     document.body.append(boton, panel);
