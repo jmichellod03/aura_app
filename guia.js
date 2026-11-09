@@ -15,7 +15,6 @@ const Guia = (() => {
   const TIPO = (txt) => ({ en: "#inputs .tabs", titulo: "Tipo de elemento", texto: txt });
   const PAGINAS = {
     "acero.html": [
-      TIPO("Elija viga (flexión y corte, AISC 360-16 capítulos F y G) o columna (flexocompresión con la interacción H1)."),
       { en: "#serie", hasta: "#unidad", titulo: "Perfil y acero", texto: "Elija la serie (HEA, HEB, IPE o IPN) y el perfil del catálogo Cintac, la calidad del acero (Fy) y las unidades en que ingresará las solicitaciones." },
       { en: "t:Viga — flexión", titulo: "Solicitaciones de la viga", texto: "Ingrese la longitud no arriostrada Lb, los momentos y el corte últimos (LRFD). Con los momentos del tramo no arriostrado se calcula Cb (F1-1) para el pandeo lateral-torsional." },
       { en: "t:Columna — flexo", titulo: "Solicitaciones de la columna", texto: "Ingrese las longitudes efectivas KL en cada eje, la carga axial y los momentos últimos. La verificación combina compresión (capítulo E) y flexión con H1-1." },
@@ -33,7 +32,6 @@ const Guia = (() => {
       { en: "t:4. Conectores", titulo: "4 · Conectores de corte", texto: "Defina los conectores (AISC I8) y, si quiere, la viga de apoyo del catálogo para verificar su ala y la acción compuesta." },
     ],
     "hormigon.html": [
-      TIPO("Elija el elemento: viga, losa o muro de hormigón armado (ACI 318-08)."),
       { en: "t:Geometría", titulo: "Geometría", texto: "Dimensiones de la sección o del paño. En la losa, además, las condiciones de borde definen los coeficientes de momento." },
       { en: "t:Condiciones de borde", titulo: "Condiciones de borde", texto: "Indique qué bordes de la losa son continuos o simplemente apoyados." },
       { en: "t:Materiales", titulo: "Materiales", texto: "Resistencia del hormigón f'c y fluencia del acero fy; el recubrimiento define la altura útil d." },
@@ -230,10 +228,20 @@ const Guia = (() => {
   function iniciar() {
     if (!document.querySelector("main") || document.querySelector(".guia-btn")) return;
     const b = document.createElement("button");
-    b.type = "button"; b.className = "guia-btn"; b.textContent = "Guía";
+    b.type = "button"; b.className = "guia-btn";
+    b.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+      + '<circle cx="12" cy="12" r="9.5"/><path d="M9.3 9.2a2.8 2.8 0 015.4 1c0 1.9-2.7 2.5-2.7 4"/><path d="M12 17.6h.01"/></svg><span>Guía</span>';
     b.title = "Pasos de diseño de esta herramienta";
     b.setAttribute("aria-haspopup", "dialog");
-    b.addEventListener("click", () => abrir());
+    // Pulsa en las primeras visitas, hasta que se use una vez
+    let vista = false;
+    try { vista = localStorage.getItem("auraGuiaVista") === "1"; } catch { /* sin almacenamiento */ }
+    if (!vista) b.classList.add("nueva");
+    b.addEventListener("click", () => {
+      b.classList.remove("nueva");
+      try { localStorage.setItem("auraGuiaVista", "1"); } catch { /* sin almacenamiento */ }
+      abrir();
+    });
     document.body.append(b);
   }
   return { iniciar, abrir, cerrar };

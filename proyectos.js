@@ -149,17 +149,102 @@ const fechaCorta = (ms) => new Date(ms).toLocaleDateString("es-CL", { day: "2-di
 function capturarFormulario() {
   const v = {};
   document.querySelectorAll("main input[id], main select[id], main textarea[id]").forEach(el => {
-    if (el.closest("#auraPanel")) return;
+    if (el.closest("#auraPanel") || el.type === "file") return;   // un archivo no se puede volver a poner por código
     v[el.id] = el.type === "checkbox" ? el.checked : el.value;
   });
   return v;
 }
-function restaurarFormulario(v) {
+// estricto (borrador): una lista no toma un valor que no está entre sus opciones (catálogo cambiado entre versiones)
+function restaurarFormulario(v, estricto = false) {
   for (const [id, x] of Object.entries(v || {})) {
     const el = document.getElementById(id);
-    if (!el) continue;
-    if (el.type === "checkbox") el.checked = !!x; else el.value = x;
+    if (!el || el.type === "file") continue;
+    try {
+      if (el.type === "checkbox") el.checked = !!x;
+      else if (estricto && el.tagName === "SELECT" && ![...el.options].some(o => o.value === String(x))) continue;
+      else el.value = x;
+    } catch (e) { console.warn(`AURA: no se pudo restaurar el campo ${id}`, e); }
   }
+}
+// Borrador por página: lo último que se escribió en cada herramienta se guarda en el navegador y vuelve
+// al regresar a ella (también desde otra página). Va por usuario y se borra al cerrar sesión (equipos compartidos).
+// Un elemento abierto desde un proyecto manda sobre el borrador y, mientras se edita, no lo reemplaza.
+const VERSION_BORRADOR = 1;
+const MAX_BORRADOR = 1_000_000;          // caracteres; un modelo ETABS grande (piers) no se guarda como borrador
+const claveBorrador = () => {
+  const u = typeof usuarioActual !== "undefined" && usuarioActual ? usuarioActual.id : "local";
+  return `auraBorrador:${u}:${paginaActual()}`;
+};
+function guardarBorrador() {
+  if (window.auraSinBorrador) return;     // cerrando sesión o restableciendo
+  try {
+    const txt = JSON.stringify({ v: VERSION_BORRADOR, datos: capturarFormulario() });
+    if (txt.length > MAX_BORRADOR) { localStorage.removeItem(claveBorrador()); return; }   // sin borrador viejo de otro modelo
+    localStorage.setItem(claveBorrador(), txt);
+  } catch (e) { console.warn("AURA: no se pudo guardar el borrador", e); }
+}
+function leerBorrador() {
+  try {
+    const b = JSON.parse(localStorage.getItem(claveBorrador()) || "null");
+    return b && b.v === VERSION_BORRADOR && b.datos && typeof b.datos === "object" ? b.datos : null;
+  } catch { return null; }
+}
+function borrarBorrador() { try { localStorage.removeItem(claveBorrador()); } catch { /* sin almacenamiento */ } }
+// Abre la página otra vez sin borrador ni elemento de proyecto (valores por defecto)
+function abrirLimpia() {
+  window.auraSinBorrador = true;
+  borrarBorrador();
+  const q = new URLSearchParams(location.search); q.delete("proyecto"); q.delete("el");
+  location.replace(`${paginaActual()}${q.toString() ? "?" + q : ""}`);
+}
+function restaurarBorrador(main) {
+  const v = leerBorrador();
+  if (!v) return;
+  try {
+    restaurarFormulario(v, true);
+    // Las listas que fija la dirección (conexion.html?tipo=…) mandan sobre el borrador
+    const q = new URLSearchParams(location.search), fijadas = [];
+    for (const [k, x] of q) {
+      const el = main.querySelector(`select[id="${CSS.escape(k)}"]`);
+      if (el && [...el.options].some(o => o.value === x)) { el.value = x; v[k] = x; fijadas.push(el); }
+    }
+    window.AURA_MEMO.recalcular(v);
+    for (const el of fijadas) el.dispatchEvent(new Event("change", { bubbles: true }));
+    // Una lista sin opción elegida deja el cálculo a medias: se descarta el borrador
+    if ([...main.querySelectorAll("select[id]")].some(s => s.options.length && s.selectedIndex < 0)) throw new Error("lista sin valor");
+  } catch (e) {
+    // Un borrador que no se puede aplicar no debe dejar a la vista resultados de otros datos
+    console.warn("AURA: borrador descartado", e);
+    abrirLimpia();
+    return "recargando";
+  }
+}
+function iniciarBorrador(restaurar) {
+  const main = document.querySelector("main");
+  if (!main || !window.AURA_MEMO) return;
+  if (restaurar && restaurarBorrador(main) === "recargando") return;
+  // «Restablecer»: borra el borrador y vuelve a abrir la página con sus datos iniciales
+  const h2 = main.querySelector(":scope > section.panel > h2");
+  if (h2 && !h2.querySelector(".restablecer")) {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "restablecer"; b.textContent = "Restablecer";
+    b.title = "Borrar los datos escritos en esta herramienta y volver a los valores iniciales";
+    b.addEventListener("click", () => {
+      if (!confirm("¿Volver a los valores por defecto? Se borran los datos escritos en esta herramienta (los elementos guardados en proyectos no cambian).")) return;
+      abrirLimpia();
+    });
+    h2.insertBefore(b, h2.querySelector(".plegar"));
+  }
+  if (!restaurar) return;                  // editando un elemento de proyecto: no se toca el borrador
+  let t = null;
+  const programar = (ev) => {
+    if (ev.target.closest?.("#auraPanel")) return;
+    clearTimeout(t); t = setTimeout(guardarBorrador, 400);
+  };
+  main.addEventListener("input", programar);
+  main.addEventListener("change", programar);
+  main.addEventListener("click", (ev) => { if (ev.target.closest("button") && !ev.target.closest("#auraPanel")) programar(ev); });   // K calculado y otros botones que cambian campos
+  addEventListener("pagehide", () => { clearTimeout(t); guardarBorrador(); });
 }
 function estadoActual() {
   const ver = [...document.querySelectorAll(".verdict")].find(e => e.getBoundingClientRect().width > 0);
@@ -432,7 +517,7 @@ async function pintarPanel() {
         </div>` : `<div class="ap-vacio" style="padding:0">Abra una herramienta de cálculo para agregar elementos al proyecto.</div>`}
         <button class="ap-b sec" id="apZip" ${p.elementos.length ? "" : "disabled"}>Descargar memoria del proyecto (.zip)</button>
         <div class="ap-sal">
-          ${editando ? `<button class="ap-b sec" id="apSalirEd" title="Deja de editar el elemento sin guardar y vuelve a la herramienta con sus valores por defecto">Salir de la edición</button>` : ""}
+          ${editando ? `<button class="ap-b sec" id="apSalirEd" title="Deja de editar el elemento sin guardar y vuelve a la herramienta con lo último que escribió en ella fuera del proyecto (o sus valores por defecto)">Salir de la edición</button>` : ""}
           <button class="ap-b sec" id="apCerrar" title="Desactiva el proyecto; sigue guardado en Mis proyectos">Cerrar proyecto</button>
         </div>
       </div>
@@ -512,6 +597,7 @@ async function iniciarPanel() {
   document.body.append(panel, tab);
   // Cálculo abierto desde el panel: proyecto y elemento en la URL
   const q = new URLSearchParams(location.search);
+  iniciarBorrador(!(q.get("proyecto") && q.get("el")));
   if (q.get("proyecto") && q.get("el")) {
     let p = null;
     try { p = await almacen().obtener(q.get("proyecto")); } catch { /* sin conexión: se abre la página sin restaurar */ }

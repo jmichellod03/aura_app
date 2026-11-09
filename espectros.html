@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js" integrity="sha384-K0oxqktRvaThvYgGL4G+OK2Ih6VS6Uyu7j3+7WJgp/uWM0Yv6Xi4YEiw0BB+mPfi" crossorigin="anonymous"></script>
-<script src="nube.js?v=30"></script>
+<script src="nube.js?v=31"></script>
 <style>
   /* PWA: sin zoom automático de iOS al enfocar campos y texto estable al rotar */
   html { -webkit-text-size-adjust: 100%; }
@@ -71,26 +71,26 @@
   .btn { padding: 8px 14px; border-radius: 5px; border: 1px solid var(--accent); background: var(--accent); color: #fff; font: inherit; font-size: 13px; cursor: pointer; }
   table.par { width: 100%; border-collapse: collapse; font-size: 13px; }
   table.par th { text-align: left; font-size: 11.5px; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--line); padding: 5px 8px; }
-  table.par td { padding: 5px 8px; border-bottom: 1px solid #eef0f3; font-variant-numeric: tabular-nums; }
+  table.par td { padding: 5px 8px; border-bottom: 1px solid var(--linea-suave); font-variant-numeric: tabular-nums; }
   table.par td.num { text-align: right; }
   h3.sec { font-size: 13.5px; color: var(--head); margin: 18px 0 6px; padding-bottom: 4px; border-bottom: 2px solid var(--accent); }
   h3.sec:first-child { margin-top: 4px; }
   /* Pasos de cálculo con el formato común de memo.js */
   table.calc { width: 100%; border-collapse: collapse; font-size: 13px; }
-  table.calc td { padding: 4px 8px; border-bottom: 1px solid #eef0f3; vertical-align: top; }
+  table.calc td { padding: 4px 8px; border-bottom: 1px solid var(--linea-suave); vertical-align: top; }
   table.calc td.v { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
   h4.sep { margin: 0; height: 8px; }
-  .formula { margin: 10px 0 0; padding: 8px 10px; background: #f3f7f6; border-radius: 5px; font-size: 13px; }
+  .formula { margin: 10px 0 0; padding: 8px 10px; background: var(--eq-fondo); border-radius: 5px; font-size: 13px; }
   details { margin: 0 16px 16px; }
   details summary { cursor: pointer; font-size: 13px; color: var(--head); font-weight: 600; padding: 6px 0; }
   .tablaWrap { max-height: 360px; overflow: auto; border: 1px solid var(--line); border-radius: 6px; }
   .tablaWrap table { width: 100%; border-collapse: collapse; font-size: 12.5px; font-variant-numeric: tabular-nums; }
-  .tablaWrap th { position: sticky; top: 0; background: #f7f8fa; text-align: right; padding: 5px 10px; border-bottom: 1px solid var(--line); }
-  .tablaWrap td { text-align: right; padding: 3px 10px; border-bottom: 1px solid #f0f2f5; }
+  .tablaWrap th { position: sticky; top: 0; background: var(--sup-2); text-align: right; padding: 5px 10px; border-bottom: 1px solid var(--line); }
+  .tablaWrap td { text-align: right; padding: 3px 10px; border-bottom: 1px solid var(--linea-suave); }
   footer { text-align: center; color: var(--muted); font-size: 12px; padding: 10px 0 24px; }
 </style>
-<link rel="stylesheet" href="aura.css?v=14">
-<script src="lateral.js?v=12"></script>
+<link rel="stylesheet" href="aura.css?v=16">
+<script src="lateral.js?v=13"></script>
 <script src="asistente.js?v=7" defer></script>
 </head>
 <body>
@@ -189,9 +189,9 @@
 </main>
 <footer>Herramienta de apoyo académico basada en la planilla «Espectros Chile». Verifique siempre los parámetros con la norma vigente.</footer>
 
-<script src="memo.js?v=39"></script>
+<script src="memo.js?v=40"></script>
 <script src="tablero.js?v=6"></script>
-<script src="guia.js?v=3"></script>
+<script src="guia.js?v=5"></script>
 <script src="dxf.js?v=2"></script>
 <script>
 "use strict";

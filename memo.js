@@ -268,10 +268,10 @@ document.addEventListener("click", (ev) => {
   st.textContent = `
   .paso { margin: 0; }
   .paso > table.clic { cursor: pointer; }
-  .paso > table.clic:hover td { background: #f6f9f8; }
+  .paso > table.clic:hover td { background: var(--hover-fila, #f6f9f8); }
   .chev { display: inline-block; width: 1em; color: var(--accent, #2f7d6d); transition: transform .15s; }
   .paso.abierto .chev { transform: rotate(90deg); }
-  .eqs { margin: 4px 0 10px; padding: 8px 12px; background: #f3f7f6; border-left: 3px solid var(--accent, #2f7d6d); border-radius: 4px; font-size: 13px; overflow-x: auto; }
+  .eqs { margin: 4px 0 10px; padding: 8px 12px; background: var(--eq-fondo, #f3f7f6); border-left: 3px solid var(--accent, #2f7d6d); border-radius: 4px; font-size: 13px; overflow-x: auto; }
   .eqs p { margin: 6px 0; }
   .kd { display: flex; align-items: center; gap: 10px; margin: 4px 0; }
   .kd > .km { flex: 1; min-width: 0; }

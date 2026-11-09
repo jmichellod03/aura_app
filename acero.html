@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js" integrity="sha384-K0oxqktRvaThvYgGL4G+OK2Ih6VS6Uyu7j3+7WJgp/uWM0Yv6Xi4YEiw0BB+mPfi" crossorigin="anonymous"></script>
-<script src="nube.js?v=30"></script>
+<script src="nube.js?v=31"></script>
 <style>
   /* PWA: sin zoom automático de iOS al enfocar campos y texto estable al rotar */
   html { -webkit-text-size-adjust: 100%; }
@@ -68,7 +68,7 @@
   details summary { cursor: pointer; font-size: 12px; color: var(--head); font-weight: 600; }
   .mini { font-size: 12px; padding: 5px 9px; border: 1px solid var(--accent); color: var(--accent); background: #fff; border-radius: 4px; cursor: pointer; margin-top: 8px; }
   .mini:hover { background: #fff3ea; }
-  .cbOut { display: block; padding: 7px 9px; border: 1px dashed var(--line); border-radius: 5px; background: #f7f8fa; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .cbOut { display: block; padding: 7px 9px; border: 1px dashed var(--line); border-radius: 5px; background: var(--sup-2); color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
   .cbTit { font-size: 12px; font-weight: 600; color: var(--head); margin: 12px 0 -4px; }
   .chk { display: flex; gap: 8px; align-items: center; margin-top: 12px; font-size: 13px; color: var(--ink); }
   .hidden { display: none !important; }
@@ -102,7 +102,7 @@
   table.alt th { text-align: left; font-size: 11.5px; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--line); padding: 5px 8px; }
   table.alt td { padding: 5px 8px; border-bottom: 1px solid #eef0f3; font-variant-numeric: tabular-nums; }
   .esquema { display: block; width: 100%; max-width: 320px; margin: 8px auto 4px; }
-  .formula { font-size: 12px; color: var(--ink); background: #f7f8fa; border-radius: 5px; padding: 8px 10px; line-height: 1.55; }
+  .formula { font-size: 12px; color: var(--ink); background: var(--eq-fondo); border-radius: 5px; padding: 8px 10px; line-height: 1.55; }
   .secwrap { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
   .secwrap svg { flex: 0 0 auto; width: 300px; max-width: 100%; }
   .secwrap .props { flex: 1 1 260px; }
@@ -125,8 +125,8 @@
     table.calc tr { break-inside: avoid; }
   }
 </style>
-<link rel="stylesheet" href="aura.css?v=14">
-<script src="lateral.js?v=12"></script>
+<link rel="stylesheet" href="aura.css?v=16">
+<script src="lateral.js?v=13"></script>
 <script src="asistente.js?v=7" defer></script>
 </head>
 <body>
@@ -142,6 +142,11 @@
   <section class="panel" id="inputs">
     <h2>Datos de entrada</h2>
     <div class="body">
+      <!-- Programas de la página: los usa la barra lateral para cambiar sin recargar (lateral.js) -->
+      <div class="hidden">
+        <button type="button" id="tabViga" data-modo="viga">Viga</button>
+        <button type="button" id="tabCol" data-modo="columna">Columna</button>
+      </div>
       <div class="row2">
         <div>
           <label for="serie">Serie</label>
@@ -315,9 +320,9 @@
 </main>
 <footer>Herramienta de apoyo académico. Las solicitaciones deben provenir de un análisis que considere efectos de segundo orden (AISC 360-16, Cap. C). Verifique siempre los resultados.</footer>
 
-<script src="memo.js?v=39"></script>
+<script src="memo.js?v=40"></script>
 <script src="tablero.js?v=6"></script>
-<script src="guia.js?v=3"></script>
+<script src="guia.js?v=5"></script>
 <script src="dxf.js?v=2"></script>
 <script src="modelo3d.js?v=6"></script>
 <script>
@@ -1246,8 +1251,21 @@ function llenarPerfiles() {
   if ([...$("perfil").options].some(o => o.value === prev)) $("perfil").value = prev;
 }
 
+// Perfil elegido en cada programa, para devolverlo al volver a él (los demás campos son propios de cada uno)
+const perfilDe = {};
+let modoListo = false;   // el primer setModo (al abrir) no guarda el perfil del otro programa
 function setModo(m) {
+  // Con un elemento de proyecto abierto, el otro programa no es ese elemento: se abre sin él
+  const q0 = new URLSearchParams(location.search);
+  if (modoListo && modo !== m && q0.has("el")) {
+    if (!confirm("Está editando un elemento del proyecto. Al cambiar de programa se deja de editar y se pierden los cambios no guardados. ¿Continuar?")) return;
+    q0.delete("proyecto"); q0.delete("el"); q0.set("elemento", m);
+    location.replace(`?${q0}`); return;
+  }
+  if (modoListo && modo !== m) perfilDe[modo] = { serie: $("serie").value, perfil: $("perfil").value };
+  const previo = perfilDe[m];
   modo = m;
+  document.querySelectorAll("[data-modo]").forEach(b => b.classList.toggle("on", b.dataset.modo === m));
   const titulo = m === "viga" ? "Vigas de acero" : "Columnas de acero";
   $("tituloEl").textContent = titulo;
   document.title = titulo;
@@ -1258,8 +1276,13 @@ function setModo(m) {
   $("fsCol").classList.toggle("hidden", m !== "columna");
   // Valores por defecto de los ejemplos del informe (HEB 140 viga / HEB 240 columna), solo en la
   // serie HEB; en otra serie se conserva el perfil elegido.
-  if ($("serie").value === "HEB") $("perfil").value = m === "viga" ? "HEB 140" : "HEB 240";
+  // Al volver a un programa ya usado se recupera su serie y su perfil.
+  if (previo) {
+    if ($("serie").value !== previo.serie) { $("serie").value = previo.serie; llenarPerfiles(); }
+    $("perfil").value = previo.perfil;
+  } else if ($("serie").value === "HEB") $("perfil").value = m === "viga" ? "HEB 140" : "HEB 240";
   if ($("perfil").selectedIndex < 0) $("perfil").selectedIndex = 0;
+  modoListo = true;
   calcular();
 }
 
@@ -1303,6 +1326,7 @@ function init() {
   }));
 
   // Una sola página con dos programas, que el inicio y la barra lateral presentan por separado (?elemento=viga o columna)
+  document.querySelectorAll("[data-modo]").forEach(b => b.addEventListener("click", () => { if (modo !== b.dataset.modo) setModo(b.dataset.modo); }));
   setModo(new URLSearchParams(location.search).get("elemento") === "columna" ? "columna" : "viga");
 }
 // ---------------------------------------------------------------------------
@@ -1449,7 +1473,7 @@ window.AURA_MEMO = {
   recalcular: (v) => { llenarPerfiles(); if (v.perfil) $("perfil").value = v.perfil; actualizarUnidades(); $("b1Box").classList.toggle("hidden", !$("cB1").checked); calcular(); },
 };
 </script>
-<script src="proyectos.js?v=42"></script>
+<script src="proyectos.js?v=44"></script>
 <script>
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
 </script>

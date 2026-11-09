@@ -72,9 +72,12 @@ async function accesoAutorizado(u) {
 }
 
 async function cerrarSesion() {
+  window.auraSinBorrador = true;           // que proyectos.js no vuelva a guardar el borrador al salir
   try { if (sb) await sb.auth.signOut(); } catch { /* sin conexión: igual se borra la sesión local */ }
   // Datos de la sesión en este navegador (equipos compartidos)
   for (const k of ["auraProyectoActivo", "auraPanelAbierto", "auraCalculista", "auraOficina"]) { try { localStorage.removeItem(k); } catch { /* sin almacenamiento */ } }
+  // Borradores de las herramientas (proyectos.js): no deben quedar para el siguiente usuario del equipo
+  try { Object.keys(localStorage).filter(k => k.startsWith("auraBorrador:")).forEach(k => localStorage.removeItem(k)); } catch { /* sin almacenamiento */ }
   location.replace("login.html");
 }
 // Mensajes de error de Supabase en español

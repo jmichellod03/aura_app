@@ -66,8 +66,8 @@
   const FIJOS = [E("index.html", "Inicio", "inicio"), E("index.html#misProyectos", "Mis proyectos", "proyectos")];
   const SECCIONES = [
     R("acero", "Acero", "secAcero", [
-      E("acero.html?elemento=viga", "Vigas", "acero"),
-      E("acero.html?elemento=columna", "Columnas", "columna"),
+      E("acero.html?elemento=viga", "Vigas", "acero", { tab: "tabViga" }),
+      E("acero.html?elemento=columna", "Columnas", "columna", { tab: "tabCol" }),
       E("reticulada.html", "Vigas reticuladas", "reticulada"),
       E("placa.html", "Placa colaborante", "placa"),
       E("base.html", "Placa base (prueba)", "base"),
@@ -78,8 +78,8 @@
       ]),
     ]),
     R("hormigon", "Hormigón", "secHormigon", [
-      E("hormigon.html?elemento=viga", "Vigas", "hormigon"),
-      E("hormigon.html?elemento=losa", "Losas", "losa"),
+      E("hormigon.html?elemento=viga", "Vigas", "hormigon", { tab: "tabViga" }),
+      E("hormigon.html?elemento=losa", "Losas", "losa", { tab: "tabLosa" }),
       E("piers.html", "Muros de corte", "pier"),
       E("muro.html", "Muros de contención", "muro"),
       R("fundaciones", "Fundaciones", "fundaciones", [E("zapata.html", "Zapata aislada", "zapata")]),
@@ -151,7 +151,7 @@
       if (paginaDe(href) !== pagina || (enInicio && href.includes("#"))) return false;
       if (vista?.tab) return !!document.getElementById(vista.tab)?.classList.contains("on");
       if (vista?.sel) return document.getElementById(vista.sel)?.value === vista.val;
-      // hormigon.html y acero.html tienen dos programas por ?elemento; sin él abren la viga
+      // Enlaces con ?elemento y sin vista: sin él la página abre la viga
       const elItem = new URLSearchParams(href.split("?")[1]).get("elemento"), elPagina = new URLSearchParams(location.search).get("elemento");
       return !elItem || elItem === elPagina || (!elPagina && elItem === "viga");
     };

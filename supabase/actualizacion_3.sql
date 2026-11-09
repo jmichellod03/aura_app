@@ -15,7 +15,8 @@ alter table public.correos_autorizados enable row level security;
 insert into public.correos_autorizados (email, nota) values
   ('jmichellod03@gmail.com', 'administrador'),
   ('benjaminestebanp@gmail.com', null),
-  ('merino.lagos@hotmail.com', null)
+  ('merino.lagos@hotmail.com', null),
+  ('benja.merino.lagos@gmail.com', null)
   -- , ('otra.persona@gmail.com', 'nombre')
 on conflict (email) do nothing;
 

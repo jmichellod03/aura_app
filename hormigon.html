@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js" integrity="sha384-K0oxqktRvaThvYgGL4G+OK2Ih6VS6Uyu7j3+7WJgp/uWM0Yv6Xi4YEiw0BB+mPfi" crossorigin="anonymous"></script>
-<script src="nube.js?v=30"></script>
+<script src="nube.js?v=31"></script>
 <style>
   /* PWA: sin zoom automático de iOS al enfocar campos y texto estable al rotar */
   html { -webkit-text-size-adjust: 100%; }
@@ -60,7 +60,7 @@
   .bordes { display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-areas: ". sup ." "izq c der" ". inf ."; gap: 6px; align-items: center; margin-top: 8px; }
   .bordes select { font-size: 12px; padding: 5px 4px; }
   #lbSup { grid-area: sup; } #lbIzq { grid-area: izq; } #lbDer { grid-area: der; } #lbInf { grid-area: inf; }
-  .bcentro { grid-area: c; border: 2px solid var(--accent); border-radius: 4px; text-align: center; padding: 14px 4px; font-size: 12px; color: var(--accent); font-weight: 600; background: #f3f6f9; }
+  .bcentro { grid-area: c; border: 2px solid var(--accent); border-radius: 4px; text-align: center; padding: 14px 4px; font-size: 12px; color: var(--accent); font-weight: 600; background: var(--sup-2); }
   .plano { padding: 14px 16px 0; }
   .plano svg { display: block; width: 100%; max-width: 760px; margin: 0 auto; }
   .tdet { font-size: 13px; color: var(--head); margin: 14px 0 4px; text-align: center; }
@@ -127,8 +127,8 @@
     table.calc tr { break-inside: avoid; }
   }
 </style>
-<link rel="stylesheet" href="aura.css?v=14">
-<script src="lateral.js?v=12"></script>
+<link rel="stylesheet" href="aura.css?v=16">
+<script src="lateral.js?v=13"></script>
 <script src="asistente.js?v=7" defer></script>
 </head>
 <body>
@@ -145,8 +145,8 @@
     <h2>Datos de entrada</h2>
     <div class="body">
       <div class="tabs hidden" role="tablist">
-        <button type="button" data-el="viga" class="on">Viga</button>
-        <button type="button" data-el="losa">Losa</button>
+        <button type="button" id="tabViga" data-el="viga" class="on">Viga</button>
+        <button type="button" id="tabLosa" data-el="losa">Losa</button>
       </div>
 
       <!-- Viga -->
@@ -356,9 +356,9 @@
 </main>
 <footer>Herramienta de apoyo académico. Las solicitaciones deben corresponder a la envolvente de combinaciones mayoradas. Verifique siempre los resultados.</footer>
 
-<script src="memo.js?v=39"></script>
+<script src="memo.js?v=40"></script>
 <script src="tablero.js?v=6"></script>
-<script src="guia.js?v=3"></script>
+<script src="guia.js?v=5"></script>
 <script src="dxf.js?v=2"></script>
 <script src="modelo3d.js?v=6"></script>
 <script>
@@ -1637,8 +1637,17 @@ const ELEMENTOS = {
   losa: { nombre: "Losa", titulo: "Losas de hormigón armado", pestana: "Losas de Hormigón" },
 };
 
+let elementoListo = false;   // el primer setElemento es el de la dirección al abrir
 function setElemento(el) {
   if (!ELEMENTOS[el]) el = "viga";
+  // Con un elemento de proyecto abierto, otro programa no es ese elemento: se abre sin él
+  const q0 = new URLSearchParams(location.search);
+  if (elementoListo && el !== elActual() && q0.has("el")) {
+    if (!confirm("Está editando un elemento del proyecto. Al cambiar de programa se deja de editar y se pierden los cambios no guardados. ¿Continuar?")) return;
+    q0.delete("proyecto"); q0.delete("el"); q0.set("elemento", el);
+    location.replace(`?${q0}`); return;
+  }
+  elementoListo = true;
   document.querySelectorAll(".tabs button").forEach(b => b.classList.toggle("on", b.dataset.el === el));
   document.querySelectorAll("[data-panel]").forEach(p => p.classList.toggle("hidden", p.dataset.panel !== el));
   const e = ELEMENTOS[el];
@@ -1961,10 +1970,11 @@ window.AURA_MEMO = {
   get tipo() { return elActual() === "losa" ? "Hormigón armado — losa" : "Hormigón armado — viga"; },
   elemento: () => elActual(), tex: () => (elActual() === "losa" ? ultimoTexLosa : elActual() === "viga" ? ultimoTex : ""),
   nombre: () => (elActual() === "losa" ? ultimoNombreLosa : ultimoNombre),
-  recalcular: () => (elActual() === "losa" ? calcularLosa() : calcularViga()),
+  // Los dos programas: el oculto también queda con los datos restaurados (se ve al cambiar de pestaña sin recargar)
+  recalcular: () => { calcularViga(); calcularLosa(); },
 };
 </script>
-<script src="proyectos.js?v=42"></script>
+<script src="proyectos.js?v=44"></script>
 <script>
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
 </script>
