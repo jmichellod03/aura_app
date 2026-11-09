@@ -115,7 +115,7 @@
     table.calc tr { break-inside: avoid; }
   }
 </style>
-<link rel="stylesheet" href="aura.css?v=17">
+<link rel="stylesheet" href="aura.css?v=18">
 <script src="lateral.js?v=13"></script>
 <script src="asistente.js?v=7" defer></script>
 </head>
@@ -577,7 +577,7 @@ function verificar(d, m) {
   const sMin = 8 / 3 * d.db, eLat = (d.bp - (d.nc - 1) * d.g) / 2;
   if (d.nf > 1) {
     const okS = geo(d.s >= sMin - 1e-9, "paso de los pernos menor que 2⅔d");
-    m.row("Paso mínimo: s ≥ 2⅔ d (se prefiere 3d)", `${fmt(MM(d.s), 0)} ≥ ${fmt(MM(sMin), 1)} mm ${tagG(okS)}${okS && d.s < 3 * d.db ? " " + tagW(false, "menor que 3d") : ""}`, "AISC 360-16 J3.3");
+    m.row("Paso mínimo: s ≥ 2⅔ d (se prefiere 3d)", `${fmt(MM(d.s), 0)} ≥ ${fmt(MM(sMin), 1)} mm ${tagG(okS)}${okS && d.s < 3 * d.db ? " " + tagW(false, 'menor que 3<span class="sim">d</span>') : ""}`, "AISC 360-16 J3.3");
     texGeo(okS, L`Paso mínimo (J3.3): $s = ${tn(MM(d.s), 0)} \ge \tfrac{8}{3}d = ${tn(MM(sMin), 1)}$ mm`);
     const sMax = Math.min(24 * Math.min(d.tp, d.tn), 30), okSM = geo(d.s <= sMax + 1e-9, "paso de los pernos mayor que el máximo");
     m.row("Paso máximo: s ≤ mín(24t ; 300 mm)", `${fmt(MM(d.s), 0)} ≤ ${fmt(MM(sMax), 0)} mm ${tagG(okSM)}`, "AISC 360-16 J3.5");

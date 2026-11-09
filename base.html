@@ -113,7 +113,7 @@
     table.calc tr { break-inside: avoid; }
   }
 </style>
-<link rel="stylesheet" href="aura.css?v=17">
+<link rel="stylesheet" href="aura.css?v=18">
 <script src="lateral.js?v=13"></script>
 <script src="asistente.js?v=7" defer></script>
 </head>
@@ -803,7 +803,7 @@ function verificar(d, m) {
       okEh = ehm >= 3 * da - 1e-9;
       Np = 0.9 * fcM * ehU * da;                               // D-16 [N]
       m.eq(L`N_p = 0.9\,f'_c\,e_h\,d_a = 0.9\cdot ${tn(fcM, 1)}\cdot ${tn(ehU, 0)}\cdot ${tn(da, 0)} = ${tn(Np / 1000, 2)}\ \mathrm{kN} \qquad 3d_a \le e_h \le 4.5d_a`, "D-16");
-      m.row("Largo del gancho: 3d<sub>a</sub> ≤ e<sub>h</sub> ≤ 4.5d<sub>a</sub>", `${fmt(ehm, 0)} mm ${tag(okEh, okEh ? "Cumple" : "menor que 3d<sub>a</sub>")}`, "ACI 318-08 D.5.3.5");
+      m.row("Largo del gancho: 3d<sub>a</sub> ≤ e<sub>h</sub> ≤ 4.5d<sub>a</sub>", `${fmt(ehm, 0)} mm ${tag(okEh, okEh ? "Cumple" : 'menor que 3<span class="sim">d</span><sub>a</sub>')}`, "ACI 318-08 D.5.3.5");
       if (!okEh) motivos.push("gancho del perno menor que 3 da");
     }
     const phiNpn = PHI_CV * psiP * Np * KGF * fC * fR, dcNp = Nua / phiNpn;

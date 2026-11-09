@@ -125,7 +125,7 @@
     table.calc tr { break-inside: avoid; }
   }
 </style>
-<link rel="stylesheet" href="aura.css?v=17">
+<link rel="stylesheet" href="aura.css?v=18">
 <script src="lateral.js?v=13"></script>
 <script src="asistente.js?v=7" defer></script>
 </head>
@@ -592,7 +592,7 @@ function verificar(eh, d, m) {
   const nAlz = porLuz ? Math.ceil(d.L / L3 - 1e-9) - 1 : (d.heli ? 1 : 0);
   const sepAlz = d.L / (nAlz + 1);
   m.row(`Longitud máxima sin alzaprimado (tramo ${nomTramo})`, `${fmt(L3, 0)} cm`, "Tabla III");
-  m.row("¿Requiere alzaprimas?", nAlz > 0 ? `<span class="tag warn">Sí — ${nAlz} por tramo, a ${fmt(sepAlz, 0)} cm</span>` : tag(true, "No"));
+  m.row("¿Requiere alzaprimas?", nAlz > 0 ? `<span class="tag warn">Sí — ${nAlz} por tramo, a ${fmt(sepAlz, 0)} <span class="sim">cm</span></span>` : tag(true, "No"));
   m.eq(L`L = ${tn(d.L, 0)}\ \mathrm{cm} ${cmp(d.L, L3)} L_{s/a} = ${tn(L3, 0)}\ \mathrm{cm}`, "Tabla III");
   if (porLuz) m.eq(L`n = \left\lceil \frac{L}{L_{s/a}} \right\rceil - 1 = \left\lceil \frac{${tn(d.L, 0)}}{${tn(L3, 0)}} \right\rceil - 1 = ${nAlz} \quad\Rightarrow\quad s = \frac{L}{n+1} = ${tn(sepAlz, 0)}\ \mathrm{cm}`);
   m.p(nAlz > 0

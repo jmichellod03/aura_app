@@ -123,7 +123,7 @@
     table.calc tr { break-inside: avoid; }
   }
 </style>
-<link rel="stylesheet" href="aura.css?v=17">
+<link rel="stylesheet" href="aura.css?v=18">
 <script src="lateral.js?v=13"></script>
 <script src="asistente.js?v=7" defer></script>
 </head>
@@ -522,7 +522,7 @@ function verificar(d, m) {
   if (d.modo === "dim") {
     Broot = sna > 0 ? anchoNecesario(Pa, Mxa, Mya, Ly, sna) : NaN;
     B = Number.isFinite(Broot) ? Math.max(Math.ceil(Broot / d.paso - 1e-9) * d.paso, d.a + 2 * d.paso) : NaN;
-    m.row("Ancho con L fijo para σ<sub>máx</sub> = σ<sub>na</sub>: B", Number.isFinite(Broot) ? `${fmt(M(Broot), 3)} m → <b>B = ${fmt(M(B), 2)} m</b>` : tag(false, "sin solución: aumente L o revise σ<sub>na</sub>"));
+    m.row("Ancho con L fijo para σ<sub>máx</sub> = σ<sub>na</sub>: B", Number.isFinite(Broot) ? `${fmt(M(Broot), 3)} m → <b>B = ${fmt(M(B), 2)} m</b>` : tag(false, "sin solución: aumente L o revise <span class=\"sim\">σ</span><sub>na</sub>"));
     m.eq(L`\frac{P_a}{B\,L} + \frac{6\,M_{ya}}{B^2 L} + \frac{6\,M_{xa}}{B\,L^2} = \sigma_{na} \;\Rightarrow\; B_1 = ${tn(M(Broot), 3)}\ \mathrm{m} \;\Rightarrow\; B = ${tn(M(B), 2)}\ \mathrm{m}`);
     if (!Number.isFinite(B)) return { error: "No existe un ancho B que cumpla con σ_na para el largo L dado." };
   }

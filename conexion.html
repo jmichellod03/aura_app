@@ -115,7 +115,7 @@
     table.calc tr { break-inside: avoid; }
   }
 </style>
-<link rel="stylesheet" href="aura.css?v=17">
+<link rel="stylesheet" href="aura.css?v=18">
 <script src="lateral.js?v=13"></script>
 <script src="asistente.js?v=7" defer></script>
 </head>
@@ -787,7 +787,7 @@ function verificar(d, m) {
   const sMin = 8 / 3 * d.db;
   if (d.nb > 1) {
     const okS = geo(d.s >= sMin - 1e-9, "paso de los pernos del alma menor que 2⅔d");
-    m.row("Paso mínimo: s ≥ 2⅔ d (se prefiere 3d)", `${fmt(MM(d.s), 0)} ≥ ${fmt(MM(sMin), 1)} mm ${tagG(okS)}${okS && d.s < 3 * d.db ? " " + tagW(false, "menor que 3d") : ""}`, "AISC 360-16 J3.3");
+    m.row("Paso mínimo: s ≥ 2⅔ d (se prefiere 3d)", `${fmt(MM(d.s), 0)} ≥ ${fmt(MM(sMin), 1)} mm ${tagG(okS)}${okS && d.s < 3 * d.db ? " " + tagW(false, 'menor que 3<span class="sim">d</span>') : ""}`, "AISC 360-16 J3.3");
     texGeo(okS, L`Paso mínimo (J3.3): $s = ${tn(MM(d.s), 0)} \ge \tfrac{8}{3}d = ${tn(MM(sMin), 1)}$ mm${okS && d.s < 3 * d.db ? " (menor que el preferido $3d$)" : ""}`);
     const sMax = Math.min(24 * Math.min(d.tp, v.tw), 30);
     const okSM = geo(d.s <= sMax + 1e-9, "paso de los pernos del alma mayor que el máximo");
@@ -806,7 +806,7 @@ function verificar(d, m) {
   m.row("La placa cabe en el alma libre: L<sub>p</sub> ≤ d − 2(t<sub>f</sub> + r)", `${fmt(MM(Lp), 0)} ≤ ${fmt(MM(hLibre), 0)} mm ${tagG(okL)}`);
   texGeo(okL, L`La placa cabe en el alma libre: $L_p = ${tn(MM(Lp), 0)} \le d - 2(t_f + r) = ${tn(MM(hLibre), 0)}$ mm`);
   const gap = d.a - d.lehV;
-  m.row("Holgura entre la viga y la columna", `${fmt(MM(gap), 0)} mm${gap < 1 - 1e-9 ? " " + tagW(false, "menor que 10 mm") : ""}`);
+  m.row("Holgura entre la viga y la columna", `${fmt(MM(gap), 0)} mm${gap < 1 - 1e-9 ? " " + tagW(false, 'menor que 10 <span class="sim">mm</span>') : ""}`);
   m.p(L`Holgura entre la viga y la columna: ${tn(MM(gap), 0)} mm${gap < 1 - 1e-9 ? " (menor que 10 mm)" : ""}.`, true);
   m.p(L`Distancias mínimas usuales del Manual ICHA (Tabla 3-1): $3d$ entre pernos y entre $1.25d$ y $1.75d$ al borde, según el tipo de canto.`, true);
 

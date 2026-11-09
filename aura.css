@@ -340,6 +340,9 @@ html.lat-corta { --ancho-lat: 64px; }
   .memo .ref { border-radius: var(--r-s); padding: 0 6px; }
   .memo .eqs { background: var(--eq-fondo); border-left-color: var(--acento); border-radius: 0 var(--r-m) var(--r-m) 0; padding: 10px 14px; }
   .memo .tag { letter-spacing: .02em; border-radius: var(--r-s); }
+  /* Marcas de estado en mayúsculas (CUMPLE, NO ESBELTA…); símbolos y unidades (.sim, sub) quedan como se escriben */
+  .tag { text-transform: uppercase; }
+  .tag sub, .tag .sim { text-transform: none; }
   .todasEq, main .vereq { border-radius: var(--r-s) !important; border-color: var(--acero-osc) !important; color: var(--acento) !important; background: var(--sup) !important; }
   main .chev, .bcentro { color: var(--acento); }
   .bcentro { border-color: var(--acento); }

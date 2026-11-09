@@ -121,7 +121,7 @@
     table.calc tr { break-inside: avoid; }
   }
 </style>
-<link rel="stylesheet" href="aura.css?v=17">
+<link rel="stylesheet" href="aura.css?v=18">
 <script src="lateral.js?v=13"></script>
 <script src="asistente.js?v=7" defer></script>
 </head>
@@ -693,7 +693,7 @@ function memoPier(m, r, c, figura) {
   const excede = f.s > r.svMax;
   m.row("Espaciamiento por armadura en dos capas: s", `<b>${barra(c.db, f.s)}</b> por cara`);
   m.eq(L`s = \left\lfloor\frac{100\,A_b}{A_s/2}\right\rfloor = \left\lfloor\frac{100\cdot ${tn(f.Ab, 3)}}{${tn(f.As / 2, 2)}}\right\rfloor = ${f.s}\ \mathrm{cm}`);
-  m.row("Espaciamiento máximo: S<sub>v,máx</sub>", `${fmt(r.svMax, 1)} cm ${excede ? `<span class="tag warn">s mayor que el máximo</span>` : `<span class="tag ok">s dentro del máximo</span>`}`);
+  m.row("Espaciamiento máximo: S<sub>v,máx</sub>", `${fmt(r.svMax, 1)} cm ${excede ? `<span class="tag warn"><span class="sim">s</span> mayor que el máximo</span>` : `<span class="tag ok"><span class="sim">s</span> dentro del máximo</span>`}`);
   m.eq(L`S_{v,m\acute{a}x} = \min\left(\frac{L_w}{3};\ 3e;\ 45\ \mathrm{cm}\right) = \min(${tn(Lw * 100 / 3, 1)};\ ${tn(3 * e * 100, 1)};\ 45) = ${tn(r.svMax, 1)}\ \mathrm{cm}`);
 
   m.sub("Condiciones de resistencia");
