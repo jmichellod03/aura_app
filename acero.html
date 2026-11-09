@@ -125,7 +125,7 @@
     table.calc tr { break-inside: avoid; }
   }
 </style>
-<link rel="stylesheet" href="aura.css?v=16">
+<link rel="stylesheet" href="aura.css?v=17">
 <script src="lateral.js?v=13"></script>
 <script src="asistente.js?v=7" defer></script>
 </head>
@@ -145,6 +145,7 @@
       <!-- Programas de la página: los usa la barra lateral para cambiar sin recargar (lateral.js) -->
       <div class="hidden">
         <button type="button" id="tabViga" data-modo="viga">Viga</button>
+        <input type="hidden" id="perfilesModo">
         <button type="button" id="tabCol" data-modo="columna">Columna</button>
       </div>
       <div class="row2">
@@ -1277,13 +1278,35 @@ function setModo(m) {
   // Valores por defecto de los ejemplos del informe (HEB 140 viga / HEB 240 columna), solo en la
   // serie HEB; en otra serie se conserva el perfil elegido.
   // Al volver a un programa ya usado se recupera su serie y su perfil.
-  if (previo) {
+  if (perfilValido(previo)) {
     if ($("serie").value !== previo.serie) { $("serie").value = previo.serie; llenarPerfiles(); }
     $("perfil").value = previo.perfil;
   } else if ($("serie").value === "HEB") $("perfil").value = m === "viga" ? "HEB 140" : "HEB 240";
   if ($("perfil").selectedIndex < 0) $("perfil").selectedIndex = 0;
   modoListo = true;
+  guardarPerfilesModo();
   calcular();
+}
+// Serie y perfil que existen en el catálogo (un dato guardado con otra versión del catálogo no se usa)
+const perfilValido = (p) => !!p && typeof p.serie === "string" && Object.hasOwn(CATALOGO, p.serie) && CATALOGO[p.serie].some(r => r[0] === p.perfil);
+// Programa y perfiles de cada programa, en un campo oculto para que el borrador y los proyectos los guarden
+function guardarPerfilesModo() { $("perfilesModo").value = JSON.stringify({ modo, otros: perfilDe }); }
+// Al restaurar datos guardados en el otro programa (borrador de columna al abrir vigas), la serie y el perfil
+// escritos son los de ese programa: pasan a perfilDe y este programa toma los suyos
+function restaurarPerfilesModo(v) {
+  let d = null;
+  try { d = JSON.parse(v.perfilesModo || "null"); } catch { d = null; }
+  if (!d || typeof d !== "object") return;
+  for (const k of ["viga", "columna"]) if (perfilValido(d.otros?.[k])) perfilDe[k] = { serie: d.otros[k].serie, perfil: d.otros[k].perfil };
+  if ((d.modo === "viga" || d.modo === "columna") && d.modo !== modo) {
+    perfilDe[d.modo] = { serie: $("serie").value, perfil: $("perfil").value };
+    const p = perfilDe[modo];
+    if (perfilValido(p)) {
+      if ($("serie").value !== p.serie) { $("serie").value = p.serie; llenarPerfiles(); }
+      $("perfil").value = p.perfil;
+    } else if ($("serie").value === "HEB") $("perfil").value = modo === "viga" ? "HEB 140" : "HEB 240";
+  }
+  guardarPerfilesModo();
 }
 
 function actualizarUnidades() {
@@ -1470,10 +1493,19 @@ window.Zona2D3D?.montar({
 window.AURA_MEMO = {
   get tipo() { return modo === "columna" ? "Acero estructural — columna" : "Acero estructural — viga"; },
   elemento: () => modo, tex: () => ultimoTex, nombre: () => ultimoNombre,
-  recalcular: (v) => { llenarPerfiles(); if (v.perfil) $("perfil").value = v.perfil; actualizarUnidades(); $("b1Box").classList.toggle("hidden", !$("cB1").checked); calcular(); },
+  recalcular: (v) => {
+    // Elemento de proyecto con una serie o un perfil que ya no está en el catálogo: se usa el primero y se avisa
+    // (un borrador así se descarta con aviso en proyectos.js)
+    const deProyecto = new URLSearchParams(location.search).has("el");
+    if (deProyecto && $("serie").selectedIndex < 0) $("serie").selectedIndex = 0;
+    llenarPerfiles(); if (v.perfil) $("perfil").value = v.perfil; restaurarPerfilesModo(v);
+    if (deProyecto && $("perfil").selectedIndex < 0) $("perfil").selectedIndex = 0;
+    if (deProyecto && v.perfil && (v.serie !== $("serie").value || v.perfil !== $("perfil").value) && window.auraAviso)
+      window.auraAviso(`El perfil ${v.perfil} de este elemento ya no está en el catálogo: se calcula con ${$("perfil").value}. Revise el perfil antes de guardar.`);
+    actualizarUnidades(); $("b1Box").classList.toggle("hidden", !$("cB1").checked); calcular(); },
 };
 </script>
-<script src="proyectos.js?v=44"></script>
+<script src="proyectos.js?v=45"></script>
 <script>
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
 </script>

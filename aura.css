@@ -174,8 +174,8 @@ html.lat-corta { --ancho-lat: 64px; }
 
   /* Pantalla ancha: los datos y el veredicto quedan a la vista mientras se recorre la memoria */
   @media (min-width: 900.02px) {
-    main > .panel:first-child { position: sticky; top: calc(var(--cab) + 12px); align-self: start; max-height: calc(100vh - var(--cab) - 24px); overflow-y: auto; scrollbar-width: thin; }
-    main > .panel:first-child > h2 { position: sticky; top: 0; z-index: 2; }
+    main > .panel:is(:first-child, .aviso-borrador + *) { position: sticky; top: calc(var(--cab) + 12px); align-self: start; max-height: calc(100vh - var(--cab) - 24px); overflow-y: auto; scrollbar-width: thin; }
+    main > .panel:is(:first-child, .aviso-borrador + *) > h2 { position: sticky; top: 0; z-index: 2; }
     div:has(> .verdict) { position: sticky; top: var(--cab); z-index: 20; background: var(--nieve); padding-top: 10px; }
   }
   /* Con el panel del proyecto abierto (empuja la página desde 1180 px), los datos ceden ancho a los resultados */
@@ -221,17 +221,22 @@ html.lat-corta { --ancho-lat: 64px; }
   .restablecer:hover { color: var(--acento); border-color: var(--linea); background: var(--sup); }
   .restablecer + .plegar { margin-left: 6px; }
   main.datos-plegados .restablecer { display: none; }
+  .aviso-borrador { grid-column: 1 / -1; display: flex; align-items: flex-start; gap: 12px; margin: 0; padding: 8px 12px; border: 1px solid var(--linea); border-left: 3px solid var(--ambar);
+    border-radius: var(--r-m); background: var(--warn-sup); color: var(--tinta); font-size: 13px; line-height: 1.45; }
+  .aviso-borrador span { flex: 1; }
+  .aviso-borrador button { font: inherit; font-size: 12px; font-weight: 600; color: var(--acento); background: none; border: 1px solid var(--linea); border-radius: var(--r-s); padding: 2px 8px; cursor: pointer; }
+  .aviso-borrador button:hover { background: var(--sup); }
   @media (min-width: 900.02px) {
     main.datos-plegados { grid-template-columns: 54px minmax(0, 1fr) !important; }
-    main.datos-plegados > section.panel:first-child { position: sticky; top: calc(var(--alto-cab, 64px) + 12px); align-self: start; }
-    main.datos-plegados > section.panel:first-child > :not(h2) { display: none !important; }
-    main.datos-plegados > section.panel:first-child > h2 { writing-mode: vertical-rl; padding: 14px 0; border-radius: var(--r-l); border-bottom: 0; justify-content: flex-start; min-height: 180px; }
-    main.datos-plegados > section.panel:first-child > h2::before { display: none; }
+    main.datos-plegados > section.panel:is(:first-child, .aviso-borrador + *) { position: sticky; top: calc(var(--alto-cab, 64px) + 12px); align-self: start; }
+    main.datos-plegados > section.panel:is(:first-child, .aviso-borrador + *) > :not(h2) { display: none !important; }
+    main.datos-plegados > section.panel:is(:first-child, .aviso-borrador + *) > h2 { writing-mode: vertical-rl; padding: 14px 0; border-radius: var(--r-l); border-bottom: 0; justify-content: flex-start; min-height: 180px; }
+    main.datos-plegados > section.panel:is(:first-child, .aviso-borrador + *) > h2::before { display: none; }
     main.datos-plegados .plegar { margin: 0 0 0 0; writing-mode: horizontal-tb; flex-direction: column; padding: 8px 6px; order: -1; }
     main.datos-plegados .plegar-ic { transform: rotate(180deg); }
   }
   @media (max-width: 900px) {
-    main.datos-plegados > section.panel:first-child > :not(h2) { display: none !important; }
+    main.datos-plegados > section.panel:is(:first-child, .aviso-borrador + *) > :not(h2) { display: none !important; }
     .plegar-ic { transform: rotate(-90deg); }
     main.datos-plegados .plegar-ic { transform: rotate(90deg); }
   }
@@ -487,7 +492,7 @@ html.lat-corta { --ancho-lat: 64px; }
   *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; scroll-behavior: auto !important; }
 }
 @media print {
-  .lateral, .lat-velo, .lat-abrir, .lat-saltar, .as-abrir, .as-panel, .zona23, .plegar, .restablecer, .mindice, .medidor, .mcard-estado, .mcard-chev, .mcard-n.sin { display: none !important; }
+  .lateral, .lat-velo, .lat-abrir, .lat-saltar, .as-abrir, .as-panel, .zona23, .plegar, .restablecer, .aviso-borrador, .mindice, .medidor, .mcard-estado, .mcard-chev, .mcard-n.sin { display: none !important; }
   .mcard-cab { all: unset; display: block; font-weight: 700; }
   .mcard-n:not(.sin)::after { content: ". "; }
   .mcard.plegada .mcard-cuerpo { display: block !important; }

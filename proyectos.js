@@ -179,27 +179,65 @@ function guardarBorrador() {
   if (window.auraSinBorrador) return;     // cerrando sesión o restableciendo
   try {
     const txt = JSON.stringify({ v: VERSION_BORRADOR, datos: capturarFormulario() });
-    if (txt.length > MAX_BORRADOR) { localStorage.removeItem(claveBorrador()); return; }   // sin borrador viejo de otro modelo
+    // Demasiado grande: queda solo una marca, para avisar al volver que los datos no se guardaron
+    if (txt.length > MAX_BORRADOR) { localStorage.setItem(claveBorrador(), JSON.stringify({ v: VERSION_BORRADOR, grande: true })); return; }
     localStorage.setItem(claveBorrador(), txt);
-  } catch (e) { console.warn("AURA: no se pudo guardar el borrador", e); }
+  } catch (e) {
+    // Almacenamiento lleno: no debe volver un borrador viejo en silencio; queda la marca para avisar
+    console.warn("AURA: no se pudo guardar el borrador", e);
+    try { localStorage.setItem(claveBorrador(), JSON.stringify({ v: VERSION_BORRADOR, grande: true })); }
+    catch { borrarBorrador(); }
+  }
 }
+// Entrega los datos guardados, "grande" (no cupieron) o null
 function leerBorrador() {
   try {
     const b = JSON.parse(localStorage.getItem(claveBorrador()) || "null");
+    if (b && b.v === VERSION_BORRADOR && b.grande === true) return "grande";
     return b && b.v === VERSION_BORRADOR && b.datos && typeof b.datos === "object" ? b.datos : null;
   } catch { return null; }
 }
 function borrarBorrador() { try { localStorage.removeItem(claveBorrador()); } catch { /* sin almacenamiento */ } }
+// Aviso visible (no bloquea) sobre los datos de la sesión anterior; sobrevive a la recarga de abrirLimpia
+const AVISOS_BORRADOR = {
+  descartado: "No se pudieron recuperar los datos escritos la última vez en esta herramienta (cambiaron sus opciones o el catálogo). Se abrió con los valores por defecto.",
+  grande: "Los datos escritos la última vez en esta herramienta no se pudieron guardar en el navegador (demasiado grandes, por ejemplo un modelo ETABS extenso, o sin espacio). Vuelva a ingresarlos o a importar el archivo.",
+};
+function mostrarAvisoBorrador(main, tipo, texto) {
+  const txt = texto || AVISOS_BORRADOR[tipo];
+  if (!main || !txt || main.querySelector(".aviso-borrador")) return;
+  const d = document.createElement("div");
+  d.className = "aviso-borrador"; d.setAttribute("role", "status");
+  const s = document.createElement("span");
+  const b = document.createElement("button");
+  b.type = "button"; b.textContent = "Cerrar"; b.setAttribute("aria-label", "Cerrar aviso");
+  b.addEventListener("click", () => {
+    const tenia = document.activeElement === b;
+    d.remove();
+    if (tenia) {                                          // el foco no cae al body
+      main.tabIndex = -1; main.style.outline = "none"; main.focus();
+      main.addEventListener("blur", () => { main.removeAttribute("tabindex"); main.style.outline = ""; }, { once: true });
+    }
+  });
+  d.append(s, b);
+  main.prepend(d);
+  // La región en vivo existe antes de recibir el texto, para que los lectores de pantalla la anuncien
+  setTimeout(() => { s.textContent = txt; }, 50);
+}
+// Aviso con texto propio de la página (por ejemplo, un dato del elemento que ya no existe en el catálogo)
+window.auraAviso = (texto) => mostrarAvisoBorrador(document.querySelector("main"), "", texto);
 // Abre la página otra vez sin borrador ni elemento de proyecto (valores por defecto)
-function abrirLimpia() {
+function abrirLimpia(aviso) {
   window.auraSinBorrador = true;
   borrarBorrador();
+  if (aviso) { try { sessionStorage.setItem("auraAvisoBorrador", JSON.stringify({ pagina: paginaActual(), aviso })); } catch { /* sin almacenamiento */ } }
   const q = new URLSearchParams(location.search); q.delete("proyecto"); q.delete("el");
   location.replace(`${paginaActual()}${q.toString() ? "?" + q : ""}`);
 }
 function restaurarBorrador(main) {
   const v = leerBorrador();
   if (!v) return;
+  if (v === "grande") { borrarBorrador(); mostrarAvisoBorrador(main, "grande"); return; }
   try {
     restaurarFormulario(v, true);
     // Las listas que fija la dirección (conexion.html?tipo=…) mandan sobre el borrador
@@ -215,13 +253,21 @@ function restaurarBorrador(main) {
   } catch (e) {
     // Un borrador que no se puede aplicar no debe dejar a la vista resultados de otros datos
     console.warn("AURA: borrador descartado", e);
-    abrirLimpia();
+    abrirLimpia("descartado");
     return "recargando";
   }
 }
 function iniciarBorrador(restaurar) {
   const main = document.querySelector("main");
   if (!main || !window.AURA_MEMO) return;
+  // Aviso que dejó un borrador descartado antes de recargar
+  try {
+    // Solo en la página que lo dejó (si la recarga no llegó aquí, no aparece en otra herramienta)
+    const txt = sessionStorage.getItem("auraAvisoBorrador");
+    sessionStorage.removeItem("auraAvisoBorrador");
+    const a = JSON.parse(txt || "null");
+    if (a && a.pagina === paginaActual()) mostrarAvisoBorrador(main, a.aviso);
+  } catch { /* sin almacenamiento */ }
   if (restaurar && restaurarBorrador(main) === "recargando") return;
   // «Restablecer»: borra el borrador y vuelve a abrir la página con sus datos iniciales
   const h2 = main.querySelector(":scope > section.panel > h2");
