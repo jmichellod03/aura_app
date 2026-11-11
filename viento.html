@@ -607,7 +607,8 @@ function componentes(d, g, st) {
   let figT = null, aviso = "";
   const th = d.theta;
   if (d.techo === "una") {
-    if (th <= 3) figT = alto ? "f40t" : "f26"; else if (th <= 10) figT = "f35"; else if (th <= 30) figT = "f36";
+    // Con h > 18.3 m la Figura 40 rige hasta θ ≤ 7° en cualquier techo (nota 6); sobre 7° se usan las Figuras 35 y 36 con q_h
+    if (alto && th <= 7) figT = "f40t"; else if (th <= 3) figT = "f26"; else if (th <= 10) figT = "f35"; else if (th <= 30) figT = "f36";
     else aviso = "La norma no entrega coeficientes de C&R para techos de pendiente única con θ > 30° (Figuras 35 y 36).";
   } else figT = th <= 7 ? (alto ? "f40t" : "f26") : th <= 20 ? "f27" : th <= 27 ? "f28" : "f29";
   const figM = alto ? "f40m" : "f24";

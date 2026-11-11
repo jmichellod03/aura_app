@@ -60,6 +60,6 @@ Documentos: NCh 432:2025.
 | Componentes y revestimientos | Techo a dos aguas, 7° < θ ≤ 20° | Figura 27 | NCh 432:2025 | 94–95 |
 | Componentes y revestimientos | Techo a dos aguas, 20° < θ ≤ 27° | Figura 28 | NCh 432:2025 | 96–97 |
 | Componentes y revestimientos | Techo a dos aguas, 27° < θ ≤ 45° | Figura 29 | NCh 432:2025 | 98–99 |
-| Componentes y revestimientos | Pendiente única, 3° < θ ≤ 10° | Figura 35 | NCh 432:2025 | 109–110 |
+| Componentes y revestimientos | Pendiente única, 3° < θ ≤ 10° (con h > 18.3 m, solo θ > 7°) | Figura 35 | NCh 432:2025 | 109–110 |
 | Componentes y revestimientos | Pendiente única, 10° < θ ≤ 30° | Figura 36 | NCh 432:2025 | 111–112 |
-| Componentes y revestimientos | Muros y techos con h > 18.3 m | Figura 40 | NCh 432:2025 | 121–122 |
+| Componentes y revestimientos | Muros y techos con h > 18.3 m (techo con θ ≤ 7°, nota 6) | Figura 40 | NCh 432:2025 | 121–122 |
