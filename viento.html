@@ -349,7 +349,8 @@ const $ = (id) => document.getElementById(id);
 const num = (id) => { const v = parseFloat($(id).value); return Number.isFinite(v) ? v : 0; };
 const L = String.raw;
 const tn = (x, d = 2) => Number.isFinite(x) ? fmt(x, d).replace(/ /g, "\\,") : "\\infty";
-const texTxt = (t) => t.replace(/—/g, "---").replace(/%/g, "\\%").replace(/&/g, "\\&");
+// Texto a LaTeX: el menos tipográfico y θ no existen en pdfLaTeX (sin esto, Overleaf borra los signos de las tablas)
+const texTxt = (t) => t.replace(/—/g, "---").replace(/%/g, "\\%").replace(/&/g, "\\&").replace(/−/g, "$-$").replace(/θ/g, "$\\theta$");
 const kg = (n) => n / KGF;                              // N → kgf (y N/m² → kgf/m²)
 const sg = (x, d = 1) => ((x > 0 ? "+" : "") + fmt(x, d)).replace("-", "−");   // con signo (menos tipográfico)
 const sgT = (x, d = 1) => (x > 0 ? "+" : "") + tn(x, d);
@@ -547,8 +548,9 @@ function fuerzasDireccional(d, g, dr, niveles) {
     const Ft = [0, 1].map(c => x.techo.reduce((a, t) => a + t.pe[c] * t.s * g.t * (t.x1 - t.x0) * x.B, 0));
     const Ftecho = Math.max(0, ...Ft);
     const Up = [0, 1].map(c => x.techo.reduce((a, t) => a - t.pe[c] * (t.x1 - t.x0) * x.B, 0));
+    // En viento longitudinal el frontón (W·Δh/2) es parte del muro extremo: se carga con la presión mínima de muro
     const esL = x.id === "L";
-    const Amuro = esL ? d.W * d.he : x.B * x.hw, Atecho = esL ? d.W * g.rise / 2 : x.B * (g.hTop - x.hw);
+    const Amuro = esL ? d.W * d.he + d.W * g.rise / 2 : x.B * x.hw, Atecho = esL ? 0 : x.B * (g.hTop - x.hw);
     const Fmin = P_MIN_MURO * Amuro + P_MIN_TECHO * Atecho;
     res.push({ ...porPiso(niveles, g.hTop, f, Ftecho, Fmin), id: x.id, nombre: x.nombre, B: x.B, Ftecho, Ft, Amuro, Atecho,
       levant: Math.max(...Up) + x.pi * x.B * x.Lw });
@@ -565,7 +567,7 @@ function fuerzasEnvolvente(d, g, ev, niveles) {
   const levant = k * d.W * d.Le * (-(c["2"] + c["3"]) / 2 + d.gcpi);
   return [
     { ...porPiso(niveles, g.hTop, fT, FtT, P_MIN_MURO * d.Le * d.he + P_MIN_TECHO * d.Le * g.rise), id: "T", nombre: "Viento transversal (caso de carga 1)", B: d.Le, Ftecho: FtT, Amuro: d.Le * d.he, Atecho: d.Le * g.rise, levant },
-    { ...porPiso(niveles, g.hTop, fL, 0, P_MIN_MURO * d.W * d.he + P_MIN_TECHO * d.W * g.rise / 2), id: "L", nombre: "Viento longitudinal (caso de carga 2)", B: d.W, Ftecho: 0, Amuro: d.W * d.he, Atecho: d.W * g.rise / 2,
+    { ...porPiso(niveles, g.hTop, fL, 0, P_MIN_MURO * (d.W * d.he + d.W * g.rise / 2)), id: "L", nombre: "Viento longitudinal (caso de carga 2)", B: d.W, Ftecho: 0, Amuro: d.W * d.he + d.W * g.rise / 2, Atecho: 0,
       levant: k * d.W * d.Le * (-(c2["2"] + c2["3"]) / 2 + d.gcpi) },
   ];
 }
@@ -691,6 +693,8 @@ function calcularViento(d, m) {
   m.h("Efecto de ráfaga y presión interna — 5.9 a 5.11");
   m.row("Factor de efecto de ráfaga: G", fmt(d.G, 2), "5.9.2");
   m.eq(L`G = ${tn(d.G, 2)}`);
+  if (!g.baja) m.note(`El edificio no es de baja altura (3.12): el valor G = ${fmt(d.G, 2)} vale solo si es rígido, con frecuencia fundamental ≥ 1 Hz (3.20), obtenida con un análisis estructural y no con fórmulas aproximadas (5.9.1). Si es flexible, se debe usar G<sub>f</sub> (5.9.3).`,
+    L`El edificio no es de baja altura (3.12): el valor $G = ${tn(d.G, 2)}$ vale solo si es rígido, con frecuencia fundamental $\ge 1$ Hz (3.20), obtenida con un análisis estructural y no con fórmulas aproximadas (5.9.1). Si es flexible, se debe usar $G_f$ (5.9.3).`);
   m.row(`Coeficiente de presión interna, edificio ${CERR_TXT[d.cerr]}: GC<sub>pi</sub>`, `±${fmt(d.gcpi, 2)}`, "Tabla 7");
   m.eq(L`(GC_{pi}) = \pm ${tn(d.gcpi, 2)}`, "Tabla 7");
   m.row("Presión interna: q<sub>h</sub> K<sub>d</sub> GC<sub>pi</sub>", `±${fmt(kg(qh * KD * d.gcpi), 1)} kgf/m²`, "Ec. (4)");
@@ -778,6 +782,7 @@ function calcularViento(d, m) {
     m.eq(L`F = \sum F_i + F_0 = ${tn(kg(f.V), 0)} + ${tn(kg(f.suelo), 0)} = ${tn(kg(f.total), 0)}\ \mathrm{kgf}`);
     m.row("Carga mínima de diseño", `${fmt(kg(f.Fmin), 0)} kgf`, d.proc === "dir" ? "6.1.5" : "7.3.6");
     m.eq(L`F_{min} = 0.25\ \mathrm{kN/m^2} \cdot ${tn(f.Amuro, 1)}\ \mathrm{m^2} + 0.13\ \mathrm{kN/m^2} \cdot ${tn(f.Atecho, 1)}\ \mathrm{m^2} = ${tn(f.Fmin / 1000, 2)}\ \mathrm{kN} = ${tn(kg(f.Fmin), 0)}\ \mathrm{kgf}`, d.proc === "dir" ? "6.1.5" : "7.3.6");
+    if (f.id === "L" && d.techo !== "plano") m.p(L`Con viento paralelo a la cumbrera, el área proyectada es el muro extremo completo, incluido el frontón: toda se carga con $0.25\ \mathrm{kN/m^2}$.`);
     if (f.escala !== 1) m.note(`Rige la carga mínima: las fuerzas se amplifican por ${fmt(f.escala, 3)} para alcanzarla (criterio de AURA para repartirla).`, L`Rige la carga mínima: las fuerzas se amplifican por ${tn(f.escala, 3)} para alcanzarla (criterio de AURA para repartirla).`);
     m.row("Corte basal ; momento volcante en la base", `${fmt(kg(f.total) / 1000, 2)} tf ; ${fmt(kg(f.M) / 1000, 2)} tf·m`);
     m.eq(L`V_b = ${tn(kg(f.total) / 1000, 2)}\ \mathrm{tf} \qquad M_v = \sum F_i\,z_i = ${tn(kg(f.M) / 1000, 2)}\ \mathrm{tf\,m}`);
