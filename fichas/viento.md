@@ -15,6 +15,8 @@ Documentos: NCh 432:2025.
 - Direccional: no se aplica la reducción por área del coeficiente −1.3 del techo (Figura 4, nota b).
 - Envolvente: solo edificios de baja altura con techo plano o a dos aguas; los casos de torsión se informan por zona, sin desarrollar.
 - Fuerzas por piso: altura tributaria hasta la mitad de los pisos vecinos; si rige la carga mínima, las fuerzas se amplifican en proporción (criterio de AURA).
+- Carga mínima con viento paralelo a la cumbrera: el frontón es parte del muro extremo y se carga con 0.25 kN/m² (6.1.5, 7.3.6).
+- Si el edificio no es de baja altura, la memoria advierte que G = 0.85 exige demostrar que es rígido (f ≥ 1 Hz, 3.20) con un análisis (5.9.1); si es flexible, G_f (5.9.3) no está implementado.
 - Componentes: Parte 1 (h ≤ 18.3 m) y Parte 2 (h > 18.3 m, con q_h en todas las zonas). Pendiente única con θ > 30° queda sin verificar.
 - No incluye parapetos, aleros, marquesinas, equipos de techo, edificios abiertos ni otras estructuras (cláusula 8).
 - NCh 3171 no está en el proyecto.
@@ -37,6 +39,7 @@ Documentos: NCh 432:2025.
 | Presión de velocidad | Coeficiente de exposición: Kh, Kz | Tabla 5 | NCh 432:2025 | 33 |
 | Presión de velocidad | Presión de velocidad: qh, qz | Ec. (2) | NCh 432:2025 | 32 |
 | Efecto de ráfaga y presión interna | Factor de efecto de ráfaga: G | 5.9.2 | NCh 432:2025 | 34 |
+| Efecto de ráfaga y presión interna | Edificio rígido (f ≥ 1 Hz) y frecuencia por análisis | 3.20, 5.9.1 | NCh 432:2025 | 13, 34 |
 | Efecto de ráfaga y presión interna | Coeficiente de presión interna: GCpi | Tabla 7 | NCh 432:2025 | 35 |
 | Sistema principal: direccional | Presión de diseño: p | Ec. (4), 6.3.1 | NCh 432:2025 | 37 |
 | Sistema principal: direccional | Coeficientes Cp de muros y techos | Figura 4 | NCh 432:2025 | 40–42 |
