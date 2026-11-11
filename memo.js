@@ -439,7 +439,13 @@ const REFERENCIAS = [
   address      = {Santiago, Chile},
   year         = {2009}
 }` },
-  { clave: "nch432", patron: /NCh\s?432(?:\s?Of\.?\s?(?:19)?71)?/, bib: String.raw`@manual{nch432,
+  { clave: "nch432v2025", patron: /NCh\s?432:2025/, bib: String.raw`@manual{nch432v2025,
+  title        = {{NCh 432:2025. Diseño estructural --- Cargas de viento}},
+  organization = {Instituto Nacional de Normalización (INN)},
+  address      = {Santiago, Chile},
+  year         = {2025}
+}` },
+  { clave: "nch432", patron: /NCh\s?432(?!:2025)(?:\s?Of\.?\s?(?:19)?71)?/, bib: String.raw`@manual{nch432,
   title        = {{NCh 432.Of1971. Cálculo de la acción del viento sobre las construcciones}},
   organization = {Instituto Nacional de Normalización (INN)},
   address      = {Santiago, Chile},

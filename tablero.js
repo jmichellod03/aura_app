@@ -251,6 +251,8 @@ const Tablero = (() => {
     { id: "instadeck", patron: /Instadeck|Ficha t[ée]cnica|Manual T[ée]cnico/, clausula: /^(?:Tabla [IVX]+\b|Ficha t[ée]cnica|Manual, pto\.)/, titulo: "Cintac — Manual Técnico Instadeck",
       desc: "Manual Técnico Instadeck (noviembre 2010) y Ficha Técnica de la placa colaborante Instadeck 0.8 mm. Tablas I a IV según el método SDI (1991)." },
     { id: "sdi", patron: /SDI/, titulo: "SDI 1991", desc: "Steel Deck Institute — Composite Deck Design Handbook, 1991. Método del que derivan las tablas del fabricante." },
+    { id: "nch432", patron: /NCh\s?432:2025/, clausula: /^(?:\d{1,2}(?:\.\d+)*(?![\dA-Z])|Tablas? \d|Figuras? \d|Ec\. \(\d+\))/, titulo: "NCh 432:2025",
+      desc: "Diseño estructural — Cargas de viento. Instituto Nacional de Normalización (INN), Santiago, 2025. Cargas de nivel de servicio (factor 1.6 en LRFD, NCh 3171)." },
     { id: "nch433", patron: /NCh\s?433|DS\s?(?:61|117)/, titulo: "NCh 433", desc: "Diseño sísmico de edificios. Instituto Nacional de Normalización (INN), con el Decreto Supremo 61 (2011) del MINVU." },
     { id: "nch2369", patron: /NCh\s?2369/, titulo: "NCh 2369", desc: "Diseño sísmico de estructuras e instalaciones industriales. Instituto Nacional de Normalización (INN)." },
     { id: "nch3171", patron: /NCh\s?3171/, titulo: "NCh 3171:2017", desc: "Diseño estructural — Disposiciones generales y combinaciones de carga. Instituto Nacional de Normalización (INN), 2017." },

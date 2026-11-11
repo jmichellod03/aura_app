@@ -1,6 +1,6 @@
 // Service worker de AURA: guarda la app completa para uso sin conexión.
 // Al publicar cambios, incremente VERSION para que los dispositivos descarguen la nueva versión.
-const VERSION = "aura-v107";
+const VERSION = "aura-v108";
 const ARCHIVOS = [
   "./",
   "./index.html",
@@ -19,6 +19,7 @@ const ARCHIVOS = [
   "./base.html",
   "./conexion.html",
   "./diagonal.html",
+  "./viento.html",
   "./memo.js",
   "./proyectos.js",
   "./nube.js",

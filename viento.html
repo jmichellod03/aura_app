@@ -1,0 +1,1122 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#00008B">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="AURA">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js" integrity="sha384-K0oxqktRvaThvYgGL4G+OK2Ih6VS6Uyu7j3+7WJgp/uWM0Yv6Xi4YEiw0BB+mPfi" crossorigin="anonymous"></script>
+<script src="nube.js?v=31"></script>
+<style>
+  /* PWA: sin zoom automático de iOS al enfocar campos y texto estable al rotar */
+  html { -webkit-text-size-adjust: 100%; }
+  @media (max-width: 900px) { input, select, textarea { font-size: 16px !important; } }
+  main > *, .row2 > *, .row3 > *, fieldset { min-width: 0; }
+  input, select { min-width: 0; max-width: 100%; }
+  .memo, .tablaWrap { overflow-x: auto; }
+  svg { max-width: 100%; }
+</style>
+<title>Cargas de viento NCh 432</title>
+<style>
+  :root {
+    --bg: #e3e6ea;
+    --panel: #fffafa;
+    --ink: #1d2330;
+    --muted: #5f6b7a;
+    --line: #dde1e7;
+    --accent: #5b7c99;
+    --accent-ink: #ffffff;
+    --head: #00008B;
+    --ok: #1f8a4c;
+    --ok-bg: #e6f4ec;
+    --bad: #c62828;
+    --bad-bg: #fbe9e9;
+    --warn: #9a6400;
+    --warn-bg: #fff4dc;
+    --mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 "Segoe UI", system-ui, -apple-system, sans-serif; }
+  header { background: var(--head); color: #fff; padding: 10px 24px; display: flex; align-items: center; gap: 8px 16px; flex-wrap: wrap; }
+  header h1 { margin: 0; font-size: 19px; font-weight: 600; }
+  header a.home { color: #fff; text-decoration: none; font-size: 13px; border: 1px solid rgba(255,255,255,.35); border-radius: 4px; padding: 3px 9px; }
+  header span { color: #c8cbe8; font-size: 13px; }
+  main { display: grid; grid-template-columns: 380px 1fr; gap: 20px; padding: 20px 24px; max-width: 1400px; margin: 0 auto; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; padding: 16px; } }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+  .panel > h2 { margin: 0; padding: 10px 16px; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); border-bottom: 1px solid var(--line); }
+  .body { padding: 14px 16px; }
+  label { display: block; font-size: 12px; color: var(--muted); margin: 10px 0 4px; }
+  select, input[type=number] { width: 100%; padding: 7px 9px; border: 1px solid var(--line); border-radius: 5px; font: inherit; background: #fff; color: var(--ink); }
+  select:focus, input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .unit { color: var(--muted); font-size: 11px; }
+  fieldset { border: 1px solid var(--line); border-radius: 6px; margin: 14px 0 0; padding: 4px 12px 12px; }
+  legend { font-size: 12px; font-weight: 600; color: var(--head); padding: 0 4px; }
+  .cbTit { font-size: 12px; font-weight: 600; color: var(--head); margin: 12px 0 -4px; }
+  .chk { display: flex; gap: 8px; align-items: center; margin-top: 12px; font-size: 13px; color: var(--ink); }
+  .hidden { display: none !important; }
+  .invalido { border-color: var(--bad) !important; background: var(--bad-bg) !important; }
+  table.cargas { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12px; }
+  table.cargas th { color: var(--muted); font-weight: 600; padding: 2px 3px; text-align: center; }
+  table.cargas th:first-child { text-align: left; }
+  table.cargas td { padding: 2px; }
+  table.cargas td:first-child { font-weight: 600; color: var(--head); white-space: nowrap; padding-right: 6px; }
+  table.cargas input { padding: 5px 4px; text-align: right; }
+  .avisoSismo { margin-top: 10px; padding: 8px 10px; border-radius: 5px; background: var(--warn-bg); color: var(--warn); font-size: 12px; }
+
+  .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; padding: 14px 16px; }
+  .card { border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; }
+  .card .t { font-size: 12px; color: var(--muted); }
+  .card .v { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .card .s { font-size: 12px; color: var(--muted); }
+  .bar { height: 6px; background: #eceef1; border-radius: 3px; margin-top: 6px; overflow: hidden; }
+  .bar > i { display: block; height: 100%; background: var(--ok); }
+  .bar.bad > i { background: var(--bad); }
+  .verdict { margin: 0 16px 14px; padding: 12px 14px; border-radius: 6px; font-weight: 600; font-size: 15px; }
+  .verdict.ok { background: var(--ok-bg); color: var(--ok); }
+  .verdict.bad { background: var(--bad-bg); color: var(--bad); }
+  .note { margin: 8px 0; padding: 8px 10px; border-radius: 5px; background: var(--warn-bg); color: var(--warn); font-size: 12.5px; }
+  #verdict .note { margin: -6px 16px 14px; }
+
+  .memo { padding: 4px 16px 16px; }
+  .memo h3 { font-size: 14px; margin: 18px 0 6px; padding-bottom: 4px; border-bottom: 2px solid var(--accent); color: var(--head); }
+  .memo h4 { font-size: 13px; margin: 12px 0 4px; color: var(--head); }
+  table.calc { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.calc td { padding: 4px 8px; border-bottom: 1px solid #eef0f3; vertical-align: top; }
+  table.calc td.k { color: var(--ink); }
+  table.calc td.v { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; font-weight: 600; }
+  .ref { display: inline-block; font-size: 10.5px; color: var(--accent); border: 1px solid #c3d0dc; border-radius: 3px; padding: 0 4px; margin-left: 6px; font-weight: 500; }
+  .tag { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 11.5px; font-weight: 600; }
+  .tag.ok { background: var(--ok-bg); color: var(--ok); }
+  .tag.bad { background: var(--bad-bg); color: var(--bad); }
+  .tag.warn { background: var(--warn-bg); color: var(--warn); }
+  table.alt { width: 100%; border-collapse: collapse; font-size: 12.5px; margin: 6px 0 10px; }
+  table.alt th { text-align: right; font-size: 11.5px; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--line); padding: 5px 7px; white-space: nowrap; }
+  table.alt th:first-child, table.alt td:first-child { text-align: left; }
+  table.alt td { padding: 4px 7px; border-bottom: 1px solid #eef0f3; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+  table.alt td.malo { color: var(--bad); font-weight: 600; }
+  .esquema { display: block; width: 100%; max-width: 330px; margin: 8px auto 4px; }
+  .dibujo { display: flex; justify-content: center; padding: 6px 16px 4px; }
+  .dibujo svg { width: 760px; }
+  .toolbar { display: flex; justify-content: flex-end; padding: 10px 16px 0; gap: 8px; flex-wrap: wrap; }
+  .btn { padding: 7px 14px; border-radius: 5px; border: 1px solid var(--head); background: var(--head); color: #fff; font: inherit; font-size: 13px; cursor: pointer; }
+  .btn.sec { background: #fff; color: var(--head); }
+  footer { text-align: center; color: var(--muted); font-size: 12px; padding: 10px 0 24px; }
+
+  @media print {
+    body { background: #fff; }
+    header { background: #fff; color: #000; border-bottom: 2px solid #000; }
+    header span { color: #333; }
+    header a.home { display: none; }
+    main { display: block; padding: 0; }
+    #inputs, .toolbar, footer { display: none; }
+    .panel { border: 0; }
+    .memo h3 { break-after: avoid; }
+    table.calc tr { break-inside: avoid; }
+  }
+</style>
+<style>
+  .prueba { max-width: 1400px; margin: 14px auto 0; padding: 0 24px; }
+  .prueba > div { padding: 10px 14px; border-radius: 6px; background: var(--warn-bg); color: var(--warn); border: 1px solid #f0d9a6; font-size: 13px; }
+  @media (max-width: 900px) { .prueba { padding: 0 16px; } }
+  input[type=text] { width: 100%; padding: 7px 9px; border: 1px solid var(--line); border-radius: 5px; font: inherit; background: #fff; color: var(--ink); }
+  .card .v small { font-size: 12px; font-weight: 500; color: var(--muted); }
+  table.alt td.neg { color: var(--bad); }
+  @media print { .prueba { display: none; } }
+</style>
+<link rel="stylesheet" href="aura.css?v=18">
+<script src="lateral.js?v=14"></script>
+<script src="asistente.js?v=7" defer></script>
+</head>
+<body>
+<header>
+  <a class="marca" href="index.html" aria-label="Inicio"><span class="logo-tile"><span class="logo"><img src="icons/logo-mmp.webp" alt="MMP"></span></span></a>
+  <a class="home" href="index.html">← Inicio</a>
+  <h1>Cargas de viento (prueba)</h1>
+  <span>NCh 432:2025 · Presión de velocidad, sistema principal (direccional o envolvente), componentes y revestimientos, carga sobre un marco y fuerzas por piso · Unidades kgf – m</span>
+</header>
+<div class="prueba"><div>⚠ <b>Versión de prueba.</b> Esta herramienta está en desarrollo y sus resultados aún no se han validado contra ejemplos publicados. Úsela como apoyo y compruebe el cálculo a mano. Cubre edificios de planta rectangular, rígidos y de forma regular, con techo plano, a dos aguas o de pendiente única (θ ≤ 45°): no incluye parapetos, aleros, edificios abiertos ni otras estructuras.</div></div>
+
+<main>
+  <!-- ===================== ENTRADAS ===================== -->
+  <section class="panel" id="inputs">
+    <h2>Datos de entrada</h2>
+    <div class="body">
+      <svg class="esquema" viewBox="0 0 330 200" aria-label="Esquema del edificio">
+        <g fill="none" stroke="#3d4450" stroke-width="1.4">
+          <rect x="30" y="40" width="110" height="120" fill="#e3e8ee"/>
+          <path d="M85 40V160" stroke-dasharray="5 3" stroke="#5b7c99"/>
+          <path d="M190 160V100L250 70L310 100V160Z" fill="#e3e8ee"/>
+          <path d="M180 160H320" stroke="#9a7b45"/>
+        </g>
+        <g font-size="10" fill="#3d4450">
+          <text x="78" y="176">W</text><text x="14" y="104">L<tspan font-size="7" dy="2">e</tspan></text>
+          <text x="88" y="34" fill="#5b7c99">cumbrera</text>
+          <text x="246" y="176">W</text><text x="314" y="134">h<tspan font-size="7" dy="2">e</tspan></text>
+          <text x="205" y="97">θ</text>
+          <path d="M150 100H178" stroke="#c0392b" stroke-width="1.4"/><path d="M178 100l-6-3v6z" fill="#c0392b"/><text x="146" y="92" fill="#c0392b">viento</text>
+          <text x="60" y="194">PLANTA</text><text x="222" y="194">ELEVACIÓN</text>
+        </g>
+      </svg>
+      <div class="unit" style="text-align:center">W: ancho perpendicular a la cumbrera (luz del marco) · L<sub>e</sub>: largo paralelo a la cumbrera · h<sub>e</sub>: altura del alero</div>
+
+      <fieldset>
+        <legend>1. Sitio</legend>
+        <label for="zona">Zona de viento (Tabla 1 y Figura 2)</label>
+        <select id="zona">
+          <option value="I-A">I-A · 17°29'–27°22' S · bajo 2 000 msnm · 27 m/s</option>
+          <option value="I-B">I-B · 17°29'–27°22' S · sobre 2 000 msnm · 30 m/s</option>
+          <option value="II-A">II-A · 27°22'–29°54' S · bajo 1 500 msnm · 27 m/s</option>
+          <option value="II-B">II-B · 27°22'–29°54' S · sobre 1 500 msnm · 35 m/s</option>
+          <option value="III-A">III-A · 29°54'–37°28' S · bajo 1 000 msnm · 34 m/s</option>
+          <option value="III-B">III-B · 29°54'–37°28' S · sobre 1 000 msnm · 35 m/s</option>
+          <option value="IV-A" selected>IV-A · 37°28'–41°28' S · bajo 600 msnm · 37 m/s</option>
+          <option value="IV-B">IV-B · 37°28'–41°28' S · sobre 600 msnm · 40 m/s</option>
+          <option value="V">V · 41°28'–50° S · 40 m/s</option>
+          <option value="VI">VI · 50°–56°32' S · 44 m/s</option>
+          <option value="NC1">NC1 · Isla de Pascua · 32 m/s</option>
+          <option value="NC2">NC2 · Juan Fernández · 50 m/s</option>
+          <option value="NC3">NC3 · Antártica · 60 m/s</option>
+          <option value="otra">Otra velocidad (estudio de viento, 5.3.2)</option>
+        </select>
+        <div id="boxV"><label for="Vman">Velocidad básica V <span class="unit">[m/s]</span></label><input id="Vman" type="number" step="1" value="37"></div>
+        <div class="row2">
+          <div><label for="cat">Categoría de ocupación</label>
+            <select id="cat"><option value="I">I · I = 0.87</option><option value="II" selected>II · I = 1.00</option><option value="III">III · I = 1.15</option><option value="IV">IV · I = 1.22</option></select></div>
+          <div><label for="expo">Exposición</label>
+            <select id="expo"><option value="B">B · urbano o boscoso</option><option value="C" selected>C · terreno abierto</option><option value="D">D · plano, sin obstáculos o agua</option></select></div>
+        </div>
+        <label for="ze">Elevación del suelo sobre el nivel del mar z<sub>e</sub> <span class="unit">[m]</span></label>
+        <input id="ze" type="number" step="50" value="0">
+        <div class="unit" style="margin-top:4px">Con z<sub>e</sub> = 0 queda K<sub>e</sub> = 1, que la norma permite usar siempre.</div>
+        <label for="topo">Efecto topográfico (5.6)</label>
+        <select id="topo">
+          <option value="no" selected>Sin efecto topográfico (K_zt = 1)</option>
+          <option value="cima">Cima 2D</option>
+          <option value="escarpe">Escarpamiento 2D</option>
+          <option value="colina">Colina axisimétrica 3D</option>
+        </select>
+        <div id="boxTopo">
+          <div class="row2">
+            <div><label for="tH">Altura H <span class="unit">[m]</span></label><input id="tH" type="number" step="1" value="30"></div>
+            <div><label for="tLh">Distancia L<sub>h</sub> <span class="unit">[m]</span></label><input id="tLh" type="number" step="1" value="100"></div>
+            <div><label for="tx">Distancia x a la cresta <span class="unit">[m]</span></label><input id="tx" type="number" step="1" value="0"></div>
+            <div><label for="tLado">Ubicación respecto de la cresta</label>
+              <select id="tLado"><option value="contra" selected>Contra el viento (barlovento)</option><option value="favor">A favor del viento (sotavento)</option></select></div>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>2. Edificio</legend>
+        <div class="row2">
+          <div><label for="techo">Tipo de techo</label>
+            <select id="techo"><option value="dos" selected>A dos aguas</option><option value="una">Pendiente única</option><option value="plano">Plano</option></select></div>
+          <div id="boxTheta"><label for="theta">Ángulo del techo θ <span class="unit">[°]</span></label><input id="theta" type="number" step="0.5" value="10"></div>
+        </div>
+        <div class="row3">
+          <div><label for="W">Ancho W <span class="unit">[m]</span></label><input id="W" type="number" step="0.5" value="20"></div>
+          <div><label for="Le">Largo L<sub>e</sub> <span class="unit">[m]</span></label><input id="Le" type="number" step="0.5" value="40"></div>
+          <div><label for="he">Altura de alero h<sub>e</sub> <span class="unit">[m]</span></label><input id="he" type="number" step="0.1" value="6"></div>
+        </div>
+        <div class="unit" style="margin-top:4px">En el techo de pendiente única, h<sub>e</sub> es la altura del alero bajo.</div>
+        <div class="row2">
+          <div><label for="cerr">Cerramiento (5.10)</label>
+            <select id="cerr"><option value="cerrado" selected>Cerrado · GC_pi = ±0.18</option><option value="pcerrado">Parcialmente cerrado · ±0.55</option><option value="pabierto">Parcialmente abierto · ±0.18</option></select></div>
+          <div><label for="G">Factor de ráfaga G</label><input id="G" type="number" step="0.01" value="0.85"></div>
+        </div>
+        <div class="unit" style="margin-top:4px">G = 0.85 para edificios rígidos (frecuencia fundamental ≥ 1 Hz, 5.9.2).</div>
+      </fieldset>
+
+      <fieldset>
+        <legend>3. Sistema principal (SPRFV)</legend>
+        <label for="proc">Procedimiento</label>
+        <select id="proc">
+          <option value="dir" selected>Direccional (cláusula 6) · todas las alturas</option>
+          <option value="env">Envolvente (cláusula 7) · edificios de baja altura</option>
+        </select>
+        <div class="row2">
+          <div><label for="sMarco">Separación entre marcos <span class="unit">[m]</span></label><input id="sMarco" type="number" step="0.25" value="5"></div>
+          <div><label for="niveles">Elevación de los pisos <span class="unit">[m]</span></label><input id="niveles" type="text" value="" placeholder="ej.: 3, 6, 9"></div>
+        </div>
+        <div class="unit" style="margin-top:4px">Marco transversal interior. Elevaciones de los diafragmas separadas por coma; vacío: un solo nivel en el alero.</div>
+      </fieldset>
+
+      <fieldset>
+        <legend>4. Componentes y revestimientos</legend>
+        <div class="cbTit">Componente de techo (costanera, panel)</div>
+        <div class="row2">
+          <div><label for="LcT">Luz del componente <span class="unit">[m]</span></label><input id="LcT" type="number" step="0.25" value="5"></div>
+          <div><label for="scT">Ancho tributario <span class="unit">[m]</span></label><input id="scT" type="number" step="0.05" value="1.2"></div>
+        </div>
+        <div class="cbTit">Componente de muro (costanera lateral, panel)</div>
+        <div class="row2">
+          <div><label for="LcM">Luz del componente <span class="unit">[m]</span></label><input id="LcM" type="number" step="0.25" value="5"></div>
+          <div><label for="scM">Ancho tributario <span class="unit">[m]</span></label><input id="scM" type="number" step="0.05" value="1.5"></div>
+        </div>
+        <div class="unit" style="margin-top:4px">Área efectiva de viento: luz × ancho efectivo, con un ancho no menor que un tercio de la luz.</div>
+      </fieldset>
+    </div>
+  </section>
+
+  <!-- ===================== RESULTADOS ===================== -->
+  <section>
+    <div class="panel">
+      <h2 id="resTitle">Resultados</h2>
+      <div class="summary" id="summary"></div>
+      <div id="verdict"></div>
+      <div class="dibujo" id="dibujo"></div>
+      <div class="toolbar">
+        <button class="btn sec" type="button" onclick="window.print()">Imprimir</button>
+        <button class="btn" type="button" onclick="descargarZipMemoria(ultimoTex, ultimoNombre, document.body)">Descargar memoria (.zip)</button>
+      </div>
+      <div class="memo" id="memo"></div>
+    </div>
+  </section>
+</main>
+<footer>Versión de prueba. Herramienta de apoyo para determinar cargas de viento según la NCh 432:2025. No reemplaza la memoria de cálculo del ingeniero del proyecto. Verifique siempre los resultados.</footer>
+
+<script src="memo.js?v=41"></script>
+<script src="tablero.js?v=7"></script>
+<script src="guia.js?v=6"></script>
+<script src="modelo3d.js?v=6"></script>
+<script>
+"use strict";
+// ---------------------------------------------------------------------------
+// Cargas de viento según la NCh 432:2025 (edificios de planta rectangular, rígidos, de forma regular).
+// Unidades internas: N y m, como la norma (presiones en N/m²). Se muestran en kgf/m², kgf/m y kgf.
+// Signos: presión positiva hacia la superficie, negativa alejándose de ella (succión).
+// Geometría: W = ancho perpendicular a la cumbrera (luz del marco), Le = largo paralelo a la cumbrera,
+// he = altura del alero (el bajo en pendiente única), θ = ángulo del techo.
+// ---------------------------------------------------------------------------
+const KGF = 9.80665;                                   // N por kgf
+const KD = 0.85;                                       // Tabla 3: edificios, SPRFV y C&R
+const ZONAS = { "I-A": 27, "I-B": 30, "II-A": 27, "II-B": 35, "III-A": 34, "III-B": 35, "IV-A": 37, "IV-B": 40, V: 40, VI: 44, NC1: 32, NC2: 50, NC3: 60 };   // Tabla 1 [m/s]
+const IMPORTANCIA = { I: 0.87, II: 1.0, III: 1.15, IV: 1.22 };                       // Tabla 2
+const EXPO = { B: { alfa: 7.5, zg: 1000, zmin: 10 }, C: { alfa: 9.8, zg: 750, zmin: 5 }, D: { alfa: 11.5, zg: 590, zmin: 2 } };   // Tabla 6
+const GCPI = { cerrado: 0.18, pcerrado: 0.55, pabierto: 0.18 };                      // Tabla 7
+const CERR_TXT = { cerrado: "cerrado", pcerrado: "parcialmente cerrado", pabierto: "parcialmente abierto" };
+// Figura 3: K1/(H/Lh) por exposición, γ y μ (contra y a favor del viento)
+const TOPO = {
+  cima: { nombre: "Cima 2D", k1: { B: 1.30, C: 1.45, D: 1.55 }, gama: 3, mu: { contra: 1.5, favor: 1.5 } },
+  escarpe: { nombre: "Escarpamiento 2D", k1: { B: 0.75, C: 0.85, D: 0.95 }, gama: 2.5, mu: { contra: 1.5, favor: 4 } },
+  colina: { nombre: "Colina axisimétrica 3D", k1: { B: 0.95, C: 1.05, D: 1.15 }, gama: 4, mu: { contra: 1.5, favor: 1.5 } },
+};
+// Figura 4: techo a barlovento con θ ≥ 10° (dos casos por celda: máxima succión y máxima presión) y a sotavento
+const F4_ANG = [10, 15, 20, 25, 30, 35, 45], F4_HL = [0.25, 0.5, 1.0];
+const F4_SUC = [[-0.7, -0.5, -0.3, -0.2, -0.2, 0.0, 0.0], [-0.9, -0.7, -0.4, -0.3, -0.2, -0.2, 0.0], [-1.3, -1.0, -0.7, -0.5, -0.3, -0.2, 0.0]];
+const F4_PRE = [[-0.18, 0.0, 0.2, 0.3, 0.3, 0.4, 0.4], [-0.18, -0.18, 0.0, 0.2, 0.2, 0.3, 0.4], [-0.18, -0.18, -0.18, 0.0, 0.2, 0.2, 0.3]];
+const F4_SOT_ANG = [10, 15, 20], F4_SOT = [[-0.3, -0.5, -0.6], [-0.5, -0.5, -0.6], [-0.7, -0.6, -0.6]];
+// Figura 12 (envolvente): caso de carga 1 por ángulo y caso de carga 2; Figura 13: zonas de torsión
+const F12_ANG = [0, 5, 20, 30, 45, 90];
+const F12_1 = {
+  "1": [0.40, 0.40, 0.53, 0.56, 0.56, 0.56], "2": [-0.69, -0.69, -0.69, 0.21, 0.21, 0.56], "3": [-0.37, -0.37, -0.48, -0.43, -0.43, -0.37], "4": [-0.29, -0.29, -0.43, -0.37, -0.37, -0.37],
+  "1E": [0.61, 0.61, 0.80, 0.69, 0.69, 0.69], "2E": [-1.07, -1.07, -1.07, 0.27, 0.27, 0.69], "3E": [-0.53, -0.53, -0.69, -0.53, -0.53, -0.48], "4E": [-0.43, -0.43, -0.64, -0.48, -0.48, -0.48],
+};
+const F12_2 = { "1": -0.45, "2": -0.69, "3": -0.37, "4": -0.45, "5": 0.40, "6": -0.29, "1E": -0.48, "2E": -1.07, "3E": -0.53, "4E": -0.48, "5E": 0.61, "6E": -0.43 };
+const F13_3 = { "1T": [0.10, 0.10, 0.13, 0.14, 0.14, 0.14], "2T": [-0.17, -0.17, -0.17, 0.05, 0.05, 0.14], "3T": [-0.09, -0.09, -0.12, -0.11, -0.11, -0.09], "4T": [-0.07, -0.07, -0.11, -0.09, -0.09, -0.09] };
+const F13_4 = { "5T": 0.10, "6T": -0.07 };
+// Componentes y revestimientos: cada curva es [A1, GCp1, A2, GCp2] (constante fuera del tramo, lineal en log A dentro)
+const CR = {
+  f24: { fig: "Figura 24", zonas: { "4": [0.9, -1.1, 46.5, -0.8], "5": [0.9, -1.4, 46.5, -0.8] }, pos: [0.9, 1.0, 46.5, 0.7] },
+  f26: { fig: "Figura 26", zonas: { "1'": [9.3, -0.9, 92.9, -0.4], "1": [0.9, -1.7, 46.5, -1.0], "2": [0.9, -2.3, 46.5, -1.4], "3": [0.9, -3.2, 46.5, -1.4] }, pos: [0.9, 0.3, 9.3, 0.2] },
+  f27: { fig: "Figura 27", zonas: { "1": [0.9, -2.0, 27.9, -0.5], "2": [0.9, -2.7, 18.6, -1.0], "3": [0.9, -3.6, 9.3, -1.8] }, pos: [0.9, 0.6, 18.6, 0.3] },
+  f28: { fig: "Figura 28", zonas: { "1": [0.9, -1.5, 18.6, -0.8], "2": [0.9, -2.5, 9.3, -1.2], "3": [0.9, -3.0, 9.3, -1.4] }, pos: [0.9, 0.6, 18.6, 0.3] },
+  f29: { fig: "Figura 29", zonas: { "1": [0.9, -1.8, 9.3, -0.8], "2": [0.9, -2.0, 18.6, -1.0], "3": [0.9, -2.5, 18.6, -1.0] }, pos: [0.9, 0.9, 18.6, 0.5] },
+  f35: { fig: "Figura 35", zonas: { "1": [0.9, -1.1, 9.3, -1.1], "2": [0.9, -1.3, 9.3, -1.2], "2'": [0.9, -1.6, 9.3, -1.5], "3": [0.9, -1.8, 9.3, -1.2], "3'": [0.9, -2.6, 9.3, -1.6] }, pos: [0.9, 0.3, 9.3, 0.2] },
+  f36: { fig: "Figura 36", zonas: { "1": [0.9, -1.3, 9.3, -1.1], "2": [0.9, -1.6, 9.3, -1.2], "3": [0.9, -2.9, 9.3, -2.0] }, pos: [0.9, 0.4, 9.3, 0.3] },
+  f40m: { fig: "Figura 40", zonas: { "4": [0.9, -0.9, 46.5, -0.7], "5": [0.9, -1.8, 46.5, -1.0] }, pos: [0.9, 0.9, 46.5, 0.6] },
+  f40t: { fig: "Figura 40", zonas: { "1": [0.9, -1.4, 46.5, -0.9], "2": [0.9, -2.3, 46.5, -1.6], "3": [0.9, -3.2, 46.5, -2.3] }, pos: null },
+};
+const P_MIN_MURO = 250, P_MIN_TECHO = 130, P_MIN_CR = 250;   // 6.1.5, 7.3.6 y 9.2.2 [N/m²]
+const H_BAJA = 18, H_CR = 18.3;                              // edificio de baja altura (3) y límite de la Parte 1 de C&R (9.1.1)
+
+// ---------------------------------------------------------------------------
+// Utilidades de formato
+// ---------------------------------------------------------------------------
+const fmt = (x, d = 2) => Number.isFinite(x)
+  ? x.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d }).replace(/,/g, " ")
+  : "—";
+const $ = (id) => document.getElementById(id);
+const num = (id) => { const v = parseFloat($(id).value); return Number.isFinite(v) ? v : 0; };
+const L = String.raw;
+const tn = (x, d = 2) => Number.isFinite(x) ? fmt(x, d).replace(/ /g, "\\,") : "\\infty";
+// Texto a LaTeX: el menos tipográfico y θ no existen en pdfLaTeX (sin esto, Overleaf borra los signos de las tablas)
+const texTxt = (t) => t.replace(/—/g, "---").replace(/%/g, "\\%").replace(/&/g, "\\&").replace(/−/g, "$-$").replace(/θ/g, "$\\theta$");
+const kg = (n) => n / KGF;                              // N → kgf (y N/m² → kgf/m²)
+const sg = (x, d = 1) => ((x > 0 ? "+" : "") + fmt(x, d)).replace("-", "−");   // con signo (menos tipográfico)
+const sgT = (x, d = 1) => (x > 0 ? "+" : "") + tn(x, d);
+const rad = (g) => g * Math.PI / 180;
+const interp = (x, xs, ys) => {
+  if (x <= xs[0]) return ys[0];
+  for (let i = 1; i < xs.length; i++) if (x <= xs[i]) return ys[i - 1] + (ys[i] - ys[i - 1]) * (x - xs[i - 1]) / (xs[i] - xs[i - 1]);
+  return ys[ys.length - 1];
+};
+const interp2 = (hl, ang, angs, tabla) => interp(hl, F4_HL, tabla.map(fila => interp(ang, angs, fila)));
+const curva = ([A1, v1, A2, v2], A) => A <= A1 ? v1 : A >= A2 ? v2 : v1 + (v2 - v1) * Math.log(A / A1) / Math.log(A2 / A1);
+
+class Memo {
+  constructor() { this.out = []; this.tex = []; this.n = 0; }
+  h(t) { memoTexCerrar(this); this.n++; this.out.push(`<h3>${this.n}. ${t}</h3>`); this.tex.push(`\\section{${texTxt(t)}}`); }
+  sub(t) { memoTexCerrar(this); this.out.push(`<h4>${t}</h4>`); this.tex.push(`\\subsection{${texTxt(t)}}`); }
+  row(k, v, ref) { this.out.push({ k, v, ref }); }
+  note(t, tt) { this.out.push(`<div class="note">${t}</div>`); if (tt) this.tex.push(`\\textit{${tt}}\n`); }
+  eq(s, ref) { this.tex.push(texDisplay(s, ref)); this.out.push({ tex: s + (ref ? `\\tag*{(${ref})}` : ""), eq: true }); }
+  p(s, soloTex) { memoTexP(this, s); if (!soloTex) this.out.push({ tex: s }); }
+  html_(h) { this.out.push(h); }
+  raw(t) { memoTexCerrar(this); this.tex.push(t); }
+  texto() { memoTexCerrar(this); return this.tex.join("\n"); }
+  html() { return memoHTML(this.out); }
+  // Tabla de resultados en pantalla y en la memoria. Cada celda es un texto o [html, tex].
+  tabla(titulo, cab, filas, ref) {
+    const H = (c) => Array.isArray(c) ? c[0] : c, T = (c) => Array.isArray(c) ? c[1] : texTxt(String(c)).replace(/ /g, "\\,");
+    const neg = (c) => /^[−-]\d/.test(String(H(c))) ? ' class="neg"' : "";
+    this.html_(`<div class="tablaWrap"><table class="alt"><thead><tr>${cab.map(c => `<th>${H(c)}</th>`).join("")}</tr></thead><tbody>${filas.map(f => `<tr>${f.map(c => `<td${neg(c)}>${H(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`
+      + (ref ? `<div class="unit" style="margin:-6px 0 8px">${titulo}<span class="ref">${ref}</span></div>` : ""));
+    this.raw(L`\begin{table}[H]
+\centering
+\small
+\caption{${texTxt(titulo)}${ref ? ` (${texTxt(ref)})` : ""}.}
+\begin{tabular}{l${"r".repeat(cab.length - 1)}}
+\toprule
+${cab.map(T).join(" & ")}\\
+\midrule
+${filas.map(f => f.map(T).join(" & ") + "\\\\").join("\n")}
+\bottomrule
+\end{tabular}
+\end{table}`);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Datos
+// ---------------------------------------------------------------------------
+function leerNiveles(txt) {
+  const partes = txt.split(/[;,\s]+/).filter(Boolean).map(s => parseFloat(s.replace(",", ".")));
+  return partes;
+}
+function leerDatos() {
+  const zona = $("zona").value, techo = $("techo").value;
+  return {
+    zona, V: zona === "otra" ? num("Vman") : ZONAS[zona], cat: $("cat").value, I: IMPORTANCIA[$("cat").value], expo: $("expo").value,
+    ze: num("ze"), topo: $("topo").value, tH: num("tH"), tLh: num("tLh"), tx: num("tx"), tLado: $("tLado").value,
+    techo, theta: techo === "plano" ? 0 : num("theta"), W: num("W"), Le: num("Le"), he: num("he"),
+    cerr: $("cerr").value, gcpi: GCPI[$("cerr").value], G: num("G"), proc: $("proc").value, s: num("sMarco"),
+    niveles: leerNiveles($("niveles").value), LcT: num("LcT"), scT: num("scT"), LcM: num("LcM"), scM: num("scM"),
+  };
+}
+function reglasDatos() {
+  const r = [["W", 0, true], ["Le", 0, true], ["he", 0, true], ["ze", -500], ["G", 0, true], ["sMarco", 0, true],
+    ["LcT", 0, true], ["scT", 0, true], ["LcM", 0, true], ["scM", 0, true]];
+  if ($("zona").value === "otra") r.push(["Vman", 0, true]);
+  if ($("techo").value !== "plano") r.push(["theta", 0]);
+  if ($("topo").value !== "no") r.push(["tH", 0, true], ["tLh", 0, true], ["tx", 0]);
+  return r;
+}
+
+// ---------------------------------------------------------------------------
+// Cláusula 5: parámetros del sitio y presión de velocidad
+// ---------------------------------------------------------------------------
+const Kz = (z, e) => 2.41 * Math.pow(Math.min(Math.max(z, e.zmin), e.zg) / e.zg, 2 / e.alfa);       // Tabla 5, nota 1
+function topografia(d) {
+  if (d.topo === "no") return { aplica: false, Kzt: () => 1 };
+  const t = TOPO[d.topo], hl = d.tH / d.tLh, hlK = Math.min(hl, 0.5), LhEf = hl > 0.5 ? 2 * d.tH : d.tLh;
+  const Hmin = d.expo === "B" ? 18 : 4.5, aplica = hl >= 0.2 && d.tH >= Hmin;
+  const K1 = t.k1[d.expo] * hlK, mu = t.mu[d.tLado], K2 = Math.max(0, 1 - Math.abs(d.tx) / (mu * LhEf));
+  const K3 = (z) => Math.exp(-t.gama * z / LhEf);
+  return { aplica, t, hl, hlK, LhEf, Hmin, K1, K2, K3, mu, Kzt: (z) => aplica ? Math.pow(1 + K1 * K2 * K3(z), 2) : 1 };
+}
+function sitio(d) {
+  const e = EXPO[d.expo], topo = topografia(d), Ke = Math.exp(-0.000119 * d.ze);
+  const q = (z) => 0.613 * d.I * Kz(z, e) * topo.Kzt(z) * Ke * d.V * d.V;                           // Ec. (2) [N/m²]
+  return { e, topo, Ke, q };
+}
+function geometria(d) {
+  const t = Math.tan(rad(d.theta));
+  const rise = d.techo === "dos" ? d.W / 2 * t : d.techo === "una" ? d.W * t : 0;
+  // Altura media del techo; con θ ≤ 10° se acepta la del alero (3.2). En pendiente única se usa siempre la media.
+  const h = d.techo === "una" ? d.he + rise / 2 : d.theta <= 10 ? d.he : d.he + rise / 2;
+  const minDim = Math.min(d.W, d.Le);
+  const a = Math.max(Math.min(0.1 * minDim, 0.4 * h), 0.04 * minDim, 0.9);                           // Figuras 12 y 24
+  return { t, rise, h, hTop: d.he + rise, minDim, a, baja: h <= H_BAJA && h <= minDim };
+}
+
+// ---------------------------------------------------------------------------
+// Cláusula 6: procedimiento direccional (Figura 4)
+// ---------------------------------------------------------------------------
+const cpSotavento = (LB) => interp(LB, [1, 2, 4], [-0.5, -0.3, -0.2]);
+// Techo con viento normal a la cumbrera y θ < 10°, o paralelo a la cumbrera: zonas por distancia al borde de barlovento
+function zonasTecho(h, Lw) {
+  const f = Math.min(1, Math.max(0, (h / Lw - 0.5) / 0.5));
+  const cps = [-0.9 + f * (-1.3 + 0.9), -0.9 + f * (-0.7 + 0.9), -0.5 + f * (-0.7 + 0.5), -0.3 + f * (-0.7 + 0.3)];
+  const lim = [0, h / 2, h, 2 * h, Infinity], nom = ["0 a h/2", "h/2 a h", "h a 2h", "más de 2h"], zs = [];
+  for (let i = 0; i < 4; i++) if (lim[i] < Lw - 1e-9) zs.push({ x0: lim[i], x1: Math.min(lim[i + 1], Lw), cp: [cps[i], -0.18], nombre: `Techo, ${nom[i]}` });
+  return zs;
+}
+// Divide los tramos en la cumbrera (x = xc) y les asigna el signo de la pendiente en el sentido del viento
+function conPendiente(tramos, xc, antes, despues) {
+  const out = [];
+  for (const t of tramos) {
+    if (xc > t.x0 + 1e-9 && xc < t.x1 - 1e-9) out.push({ ...t, x1: xc, s: antes }, { ...t, x0: xc, s: despues });
+    else out.push({ ...t, s: (t.x0 + t.x1) / 2 < xc ? antes : despues });
+  }
+  return out;
+}
+function direccional(d, g, st) {
+  const qh = st.q(g.h), dirs = [];
+  const armar = (id, nombre, Lw, B, hw, hl, techo, ancho) => {
+    const cpL = cpSotavento(Lw / B);
+    const pe = (q, cp) => q * KD * d.G * cp, pi = qh * KD * d.gcpi;
+    dirs.push({ id, nombre, Lw, B, hw, hl, cpL, qh, pi, techo: techo.map(t => ({ ...t, pe: t.cp.map(c => pe(qh, c)) })),
+      pW: (z) => pe(st.q(z), 0.8), pL: pe(qh, cpL), pS: pe(qh, -0.7), ancho });
+  };
+  // --- Viento normal a la cumbrera (transversal): L = W, B = Le
+  const hlT = g.h / d.W;
+  const techoT = (barlovento) => {
+    if (d.theta < 10) return null;
+    const suc = interp2(hlT, d.theta, F4_ANG, F4_SUC), pre = interp2(hlT, d.theta, F4_ANG, F4_PRE), sot = interp2(hlT, d.theta, F4_SOT_ANG, F4_SOT);
+    return barlovento ? { cp: [suc, pre], nombre: "Techo a barlovento" } : { cp: [sot, sot], nombre: "Techo a sotavento" };
+  };
+  const anchoT = () => d.Le;
+  if (d.techo === "dos" || d.techo === "plano") {
+    const tr = d.theta < 10 ? conPendiente(zonasTecho(g.h, d.W), d.W / 2, d.techo === "plano" ? 0 : 1, d.techo === "plano" ? 0 : -1)
+      : [{ ...techoT(true), x0: 0, x1: d.W / 2, s: 1 }, { ...techoT(false), x0: d.W / 2, x1: d.W, s: -1 }];
+    armar("T", "Viento transversal (normal a la cumbrera)", d.W, d.Le, d.he, d.he, tr, anchoT);
+  } else {
+    const t1 = d.theta < 10 ? zonasTecho(g.h, d.W).map(t => ({ ...t, s: 1 })) : [{ ...techoT(true), x0: 0, x1: d.W, s: 1 }];
+    const t2 = d.theta < 10 ? zonasTecho(g.h, d.W).map(t => ({ ...t, s: -1 })) : [{ ...techoT(false), x0: 0, x1: d.W, s: -1 }];
+    armar("T1", "Viento transversal hacia el alero bajo (techo a barlovento)", d.W, d.Le, d.he, g.hTop, t1, anchoT);
+    armar("T2", "Viento transversal hacia el alero alto (techo a sotavento)", d.W, d.Le, g.hTop, d.he, t2, anchoT);
+  }
+  // --- Viento paralelo a la cumbrera (longitudinal): L = Le, B = W; el muro de barlovento es el frontón
+  const anchoL = (z) => z <= d.he ? d.W : g.rise > 0 ? d.W * Math.max(0, 1 - (z - d.he) / g.rise) : 0;
+  armar("L", "Viento longitudinal (paralelo a la cumbrera)", d.Le, d.W, g.hTop, g.hTop, zonasTecho(g.h, d.Le).map(t => ({ ...t, s: 0 })), anchoL);
+  return { qh, dirs, hlT };
+}
+
+// ---------------------------------------------------------------------------
+// Cláusula 7: procedimiento envolvente (Figuras 12 y 13)
+// ---------------------------------------------------------------------------
+function envolvente(d, g, st) {
+  const qh = st.q(g.h), k = qh * KD;
+  const c1 = Object.fromEntries(Object.entries(F12_1).map(([z, v]) => [z, interp(d.theta, F12_ANG, v)]));
+  const c3 = Object.fromEntries(Object.entries(F13_3).map(([z, v]) => [z, interp(d.theta, F12_ANG, v)]));
+  const fila = (zona, gc) => ({ zona, gc, pe: k * gc, pMas: k * (gc - d.gcpi), pMenos: k * (gc + d.gcpi) });
+  // Zona 2 negativa: se aplica hasta mín(0.5 W ; 2.5 he) desde el borde; el resto usa el coeficiente de la zona 3 (7.3.2.1)
+  const x2 = Math.min(0.5 * d.W, 2.5 * d.he);
+  return { qh, k, c1, c3, x2, corta2: c1["2"] < 0 && x2 < 0.5 * d.W - 1e-9,
+    caso1: Object.entries(c1).map(([z, v]) => fila(z, v)), caso2: Object.entries(F12_2).map(([z, v]) => fila(z, v)),
+    tors: [...Object.entries(c3), ...Object.entries(F13_4)].map(([z, v]) => fila(z, v)) };
+}
+
+// ---------------------------------------------------------------------------
+// Fuerzas por piso: integra la fuerza horizontal por unidad de altura f(z) [N/m] y la reparte por alturas tributarias
+// ---------------------------------------------------------------------------
+function porPiso(niveles, hTop, f, Ftecho, Fmin) {
+  const zs = niveles, n = zs.length, F = new Array(n).fill(0);
+  let suelo = 0;
+  const N = 2000, dz = hTop / N;
+  const lim = (i) => i < 0 ? zs[0] / 2 : i >= n - 1 ? Infinity : (zs[i] + zs[i + 1]) / 2;       // límite superior de la franja del nivel i
+  for (let k = 0; k < N; k++) {
+    const z = (k + 0.5) * dz, df = f(z) * dz;
+    if (z < lim(-1)) { suelo += df; continue; }
+    let i = 0; while (i < n - 1 && z >= lim(i)) i++;
+    F[i] += df;
+  }
+  F[n - 1] += Ftecho;
+  let total = suelo + F.reduce((a, b) => a + b, 0);
+  const escala = total < Fmin ? Fmin / total : 1;
+  if (escala !== 1) { for (let i = 0; i < n; i++) F[i] *= escala; suelo *= escala; total = Fmin; }
+  const pisos = [];
+  let V = 0, M = 0;
+  for (let i = n - 1; i >= 0; i--) { V += F[i]; pisos.unshift({ z: zs[i], F: F[i], V }); M += F[i] * zs[i]; }
+  return { pisos, suelo, total, V: V, M, escala, Fmin };
+}
+function fuerzasDireccional(d, g, dr, niveles) {
+  const res = [];
+  for (const x of dr.dirs) {
+    const f = (z) => KD * d.G * ((z < x.hw ? 0.8 * dr.st.q(z) : 0) - (z < x.hl ? x.cpL * x.qh : 0)) * x.ancho(z);
+    // Componente horizontal del techo: Σ p·s·tanθ·Δx·B, con el caso más desfavorable y no menor que cero (Figura 4, nota 6)
+    const Ft = [0, 1].map(c => x.techo.reduce((a, t) => a + t.pe[c] * t.s * g.t * (t.x1 - t.x0) * x.B, 0));
+    const Ftecho = Math.max(0, ...Ft);
+    const Up = [0, 1].map(c => x.techo.reduce((a, t) => a - t.pe[c] * (t.x1 - t.x0) * x.B, 0));
+    // En viento longitudinal el frontón (W·Δh/2) es parte del muro extremo: se carga con la presión mínima de muro
+    const esL = x.id === "L";
+    const Amuro = esL ? d.W * d.he + d.W * g.rise / 2 : x.B * x.hw, Atecho = esL ? 0 : x.B * (g.hTop - x.hw);
+    const Fmin = P_MIN_MURO * Amuro + P_MIN_TECHO * Atecho;
+    res.push({ ...porPiso(niveles, g.hTop, f, Ftecho, Fmin), id: x.id, nombre: x.nombre, B: x.B, Ftecho, Ft, Amuro, Atecho,
+      levant: Math.max(...Up) + x.pi * x.B * x.Lw });
+  }
+  return res;
+}
+function fuerzasEnvolvente(d, g, ev, niveles) {
+  const k = ev.k, a = g.a, c = ev.c1, c2 = F12_2, e2 = Math.min(2 * a, d.Le);
+  const fT = (z) => z < d.he ? k * ((c["1"] - c["4"]) * (d.Le - e2) + (c["1E"] - c["4E"]) * e2) : 0;
+  const FtT = Math.max(0, k * g.rise * ((c["2"] - c["3"]) * (d.Le - e2) + (c["2E"] - c["3E"]) * e2));
+  const ancho = (z) => z <= d.he ? d.W : g.rise > 0 ? d.W * Math.max(0, 1 - (z - d.he) / g.rise) : 0;
+  const aE = Math.min(a, d.W);
+  const fL = (z) => { const b = ancho(z), bE = z < d.he ? aE : 0; return k * ((c2["5"] - c2["6"]) * (b - bE) + (c2["5E"] - c2["6E"]) * bE); };
+  const levant = k * d.W * d.Le * (-(c["2"] + c["3"]) / 2 + d.gcpi);
+  return [
+    { ...porPiso(niveles, g.hTop, fT, FtT, P_MIN_MURO * d.Le * d.he + P_MIN_TECHO * d.Le * g.rise), id: "T", nombre: "Viento transversal (caso de carga 1)", B: d.Le, Ftecho: FtT, Amuro: d.Le * d.he, Atecho: d.Le * g.rise, levant },
+    { ...porPiso(niveles, g.hTop, fL, 0, P_MIN_MURO * (d.W * d.he + d.W * g.rise / 2)), id: "L", nombre: "Viento longitudinal (caso de carga 2)", B: d.W, Ftecho: 0, Amuro: d.W * d.he + d.W * g.rise / 2, Atecho: 0,
+      levant: k * d.W * d.Le * (-(c2["2"] + c2["3"]) / 2 + d.gcpi) },
+  ];
+}
+
+// ---------------------------------------------------------------------------
+// Carga sobre un marco transversal interior, con la separación s [N/m]. Casos: techo (A, B) × presión interna (+, −)
+// ---------------------------------------------------------------------------
+function marcoDireccional(d, g, dr) {
+  return dr.dirs.filter(x => x.id !== "L").map(x => {
+    const casos = [];
+    const dosTecho = x.techo.some(t => Math.abs(t.cp[0] - t.cp[1]) > 1e-9);
+    for (const c of dosTecho ? [0, 1] : [0]) for (const sI of [1, -1]) {
+      const pi = sI * x.pi;
+      casos.push({ nombre: `${dosTecho ? (c ? "B" : "A") : "A"}${sI > 0 ? "+" : "−"}`, tex: `${dosTecho ? (c ? "B" : "A") : "A"}${sI > 0 ? "+" : "-"}`,
+        base: (x.pW(0) - pi) * d.s, alto: (x.pW(x.hw) - pi) * d.s, sot: (x.pL - pi) * d.s, techo: x.techo.map(t => (t.pe[c] - pi) * d.s) });
+    }
+    return { id: x.id, nombre: x.nombre, hw: x.hw, hl: x.hl, tramos: x.techo, casos };
+  });
+}
+function marcoEnvolvente(d, g, ev) {
+  const c = ev.c1, k = ev.k;
+  const tramos = d.techo === "plano" || d.theta === 0
+    ? [{ nombre: "Techo, zona 2", x0: 0, x1: d.W / 2, gc: c["2"], s: 0 }, { nombre: "Techo, zona 3", x0: d.W / 2, x1: d.W, gc: c["3"], s: 0 }]
+    : [{ nombre: "Techo a barlovento, zona 2", x0: 0, x1: d.W / 2, gc: c["2"], s: 1 }, { nombre: "Techo a sotavento, zona 3", x0: d.W / 2, x1: d.W, gc: c["3"], s: -1 }];
+  if (ev.corta2) tramos.splice(0, 1, { ...tramos[0], x1: ev.x2 }, { ...tramos[0], nombre: "Techo a barlovento, resto (coef. zona 3)", x0: ev.x2, gc: c["3"] });
+  const casos = [1, -1].map(sI => ({ nombre: `1${sI > 0 ? "+" : "−"}`, tex: `1${sI > 0 ? "+" : "-"}`,
+    base: k * (c["1"] - sI * d.gcpi) * d.s, alto: k * (c["1"] - sI * d.gcpi) * d.s, sot: k * (c["4"] - sI * d.gcpi) * d.s, techo: tramos.map(t => k * (t.gc - sI * d.gcpi) * d.s) }));
+  return [{ id: "T", nombre: "Viento transversal (caso de carga 1, zonas 1 a 4)", hw: d.he, hl: d.he, tramos, casos }];
+}
+
+// ---------------------------------------------------------------------------
+// Cláusula 9: componentes y revestimientos
+// ---------------------------------------------------------------------------
+function componentes(d, g, st) {
+  const qh = st.q(g.h), alto = g.h > H_CR;
+  const AT = d.LcT * Math.max(d.scT, d.LcT / 3), AM = d.LcM * Math.max(d.scM, d.LcM / 3);
+  let figT = null, aviso = "";
+  const th = d.theta;
+  if (d.techo === "una") {
+    // Con h > 18.3 m la Figura 40 rige hasta θ ≤ 7° en cualquier techo (nota 6); sobre 7° se usan las Figuras 35 y 36 con q_h
+    if (alto && th <= 7) figT = "f40t"; else if (th <= 3) figT = "f26"; else if (th <= 10) figT = "f35"; else if (th <= 30) figT = "f36";
+    else aviso = "La norma no entrega coeficientes de C&R para techos de pendiente única con θ > 30° (Figuras 35 y 36).";
+  } else figT = th <= 7 ? (alto ? "f40t" : "f26") : th <= 20 ? "f27" : th <= 27 ? "f28" : "f29";
+  const figM = alto ? "f40m" : "f24";
+  const redMuro = !alto && th <= 10 ? 0.9 : 1;                                     // Figura 24, nota 5
+  const k = qh * KD;
+  const neto = (gc, signo) => { const p = k * (gc + signo * d.gcpi); return Math.abs(p) < P_MIN_CR ? Math.sign(p || signo) * P_MIN_CR : p; };
+  const lista = (fig, A, red, s, donde) => {
+    if (!fig) return [];
+    const f = CR[fig], gp = f.pos ? curva(f.pos, A) * red : null;
+    return Object.entries(f.zonas).map(([z, cv]) => {
+      const gn = curva(cv, A) * red;
+      const pn = neto(gn, -1), pp = gp === null ? P_MIN_CR : neto(gp, 1);
+      return { donde, zona: z, fig: f.fig, A, gn, gp, pn, pp, wn: pn * s, wp: pp * s, minN: Math.abs(k * (gn - d.gcpi)) < P_MIN_CR, minP: gp === null || Math.abs(k * (gp + d.gcpi)) < P_MIN_CR };
+    });
+  };
+  const aCR = alto ? Math.max(0.1 * g.minDim, 0.9) : g.a;
+  return { qh, alto, AT, AM, figT, figM, redMuro, aviso, a: aCR,
+    techo: lista(figT, AT, 1, d.scT, "Techo"), muro: lista(figM, AM, redMuro, d.scM, "Muro") };
+}
+
+// ---------------------------------------------------------------------------
+// Cálculo completo y memoria
+// ---------------------------------------------------------------------------
+let ultimoTex = "", ultimoNombre = "memoria.tex", ultimoR = null, ultimoD = null;
+const NOM_TECHO = { dos: "a dos aguas", una: "de pendiente única", plano: "plano" };
+
+function calcularViento(d, m) {
+  const g = geometria(d), st = sitio(d), e = st.e, tp = st.topo;
+  if (d.proc === "env" && !g.baja) return { error: `El procedimiento envolvente es solo para edificios de baja altura (h ≤ ${H_BAJA} m y h no mayor que la menor dimensión en planta); aquí h = ${fmt(g.h, 2)} m. Use el procedimiento direccional.` };
+  if (d.proc === "env" && d.techo === "una") return { error: "El procedimiento envolvente de esta página cubre techos planos y a dos aguas (Figura 12). Para pendiente única use el procedimiento direccional." };
+  const niveles = d.niveles.length ? d.niveles : [d.he];
+  const qh = st.q(g.h), Kh = Kz(g.h, e), Kzth = tp.Kzt(g.h);
+  const U = L`\ \mathrm{kgf/m^2}`;
+
+  // ---------- 1) Parámetros del sitio ----------
+  m.h("Parámetros del sitio — NCh 432:2025, cláusula 5");
+  m.p(L`\textbf{Versión de prueba:} esta herramienta está en desarrollo y sus resultados aún no se han validado contra ejemplos publicados; el cálculo debe comprobarse a mano.`);
+  m.row("Velocidad básica del viento: V", `${fmt(d.V, 0)} m/s`, d.zona === "otra" ? "5.3.2" : "Tabla 1");
+  m.p(d.zona === "otra" ? L`La velocidad básica se ingresa desde un estudio de viento (5.3.2): ráfaga de 3 s a 10 m de altura en exposición C.` : L`Zona de viento ${d.zona} de la Tabla 1: ráfaga de 3 s a 10 m de altura en exposición C, con período de retorno de 50 años.`);
+  m.eq(L`V = ${tn(d.V, 0)}\ \mathrm{m/s}`);
+  m.row("Factor de importancia: I", fmt(d.I, 2), "Tabla 2");
+  m.eq(L`I = ${tn(d.I, 2)} \quad \text{(categoría de ocupación ${d.cat})}`);
+  m.row("Factor de direccionalidad: K<sub>d</sub>", fmt(KD, 2), "Tabla 3");
+  m.eq(L`K_d = ${tn(KD, 2)} \quad \text{(edificios: sistema principal y componentes)}`);
+  m.row(`Exposición ${d.expo}: α ; z<sub>g</sub> ; z<sub>mín</sub>`, `${fmt(e.alfa, 1)} ; ${fmt(e.zg, 0)} m ; ${fmt(e.zmin, 0)} m`, "Tabla 6");
+  m.eq(L`\alpha = ${tn(e.alfa, 1)} \qquad z_g = ${tn(e.zg, 0)}\ \mathrm{m} \qquad z_{min} = ${tn(e.zmin, 0)}\ \mathrm{m}`);
+  m.row("Factor de elevación del suelo: K<sub>e</sub>", fmt(st.Ke, 3), "Tabla 4");
+  m.eq(L`K_e = e^{-0.000119\,z_e} = e^{-0.000119 \cdot ${tn(d.ze, 0)}} = ${tn(st.Ke, 3)}`, "Tabla 4, nota 2");
+  if (d.topo === "no") {
+    m.row("Factor topográfico: K<sub>zt</sub>", "1.00", "5.6.2");
+    m.eq(L`K_{zt} = 1.00 \quad \text{(sin efecto topográfico)}`);
+  } else {
+    m.row(`${tp.t.nombre}: H/L<sub>h</sub>`, fmt(tp.hl, 3), "5.6.1");
+    m.eq(L`\frac{H}{L_h} = \frac{${tn(d.tH, 1)}}{${tn(d.tLh, 1)}} = ${tn(tp.hl, 3)}`);
+    if (!tp.aplica) {
+      m.row("Factor topográfico: K<sub>zt</sub>", "1.00", "5.6.2");
+      m.eq(L`K_{zt} = 1.00`);
+      m.note(`No se cumplen las condiciones de 5.6.1 (H/L<sub>h</sub> ≥ 0.2 y H ≥ ${fmt(tp.Hmin, 1)} m en exposición ${d.expo}): K<sub>zt</sub> = 1.`,
+        L`No se cumplen las condiciones de 5.6.1 ($H/L_h \ge 0.2$ y $H \ge ${tn(tp.Hmin, 1)}$ m en exposición ${d.expo}): $K_{zt} = 1$.`);
+    } else {
+      m.row("Factores K<sub>1</sub> ; K<sub>2</sub> ; K<sub>3</sub> a la altura h", `${fmt(tp.K1, 3)} ; ${fmt(tp.K2, 3)} ; ${fmt(tp.K3(g.h), 3)}`, "Figura 3");
+      m.eq(L`K_1 = ${tn(tp.t.k1[d.expo], 2)} \cdot ${tn(tp.hlK, 3)} = ${tn(tp.K1, 3)} \qquad K_2 = 1 - \frac{|x|}{\mu L_h} = 1 - \frac{${tn(d.tx, 1)}}{${tn(tp.mu, 1)} \cdot ${tn(tp.LhEf, 1)}} = ${tn(tp.K2, 3)} \qquad K_3 = e^{-\gamma z/L_h} = e^{-${tn(tp.t.gama, 1)} \cdot ${tn(g.h, 2)}/${tn(tp.LhEf, 1)}} = ${tn(tp.K3(g.h), 3)}`, "Figura 3");
+      m.row("Factor topográfico a la altura h: K<sub>zt</sub>", fmt(Kzth, 3), "Ec. (1)");
+      m.eq(L`K_{zt} = (1 + K_1 K_2 K_3)^2 = (1 + ${tn(tp.K1, 3)} \cdot ${tn(tp.K2, 3)} \cdot ${tn(tp.K3(g.h), 3)})^2 = ${tn(Kzth, 3)}`, "Ec. (1)");
+      if (tp.hl > 0.5) m.note("Con H/L<sub>h</sub> > 0.5 se usa H/L<sub>h</sub> = 0.5 en K<sub>1</sub> y L<sub>h</sub> = 2H en K<sub>2</sub> y K<sub>3</sub> (Figura 3, nota b).", L`Con $H/L_h > 0.5$ se usa $H/L_h = 0.5$ en $K_1$ y $L_h = 2H$ en $K_2$ y $K_3$ (Figura 3, nota b).`);
+    }
+  }
+
+  // ---------- 2) Presión de velocidad ----------
+  m.h("Presión de velocidad — 5.8");
+  m.row("Altura media del techo: h", `${fmt(g.h, 2)} m`, "3.2");
+  m.eq(g.h === d.he ? L`h = h_e = ${tn(d.he, 2)}\ \mathrm{m} \quad (\theta \le 10^\circ)` : L`h = h_e + \tfrac{1}{2}\,\Delta h = ${tn(d.he, 2)} + \tfrac{1}{2} \cdot ${tn(g.rise, 2)} = ${tn(g.h, 2)}\ \mathrm{m}`);
+  m.row("Coeficiente de exposición a la altura h: K<sub>h</sub>", fmt(Kh, 3), "Tabla 5");
+  m.eq(L`K_h = 2.41 \left(\frac{z}{z_g}\right)^{2/\alpha} = 2.41 \left(\frac{${tn(Math.max(g.h, e.zmin), 2)}}{${tn(e.zg, 0)}}\right)^{2/${tn(e.alfa, 1)}} = ${tn(Kh, 3)}`, "Tabla 5, nota 1");
+  if (g.h < e.zmin) m.note(`Como h < z<sub>mín</sub>, K<sub>h</sub> se evalúa con z = z<sub>mín</sub> = ${fmt(e.zmin, 0)} m (Tabla 5, nota 3).`, L`Como $h < z_{min}$, $K_h$ se evalúa con $z = z_{min} = ${tn(e.zmin, 0)}$ m (Tabla 5, nota 3).`);
+  m.row("Presión de velocidad a la altura h: q<sub>h</sub>", `${fmt(kg(qh), 1)} kgf/m²`, "Ec. (2)");
+  m.eq(L`q_h = 0.613\,I\,K_h\,K_{zt}\,K_e\,V^2 = 0.613 \cdot ${tn(d.I, 2)} \cdot ${tn(Kh, 3)} \cdot ${tn(Kzth, 3)} \cdot ${tn(st.Ke, 3)} \cdot ${tn(d.V, 0)}^2 = ${tn(qh, 1)}\ \mathrm{N/m^2} = ${tn(kg(qh), 1)}${U}`, "Ec. (2)");
+  const alturas = [...new Set([0, e.zmin, ...niveles, d.he, g.h, g.hTop].filter(z => z <= g.hTop + 1e-9).map(z => +z.toFixed(3)))].sort((a, b) => a - b);
+  m.tabla("Presión de velocidad por altura", [["z [m]", "$z$ [m]"], ["K<sub>z</sub>", "$K_z$"], ["K<sub>zt</sub>", "$K_{zt}$"], ["q<sub>z</sub> [N/m²]", "$q_z$ [N/m$^2$]"], ["q<sub>z</sub> [kgf/m²]", "$q_z$ [kgf/m$^2$]"]],
+    alturas.map(z => [fmt(z, 2), fmt(Kz(z, e), 3), fmt(tp.Kzt(z), 3), fmt(st.q(z), 1), fmt(kg(st.q(z)), 1)]), "Tabla 5 y Ec. (2)");
+
+  // ---------- 3) Cerramiento ----------
+  m.h("Efecto de ráfaga y presión interna — 5.9 a 5.11");
+  m.row("Factor de efecto de ráfaga: G", fmt(d.G, 2), "5.9.2");
+  m.eq(L`G = ${tn(d.G, 2)}`);
+  if (!g.baja) m.note(`El edificio no es de baja altura (3.12): el valor G = ${fmt(d.G, 2)} vale solo si es rígido, con frecuencia fundamental ≥ 1 Hz (3.20), obtenida con un análisis estructural y no con fórmulas aproximadas (5.9.1). Si es flexible, se debe usar G<sub>f</sub> (5.9.3).`,
+    L`El edificio no es de baja altura (3.12): el valor $G = ${tn(d.G, 2)}$ vale solo si es rígido, con frecuencia fundamental $\ge 1$ Hz (3.20), obtenida con un análisis estructural y no con fórmulas aproximadas (5.9.1). Si es flexible, se debe usar $G_f$ (5.9.3).`);
+  m.row(`Coeficiente de presión interna, edificio ${CERR_TXT[d.cerr]}: GC<sub>pi</sub>`, `±${fmt(d.gcpi, 2)}`, "Tabla 7");
+  m.eq(L`(GC_{pi}) = \pm ${tn(d.gcpi, 2)}`, "Tabla 7");
+  m.row("Presión interna: q<sub>h</sub> K<sub>d</sub> GC<sub>pi</sub>", `±${fmt(kg(qh * KD * d.gcpi), 1)} kgf/m²`, "Ec. (4)");
+  m.eq(L`q_i\,K_d\,(GC_{pi}) = ${tn(kg(qh), 1)} \cdot ${tn(KD, 2)} \cdot ${tn(d.gcpi, 2)} = \pm ${tn(kg(qh * KD * d.gcpi), 1)}${U}`);
+  m.p(L`Se consideran los dos casos de la Tabla 7: presión interna positiva (hacia las superficies interiores) y negativa en todas las superficies. La presión interna se evalúa con $q_i = q_h$, lo que es conservador en edificios parcialmente cerrados.`);
+
+  // ---------- 4) SPRFV ----------
+  let dr = null, ev = null, fuerzas, marcos;
+  const cabP = (ext) => [["Superficie", "Superficie"], ext, ["p ext. [kgf/m²]", "$p_{ext}$"], ["con +GC<sub>pi</sub>", "con $+GC_{pi}$"], ["con −GC<sub>pi</sub>", "con $-GC_{pi}$"]];
+  if (d.proc === "dir") {
+    dr = { ...direccional(d, g, st), st };
+    m.h("Sistema principal: procedimiento direccional — cláusula 6");
+    m.p(L`La presión de diseño de cada superficie es $p = q\,K_d\,G\,C_p - q_i\,K_d\,(GC_{pi})$ (Ec. (4)), con $q = q_z$ en el muro de barlovento y $q = q_h$ en el muro de sotavento, los muros laterales y el techo. Los coeficientes $C_p$ son los de la Figura 4.`);
+    for (const x of dr.dirs) {
+      m.sub(x.nombre);
+      m.row("Dimensiones paralela y normal al viento: L ; B", `${fmt(x.Lw, 2)} ; ${fmt(x.B, 2)} m`, "Figura 4");
+      m.eq(L`L = ${tn(x.Lw, 2)}\ \mathrm{m} \qquad B = ${tn(x.B, 2)}\ \mathrm{m} \qquad \frac{L}{B} = ${tn(x.Lw / x.B, 3)} \qquad \frac{h}{L} = ${tn(g.h / x.Lw, 3)}`);
+      m.row("Muro de sotavento: C<sub>p</sub>", sg(x.cpL, 3), "Figura 4");
+      m.eq(L`C_p = ${tn(x.cpL, 3)} \quad \text{(interpolado con } L/B = ${tn(x.Lw / x.B, 3)}\text{)}`, "Figura 4");
+      m.row("Muro de barlovento a la altura h: p externa", `${sg(kg(x.pW(g.h)))} kgf/m²`, "Ec. (4)");
+      m.eq(L`q_h\,K_d\,G\,C_p = ${tn(kg(st.q(g.h)), 1)} \cdot ${tn(KD, 2)} \cdot ${tn(d.G, 2)} \cdot 0.8 = ${tn(kg(x.pW(g.h)), 1)}${U}`, "Ec. (4)");
+      const filas = [];
+      const f3 = (nombre, cpTxt, pe) => filas.push([nombre, cpTxt, sg(kg(pe)), sg(kg(pe - x.pi)), sg(kg(pe + x.pi))]);
+      const zsW = [...new Set([0, e.zmin, ...niveles, x.hw].filter(z => z <= x.hw + 1e-9).map(z => +z.toFixed(3)))].sort((a, b) => a - b);
+      for (const z of zsW) f3(`Muro de barlovento, z = ${fmt(z, 2)} m`, "0.800", x.pW(z));
+      f3("Muro de sotavento", sg(x.cpL, 3), x.pL);
+      f3("Muros laterales", "−0.700", x.pS);
+      for (const t of x.techo) {
+        const tramo = `${t.nombre} (${fmt(t.x0, 2)} a ${fmt(t.x1, 2)} m)`, dos = Math.abs(t.cp[0] - t.cp[1]) > 1e-9;
+        f3(dos ? `${tramo}, caso A` : tramo, fmt(t.cp[0], 3).replace("-", "−"), t.pe[0]);
+        if (dos) f3(`${tramo}, caso B`, fmt(t.cp[1], 3).replace("-", "−"), t.pe[1]);
+      }
+      m.tabla(`Presiones de diseño del SPRFV [kgf/m²], ${x.nombre.toLowerCase()}`, cabP(["C<sub>p</sub>", "$C_p$"]), filas.map(f => f.map((c, i) => i === 0 ? c : String(c).replace("-", "−"))), "Figura 4 y Ec. (4)");
+    }
+    m.p(L`En el techo, la distancia de cada tramo se mide en horizontal desde el borde de barlovento. Donde la Figura 4 entrega dos valores de $C_p$, el caso A es el de mayor succión y el caso B el segundo valor; la estructura del techo debe resistir ambos.`);
+    fuerzas = fuerzasDireccional(d, g, dr, niveles);
+    marcos = marcoDireccional(d, g, dr);
+  } else {
+    ev = envolvente(d, g, st);
+    m.h("Sistema principal: procedimiento envolvente — cláusula 7");
+    m.p(L`La presión de diseño de cada zona es $p = q_h\,K_d\,[(GC_{pf}) - (GC_{pi})]$ (Ec. (7)), con los coeficientes $(GC_{pf})$ de la Figura 12, interpolados con el ángulo del techo.`);
+    m.row("Ancho de las zonas de extremo: 2a", `${fmt(2 * g.a, 2)} m`, "Figura 12");
+    m.eq(L`a = \min(0.1 \cdot ${tn(g.minDim, 2)}\ ;\ 0.4 \cdot ${tn(g.h, 2)}) = ${tn(Math.min(0.1 * g.minDim, 0.4 * g.h), 2)}\ \mathrm{m} \ \ge\ \max(0.04 \cdot ${tn(g.minDim, 2)}\ ;\ 0.9) = ${tn(Math.max(0.04 * g.minDim, 0.9), 2)}\ \mathrm{m} \quad\Rightarrow\quad a = ${tn(g.a, 2)}\ \mathrm{m}`, "Figura 12");
+    m.row("Presión de referencia: q<sub>h</sub> K<sub>d</sub>", `${fmt(kg(ev.k), 1)} kgf/m²`, "Ec. (7)");
+    m.eq(L`q_h\,K_d = ${tn(kg(qh), 1)} \cdot ${tn(KD, 2)} = ${tn(kg(ev.k), 1)}${U}`, "Ec. (7)");
+    const tab = (titulo, lista, ref) => m.tabla(titulo, cabP(["GC<sub>pf</sub>", "$GC_{pf}$"]).map((c, i) => i === 0 ? ["Zona", "Zona"] : c),
+      lista.map(f => [f.zona, sg(f.gc, 3), sg(kg(f.pe)), sg(kg(f.pMas)), sg(kg(f.pMenos))].map((c, i) => i === 0 ? c : c.replace("-", "−"))), ref);
+    tab("Caso de carga 1 (viento transversal a la cumbrera): presiones [kgf/m²]", ev.caso1, "Figura 12");
+    tab("Caso de carga 2 (viento paralelo a la cumbrera): presiones [kgf/m²]", ev.caso2, "Figura 12");
+    tab("Zonas de los casos de torsión 3 y 4: presiones [kgf/m²]", ev.tors, "Figura 13");
+    m.p(L`Zonas 1 y 4: muros de barlovento y sotavento; 2 y 3: techo a barlovento y a sotavento; 5 y 6: muros extremos en el caso 2. Las zonas con E son la franja de extremo de ancho $2a$ junto a la esquina de barlovento (ancho $a$ en las zonas 5E y 6E). Cada esquina del edificio se debe considerar como esquina de barlovento.`);
+    if (ev.corta2) m.note(`El coeficiente negativo de la zona 2 se aplica hasta ${fmt(ev.x2, 2)} m del borde (2.5 h<sub>e</sub>); el resto del techo a barlovento usa el de la zona 3 (7.3.2.1).`,
+      L`El coeficiente negativo de la zona 2 se aplica hasta ${tn(ev.x2, 2)} m del borde ($2.5\,h_e$); el resto del techo a barlovento usa el de la zona 3 (7.3.2.1).`);
+    m.p(L`Los casos de torsión 3 y 4 usan los coeficientes de los casos 1 y 2 en una mitad del edificio y los de las zonas T en la otra (7.3.2.2). No se exigen en edificios de un piso con $h \le 9$ m, ni en edificios de uno o dos pisos de estructura ligera o con diafragmas flexibles.`);
+    fuerzas = fuerzasEnvolvente(d, g, ev, niveles);
+    marcos = marcoEnvolvente(d, g, ev);
+  }
+
+  // ---------- 5) Carga sobre un marco ----------
+  m.h("Carga sobre un marco transversal interior");
+  m.p(L`Cargas por metro de barra, iguales a la presión de diseño por la separación entre marcos $s = ${tn(d.s, 2)}$ m. Actúan normales a cada superficie: positivas hacia ella y negativas alejándose (succión). Los casos combinan ${d.proc === "dir" ? "los dos valores del techo (A y B) con " : ""}la presión interna positiva ($+$) y negativa ($-$).`);
+  for (const mc of marcos) {
+    m.sub(mc.nombre);
+    const c0 = mc.casos[0];
+    m.row(`Columna de barlovento en el alero, caso ${c0.nombre}: w`, `${sg(kg(c0.alto), 0)} kgf/m`, d.proc === "dir" ? "Ec. (4)" : "Ec. (7)");
+    m.eq(L`w = p \cdot s = ${sgT(kg(c0.alto / d.s), 1)} \cdot ${tn(d.s, 2)} = ${sgT(kg(c0.alto), 0)}\ \mathrm{kgf/m}`);
+    const filas = [];
+    const fl = (nombre, get) => filas.push([nombre, ...mc.casos.map(c => sg(kg(get(c)), 0).replace("-", "−"))]);
+    if (d.proc === "dir") { fl("Columna de barlovento, base", c => c.base); fl(`Columna de barlovento, z = ${fmt(mc.hw, 2)} m`, c => c.alto); }
+    else fl("Columna de barlovento", c => c.alto);
+    fl(`Columna de sotavento (altura ${fmt(mc.hl, 2)} m)`, c => c.sot);
+    mc.tramos.forEach((t, i) => fl(`${t.nombre} (${fmt(t.x0, 2)} a ${fmt(t.x1, 2)} m)`, c => c.techo[i]));
+    m.tabla(`Cargas sobre el marco [kgf/m], ${mc.nombre.toLowerCase()}`, [["Barra", "Barra"], ...mc.casos.map(c => [`Caso ${c.nombre}`, `Caso ${c.tex}`])], filas, d.proc === "dir" ? "Ec. (4)" : "Ec. (7)");
+  }
+  m.p(d.proc === "dir"
+    ? L`En la columna de barlovento la carga varía con la altura como $q_z$: es constante hasta $z_{min}$ y crece hasta el alero. Los marcos de los extremos reciben la mitad del ancho tributario.`
+    : L`Los marcos dentro de la franja de extremo ($2a = ${tn(2 * g.a, 2)}$ m) reciben las presiones de las zonas 1E a 4E en la parte de su ancho tributario que cae en esa franja.`);
+
+  // ---------- 6) Fuerzas por piso ----------
+  m.h("Fuerzas por piso, corte basal y momento volcante");
+  m.p(L`La fuerza de cada nivel reúne la presión externa de los muros de barlovento y sotavento en su altura tributaria (hasta la mitad de la altura de los pisos vecinos) y, en el nivel superior, la parte del edificio sobre él y la componente horizontal del techo. La presión interna se anula entre muros opuestos. La mitad inferior del primer piso descarga directo en la fundación.`);
+  for (const f of fuerzas) {
+    m.sub(f.nombre);
+    m.row("Fuerza total del viento sobre el edificio", `${fmt(kg(f.total), 0)} kgf`, d.proc === "dir" ? "Ec. (4)" : "Ec. (7)");
+    m.eq(L`F = \sum F_i + F_0 = ${tn(kg(f.V), 0)} + ${tn(kg(f.suelo), 0)} = ${tn(kg(f.total), 0)}\ \mathrm{kgf}`);
+    m.row("Carga mínima de diseño", `${fmt(kg(f.Fmin), 0)} kgf`, d.proc === "dir" ? "6.1.5" : "7.3.6");
+    m.eq(L`F_{min} = 0.25\ \mathrm{kN/m^2} \cdot ${tn(f.Amuro, 1)}\ \mathrm{m^2} + 0.13\ \mathrm{kN/m^2} \cdot ${tn(f.Atecho, 1)}\ \mathrm{m^2} = ${tn(f.Fmin / 1000, 2)}\ \mathrm{kN} = ${tn(kg(f.Fmin), 0)}\ \mathrm{kgf}`, d.proc === "dir" ? "6.1.5" : "7.3.6");
+    if (f.id === "L" && d.techo !== "plano") m.p(L`Con viento paralelo a la cumbrera, el área proyectada es el muro extremo completo, incluido el frontón: toda se carga con $0.25\ \mathrm{kN/m^2}$.`);
+    if (f.escala !== 1) m.note(`Rige la carga mínima: las fuerzas se amplifican por ${fmt(f.escala, 3)} para alcanzarla (criterio de AURA para repartirla).`, L`Rige la carga mínima: las fuerzas se amplifican por ${tn(f.escala, 3)} para alcanzarla (criterio de AURA para repartirla).`);
+    m.row("Corte basal ; momento volcante en la base", `${fmt(kg(f.total) / 1000, 2)} tf ; ${fmt(kg(f.M) / 1000, 2)} tf·m`);
+    m.eq(L`V_b = ${tn(kg(f.total) / 1000, 2)}\ \mathrm{tf} \qquad M_v = \sum F_i\,z_i = ${tn(kg(f.M) / 1000, 2)}\ \mathrm{tf\,m}`);
+    m.row("Levantamiento total del techo (presión interna positiva)", `${fmt(kg(f.levant) / 1000, 2)} tf`);
+    m.eq(L`U = ${tn(kg(f.levant) / 1000, 2)}\ \mathrm{tf}`);
+    const cab = [["Nivel", "Nivel"], ["z [m]", "$z$ [m]"], ["F [kgf]", "$F_i$ [kgf]"], ["Corte [kgf]", "$V_i$ [kgf]"]];
+    if (d.proc === "dir") cab.push(["M<sub>z</sub> caso 2 [kgf·m]", "$M_z$ caso 2 [kgf m]"]);
+    const filas = f.pisos.slice().reverse().map((p, i) => [String(f.pisos.length - i), fmt(p.z, 2), fmt(kg(p.F), 0), fmt(kg(p.V), 0), ...(d.proc === "dir" ? [fmt(kg(0.75 * p.F * 0.15 * f.B), 0)] : [])]);
+    filas.push(["Fundación", "0.00", fmt(kg(f.suelo), 0), fmt(kg(f.total), 0), ...(d.proc === "dir" ? ["—"] : [])]);
+    m.tabla(`Fuerzas por piso, ${f.nombre.toLowerCase()}`, cab, filas, d.proc === "dir" ? "Figura 11" : "Figura 12");
+  }
+  if (d.proc === "dir") m.p(L`Casos de carga de la Figura 11: el caso 1 es la fuerza completa en cada dirección; el caso 2 aplica el 75\,\% de esa fuerza junto con un momento torsor $M_z = 0.75\,F_i \cdot 0.15\,B$; el caso 3 aplica a la vez el 75\,\% de ambas direcciones, y el caso 4 el 56.3\,\% de ambas con sus torsiones.`);
+
+  // ---------- 7) Componentes y revestimientos ----------
+  const cr = componentes(d, g, st);
+  m.h("Componentes y revestimientos — cláusula 9");
+  m.p(cr.alto
+    ? L`Con $h > 18.3$ m rige la Parte 2: $p = q\,K_d\,(GC_p) - q_i\,K_d\,(GC_{pi})$ (Ec. (20)). Se evalúa con $q = q_h$ en todas las zonas; en los muros de barlovento la presión positiva se puede calcular con $q_z$ a la altura del componente.`
+    : L`Con $h \le 18.3$ m rige la Parte 1: $p = q_h\,K_d\,[(GC_p) - (GC_{pi})]$ (Ec. (19)).`);
+  m.row("Área efectiva de viento del componente de techo: A", `${fmt(cr.AT, 2)} m²`, "3");
+  m.eq(L`A = L_c \cdot \max(s_c\ ;\ L_c/3) = ${tn(d.LcT, 2)} \cdot \max(${tn(d.scT, 2)}\ ;\ ${tn(d.LcT / 3, 2)}) = ${tn(cr.AT, 2)}\ \mathrm{m^2}`);
+  m.row("Área efectiva de viento del componente de muro: A", `${fmt(cr.AM, 2)} m²`, "3");
+  m.eq(L`A = ${tn(d.LcM, 2)} \cdot \max(${tn(d.scM, 2)}\ ;\ ${tn(d.LcM / 3, 2)}) = ${tn(cr.AM, 2)}\ \mathrm{m^2}`);
+  m.row("Ancho de las zonas de borde: a", `${fmt(cr.a, 2)} m`, cr.alto ? "Figura 40" : "Figura 24");
+  m.eq(L`a = ${tn(cr.a, 2)}\ \mathrm{m}`);
+  const peor = [...cr.techo, ...cr.muro].reduce((a, c) => (!a || c.pn < a.pn ? c : a), null);
+  if (peor) {
+    m.row(`Mayor succión: ${peor.donde.toLowerCase()}, zona ${peor.zona}`, `${sg(kg(peor.pn))} kgf/m²`, cr.alto ? "Ec. (20)" : "Ec. (19)");
+    m.eq(L`p = q_h\,K_d\,[(GC_p) - (GC_{pi})] = ${tn(kg(qh), 1)} \cdot ${tn(KD, 2)} \cdot (${tn(peor.gn, 3)} - ${tn(d.gcpi, 2)}) = ${tn(kg(qh * KD * (peor.gn - d.gcpi)), 1)}${U}`, cr.alto ? "Ec. (20)" : "Ec. (19)");
+  }
+  const cabC = [["Zona", "Zona"], ["GC<sub>p</sub> −", "$GC_p^-$"], ["GC<sub>p</sub> +", "$GC_p^+$"], ["p − [kgf/m²]", "$p^-$"], ["p + [kgf/m²]", "$p^+$"], ["w − [kgf/m]", "$w^-$ [kgf/m]"], ["w + [kgf/m]", "$w^+$ [kgf/m]"]];
+  const filC = (l) => l.map(c => [c.zona, sg(c.gn, 3), c.gp === null ? "—" : sg(c.gp, 3), sg(kg(c.pn)) + (c.minN ? " *" : ""), sg(kg(c.pp)) + (c.minP ? " *" : ""), sg(kg(c.wn), 0), sg(kg(c.wp), 0)].map((c2, i) => i === 0 ? c2 : c2.replace("-", "−")));
+  if (cr.techo.length) m.tabla(`Componente de techo, A = ${fmt(cr.AT, 2)} m²: presiones [kgf/m²]`, cabC, filC(cr.techo), CR[cr.figT].fig);
+  else m.note(`${cr.aviso} El componente de techo queda SIN VERIFICAR.`, `${texTxt(cr.aviso)} El componente de techo queda sin verificar.`);
+  m.tabla(`Componente de muro, A = ${fmt(cr.AM, 2)} m²: presiones [kgf/m²]`, cabC, filC(cr.muro), CR[cr.figM].fig);
+  m.p(L`Cada componente se diseña para la mayor succión ($p^-$, con presión interna positiva) y la mayor presión ($p^+$, con presión interna negativa). La carga lineal $w$ es la presión por el ancho tributario del componente. Los valores con * corresponden a la presión mínima de 0.25 kN/m$^2$ (9.2.2).`);
+  if (cr.redMuro !== 1) m.p(L`Los coeficientes de los muros se reducen en 10\,\% porque $\theta \le 10^\circ$ (Figura 24, nota 5).`);
+  m.p(d.techo === "una"
+    ? L`Zonas del techo de pendiente única (Figuras 35 y 36): 1 interior; 2 y 2' bordes; 3 y 3' esquinas, las de mayor succión junto al alero alto.`
+    : cr.figT === "f26" ? L`Zonas del techo (Figura 26): 3 esquinas; 2 borde de ancho $0.6h$; 1 franja interior siguiente de ancho $0.6h$; 1' centro del techo. Zonas de muro: 5 esquinas de ancho $a$; 4 resto.`
+    : L`Zonas del techo: 1 interior; 2 bordes y cumbrera; 3 esquinas (ver la figura indicada). Zonas de muro: 5 esquinas de ancho $a$; 4 resto.`);
+
+  return { g, st, qh, Kh, dr, ev, fuerzas, marcos, cr, niveles };
+}
+
+// ---------------------------------------------------------------------------
+// Dibujo: corte transversal con las presiones externas del sistema principal [kgf/m²]
+// ---------------------------------------------------------------------------
+function superficiesDibujo(d, r) {
+  // Devuelve { hw, hl, items: [{ tipo, x0, x1, p }] } del primer caso transversal (caso A del techo)
+  if (r.dr) {
+    const x = r.dr.dirs[0];
+    return { hw: x.hw, hl: x.hl, sub: `${x.nombre} · presiones externas, caso A del techo`,
+      muroW: x.pW(x.hw), muroL: x.pL, techo: x.techo.map(t => ({ x0: t.x0, x1: t.x1, p: t.pe[0] })) };
+  }
+  const mc = r.marcos[0], k = r.ev.k, c = r.ev.c1;
+  return { hw: d.he, hl: d.he, sub: "Viento transversal · presiones externas, caso de carga 1 (zonas 1 a 4)",
+    muroW: k * c["1"], muroL: k * c["4"], techo: mc.tramos.map(t => ({ x0: t.x0, x1: t.x1, p: k * t.gc })) };
+}
+function perfilTecho(d, g, hw) {
+  // Altura del techo en la coordenada x (0 = borde de barlovento)
+  if (d.techo === "dos") return (x) => d.he + (x <= d.W / 2 ? x : d.W - x) * g.t;
+  if (d.techo === "una") return (x) => hw <= d.he + 1e-9 ? d.he + x * g.t : g.hTop - x * g.t;
+  return () => d.he;
+}
+function svgViento(d, r) {
+  const g = r.g, s = superficiesDibujo(d, r), y = perfilTecho(d, g, s.hw);
+  const k = Math.min(420 / d.W, 190 / g.hTop), ox = 170, oy = 112 + g.hTop * k;
+  const X = (x) => ox + x * k, Y = (z) => oy - z * k, c = "#3d4450";
+  const pMax = Math.max(Math.abs(s.muroW), Math.abs(s.muroL), ...s.techo.map(t => Math.abs(t.p)), 1), la = (p) => 14 + 34 * Math.abs(p) / pMax;
+  const txt = (x, yy, t, a = "middle", col = c, fs = 11) => `<text x="${x.toFixed(1)}" y="${yy.toFixed(1)}" font-size="${fs}" fill="${col}" text-anchor="${a}">${t}</text>`;
+  // Flecha normal a la superficie en (px, py), con normal exterior (nx, ny): hacia la superficie si p > 0
+  const flecha = (px, py, nx, ny, p) => {
+    const l = la(p), col = p >= 0 ? "#1f5fa8" : "#c62828";
+    const [x1, y1, x2, y2] = p >= 0 ? [px + nx * (l + 4), py + ny * (l + 4), px + nx * 4, py + ny * 4] : [px + nx * 4, py + ny * 4, px + nx * (l + 4), py + ny * (l + 4)];
+    const ang = Math.atan2(y2 - y1, x2 - x1), h = 6;
+    return `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${col}" stroke-width="1.5"/>
+      <polygon points="${x2.toFixed(1)},${y2.toFixed(1)} ${(x2 - h * Math.cos(ang - 0.4)).toFixed(1)},${(y2 - h * Math.sin(ang - 0.4)).toFixed(1)} ${(x2 - h * Math.cos(ang + 0.4)).toFixed(1)},${(y2 - h * Math.sin(ang + 0.4)).toFixed(1)}" fill="${col}"/>`;
+  };
+  const col = (p) => p >= 0 ? "#1f5fa8" : "#c62828";
+  let fl = "";
+  for (const f of [0.25, 0.6, 0.92]) fl += flecha(X(0), Y(s.hw * f), -1, 0, s.muroW * (0.75 + 0.25 * f));
+  for (const f of [0.3, 0.75]) fl += flecha(X(d.W), Y(s.hl * f), 1, 0, s.muroL);
+  let rot = txt(X(0) - 58, Y(s.hw * 0.6) - 8, `${sg(kg(s.muroW), 0)}`, "end", col(s.muroW), 12) + txt(X(d.W) + 58, Y(s.hl * 0.5) - 8, `${sg(kg(s.muroL), 0)}`, "start", col(s.muroL), 12);
+  s.techo.forEach((t, i) => {
+    const xm = (t.x0 + t.x1) / 2, pend = (y(xm + 0.01) - y(xm - 0.01)) / 0.02, n = Math.hypot(pend, 1), nx = -pend / n, ny = -1 / n;   // normal exterior en pantalla
+    const nf = Math.max(1, Math.min(3, Math.round((t.x1 - t.x0) * k / 45)));
+    for (let j = 0; j < nf; j++) { const xx = t.x0 + (t.x1 - t.x0) * (j + 0.5) / nf; fl += flecha(X(xx), Y(y(xx)), nx, ny, t.p); }
+    rot += txt(X(xm) + nx * 62, Y(y(xm)) + ny * 62 - (i % 2 ? 0 : 4), `${sg(kg(t.p), 0)}`, "middle", col(t.p), 12);
+    if (i) rot += `<line x1="${X(t.x0)}" y1="${Y(y(t.x0)) - 5}" x2="${X(t.x0)}" y2="${Y(y(t.x0)) + 5}" stroke="${c}"/>`;
+  });
+  const pts = [[0, 0], [0, y(0)]];
+  for (let i = 1; i <= 40; i++) pts.push([d.W * i / 40, y(d.W * i / 40)]);
+  pts.push([d.W, 0]);
+  const Wt = X(d.W) + 170, Ht = oy + 76;
+  return `<svg viewBox="0 0 ${Wt.toFixed(0)} ${Ht.toFixed(0)}" role="img" aria-label="Corte transversal del edificio con las presiones del viento">
+    ${txt(Wt / 2, 18, "CORTE TRANSVERSAL — PRESIONES DEL VIENTO [kgf/m²]", "middle", c, 11.5)}
+    <line x1="${X(0) - 150}" y1="${oy}" x2="${X(d.W) + 150}" y2="${oy}" stroke="#9a7b45"/>
+    <polygon points="${pts.map(([x, z]) => `${X(x).toFixed(1)},${Y(z).toFixed(1)}`).join(" ")}" fill="#e3e8ee" stroke="${c}" stroke-width="1.6"/>
+    <line x1="18" y1="${Y(g.hTop * 0.5)}" x2="62" y2="${Y(g.hTop * 0.5)}" stroke="${c}" stroke-width="2.2"/><polygon points="62,${Y(g.hTop * 0.5)} 53,${Y(g.hTop * 0.5) - 5} 53,${Y(g.hTop * 0.5) + 5}" fill="${c}"/>
+    ${txt(40, Y(g.hTop * 0.5) - 9, "viento")}
+    ${fl}${rot}
+    <line x1="${X(0)}" y1="${oy + 16}" x2="${X(d.W)}" y2="${oy + 16}" stroke="#8a93a0"/>${txt(X(d.W / 2), oy + 30, `W = ${fmt(d.W, 2)} m`)}
+    ${txt(X(d.W / 2), Y(Math.min(s.hw, s.hl) / 2), `h = ${fmt(g.h, 2)} m · q<tspan font-size="8" dy="2">h</tspan><tspan dy="-2"> = ${fmt(kg(r.qh), 1)} kgf/m²</tspan>`)}
+    <text x="4" y="${(Ht - 22).toFixed(0)}" font-size="10" fill="#8a93a0">${s.sub}</text>
+    <text x="4" y="${(Ht - 8).toFixed(0)}" font-size="10" fill="#8a93a0">Azul: hacia la superficie · rojo: succión · no incluyen la presión interna (±${fmt(kg(r.qh * KD * d.gcpi), 0)} kgf/m²)</text>
+  </svg>`;
+}
+function tikzViento(d, r) {
+  const g = r.g, s = superficiesDibujo(d, r), y = perfilTecho(d, g, s.hw), k = 8 / d.W, f = (v) => (v * k).toFixed(3);
+  const pts = [[0, 0], [0, y(0)], ...(d.techo === "dos" ? [[d.W / 2, y(d.W / 2)]] : []), [d.W, y(d.W)], [d.W, 0]];
+  return L`\begin{figure}[H]
+\centering
+\begin{tikzpicture}[>=stealth]
+\filldraw[fill=gray!15,draw=black,thick] ${pts.map(([x, z]) => `(${f(x)},${f(z)})`).join(" -- ")} -- cycle;
+\draw (${f(-0.3 * d.W)},0) -- (${f(1.3 * d.W)},0);
+\draw[->,thick] (${f(-0.35 * d.W)},${f(g.hTop / 2)}) -- (${f(-0.12 * d.W)},${f(g.hTop / 2)}) node[midway,above]{\small viento};
+\node[left] at (0,${f(s.hw * 0.75)}) {\small $${sgT(kg(s.muroW), 0)}$};
+\node[right] at (${f(d.W)},${f(s.hl / 2)}) {\small $${sgT(kg(s.muroL), 0)}$};
+${s.techo.map(t => L`\node[above] at (${f((t.x0 + t.x1) / 2)},${f(y((t.x0 + t.x1) / 2))}) {\small $${sgT(kg(t.p), 0)}$};`).join("\n")}
+\node[below] at (${f(d.W / 2)},0) {\small $W = ${tn(d.W, 2)}$ m};
+\end{tikzpicture}
+\caption{Corte transversal con las presiones externas del sistema principal en kgf/m$^2$ (positivas hacia la superficie).}
+\end{figure}
+`;
+}
+
+// ---------------------------------------------------------------------------
+// Memoria LaTeX
+// ---------------------------------------------------------------------------
+function documentoTex(d, r, cuerpo) {
+  const fecha = new Date().toLocaleDateString("es-CL", { day: "numeric", month: "long", year: "numeric" });
+  const fila = (a, b) => `${a} & ${b}\\\\`, g = r.g;
+  const datos = [
+    fila("Norma", "NCh 432:2025"),
+    fila("Zona de viento y velocidad básica", d.zona === "otra" ? L`Estudio de viento, $V = ${tn(d.V, 0)}$ m/s` : L`${d.zona}, $V = ${tn(d.V, 0)}$ m/s`),
+    fila("Categoría de ocupación ; exposición", L`${d.cat} ($I = ${tn(d.I, 2)}$) ; ${d.expo}`),
+    fila(L`Elevación del suelo $z_e$`, L`${tn(d.ze, 0)} m`),
+    fila("Efecto topográfico", d.topo === "no" ? "No se considera" : L`${TOPO[d.topo].nombre}: $H = ${tn(d.tH, 1)}$ m, $L_h = ${tn(d.tLh, 1)}$ m, $x = ${tn(d.tx, 1)}$ m (${d.tLado === "contra" ? "contra el viento" : "a favor del viento"})`),
+    fila("Techo", L`${NOM_TECHO[d.techo]}${d.techo === "plano" ? "" : L`, $\theta = ${tn(d.theta, 1)}^\circ$`}`),
+    fila(L`Ancho $W$ ; largo $L_e$ ; alero $h_e$`, L`${tn(d.W, 2)} ; ${tn(d.Le, 2)} ; ${tn(d.he, 2)} m`),
+    fila(L`Altura media del techo $h$ ; altura máxima`, L`${tn(g.h, 2)} ; ${tn(g.hTop, 2)} m`),
+    fila("Cerramiento ; factor de ráfaga", L`${CERR_TXT[d.cerr]}, $(GC_{pi}) = \pm ${tn(d.gcpi, 2)}$ ; $G = ${tn(d.G, 2)}$`),
+    fila("Procedimiento del sistema principal", d.proc === "dir" ? "Direccional (cláusula 6)" : "Envolvente (cláusula 7)"),
+    fila("Separación entre marcos", L`${tn(d.s, 2)} m`),
+    fila("Elevación de los pisos", r.niveles.map(z => tn(z, 2)).join(" ; ") + " m"),
+    fila("Componente de techo: luz ; ancho tributario", L`${tn(d.LcT, 2)} ; ${tn(d.scT, 2)} m`),
+    fila("Componente de muro: luz ; ancho tributario", L`${tn(d.LcM, 2)} ; ${tn(d.scM, 2)} m`),
+  ].join("\n");
+  const resumen = [
+    fila(L`Presión de velocidad $q_h$`, L`${tn(kg(r.qh), 1)} kgf/m$^2$`),
+    ...r.fuerzas.map(f => fila(`Corte basal, ${f.nombre.toLowerCase()}`, L`${tn(kg(f.total) / 1000, 2)} tf`)),
+    ...r.fuerzas.map(f => fila(`Momento volcante, ${f.nombre.toLowerCase()}`, L`${tn(kg(f.M) / 1000, 2)} tf m`)),
+    ...(r.cr.techo.length ? [fila("Mayor succión en componentes de techo", L`${tn(kg(Math.min(...r.cr.techo.map(c => c.pn))), 1)} kgf/m$^2$`)] : []),
+    fila("Mayor succión en componentes de muro", L`${tn(kg(Math.min(...r.cr.muro.map(c => c.pn))), 1)} kgf/m$^2$`),
+  ].join("\n");
+  const alcance = [
+    L`\textbf{Versión de prueba}: la herramienta está en desarrollo y sus resultados aún no se han validado contra ejemplos publicados.`,
+    L`Las cargas se determinan según la NCh 432:2025 para un edificio de planta rectangular, de forma regular y rígido (frecuencia fundamental mayor o igual que 1 Hz), con techo ${NOM_TECHO[d.techo]}. No se consideran edificios flexibles ni sensibles a viento transversal, desprendimiento de vórtices, galope o aleteo.`,
+    L`El viento es una carga de nivel de servicio: en las combinaciones de la NCh 3171 lleva factor 1.6 en diseño por resistencia y 1.0 en tensiones admisibles.`,
+    L`La categoría de exposición, la zona de viento y la clasificación del cerramiento son datos del usuario; la página no las deduce del sitio ni de las aberturas.`,
+    L`La presión interna se evalúa con $q_h$ y no se aplica el factor de reducción $R_i$ de edificios de gran volumen (5.11.1).`,
+    d.proc === "dir" ? L`En el procedimiento direccional no se aplica la reducción por área del coeficiente $-1.3$ del techo (Figura 4, nota b), lo que es conservador.` : "",
+    L`No se incluyen parapetos, aleros, marquesinas, equipos de techo, paneles solares, edificios abiertos ni otras estructuras (cláusula 8).`,
+    L`Las fuerzas por piso reparten la presión de los muros por alturas tributarias; la distribución entre los elementos resistentes y los efectos de torsión deben resolverse en el modelo estructural.`,
+    !r.cr.techo.length ? L`\textbf{Sin verificar}: la norma no entrega coeficientes de componentes y revestimientos para este techo; las presiones del componente de techo deben definirse por otro medio.` : "",
+  ].filter(Boolean).map(t => `\\item ${t}`).join("\n");
+  return L`\documentclass[11pt,letterpaper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-tabla,es-noshorthands,es-nolists]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+${TEX_ESTILO}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{tikz}
+\usepackage{fancyhdr}
+\setlength{\headheight}{14pt}
+\pagestyle{fancy}
+\fancyhf{}
+\chead{Cargas de viento (versión de prueba)}
+\lfoot{Memoria de cálculo --- Cargas de viento}
+\rfoot{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+\allowdisplaybreaks
+
+\begin{document}
+
+\begin{center}
+{\Large\bfseries Memoria de Cálculo}\\[4pt]
+{\large Cargas de viento sobre un edificio}\\[2pt]
+Techo ${NOM_TECHO[d.techo]}, $W \times L_e \times h_e = ${tn(d.W, 2)} \times ${tn(d.Le, 2)} \times ${tn(d.he, 2)}$ m\\[2pt]
+{\small ${fecha}}
+\end{center}
+
+\section{Datos de diseño}
+\begin{table}[H]
+\centering
+\caption{Datos del sitio y del edificio.}
+\begin{tabular}{lp{7.8cm}}
+\toprule
+Parámetro & Valor\\
+\midrule
+${datos}
+\bottomrule
+\end{tabular}
+\end{table}
+
+${tikzViento(d, r)}
+
+\section{Metodología}
+Se determinan los parámetros del sitio y la presión de velocidad según la cláusula 5 de la NCh 432:2025. Con ellos se calculan las presiones del sistema principal resistente a las fuerzas del viento (SPRFV) por el procedimiento ${d.proc === "dir" ? "direccional de la cláusula 6" : "envolvente de la cláusula 7"}, las cargas sobre un marco transversal interior, las fuerzas por piso con el corte basal y el momento volcante, y las presiones sobre componentes y revestimientos de la cláusula 9. Las presiones positivas actúan hacia la superficie y las negativas se alejan de ella.
+
+${cuerpo}
+
+\section{Alcance, hipótesis y limitaciones}
+\begin{itemize}
+${alcance}
+\end{itemize}
+
+\section{Resumen de resultados}
+\begin{table}[H]
+\centering
+\caption{Cargas de viento de diseño (nivel de servicio).}
+\begin{tabular}{p{9.5cm}r}
+\toprule
+Resultado & Valor\\
+\midrule
+${resumen}
+\bottomrule
+\end{tabular}
+\end{table}
+
+Las cargas de esta memoria son cargas de viento de servicio para usar en las combinaciones de carga del proyecto; la página no verifica la resistencia de ningún elemento.
+
+\end{document}
+`;
+}
+
+// ---------------------------------------------------------------------------
+// Cálculo e interfaz
+// ---------------------------------------------------------------------------
+function calcular() {
+  $("boxV").classList.toggle("hidden", $("zona").value !== "otra");
+  $("boxTopo").classList.toggle("hidden", $("topo").value === "no");
+  $("boxTheta").classList.toggle("hidden", $("techo").value === "plano");
+  limpiarInvalidos($("inputs"));
+  let malos = datosInvalidos(reglasDatos());
+  if (!malos.length) malos = datosSobreMaximo([["theta", 45, "El ángulo del techo debe ser θ ≤ 45°"], ["G", 1, "El factor de ráfaga G no debe superar 1 en un edificio rígido"]]);
+  const limpiar = (msg) => {
+    $("resTitle").textContent = "Resultados";
+    $("summary").innerHTML = ""; $("memo").innerHTML = ""; $("dibujo").innerHTML = "";
+    $("verdict").innerHTML = msg;
+    ultimoTex = ""; ultimoR = null; ultimoD = null;
+  };
+  if (malos.length) { limpiar(avisoInvalidos(malos)); return; }
+  const d = leerDatos();
+  // Elevaciones de los pisos: números positivos, crecientes y no mayores que la altura del edificio
+  const hTop = geometria(d).hTop, nv = d.niveles;
+  const nivMal = nv.some(z => !Number.isFinite(z) || z <= 0) || nv.some((z, i) => i && z <= nv[i - 1]) || (nv.length && nv[nv.length - 1] > hTop + 1e-6);
+  $("niveles").classList.toggle("invalido", nivMal);
+  if (nivMal) { limpiar(avisoInvalidos([`Elevación de los pisos: valores positivos, crecientes y no mayores que la altura del edificio (${fmt(hTop, 2)} m)`])); return; }
+  const m = new Memo();
+  const r = calcularViento(d, m);
+  if (r.error) { limpiar(`<div class="verdict bad">✘ ${r.error} Datos inválidos para el cálculo.</div>`); return; }
+
+  const fT = r.fuerzas.filter(f => f.id !== "L").reduce((a, f) => (!a || f.total > a.total ? f : a), null), fL = r.fuerzas.find(f => f.id === "L");
+  const sucT = r.cr.techo.length ? Math.min(...r.cr.techo.map(c => c.pn)) : null, sucM = Math.min(...r.cr.muro.map(c => c.pn));
+  const pTecho = r.dr ? Math.min(...r.dr.dirs.flatMap(x => x.techo.map(t => t.pe[0] - x.pi))) : Math.min(...r.ev.caso1.concat(r.ev.caso2).filter(f => /^[23]/.test(f.zona)).map(f => f.pMas));
+  const cards = [
+    { t: "Presión de velocidad q<sub>h</sub>", v: `${fmt(kg(r.qh), 1)} <small>kgf/m²</small>`, s: `V = ${fmt(d.V, 0)} m/s · K<sub>h</sub> = ${fmt(r.Kh, 3)} · h = ${fmt(r.g.h, 2)} m` },
+    { t: "Mayor succión en el techo (SPRFV)", v: `${sg(kg(pTecho), 1).replace("-", "−")} <small>kgf/m²</small>`, s: `${d.proc === "dir" ? "direccional" : "envolvente"}, con presión interna positiva` },
+    { t: "Corte basal transversal", v: `${fmt(kg(fT.total) / 1000, 2)} <small>tf</small>`, s: `momento volcante ${fmt(kg(fT.M) / 1000, 2)} tf·m` },
+    { t: "Corte basal longitudinal", v: `${fmt(kg(fL.total) / 1000, 2)} <small>tf</small>`, s: `momento volcante ${fmt(kg(fL.M) / 1000, 2)} tf·m` },
+    { t: "Componentes: mayor succión", v: `${sg(kg(Math.min(sucT ?? 0, sucM)), 1).replace("-", "−")} <small>kgf/m²</small>`, s: sucT === null ? "techo sin coeficientes; solo muros" : `techo ${sg(kg(sucT), 0).replace("-", "−")} · muro ${sg(kg(sucM), 0).replace("-", "−")} kgf/m²` },
+  ];
+  $("summary").innerHTML = cards.map(c => `<div class="card"><div class="t">${c.t}</div><div class="v">${c.v}</div><div class="s">${c.s}</div></div>`).join("");
+  $("resTitle").textContent = `Resultados — Viento NCh 432 · techo ${NOM_TECHO[d.techo]} ${fmt(d.W, 1)} × ${fmt(d.Le, 1)} × ${fmt(d.he, 1)} m`;
+  const sinTecho = !r.cr.techo.length;
+  $("verdict").innerHTML = `<div class="verdict ok">✔ Cargas de viento determinadas — V = ${fmt(d.V, 0)} m/s · q<sub>h</sub> = ${fmt(kg(r.qh), 1)} kgf/m² · corte basal ${fmt(kg(fT.total) / 1000, 2)} tf transversal y ${fmt(kg(fL.total) / 1000, 2)} tf longitudinal${sinTecho ? " · componente de techo SIN VERIFICAR" : ""}</div>`
+    + `<div class="note">Versión de prueba: compruebe el resultado a mano antes de usarlo. Son cargas de servicio (factor 1.6 en LRFD y 1.0 en ASD, NCh 3171); la página no verifica elementos.</div>`
+    + (sinTecho ? `<div class="note">⚠ ${r.cr.aviso}</div>` : "");
+  $("dibujo").innerHTML = svgViento(d, r);
+  $("memo").innerHTML = m.html();
+
+  ultimoR = r; ultimoD = d;
+  ultimoTex = documentoTex(d, r, m.texto());
+  ultimoNombre = `memoria_viento_${fmt(d.W, 1).replace(".", "_")}x${fmt(d.Le, 1).replace(".", "_")}.tex`;
+}
+
+function init() {
+  $("inputs").addEventListener("input", (e) => { if (e.target.tagName === "INPUT" && e.target.type !== "checkbox") calcular(); });
+  $("inputs").addEventListener("change", () => calcular());
+  calcular();
+}
+init();
+
+// ---------------------------------------------------------------------------
+// Vista 2D / 3D (modelo3d.js): volumen del edificio (x = W, y = vertical, z = Le; mm)
+// ---------------------------------------------------------------------------
+window.Zona2D3D?.montar({
+  antes: document.querySelector(".toolbar"),
+  fuente2D: () => $("dibujo").querySelector("svg"),
+  observar: [$("verdict"), $("dibujo")],
+  capas: [["muros", "Muros"], ["techo", "Techo"]],
+  nota: "volumen del edificio a escala; la estructura no se dibuja",
+  construir: () => {
+    if (!ultimoTex || !ultimoR) return null;
+    const d = ultimoD, g = ultimoR.g, k = 1000;
+    const W = d.W * k, Le = d.Le * k, he = d.he * k, top = g.hTop * k, esp = Math.max(60, Math.min(W, Le) * 0.006);
+    const e = new Geo3D.Escena();
+    const pared = d.techo === "dos" ? [[0, 0], [W, 0], [W, he], [W / 2, top], [0, he]] : d.techo === "una" ? [[0, 0], [W, 0], [W, top], [0, he]] : [[0, 0], [W, 0], [W, he], [0, he]];
+    const aP = (u, v, w) => [u - W / 2, v, w];
+    e.extruir({ mat: "placa", alfa: 0.55, grupo: "muros" }, pared, -Le / 2, Le / 2, aP);
+    const cub = d.techo === "dos" ? [[0, he], [W / 2, top], [W, he], [W, he + esp], [W / 2, top + esp], [0, he + esp]]
+      : d.techo === "una" ? [[0, he], [W, top], [W, top + esp], [0, he + esp]] : [[0, he], [W, he], [W, he + esp], [0, he + esp]];
+    e.extruir({ mat: "acero", alfa: 0.9, grupo: "techo" }, cub, -Le / 2 - esp, Le / 2 + esp, aP);
+    return e;
+  },
+});
+// Integración con proyectos (proyectos.js): datos para guardar y restaurar este cálculo
+window.AURA_MEMO = {
+  tipo: "Cargas de viento (prueba)",
+  elemento: () => "", tex: () => ultimoTex, nombre: () => ultimoNombre,
+  recalcular: () => calcular(),
+};
+</script>
+<script src="proyectos.js?v=46"></script>
+<script>
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
+</script>
+</body>
+</html>

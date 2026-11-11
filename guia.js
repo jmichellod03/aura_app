@@ -77,6 +77,16 @@ const Guia = (() => {
       { en: "#graf", titulo: "Espectro", texto: "Curva de pseudo-aceleración elástica Sa [g]. Pase el cursor para leer los valores." },
       { en: ".toolbar", titulo: "Exportar", texto: "Descargue el espectro .txt para ETABS, el plano DXF o la memoria .zip." },
     ],
+    "viento.html": [
+      { en: "t:1. Sitio", titulo: "Sitio", texto: "Zona de viento de la Tabla 1 (o la velocidad de un estudio), categoría de ocupación, exposición del terreno, elevación y efecto topográfico." },
+      { en: "t:2. Edificio", titulo: "Edificio", texto: "Tipo de techo y ángulo, ancho W perpendicular a la cumbrera, largo y altura del alero. El cerramiento define la presión interna." },
+      { en: "t:3. Sistema principal", titulo: "Sistema principal", texto: "Procedimiento direccional (todas las alturas) o envolvente (baja altura), separación entre marcos y elevación de los pisos para las fuerzas por nivel." },
+      { en: "t:4. Componentes", titulo: "Componentes y revestimientos", texto: "Luz y ancho tributario de una costanera o panel de techo y de muro: definen el área efectiva de viento." },
+      { en: "#summary", titulo: "Resultados", texto: "Presión de velocidad, mayor succión del techo, cortes basales y succión de diseño de los componentes." },
+      { en: "#dibujo", titulo: "Presiones", texto: "Corte transversal con las presiones externas del sistema principal: azul hacia la superficie, rojo succión." },
+      { en: "#memo", titulo: "Procedimiento", texto: "Tablas de presiones por superficie, cargas sobre el marco, fuerzas por piso y presiones de componentes por zona." },
+      { en: ".toolbar", titulo: "Memoria", texto: "Descargue la memoria .zip para Overleaf o imprima el procedimiento." },
+    ],
     "vial.html": [
       { en: "t:Solicitaciones", titulo: "1 · Solicitaciones", texto: "Ejes equivalentes EE de diseño, ingresados o calculados con el tránsito (3.603.202)." },
       { en: "t:Serviciabilidad", titulo: "2 · Serviciabilidad y confiabilidad", texto: "Índices de serviciabilidad inicial y final, confiabilidad R y desviación estándar S0." },
@@ -206,7 +216,7 @@ const Guia = (() => {
     if (pleg) pleg.click();
     const pagina = (typeof pag === "string" && pag) || location.pathname.split("/").pop() || "index.html";
     const vistos = new Set();
-    pasos = [...(PAGINAS[pagina] || []), ...(pagina === "espectros.html" ? [] : COMUNES)]
+    pasos = [...(PAGINAS[pagina] || []), ...(["espectros.html", "viento.html"].includes(pagina) ? [] : COMUNES)]
       .map(p => ({ ...p, el: destino(p.en), el2: p.hasta ? [...document.querySelectorAll(p.hasta)].find(visible) || null : null }))
       .filter(p => p.el && !vistos.has(p.el) && vistos.add(p.el));
     if (!pasos.length) return;

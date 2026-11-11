@@ -49,6 +49,8 @@
     secHormigon: svg('<path d="M3 8l9-5 9 5v8l-9 5-9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/>'),
     secMadera: svg('<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/>'),
     secSismico: svg('<path d="M2 12h4l2-6 3 13 3-16 3 12 1.5-3H22"/>'),
+    secCargas: svg('<path d="M3 7h11a3 3 0 10-3-3"/><path d="M3 12h16a3 3 0 11-3 3"/><path d="M3 17h7"/>'),
+    viento: svg('<path d="M4 20V11l8-5 8 5v9z"/><path d="M1 4h6M1 8h4"/>'),
     secVial: svg('<path d="M8 3L4 21M16 3l4 18M12 4v3M12 11v3M12 18v3"/>'),
     fundaciones: svg('<path d="M2 9h20"/><path d="M10 9v5H5v6h14v-6h-5V9"/>'),
     chevron: svg('<path d="M9 6l6 6-6 6"/>'),
@@ -103,6 +105,9 @@
         norma("433-2026", "NCh 433:2026"),
         norma("2369-2025", "NCh 2369:2025"),
       ]),
+    ]),
+    R("cargas", "Cargas", "secCargas", [
+      E("viento.html", "Viento NCh 432 (prueba)", "viento"),
     ]),
     R("vial", "Vial", "secVial", [
       E("vial.html", "Pavimento flexible", "vial"),
