@@ -131,7 +131,7 @@
   @media print { .esqWrap svg { max-width: 100%; } }
 </style>
 <link rel="stylesheet" href="aura.css?v=13">
-<script src="lateral.js?v=12"></script>
+<script src="lateral.js?v=13"></script>
 <script src="asistente.js?v=5" defer></script>
 </head>
 <body>
@@ -243,9 +243,9 @@
 </main>
 <footer>Herramienta de apoyo académico. Las solicitaciones las calcula AURA con un análisis elástico lineal del modelo plano de la reticulada (o se ingresan desde un modelo externo); el modelo se puede comprobar en SAP2000. Las propiedades de las secciones se calculan con esquinas rectas; para perfiles plegados de pared delgada rige además AISI S100 / NCh 427. Verifique siempre los resultados.</footer>
 
-<script src="memo.js?v=39"></script>
-<script src="tablero.js?v=6"></script>
-<script src="guia.js?v=3"></script>
+<script src="memo.js?v=40"></script>
+<script src="tablero.js?v=7"></script>
+<script src="guia.js?v=4"></script>
 <script src="modelo3d.js?v=6"></script>
 <script>
 "use strict";
@@ -2319,7 +2319,7 @@ window.AURA_MEMO = {
   recalcular: () => { marcarManuales(); GRUPOS.forEach(g => mostrarTipo(g.id)); mostrarGrupo(grupoVisible); actualizarUnidades(); calcular(); },
 };
 </script>
-<script src="proyectos.js?v=42"></script>
+<script src="proyectos.js?v=43"></script>
 <script>
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
 </script>

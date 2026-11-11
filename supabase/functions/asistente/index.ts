@@ -3,7 +3,7 @@
 // Etapa actual (plan gratis de Gemini): no recibe datos del cálculo, solo la página abierta y la conversación.
 // Secretos opcionales: GEMINI_MODEL, GEMINI_MODEL_RESPALDO, ASISTENTE_LIMITE_DIARIO, ASISTENTE_ORIGENES y AURA_BASE.
 
-const PAGINAS = ["index.html", "acero.html", "reticulada.html", "placa.html", "hormigon.html", "piers.html", "muro.html", "zapata.html", "base.html", "conexion.html", "diagonal.html", "madera.html", "mle.html", "espectros.html", "vial.html", "rigido.html"];
+const PAGINAS = ["index.html", "acero.html", "reticulada.html", "placa.html", "hormigon.html", "piers.html", "muro.html", "zapata.html", "base.html", "conexion.html", "diagonal.html", "madera.html", "mle.html", "espectros.html", "viento.html", "vial.html", "rigido.html"];
 const MAX_MENSAJES = 12, MAX_TEXTO = 2000, MAX_CATALOGO = 40000, CACHE_MS = 10 * 60 * 1000;
 const GEMINI = "https://generativelanguage.googleapis.com/v1beta/models";
 const PAUSAS_MS = [800, 2000];                 // antes de cada reintento de un mismo modelo
